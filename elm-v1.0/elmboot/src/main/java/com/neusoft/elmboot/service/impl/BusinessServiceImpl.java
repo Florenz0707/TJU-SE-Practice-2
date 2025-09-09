@@ -10,18 +10,18 @@ import com.neusoft.elmboot.po.Business;
 import com.neusoft.elmboot.service.BusinessService;
 
 @Service
-public class BusinessServiceImpl implements BusinessService{
-	
-	@Autowired
-	private BusinessMapper businessMapper;
+public class BusinessServiceImpl implements BusinessService {
 
-	@Override
-	public List<Business> listBusinessByOrderTypeId(Integer orderTypeId) {
-		return businessMapper.listBusinessByOrderTypeId(orderTypeId);
-	}
-	
-	@Override
-	public Business getBusinessById(Integer businessId) {
-		return businessMapper.getBusinessById(businessId);
-	}
+    @Autowired
+    private BusinessMapper businessMapper;
+
+    @Override
+    public List<Business> listBusinessByOrderTypeId(Integer orderTypeId) {
+        return businessMapper.listBusinessByOrderTypeId(orderTypeId);
+    }
+
+    @Override
+    public Business getBusinessById(Integer businessId) {
+        return businessMapper.getBusinessById(businessId);
+    }
 }

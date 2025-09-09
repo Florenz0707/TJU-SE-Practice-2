@@ -22,7 +22,7 @@ public class WebMvcConfig {
                 registry.addMapping("/**")
                         .allowedOrigins("http://localhost:8081")
                         .allowCredentials(true)
-                        .allowedMethods("GET", "POST", "DELETE", "PUT","PATCH")
+                        .allowedMethods("GET", "POST", "DELETE", "PUT", "PATCH")
                         .allowedHeaders("*")
                         .maxAge(36000);
             }

@@ -10,22 +10,22 @@ import com.neusoft.elmboot.service.UserService;
 @RestController
 @RequestMapping("/UserController")
 public class UserController {
-	
-	@Autowired
-	private UserService userService;
 
-	@RequestMapping("/getUserByIdByPass")
-	public User getUserByIdByPass(User user) throws Exception{
-		return userService.getUserByIdByPass(user);
-	}
-	
-	@RequestMapping("/getUserById")
-	public int getUserById(User user) throws Exception{
-		return userService.getUserById(user.getUserId());
-	}
-	
-	@RequestMapping("/saveUser")
-	public int saveUser(User user) throws Exception{
-		return userService.saveUser(user);
-	}
+    @Autowired
+    private UserService userService;
+
+    @RequestMapping("/getUserByIdByPass")
+    public User getUserByIdByPass(User user) throws Exception {
+        return userService.getUserByIdByPass(user);
+    }
+
+    @RequestMapping("/getUserById")
+    public int getUserById(User user) throws Exception {
+        return userService.getUserById(user.getUserId());
+    }
+
+    @RequestMapping("/saveUser")
+    public int saveUser(User user) throws Exception {
+        return userService.saveUser(user);
+    }
 }

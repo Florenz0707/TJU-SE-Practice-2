@@ -10,13 +10,13 @@ import com.neusoft.elmboot.po.Food;
 import com.neusoft.elmboot.service.FoodService;
 
 @Service
-public class FoodServiceImpl implements FoodService{
-	
-	@Autowired
-	private FoodMapper foodMapper;
+public class FoodServiceImpl implements FoodService {
 
-	@Override
-	public List<Food> listFoodByBusinessId(Integer businessId) {
-		return foodMapper.listFoodByBusinessId(businessId);
-	}
+    @Autowired
+    private FoodMapper foodMapper;
+
+    @Override
+    public List<Food> listFoodByBusinessId(Integer businessId) {
+        return foodMapper.listFoodByBusinessId(businessId);
+    }
 }
