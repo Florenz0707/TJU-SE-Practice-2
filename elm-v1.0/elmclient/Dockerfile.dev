@@ -1,0 +1,19 @@
+FROM node:14-slim
+
+WORKDIR /app
+
+# 设置 npm 国内源
+RUN npm config set registry https://registry.npmmirror.com
+
+# 安装 cnpm
+RUN npm install -g cnpm --registry=https://registry.npmmirror.com
+
+# 先拷贝 package.json，安装依赖
+COPY package*.json ./
+RUN cnpm install
+
+# 再拷贝源码
+COPY . .
+
+# 默认启动命令
+CMD ["cnpm", "run", "serve"]

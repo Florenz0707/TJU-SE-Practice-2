@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  backend:
+    image: maven:3.9.6-eclipse-temurin-11
+    container_name: elmboot-backend-dev
+    working_dir: /app
+    volumes:
+      - .:/app            # 挂载源码
+      - ~/.m2:/root/.m2   # 挂载本地 Maven 仓库
+    ports:
+      - "8080:8080"
+    command: mvn spring-boot:run

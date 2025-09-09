@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: ./
+      dockerfile: Dockerfile.dev
+    container_name: elmclient-dev
+    working_dir: /app
+    volumes:
+      - ./:/app          # 挂载源码
+      - /app/node_modules         # 避免宿主机覆盖 node_modules
+    ports:
+      - "8081:8081"
