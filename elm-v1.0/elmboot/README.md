@@ -2,7 +2,8 @@
 
 1. 使用**jdk-11**（检查环境变量与IDE的配置）。
 2. 使用本仓库内的**pom.xml**。
-3. 安装**Maven**并使用下面的配置文件（C://Users//User//.m2//settings.xml）：
+3. 补充原仓库内的**src//main//resources/application.properties**，并设置数据库连接的用户和密码。
+4. 安装**Maven**并使用下面的配置文件（C://Users//User//.m2//settings.xml）：
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
