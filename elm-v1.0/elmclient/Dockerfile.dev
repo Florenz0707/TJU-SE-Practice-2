@@ -1,19 +1,31 @@
-FROM node:14-slim
+FROM node:16-alpine
 
 WORKDIR /app
 
-# 设置 npm 国内源
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Set npm registry
 RUN npm config set registry https://registry.npmmirror.com
 
-# 安装 cnpm
+# Install cnpm globally
 RUN npm install -g cnpm --registry=https://registry.npmmirror.com
 
-# 先拷贝 package.json，安装依赖
+# Copy package files first (for better caching)
 COPY package*.json ./
+
+# Install dependencies
 RUN cnpm install
 
-# 再拷贝源码
+# Copy source code
 COPY . .
 
-# 默认启动命令
-CMD ["cnpm", "run", "serve"]
+# Expose port
+EXPOSE 8081
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8081/ || exit 1
+
+# Start development server
+CMD ["npm", "run", "serve"]
