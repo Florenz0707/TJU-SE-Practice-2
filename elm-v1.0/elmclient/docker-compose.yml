@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  frontend:
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+    container_name: elmclient
+    ports:
+      - "80:80"
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
