@@ -1,0 +1,21 @@
+
+INSERT INTO USERS (USERNAME, PASSWORD,ACTIVATED)
+VALUES
+    ('admin', '$2a$08$lDnHPz7eUkSi6ao14Twuau08mzhWrL4kyZGGU5xfiGALO/Vxd5DOi', TRUE),
+    ('user', '$2a$08$UkVvwpULis18S19S5pZFn.YHPZt3oaqHZnDwqbCW9pft6uFtkXKDC', TRUE)
+;
+
+INSERT INTO AUTHORITY (NAME)
+VALUES
+    ('ADMIN'),
+    ('USER'),
+    ('BUSINESS')
+;
+
+INSERT INTO USER_AUTHORITY (USER_ID, AUTHORITY_NAME)
+VALUES
+    (1, 'ADMIN'),
+    (1, 'USER'),
+    (1, 'BUSINESS'),
+    (2, 'USER')
+;
