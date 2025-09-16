@@ -13,27 +13,27 @@ import java.util.Optional;
 @Transactional
 public class UserService {
 
-   private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
-   public UserService(UserRepository userRepository) {
-      this.userRepository = userRepository;
-   }
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
-   @Transactional(readOnly = true)
-   public Optional<User> getUserWithAuthorities() {
-      return SecurityUtils.getCurrentUsername().flatMap(userRepository::findOneWithAuthoritiesByUsername);
-   }
+    @Transactional(readOnly = true)
+    public Optional<User> getUserWithAuthorities() {
+        return SecurityUtils.getCurrentUsername().flatMap(userRepository::findOneWithAuthoritiesByUsername);
+    }
 
-   public User addUser(User user) {
-      return userRepository.save(user);
-   }
+    public User addUser(User user) {
+        return userRepository.save(user);
+    }
 
-   public User updateUser(User user) {
-      return userRepository.save(user);
-   }
+    public void updateUser(User user) {
+        userRepository.save(user);
+    }
 
-   public Boolean isEmptyUserTable() {
-      List<User> userList = userRepository.findAll();
-      return userList.isEmpty();
-   }
+    public Boolean isEmptyUserTable() {
+        List<User> userList = userRepository.findAll();
+        return userList.isEmpty();
+    }
 }

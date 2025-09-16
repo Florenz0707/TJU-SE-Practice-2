@@ -21,17 +21,17 @@ public class OrderController {
 //    private OrderService ordersService;
 
     @PostMapping(value = "")
-    public HttpResult<Order> addOrders(@RequestBody Order order) throws Exception{
+    public HttpResult<Order> addOrders(@RequestBody Order order) throws Exception {
         return null;
     }
 
     @GetMapping("/{id}")
-    public HttpResult getOrderById(@PathVariable Long id) throws Exception{
+    public HttpResult getOrderById(@PathVariable Long id) throws Exception {
         return null;
     }
 
     @GetMapping("")
-    public List<Order> listOrdersByUserId(@RequestParam Long userId) throws Exception{
+    public List<Order> listOrdersByUserId(@RequestParam Long userId) throws Exception {
         return null;
     }
 }

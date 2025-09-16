@@ -27,18 +27,18 @@ public class FoodController {
 
     @GetMapping("/{id}")
     @Operation(summary = "返回查询到的一条商品记录", method = "GET")
-    public HttpResult<Food> getFoodById(@PathVariable Long id){
+    public HttpResult<Food> getFoodById(@PathVariable Long id) {
         return null;
     }
 
     @GetMapping("")
     public HttpResult<List<Food>> getAllFoods(@RequestParam(name = "business", required = false) Long businessId,
-                                              @RequestParam(name = "order", required = false) Long orderId){
+                                              @RequestParam(name = "order", required = false) Long orderId) {
         return null;
     }
 
     @PostMapping("")
-    public HttpResult<Food> addFood(@RequestBody Food food){
+    public HttpResult<Food> addFood(@RequestBody Food food) {
         return null;
     }
 }

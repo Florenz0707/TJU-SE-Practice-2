@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 @Entity
 public class Business extends BaseEntity {
-    @Column(nullable=false)
+    @Column(nullable = false)
     private String businessName;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)

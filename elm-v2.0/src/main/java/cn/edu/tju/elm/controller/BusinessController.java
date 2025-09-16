@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/businesses")
-@Tag(name="管理店铺", description = "提供对店铺的增删改查功能")
+@Tag(name = "管理店铺", description = "提供对店铺的增删改查功能")
 public class BusinessController {
     @Autowired
     private UserService userService;
@@ -22,33 +22,33 @@ public class BusinessController {
 //    BusinessService businessService;
 
     @GetMapping("")
-    public HttpResult<List<Business>> getBusinesses(){
+    public HttpResult<List<Business>> getBusinesses() {
         return null;
     }
 
     @PostMapping("")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public HttpResult<Business> addBusiness(@RequestBody Business business){
+    public HttpResult<Business> addBusiness(@RequestBody Business business) {
         return null;
     }
 
     @GetMapping("/{id}")
-    public HttpResult<Business> getBusiness(@PathVariable("id") Long id){
+    public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
         return null;
     }
 
     @PutMapping("/{id}")
-    public HttpResult<Business> updateBusiness(@PathVariable("id") Long id, @RequestBody Business business){
+    public HttpResult<Business> updateBusiness(@PathVariable("id") Long id, @RequestBody Business business) {
         return null;
     }
 
     @PatchMapping("/{id}")
-    public HttpResult<Business> patchBusiness(@PathVariable("id") Long id, @RequestBody Business business){
+    public HttpResult<Business> patchBusiness(@PathVariable("id") Long id, @RequestBody Business business) {
         return null;
     }
 
     @DeleteMapping("/{id}")
-    public HttpResult<Business> deleteBusiness(@PathVariable("id") Long id){
+    public HttpResult<Business> deleteBusiness(@PathVariable("id") Long id) {
         return null;
     }
 }

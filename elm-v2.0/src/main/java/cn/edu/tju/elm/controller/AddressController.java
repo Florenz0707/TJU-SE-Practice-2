@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api")
-@Tag(name="管理地址", description = "对配送地址的增删改查")
+@Tag(name = "管理地址", description = "对配送地址的增删改查")
 public class AddressController {
 //    @Autowired
 //    private AddressService addressService;

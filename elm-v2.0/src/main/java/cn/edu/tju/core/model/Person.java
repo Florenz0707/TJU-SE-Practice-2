@@ -3,7 +3,7 @@ package cn.edu.tju.core.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "person")
+@Table(name = "PERSON")
 public class Person extends User {
 
     private String firstName;

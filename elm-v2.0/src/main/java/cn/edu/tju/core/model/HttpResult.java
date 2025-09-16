@@ -3,7 +3,7 @@ package cn.edu.tju.core.model;
 
 import java.io.Serializable;
 
-public class HttpResult <T> implements Serializable {
+public class HttpResult<T> implements Serializable {
 
     /**
      * 是否响应成功
@@ -23,6 +23,7 @@ public class HttpResult <T> implements Serializable {
     private String message;
 
     // 构造器开始
+
     /**
      * 无参构造器(构造器私有，外部不可以直接创建)
      */
@@ -30,9 +31,9 @@ public class HttpResult <T> implements Serializable {
         this.code = ResultCodeEnum.SUCCESS.getCode();
         this.success = true;
     }
+
     /**
      * 有参构造器
-     * @param obj
      */
     private HttpResult(T obj) {
         this.code = ResultCodeEnum.SUCCESS.getCode();
@@ -42,7 +43,6 @@ public class HttpResult <T> implements Serializable {
 
     /**
      * 有参构造器
-     * @param resultCode
      */
     private HttpResult(ResultCodeEnum resultCode) {
         this.success = false;
@@ -59,35 +59,28 @@ public class HttpResult <T> implements Serializable {
 
     /**
      * 通用返回成功（没有返回结果）
-     * @param <T>
-     * @return
      */
-    public static<T> HttpResult<T> success(){
+    public static <T> HttpResult<T> success() {
         return new HttpResult();
     }
 
     /**
      * 返回成功（有返回结果）
-     * @param data
-     * @param <T>
-     * @return
+
      */
-    public static<T> HttpResult<T> success(T data){
+    public static <T> HttpResult<T> success(T data) {
         return new HttpResult<T>(data);
     }
 
     /**
      * 通用返回失败
-     * @param resultCode
-     * @param <T>
-     * @return
      */
-    public static<T> HttpResult<T> failure(ResultCodeEnum resultCode){
+    public static <T> HttpResult<T> failure(ResultCodeEnum resultCode) {
         return new HttpResult<T>(resultCode);
     }
 
-    public static<T> HttpResult<T> failure(ResultCodeEnum resultCode, String message){
-        return new HttpResult<T>(resultCode,message);
+    public static <T> HttpResult<T> failure(ResultCodeEnum resultCode, String message) {
+        return new HttpResult<T>(resultCode, message);
     }
 
     public Boolean getSuccess() {
@@ -132,4 +125,3 @@ public class HttpResult <T> implements Serializable {
                 '}';
     }
 }
-
