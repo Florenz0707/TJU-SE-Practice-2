@@ -33,6 +33,11 @@ public class AddressController {
 
     @PostMapping("/addresses")
     public HttpResult<DeliveryAddress> addDeliveryAddress(@RequestBody DeliveryAddress deliveryAddress) {
+        // 整体流程：Controller -> Service -> Repository
+        // Controller负责方法路由和鉴权
+        // Service负责数据库数据的再次处理，如比较复杂的排序、去重等
+        // Repository负责与数据库的直接交互
+
         // 使用HttpResult进行返回响应，SUCCESS可携带实体信息，FAILURE可携带错误码（使用定义好的枚举值）
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
@@ -44,7 +49,7 @@ public class AddressController {
 
         // 检查token指向的user是否与deliveryAddress中的customer一致
         if (me.getUsername().equals(user.getUsername())) {
-            deliveryAddress.setCustomer(user);
+            deliveryAddress.setCustomer(user);  // 使user被jpa接管，否则会报错
             return addressService.addAddress(deliveryAddress);
         }
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);
