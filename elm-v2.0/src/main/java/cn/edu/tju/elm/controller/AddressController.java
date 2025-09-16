@@ -20,28 +20,32 @@ import java.util.Optional;
 @RequestMapping("/api")
 @Tag(name = "管理地址", description = "对配送地址的增删改查")
 public class AddressController {
+
+    // 准备需要的接口
     @Autowired
     private AddressService addressService;
 
     @Autowired
     private UserService userService;
+
     @Autowired
     private UserRepository userRepository;
 
     @PostMapping("/addresses")
     public HttpResult<DeliveryAddress> addDeliveryAddress(@RequestBody DeliveryAddress deliveryAddress) {
+        // 使用HttpResult进行返回响应，SUCCESS可携带实体信息，FAILURE可携带错误码（使用定义好的枚举值）
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
-
         User me = meOptional.get();
+
         Optional<User> userOptional = userRepository.findOneWithAuthoritiesByUsername(deliveryAddress.getCustomer().getUsername());
         if (userOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
-
         User user = userOptional.get();
+
+        // 检查token指向的user是否与deliveryAddress中的customer一致
         if (me.getUsername().equals(user.getUsername())) {
             deliveryAddress.setCustomer(user);
-            addressService.addAddress(deliveryAddress);
-            return HttpResult.success(deliveryAddress);
+            return addressService.addAddress(deliveryAddress);
         }
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);
     }
