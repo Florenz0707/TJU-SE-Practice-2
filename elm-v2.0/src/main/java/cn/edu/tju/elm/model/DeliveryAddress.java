@@ -13,6 +13,7 @@ public class DeliveryAddress extends BaseEntity {
     private Integer contactSex;
     private String contactTel;
     private String address;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User customer;
