@@ -15,8 +15,7 @@ public class AddressService {
         this.addressRepository = addressRepository;
     }
 
-    public HttpResult<DeliveryAddress> addAddress(DeliveryAddress address) {
-        addressRepository.save(address);
-        return HttpResult.success(address);
+    public DeliveryAddress addAddress(DeliveryAddress address) {
+        return addressRepository.save(address);
     }
 }

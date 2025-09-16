@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @RestController
@@ -49,8 +50,15 @@ public class AddressController {
 
         // 检查token指向的user是否与deliveryAddress中的customer一致
         if (me.getUsername().equals(user.getUsername())) {
+            LocalDateTime now = LocalDateTime.now();
+            deliveryAddress.setCreateTime(now);
+            deliveryAddress.setUpdateTime(now);
+            deliveryAddress.setCreator(user.getId());
+            deliveryAddress.setUpdater(user.getId());
+            deliveryAddress.setDeleted(false);
             deliveryAddress.setCustomer(user);  // 使user被jpa接管，否则会报错
-            return addressService.addAddress(deliveryAddress);
+            if (deliveryAddress.equals(addressService.addAddress(deliveryAddress)))
+                return HttpResult.success(deliveryAddress);
         }
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);
     }
