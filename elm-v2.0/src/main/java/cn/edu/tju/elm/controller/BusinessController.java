@@ -60,7 +60,9 @@ public class BusinessController {
 
     @GetMapping("/{id}")
     public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
-        return null;
+        Business business = businessService.getBusinessById(id);
+        if (business == null || business.getDeleted()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        return HttpResult.success(business);
     }
 
     @PutMapping("/{id}")
