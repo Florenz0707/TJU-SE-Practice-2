@@ -7,6 +7,7 @@ import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.core.security.service.UserService;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -58,9 +59,27 @@ public class BusinessController {
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Not Known Error");
     }
 
+//    根据ID获取店铺详情
+//     * 所有认证用户均可访问
+//     * @param id 店铺ID
+//     * @return 店铺详细信息或错误信息
     @GetMapping("/{id}")
-    public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
-        return null;
+    public HttpResult<Business> getBusiness(
+            @Parameter(description = "店铺ID", required = true, example = "1001")
+            @PathVariable("id") Long id) {
+        // 根据ID查询店铺信息
+        Business business = businessService.getBusinessById(id);
+        if (business == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "未找到指定ID的店铺");
+        }
+
+        // 检查店铺是否已被逻辑删除
+        if (business.getDeleted()) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "该店铺已被删除");
+        }
+
+        // 返回查询成功的店铺信息
+        return HttpResult.success(business);
     }
 
     @PutMapping("/{id}")
