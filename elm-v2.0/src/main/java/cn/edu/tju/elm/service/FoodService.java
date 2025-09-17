@@ -1,6 +1,5 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.elm.model.Food;
 import cn.edu.tju.elm.repository.FoodRepository;
 import org.springframework.stereotype.Service;
@@ -15,8 +14,7 @@ public class FoodService {
         this.foodRepository = foodRepository;
     }
 
-    public HttpResult<Food> addFood(Food food) {
-        foodRepository.save(food);
-        return HttpResult.success(food);
+    public Food addFood(Food food) {
+        return foodRepository.save(food);
     }
 }

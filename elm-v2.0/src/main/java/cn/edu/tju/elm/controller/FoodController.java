@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +50,8 @@ public class FoodController {
 
     @PostMapping("")
     public HttpResult<Food> addFood(@RequestBody Food food) {
+        if (food.getFoodName() == null || food.getFoodPrice() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodName AND FoodPrice CANT BE NULL");
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
         User me = meOptional.get();
@@ -65,15 +68,20 @@ public class FoodController {
             }
         }
 
-        // TODO: 不跟据附带的businessOwner信息获得User信息，而直接用businessId查找business实体从而获取User
-        Optional<User> userOptional = userRepository.findOneWithAuthoritiesByUsername(food.getBusiness().getBusinessOwner().getUsername());
-        if (userOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
-        User user = userOptional.get();
-        if (isAdmin || (isBusiness && user.getUsername().equals(me.getUsername()))) {
-            Business business = businessService.getBusinessById(food.getBusiness().getId());
-            if (business == null) return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);
+        Business business = businessService.getBusinessById(food.getBusiness().getId());
+        if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        User user = business.getBusinessOwner();
+        if (isAdmin || (isBusiness && me.getUsername().equals(user.getUsername()))) {
             food.setBusiness(business);
-            return foodService.addFood(food);
+            LocalDateTime now = LocalDateTime.now();
+            food.setCreateTime(now);
+            food.setUpdateTime(now);
+            food.setCreator(me.getId());
+            food.setUpdater(me.getId());
+            food.setDeleted(false);
+            if (food.equals(foodService.addFood(food))) {
+                return HttpResult.success(food);
+            }
         }
 
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);

@@ -23,4 +23,8 @@ public class BusinessService {
 //        return businessOptional.get();
         return businessOptional.orElse(null);
     }
+
+    public Business addBusiness(Business business) {
+        return businessRepository.save(business);
+    }
 }
