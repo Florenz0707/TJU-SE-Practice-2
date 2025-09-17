@@ -45,6 +45,16 @@ public class FoodController {
     @GetMapping("")
     public HttpResult<List<Food>> getAllFoods(@RequestParam(name = "business", required = false) Long businessId,
                                               @RequestParam(name = "order", required = false) Long orderId) {
+        if ((businessId == null && orderId == null) || (businessId != null && orderId != null)) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "HAVE TO PROVIDE ONE AND ONLY ONE ARG");
+        }
+        if (businessId != null) {
+            Business business = businessService.getBusinessById(businessId);
+            if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+            return HttpResult.success(foodService.getFoodsByBusinessId(businessId));
+        }
+        // TODO: getByOrderId
+
         return null;
     }
 

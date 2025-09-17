@@ -60,6 +60,6 @@ public class AddressController {
             if (deliveryAddress.equals(addressService.addAddress(deliveryAddress)))
                 return HttpResult.success(deliveryAddress);
         }
-        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "UNKNOWN ERROR");
     }
 }

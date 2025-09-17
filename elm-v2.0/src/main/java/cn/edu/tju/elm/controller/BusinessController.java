@@ -1,5 +1,6 @@
 package cn.edu.tju.elm.controller;
 
+import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.repository.UserRepository;
@@ -30,7 +31,7 @@ public class BusinessController {
 
     @GetMapping("")
     public HttpResult<List<Business>> getBusinesses() {
-        return null;
+        return HttpResult.success(businessService.getBusinesses());
     }
 
     @PostMapping("")
@@ -77,6 +78,35 @@ public class BusinessController {
 
     @DeleteMapping("/{id}")
     public HttpResult<Business> deleteBusiness(@PathVariable("id") Long id) {
-        return null;
+        Business business = businessService.getBusinessById(id);
+        if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+        boolean isAdmin = false;
+        boolean isBusiness = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+            if (authority.getName().equals("BUSINESS")) {
+                isBusiness = true;
+                break;
+            }
+        }
+
+        if (isAdmin || (isBusiness && business.getBusinessOwner().getUsername().equals(me.getUsername()))) {
+            if (business.getDeleted()) return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Business ALREADY DELETED");
+            LocalDateTime now = LocalDateTime.now();
+            business.setUpdateTime(now);
+            business.setUpdater(me.getId());
+            business.setDeleted(true);
+            businessService.updateBusiness(business);
+            return HttpResult.success(business);
+        }
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN);
     }
 }
