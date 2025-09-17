@@ -68,14 +68,8 @@ public class FoodController {
         boolean isAdmin = false;
         boolean isBusiness = false;
         for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-            if (authority.getName().equals("BUSINESS")) {
-                isBusiness = true;
-                break;
-            }
+            if (authority.getName().equals("ADMIN")) isAdmin = true;
+            if (authority.getName().equals("BUSINESS")) isBusiness = true;
         }
 
         Business business = businessService.getBusinessById(food.getBusiness().getId());

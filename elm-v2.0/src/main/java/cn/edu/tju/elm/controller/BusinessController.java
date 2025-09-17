@@ -62,18 +62,97 @@ public class BusinessController {
     @GetMapping("/{id}")
     public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
         Business business = businessService.getBusinessById(id);
-        if (business == null || business.getDeleted()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        if (business == null || business.getDeleted())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
         return HttpResult.success(business);
     }
 
     @PutMapping("/{id}")
     public HttpResult<Business> updateBusiness(@PathVariable("id") Long id, @RequestBody Business business) {
-        return null;
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Business oldBusiness = businessService.getBusinessById(id);
+        if (oldBusiness == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        if (business.getBusinessName() == null)
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "BusinessName CANT BE NULL");
+
+        boolean isAdmin = false;
+        boolean isBusiness = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) isAdmin = true;
+            if (authority.getName().equals("BUSINESS")) isBusiness = true;
+        }
+        if (isAdmin || (isBusiness && me.getUsername().equals(oldBusiness.getBusinessOwner().getUsername()))) {
+            LocalDateTime now = LocalDateTime.now();
+            business.setId(oldBusiness.getId());
+            business.setCreateTime(oldBusiness.getCreateTime());
+            business.setUpdateTime(now);
+            business.setCreator(oldBusiness.getCreator());
+            business.setUpdater(me.getId());
+            business.setDeleted(false);
+            businessService.updateBusiness(business);
+            return HttpResult.success(business);
+        }
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     @PatchMapping("/{id}")
     public HttpResult<Business> patchBusiness(@PathVariable("id") Long id, @RequestBody Business business) {
-        return null;
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Business oldBusiness = businessService.getBusinessById(id);
+        if (oldBusiness == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+
+        boolean isAdmin = false;
+        boolean isBusiness = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) isAdmin = true;
+            if (authority.getName().equals("BUSINESS")) isBusiness = true;
+        }
+        if (isAdmin || (isBusiness && me.getUsername().equals(oldBusiness.getBusinessOwner().getUsername()))) {
+            business.setId(oldBusiness.getId());
+            if (business.getBusinessOwner() == null) {
+                business.setBusinessOwner(oldBusiness.getBusinessOwner());
+            }
+            if (business.getBusinessAddress() == null) {
+                business.setBusinessAddress(oldBusiness.getBusinessAddress());
+            }
+            if (business.getBusinessExplain() == null) {
+                business.setBusinessExplain(oldBusiness.getBusinessExplain());
+            }
+            if (business.getBusinessImg() == null) {
+                business.setBusinessImg(oldBusiness.getBusinessImg());
+            }
+            if (business.getRemarks() == null) {
+                business.setRemarks(oldBusiness.getRemarks());
+            }
+            if (business.getOrderTypeId() == null) {
+                business.setOrderTypeId(oldBusiness.getOrderTypeId());
+            }
+            if (business.getStartPrice() == null) {
+                business.setStartPrice(oldBusiness.getStartPrice());
+            }
+            if (business.getDeliveryPrice() == null) {
+                business.setDeliveryPrice(oldBusiness.getDeliveryPrice());
+            }
+
+            LocalDateTime now = LocalDateTime.now();
+            business.setCreateTime(oldBusiness.getCreateTime());
+            business.setUpdateTime(now);
+            business.setCreator(oldBusiness.getCreator());
+            business.setUpdater(me.getId());
+            business.setDeleted(false);
+
+            businessService.updateBusiness(business);
+            return HttpResult.success(business);
+        }
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     @DeleteMapping("/{id}")
@@ -84,21 +163,17 @@ public class BusinessController {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
+
         boolean isAdmin = false;
         boolean isBusiness = false;
         for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-            if (authority.getName().equals("BUSINESS")) {
-                isBusiness = true;
-                break;
-            }
+            if (authority.getName().equals("ADMIN")) isAdmin = true;
+            if (authority.getName().equals("BUSINESS")) isBusiness = true;
         }
 
         if (isAdmin || (isBusiness && business.getBusinessOwner().getUsername().equals(me.getUsername()))) {
-            if (business.getDeleted()) return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Business ALREADY DELETED");
+            if (business.getDeleted())
+                return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Business ALREADY DELETED");
             LocalDateTime now = LocalDateTime.now();
             business.setUpdateTime(now);
             business.setUpdater(me.getId());
