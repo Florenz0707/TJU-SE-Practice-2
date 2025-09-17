@@ -26,6 +26,7 @@ public class BusinessController {
 
     @Autowired
     BusinessService businessService;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -38,9 +39,13 @@ public class BusinessController {
     @PreAuthorize("hasAuthority('ADMIN')")
     public HttpResult<Business> addBusiness(@RequestBody Business business) {
         Optional<User> adminOptional = userService.getUserWithAuthorities();
-        if (adminOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Admin NOT FOUND");
+        if (adminOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Admin NOT FOUND");
         User admin = adminOptional.get();
 
+        if (business.getBusinessName() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessName CANT BE NULL");
+        if (business.getBusinessOwner() == null || business.getBusinessOwner().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner.Id CANT BE NULL");
         Optional<User> ownerOptional = userRepository.findById(business.getBusinessOwner().getId());
         if (ownerOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner NOT FOUND");
         User owner = ownerOptional.get();
@@ -75,8 +80,14 @@ public class BusinessController {
 
         Business oldBusiness = businessService.getBusinessById(id);
         if (oldBusiness == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        User oldOwner = oldBusiness.getBusinessOwner();
+
         if (business.getBusinessName() == null)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "BusinessName CANT BE NULL");
+        if (business.getBusinessOwner() == null || business.getBusinessOwner().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner.Id CANT BE NULL");
+        User newOwner = userService.getUserById(business.getBusinessOwner().getId());
+        if (newOwner == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner NOT FOUND");
 
         boolean isAdmin = false;
         boolean isBusiness = false;
@@ -84,7 +95,8 @@ public class BusinessController {
             if (authority.getName().equals("ADMIN")) isAdmin = true;
             if (authority.getName().equals("BUSINESS")) isBusiness = true;
         }
-        if (isAdmin || (isBusiness && me.getUsername().equals(oldBusiness.getBusinessOwner().getUsername()))) {
+        if (isAdmin || (isBusiness && me.getUsername().equals(oldOwner.getUsername())
+                && oldOwner.getUsername().equals(newOwner.getUsername()))) {
             LocalDateTime now = LocalDateTime.now();
             business.setId(oldBusiness.getId());
             business.setCreateTime(oldBusiness.getCreateTime());
@@ -118,6 +130,10 @@ public class BusinessController {
             business.setId(oldBusiness.getId());
             if (business.getBusinessOwner() == null) {
                 business.setBusinessOwner(oldBusiness.getBusinessOwner());
+            }
+            else if (isBusiness) {
+                if (business.getBusinessOwner().getId() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "IF BusinessOwner NOT NULL THEN BusinessOwner.Id MUST BE NOT NULL");
+                if (!me.getId().equals(business.getBusinessOwner().getId())) return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
             }
             if (business.getBusinessAddress() == null) {
                 business.setBusinessAddress(oldBusiness.getBusinessAddress());

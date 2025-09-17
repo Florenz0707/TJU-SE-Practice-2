@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -26,5 +27,10 @@ public class FoodService {
             if (foodList.get(i).getDeleted()) foodList.remove(i--);
         }
         return foodList;
+    }
+
+    public Food getFoodById(Long id) {
+        Optional<Food> foodOptional = foodRepository.findById(id);
+        return foodOptional.orElse(null);
     }
 }

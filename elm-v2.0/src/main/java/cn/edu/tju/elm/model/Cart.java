@@ -19,6 +19,7 @@ public class Cart extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "business_id", nullable = false)
     private Business business;
+
     private Integer quantity;
 
     public Food getFood() {

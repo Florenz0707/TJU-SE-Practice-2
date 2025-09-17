@@ -39,7 +39,9 @@ public class FoodController {
     @GetMapping("/{id}")
     @Operation(summary = "返回查询到的一条商品记录", method = "GET")
     public HttpResult<Food> getFoodById(@PathVariable Long id) {
-        return null;
+        Food food = foodService.getFoodById(id);
+        if (food == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+        return HttpResult.success(food);
     }
 
     @GetMapping("")
@@ -60,8 +62,11 @@ public class FoodController {
 
     @PostMapping("")
     public HttpResult<Food> addFood(@RequestBody Food food) {
-        if (food.getFoodName() == null || food.getFoodPrice() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodName AND FoodPrice CANT BE NULL");
+        if (food.getFoodName() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodName CANT BE NULL");
+        if (food.getFoodPrice() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodPrice CANT BE NULL");
+        if (food.getBusiness() == null || food.getBusiness().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
+
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
         User me = meOptional.get();
