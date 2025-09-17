@@ -3,7 +3,6 @@ package cn.edu.tju.elm.controller;
 import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.core.security.repository.UserRepository;
 import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.model.Food;
 import cn.edu.tju.core.model.HttpResult;
@@ -31,9 +30,6 @@ public class FoodController {
     private FoodService foodService;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private BusinessService businessService;
 
     @GetMapping("/{id}")
@@ -45,8 +41,9 @@ public class FoodController {
     }
 
     @GetMapping("")
-    public HttpResult<List<Food>> getAllFoods(@RequestParam(name = "business", required = false) Long businessId,
-                                              @RequestParam(name = "order", required = false) Long orderId) {
+    public HttpResult<List<Food>> getAllFoods(
+            @RequestParam(name = "business", required = false) Long businessId,
+            @RequestParam(name = "order", required = false) Long orderId) {
         if ((businessId == null && orderId == null) || (businessId != null && orderId != null)) {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "HAVE TO PROVIDE ONE AND ONLY ONE ARG");
         }
@@ -62,14 +59,17 @@ public class FoodController {
 
     @PostMapping("")
     public HttpResult<Food> addFood(@RequestBody Food food) {
-        if (food.getFoodName() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodName CANT BE NULL");
-        if (food.getFoodPrice() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodPrice CANT BE NULL");
-        if (food.getBusiness() == null || food.getBusiness().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
-
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
         User me = meOptional.get();
+
+        if (food.getFoodName() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodName CANT BE NULL");
+        if (food.getFoodPrice() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodPrice CANT BE NULL");
+        if (food.getBusiness() == null || food.getBusiness().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
+
         boolean isAdmin = false;
         boolean isBusiness = false;
         for (Authority authority : me.getAuthorities()) {
@@ -80,8 +80,10 @@ public class FoodController {
         Business business = businessService.getBusinessById(food.getBusiness().getId());
         if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
         User user = business.getBusinessOwner();
-        if (isAdmin || (isBusiness && me.getUsername().equals(user.getUsername()))) {
+
+        if (isAdmin || (isBusiness && me.equals(user))) {
             food.setBusiness(business);
+
             LocalDateTime now = LocalDateTime.now();
             food.setCreateTime(now);
             food.setUpdateTime(now);

@@ -49,19 +49,24 @@ public class CartController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
         if (cart.getCustomer() == null || cart.getCustomer().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
-        if (cart.getQuantity() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Quantity CANT BE NULL");
+        if (cart.getQuantity() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Quantity CANT BE NULL");
 
         Food food = foodService.getFoodById(cart.getFood().getId());
-        if (food == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+        if (food == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
         Business business = businessService.getBusinessById(cart.getBusiness().getId());
-        if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        if (business == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
         User user = userService.getUserById(cart.getCustomer().getId());
-        if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+        if (user == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        if (user.getUsername().equals(me.getUsername())) {
+        if (user.equals(me)) {
             cart.setFood(food);
             cart.setBusiness(business);
             cart.setCustomer(user);
+
             LocalDateTime now = LocalDateTime.now();
             cart.setCreateTime(now);
             cart.setUpdateTime(now);
