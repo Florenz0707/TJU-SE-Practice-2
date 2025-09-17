@@ -2,6 +2,7 @@ package cn.edu.tju.elm.service;
 
 import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.repository.BusinessRepository;
+import cn.edu.tju.elm.utils.Utils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +20,7 @@ public class BusinessService {
     }
 
     public List<Business> getBusinesses() {
-        List<Business> businessList = businessRepository.findAll();
-        for (int i = 0; i < businessList.size(); ++i) {
-            if (businessList.get(i).getDeleted()) businessList.remove(i--);
-        }
-        return businessList;
+        return Utils.removeDeleted(businessRepository.findAll());
     }
 
     public Business getBusinessById(Long businessId) {

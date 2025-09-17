@@ -29,9 +29,6 @@ public class AddressController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private UserRepository userRepository;
-
     @PostMapping("/addresses")
     public HttpResult<DeliveryAddress> addDeliveryAddress(@RequestBody DeliveryAddress deliveryAddress) {
         // 整体流程：Controller -> Service -> Repository

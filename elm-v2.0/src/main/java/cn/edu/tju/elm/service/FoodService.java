@@ -2,6 +2,7 @@ package cn.edu.tju.elm.service;
 
 import cn.edu.tju.elm.model.Food;
 import cn.edu.tju.elm.repository.FoodRepository;
+import cn.edu.tju.elm.utils.Utils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,11 +23,7 @@ public class FoodService {
     }
 
     public List<Food> getFoodsByBusinessId(Long businessId) {
-        List<Food> foodList = foodRepository.findAllByBusinessId(businessId);
-        for (int i = 0; i < foodList.size(); ++i) {
-            if (foodList.get(i).getDeleted()) foodList.remove(i--);
-        }
-        return foodList;
+        return Utils.removeDeleted(foodRepository.findAllByBusinessId(businessId));
     }
 
     public Food getFoodById(Long id) {

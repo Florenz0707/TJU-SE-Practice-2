@@ -3,19 +3,17 @@ package cn.edu.tju.elm.controller;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.elm.model.Business;
-import cn.edu.tju.elm.model.DeliveryAddress;
-import cn.edu.tju.elm.model.Order;
-import cn.edu.tju.elm.service.AddressService;
-import cn.edu.tju.elm.service.BusinessService;
-import cn.edu.tju.elm.service.OrderService;
+import cn.edu.tju.elm.model.*;
+import cn.edu.tju.elm.service.*;
 import cn.edu.tju.core.security.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,10 +26,18 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
+
     @Autowired
     private BusinessService businessService;
+
     @Autowired
     private AddressService addressService;
+    @Autowired
+    private CartItemService cartItemService;
+    @Autowired
+    private FoodService foodService;
+    @Autowired
+    private OrderDetailetService orderDetailetService;
 
     @PostMapping(value = "")
     public HttpResult<Order> addOrders(@RequestBody Order order) {
@@ -57,9 +63,19 @@ public class OrderController {
         if (address == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
 
+        List<Cart> cartList = cartItemService.getCart(business.getId(), customer.getId());
+        if (cartList.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Cart IS EMPTY");
+
         if (me.equals(customer) && me.equals(address.getCustomer())) {
             // TODO: Complete Order info and OrderDetailet with cart(customer_id, business_id)
-            order.setOrderTotal(BigDecimal.valueOf(0));
+            // TODO: Await to be tested
+            BigDecimal totalPrice = new BigDecimal(0);
+            for (Cart cart : cartList) {
+                BigDecimal quantity = new BigDecimal(cart.getQuantity());
+                totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
+            }
+            order.setOrderTotal(totalPrice);
             order.setOrderState(0);
 
             order.setBusiness(business);
@@ -73,8 +89,17 @@ public class OrderController {
             order.setCreator(me.getId());
             order.setUpdater(me.getId());
             order.setDeleted(false);
-            if (order.equals(orderService.addOrder(order))) {
-                return HttpResult.success(order);
+
+            orderService.addOrder(order);
+            for (Cart cart : cartList) {
+                OrderDetailet orderDetailet = new OrderDetailet();
+                orderDetailet.setOrder(order);
+                orderDetailet.setFood(cart.getFood());
+                orderDetailet.setQuantity(cart.getQuantity());
+                orderDetailetService.addOrderDetailet(orderDetailet);
+
+                cart.setDeleted(true);
+                cartItemService.updateCart(cart);
             }
         }
 
@@ -82,12 +107,12 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public HttpResult getOrderById(@PathVariable Long id) {
+    public HttpResult<Order> getOrderById(@PathVariable Long id) {
         return null;
     }
 
     @GetMapping("")
-    public List<Order> listOrdersByUserId(@RequestParam Long userId) {
+    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
         return null;
     }
 }
