@@ -1,5 +1,6 @@
 package cn.edu.tju.elm.controller;
 
+import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
@@ -7,13 +8,11 @@ import cn.edu.tju.elm.model.*;
 import cn.edu.tju.elm.service.*;
 import cn.edu.tju.core.security.service.UserService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,10 +31,10 @@ public class OrderController {
 
     @Autowired
     private AddressService addressService;
+
     @Autowired
     private CartItemService cartItemService;
-    @Autowired
-    private FoodService foodService;
+
     @Autowired
     private OrderDetailetService orderDetailetService;
 
@@ -65,7 +64,7 @@ public class OrderController {
 
         List<Cart> cartList = cartItemService.getCart(business.getId(), customer.getId());
         if (cartList.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Cart IS EMPTY");
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
         if (me.equals(customer) && me.equals(address.getCustomer())) {
             // TODO: Complete Order info and OrderDetailet with cart(customer_id, business_id)
@@ -93,6 +92,11 @@ public class OrderController {
             orderService.addOrder(order);
             for (Cart cart : cartList) {
                 OrderDetailet orderDetailet = new OrderDetailet();
+                orderDetailet.setCreateTime(now);
+                orderDetailet.setUpdateTime(now);
+                orderDetailet.setCreator(me.getId());
+                orderDetailet.setUpdater(me.getId());
+                orderDetailet.setDeleted(false);
                 orderDetailet.setOrder(order);
                 orderDetailet.setFood(cart.getFood());
                 orderDetailet.setQuantity(cart.getQuantity());
@@ -101,6 +105,7 @@ public class OrderController {
                 cart.setDeleted(true);
                 cartItemService.updateCart(cart);
             }
+            return HttpResult.success(order);
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -108,11 +113,71 @@ public class OrderController {
 
     @GetMapping("/{id}")
     public HttpResult<Order> getOrderById(@PathVariable Long id) {
-        return null;
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Order order = orderService.getOrderById(id);
+        if (order == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
+        if (isAdmin || order.getCustomer().equals(me))
+            return HttpResult.success(order);
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
+//    Version of returning HttpResult
+//    @GetMapping("")
+//    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
+//        Optional<User> meOptional = userService.getUserWithAuthorities();
+//        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+//        User me = meOptional.get();
+//
+//        User user = userService.getUserById(userId);
+//        if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+//
+//        boolean isAdmin = false;
+//        for (Authority authority : me.getAuthorities()) {
+//            if (authority.getName().equals("ADMIN")) {
+//                isAdmin = true;
+//                break;
+//            }
+//        }
+//        if (isAdmin || me.equals(user)) {
+//            return HttpResult.success(orderService.getOrdersByCustomerId(userId));
+//        }
+//
+//        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+//    }
+
     @GetMapping("")
-    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
+    public List<Order> listOrdersByUserId(@RequestParam Long userId) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return null;
+        User me = meOptional.get();
+
+        User user = userService.getUserById(userId);
+        if (user == null) return null;
+
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
+        if (isAdmin || me.equals(user)) {
+            return orderService.getOrdersByCustomerId(userId);
+        }
+
         return null;
     }
 }

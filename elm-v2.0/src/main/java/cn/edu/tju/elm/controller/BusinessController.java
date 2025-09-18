@@ -101,6 +101,7 @@ public class BusinessController {
             if (authority.getName().equals("BUSINESS")) isBusiness = true;
         }
         if (isAdmin || (isBusiness && me.equals(oldOwner) && oldOwner.equals(newOwner))) {
+            business.setBusinessOwner(newOwner);
             LocalDateTime now = LocalDateTime.now();
             business.setId(oldBusiness.getId());
             business.setCreateTime(oldBusiness.getCreateTime());

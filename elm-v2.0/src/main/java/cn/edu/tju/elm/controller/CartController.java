@@ -58,6 +58,8 @@ public class CartController {
         Business business = businessService.getBusinessById(cart.getBusiness().getId());
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        if (!food.getBusiness().equals(business))
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND IN THE Business");
         User user = userService.getUserById(cart.getCustomer().getId());
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");

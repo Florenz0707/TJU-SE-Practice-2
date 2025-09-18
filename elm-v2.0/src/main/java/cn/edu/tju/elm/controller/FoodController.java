@@ -6,15 +6,20 @@ import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.model.Food;
 import cn.edu.tju.core.model.HttpResult;
+import cn.edu.tju.elm.model.Order;
+import cn.edu.tju.elm.model.OrderDetailet;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.FoodService;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.service.OrderDetailetService;
+import cn.edu.tju.elm.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +36,10 @@ public class FoodController {
 
     @Autowired
     private BusinessService businessService;
+    @Autowired
+    private OrderService orderService;
+    @Autowired
+    private OrderDetailetService orderDetailetService;
 
     @GetMapping("/{id}")
     @Operation(summary = "返回查询到的一条商品记录", method = "GET")
@@ -47,14 +56,21 @@ public class FoodController {
         if ((businessId == null && orderId == null) || (businessId != null && orderId != null)) {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "HAVE TO PROVIDE ONE AND ONLY ONE ARG");
         }
+
         if (businessId != null) {
             Business business = businessService.getBusinessById(businessId);
             if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
             return HttpResult.success(foodService.getFoodsByBusinessId(businessId));
         }
-        // TODO: getByOrderId
 
-        return null;
+        Order order = orderService.getOrderById(orderId);
+        if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+        List<OrderDetailet> orderDetailetList = orderDetailetService.getOrderDetailetByOrderId(orderId);
+        List<Food> foodList = new ArrayList<>(orderDetailetList.size());
+        for (OrderDetailet orderDetailet : orderDetailetList) {
+            foodList.add(orderDetailet.getFood());
+        }
+        return HttpResult.success(foodList);
     }
 
     @PostMapping("")
@@ -90,9 +106,8 @@ public class FoodController {
             food.setCreator(me.getId());
             food.setUpdater(me.getId());
             food.setDeleted(false);
-            if (food.equals(foodService.addFood(food))) {
-                return HttpResult.success(food);
-            }
+            foodService.addFood(food);
+            return HttpResult.success(food);
         }
 
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);
