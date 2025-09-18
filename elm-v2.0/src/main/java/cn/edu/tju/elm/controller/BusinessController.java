@@ -66,14 +66,6 @@ public class BusinessController {
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Not Known Error");
     }
 
-    @GetMapping("/{id}")
-    public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
-        Business business = businessService.getBusinessById(id);
-        if (business == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-        return HttpResult.success(business);
-    }
-
     @PutMapping("/{id}")
     public HttpResult<Business> updateBusiness(@PathVariable("id") Long id, @RequestBody Business business) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
