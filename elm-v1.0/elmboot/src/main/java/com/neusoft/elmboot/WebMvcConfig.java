@@ -20,9 +20,9 @@ public class WebMvcConfig {
                  * maxAge：配置预检请求的有效时间
                  */
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:8081")
+                .allowedOrigins("http://localhost:8081", "http://localhost:80")
                         .allowCredentials(true)
-                        .allowedMethods("GET", "POST", "DELETE", "PUT","PATCH")
+                        .allowedMethods("GET", "POST", "DELETE", "PUT", "PATCH")
                         .allowedHeaders("*")
                         .maxAge(36000);
             }

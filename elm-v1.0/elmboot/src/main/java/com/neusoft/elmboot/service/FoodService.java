@@ -6,5 +6,5 @@ import com.neusoft.elmboot.po.Food;
 
 public interface FoodService {
 
-	public List<Food> listFoodByBusinessId(Integer businessId);
+    public List<Food> listFoodByBusinessId(Integer businessId);
 }

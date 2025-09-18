@@ -9,7 +9,7 @@ import com.neusoft.elmboot.po.OrderDetailet;
 @Mapper
 public interface OrderDetailetMapper {
 
-	public int saveOrderDetailetBatch(List<OrderDetailet> list);
-	
-	public List<OrderDetailet> listOrderDetailetByOrderId(Integer orderOd);
+    public int saveOrderDetailetBatch(List<OrderDetailet> list);
+
+    public List<OrderDetailet> listOrderDetailetByOrderId(Integer orderOd);
 }
