@@ -30,6 +30,14 @@ public class BusinessController {
     @Autowired
     private UserRepository userRepository;
 
+    @GetMapping("/{id}")
+    public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
+        Business business = businessService.getBusinessById(id);
+        if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        return HttpResult.success(business);
+    }
+
+
     @GetMapping("")
     public HttpResult<List<Business>> getBusinesses() {
         return HttpResult.success(businessService.getBusinesses());
