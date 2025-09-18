@@ -1,6 +1,7 @@
 package cn.edu.tju.elm.service;
 
 import cn.edu.tju.elm.model.Business;
+import cn.edu.tju.elm.model.DeliveryAddress;
 import cn.edu.tju.elm.repository.BusinessRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,10 @@ public class BusinessService {
 //        if (businessOptional.isEmpty()) return null;
 //        return businessOptional.get();
         return businessOptional.orElse(null);
+    }
+
+    public Business getById(Long id) {
+        return businessRepository.findById(id).orElse(null);
     }
 
     public Business addBusiness(Business business) {

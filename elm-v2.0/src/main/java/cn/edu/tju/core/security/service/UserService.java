@@ -1,5 +1,6 @@
 package cn.edu.tju.core.security.service;
 
+import cn.edu.tju.elm.model.DeliveryAddress;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import cn.edu.tju.core.security.SecurityUtils;
@@ -35,5 +36,9 @@ public class UserService {
     public Boolean isEmptyUserTable() {
         List<User> userList = userRepository.findAll();
         return userList.isEmpty();
+    }
+
+    public User getById(Long id) {
+        return userRepository.findById(id).orElse(null);
     }
 }
