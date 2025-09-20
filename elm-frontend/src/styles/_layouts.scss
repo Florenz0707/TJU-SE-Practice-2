@@ -1,0 +1,40 @@
+@use 'variables' as *;
+
+// This file contains styles for the main application layouts.
+
+// Customer Layout
+.customer-layout {
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid $border-color;
+    padding: 0 24px;
+    height: 64px;
+
+    .logo {
+      font-family: $font-family-headings;
+      font-weight: $fw-bold;
+      font-size: 20px;
+    }
+  }
+
+  .app-main {
+    padding: $space-unit * 3;
+    background-color: $bg-light;
+  }
+}
+
+// Page Transitions
+// -----------------
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
