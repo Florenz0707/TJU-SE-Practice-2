@@ -231,6 +231,14 @@
         "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/JWTToken" } } }, "headers": {} } }, "security": []
       }
     },
+    "/api/auth/refresh": {
+      "post": {
+        "summary": "refreshToken", "deprecated": false, "description": "使用刷新令牌获取新的访问令牌",
+        "operationId": "refreshToken", "tags": ["管理认证"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "refresh_token": { "type": "string" } } } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/JWTToken" } } }, "headers": {} } }, "security": []
+      }
+    },
     "/api/addresses": {
       "get": {
         "summary": "获取当前用户的收货地址", "deprecated": false, "description": "获取当前登录用户的所有收货地址列表",
@@ -296,7 +304,7 @@
       "HttpResultFood": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/Food" }, "message": { "type": "string", "nullable": true } } },
       "Cart": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "food": { "$ref": "#/components/schemas/Food" }, "customer": { "$ref": "#/components/schemas/User" }, "business": { "$ref": "#/components/schemas/Business" }, "quantity": { "type": "integer", "format": "int32" } } },
       "HttpResultCart": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/Cart" }, "message": { "type": "string", "nullable": true } } },
-      "JWTToken": { "type": "object", "properties": { "id_token": { "type": "string" } } },
+      "JWTToken": { "type": "object", "properties": { "id_token": { "type": "string" }, "refresh_token": { "type": "string" } } },
       "HttpResultDeliveryAddress": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/DeliveryAddress" }, "message": { "type": "string", "nullable": true } } },
       "HttpResult": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "object", "properties": {} }, "message": { "type": "string", "nullable": true } } },
       "HttpResultListFood": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Food" } }, "message": { "type": "string", "nullable": true } } },
