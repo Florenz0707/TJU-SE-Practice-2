@@ -1,7 +1,6 @@
 package cn.edu.tju.core.security.rest;
 
-import cn.edu.tju.core.model.Authority;
-import cn.edu.tju.core.model.Person;
+import cn.edu.tju.core.model.*;
 import cn.edu.tju.core.security.SecurityUtils;
 import cn.edu.tju.core.security.UserModelDetailsService;
 import cn.edu.tju.core.security.repository.PersonRepository;
@@ -9,14 +8,12 @@ import cn.edu.tju.core.security.repository.UserRepository;
 import cn.edu.tju.core.security.rest.dto.LoginDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.security.RolesAllowed;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
 
-import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -102,6 +99,106 @@ public class UserRestController {
             return personRepository.save(person);
         }
         return null;
+    }
+
+    @GetMapping("/users")
+    public HttpResult<List<User>> getUsers() {
+        Optional<User> meoptional = userService.getUserWithAuthorities();
+        if(meoptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        User me = meoptional.get();
+
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN"))
+                isAdmin = true;
+        }
+
+        if(isAdmin){
+            return HttpResult.success(userService.getUsers());
+        }
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+
+    @GetMapping("/users/{id}")
+    public HttpResult<User> getUser(@PathVariable Long id) {
+        Optional<User> userOptional = userService.getUserWithAuthorities();
+        if(userOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        User user = userOptional.get();
+
+        boolean isAdmin = false;
+        for (Authority authority : user.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+            }
+        }
+        if(isAdmin){
+            User user1 = userService.getUserById(id);
+            return HttpResult.success(user1);
+        }
+        return null;
+    }
+
+    @PutMapping("/users/{id}")
+    public HttpResult<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+        Optional<User> userOptional = userService.getUserWithAuthorities();
+        if(userOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        User user1 = userOptional.get();
+
+        User oldUser = userService.getUserById(id);
+        if(oldUser == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+
+        if(user.getPassword() == null)
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "PASSWORD CANT BE NULL");
+        if(user.getUsername() == null)
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "USER CANT BE NULL");
+        if(user.getAuthorities() == null)
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "AUTHORITY LACKED");
+        User newUser = userService.getUserById(user.getId());
+        if(newUser == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+
+        boolean isAdmin = false;
+        for (Authority authority : user1.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+            }
+        }
+        if(isAdmin || (user1.equals(oldUser) && oldUser.equals(newUser))){
+            user.setUpdater(user1.getId());
+            LocalDateTime now = LocalDateTime.now();
+            user.setUpdateTime(now);
+            user.setCreateTime(oldUser.getCreateTime());
+            user.setCreator(oldUser.getId());
+            userService.updateUser(user);
+            return HttpResult.success(user);
+        }
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+
+    @DeleteMapping("/users/{id}")
+    public HttpResult<User> deleteUser(@PathVariable Long id) {
+        Optional<User> userOptional = userService.getUserWithAuthorities();
+        if(userOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        User user = userOptional.get();
+
+        boolean isAdmin = false;
+        for (Authority authority : user.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+            }
+        }
+        if(isAdmin){
+            LocalDateTime now = LocalDateTime.now();
+            user.setUpdateTime(now);
+            user.setUpdater(user.getId());
+            user.setDeleted(true);
+            userService.updateUser(user);
+            return HttpResult.success(userService.getUserById(id));
+        }
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     public UserModelDetailsService getUserModelDetailsService() {

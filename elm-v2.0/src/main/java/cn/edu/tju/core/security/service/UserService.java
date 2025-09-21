@@ -40,6 +40,10 @@ public class UserService {
         return userList.isEmpty();
     }
 
+    public List<User> getUsers() {
+        return userRepository.findAll();
+    }
+
     public User getById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
