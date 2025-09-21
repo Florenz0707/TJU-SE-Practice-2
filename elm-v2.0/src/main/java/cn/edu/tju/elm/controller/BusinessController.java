@@ -192,4 +192,17 @@ public class BusinessController {
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN);
     }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasAuthority('BUSINESS')")
+    public HttpResult<List<Business>> getMyBusinesses() {
+        Optional<User> currentUserOptional = userService.getUserWithAuthorities();
+        if (currentUserOptional.isEmpty()) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "用户未找到");
+        }
+        User currentUser = currentUserOptional.get();
+
+        List<Business> myBusinesses = businessService.getBusinessesByOwner(currentUser);
+        return HttpResult.success(myBusinesses);
+    }
 }

@@ -5,6 +5,7 @@ import cn.edu.tju.elm.repository.BusinessRepository;
 import cn.edu.tju.elm.utils.Utils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import cn.edu.tju.core.model.User;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,5 +36,9 @@ public class BusinessService {
 
     public void updateBusiness(Business business) {
         businessRepository.save(business);
+    }
+
+    public List<Business> getBusinessesByOwner(User owner) {
+        return businessRepository.findByBusinessOwnerAndDeletedFalse(owner);
     }
 }
