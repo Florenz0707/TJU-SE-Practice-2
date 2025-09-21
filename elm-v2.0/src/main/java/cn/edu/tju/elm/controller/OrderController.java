@@ -1,24 +1,19 @@
 package cn.edu.tju.elm.controller;
 
+import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.core.security.repository.UserRepository;
-import cn.edu.tju.elm.model.Business;
-import cn.edu.tju.elm.model.DeliveryAddress;
-import cn.edu.tju.elm.model.Order;
-//import cn.edu.tju.elb.service.OrderService;
+import cn.edu.tju.elm.model.*;
+import cn.edu.tju.elm.service.*;
 import cn.edu.tju.core.security.service.UserService;
-import cn.edu.tju.elm.repository.OrderRepository;
-import cn.edu.tju.elm.service.AddressService;
-import cn.edu.tju.elm.service.BusinessService;
-import cn.edu.tju.elm.service.OrderService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -29,75 +24,160 @@ public class OrderController {
     private UserService userService;
 
     @Autowired
-    private OrderRepository orderRepository;
+    private OrderService orderService;
 
-    @Autowired
-    private OrderService ordersService;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private AddressService addressService;
     @Autowired
     private BusinessService businessService;
 
+    @Autowired
+    private AddressService addressService;
+
+    @Autowired
+    private CartItemService cartItemService;
+
+    @Autowired
+    private OrderDetailetService orderDetailetService;
+
     @PostMapping(value = "")
-    public HttpResult<Order> addOrders(@RequestBody Order order) throws Exception {
-
-        //if() return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "CONSUMER NOT ACTIVE");
-        if(order.getDeliveryAddress() == null)  return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DELIVERY ADDRESS NOT FOUND");
-        if(order.getDeliveryAddress().getId() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DELIVERY ADDRESS NOT FOUND");
-        //if(addressService.getById(order.getDeliveryAddress().getId())) return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ADDRESS DELETED");
-        if(order.getCustomer() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "CUSTOMER NOT FOUND");
-        if(order.getCustomer().getId() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "CUSTOMER NOT FOUND");
-        if(order.getBusiness() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BUSINESS NOT FOUND");
-        if(order.getBusiness().getId() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BUSINESS NOT FOUND");
-        if(order.getOrderTotal() == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "TOTAL NOT FOUND");
-
-        // token来的
+    public HttpResult<Order> addOrders(@RequestBody Order order) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if(meOptional.isEmpty())  return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        // 前端来的
-        User user = userService.getById(order.getCustomer().getId());
-        if(user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        if (order.getBusiness() == null || order.getBusiness().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
+        if (order.getCustomer() == null || order.getCustomer().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
+        if (order.getDeliveryAddress() == null || order.getDeliveryAddress().getId() == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress.Id CANT BE NULL");
+        }
 
+        Business business = businessService.getBusinessById(order.getBusiness().getId());
+        if (business == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        User customer = userService.getUserById(order.getCustomer().getId());
+        if (customer == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer NOT FOUND");
+        DeliveryAddress address = addressService.getAddressById(order.getDeliveryAddress().getId());
+        if (address == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
 
+        List<Cart> cartList = cartItemService.getCart(business.getId(), customer.getId());
+        if (cartList.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
+        if (me.equals(customer) && me.equals(address.getCustomer())) {
+            // TODO: Complete Order info and OrderDetailet with cart(customer_id, business_id)
+            // TODO: Await to be tested
+            BigDecimal totalPrice = new BigDecimal(0);
+            for (Cart cart : cartList) {
+                BigDecimal quantity = new BigDecimal(cart.getQuantity());
+                totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
+            }
+            order.setOrderTotal(totalPrice);
+            order.setOrderState(0);
 
-        Business business = businessService.getById(order.getBusiness().getId());
-        if(business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BUSINESS NOT FOUND");
-        DeliveryAddress address = addressService.getById(order.getDeliveryAddress().getId());
-        if (address == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ADDRESS NOT FOUND");
-        User customer = userService.getById(order.getCustomer().getId());
-        if(customer == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
-
-        if(me.getUsername().equals(user.getUsername()) && me.getUsername().equals(address.getCustomer().getUsername())) {
+            order.setBusiness(business);
+            order.setCustomer(customer);
+            order.setDeliveryAddress(address);
 
             LocalDateTime now = LocalDateTime.now();
             order.setCreateTime(now);
             order.setUpdateTime(now);
-            order.setCreator(user.getId());
-
-            order.setUpdater(user.getId());
-            order.setOrderDate(LocalDateTime.now());
-
+            order.setOrderDate(now);
+            order.setCreator(me.getId());
+            order.setUpdater(me.getId());
             order.setDeleted(false);
 
-            if(order.equals(ordersService.addOrder(order))) {
-                return HttpResult.success(order);
+            orderService.addOrder(order);
+            for (Cart cart : cartList) {
+                OrderDetailet orderDetailet = new OrderDetailet();
+                orderDetailet.setCreateTime(now);
+                orderDetailet.setUpdateTime(now);
+                orderDetailet.setCreator(me.getId());
+                orderDetailet.setUpdater(me.getId());
+                orderDetailet.setDeleted(false);
+                orderDetailet.setOrder(order);
+                orderDetailet.setFood(cart.getFood());
+                orderDetailet.setQuantity(cart.getQuantity());
+                orderDetailetService.addOrderDetailet(orderDetailet);
+
+                cart.setDeleted(true);
+                cartItemService.updateCart(cart);
             }
+            return HttpResult.success(order);
         }
-        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     @GetMapping("/{id}")
-    public HttpResult getOrderById(@PathVariable Long id) throws Exception {
-        return null;
+    public HttpResult<Order> getOrderById(@PathVariable Long id) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Order order = orderService.getOrderById(id);
+        if (order == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
+        if (isAdmin || order.getCustomer().equals(me))
+            return HttpResult.success(order);
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
+//    Version of returning HttpResult
+//    @GetMapping("")
+//    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
+//        Optional<User> meOptional = userService.getUserWithAuthorities();
+//        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+//        User me = meOptional.get();
+//
+//        User user = userService.getUserById(userId);
+//        if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+//
+//        boolean isAdmin = false;
+//        for (Authority authority : me.getAuthorities()) {
+//            if (authority.getName().equals("ADMIN")) {
+//                isAdmin = true;
+//                break;
+//            }
+//        }
+//        if (isAdmin || me.equals(user)) {
+//            return HttpResult.success(orderService.getOrdersByCustomerId(userId));
+//        }
+//
+//        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+//    }
+
     @GetMapping("")
-    public List<Order> listOrdersByUserId(@RequestParam Long userId) throws Exception {
+    public List<Order> listOrdersByUserId(@RequestParam Long userId) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return null;
+        User me = meOptional.get();
+
+        User user = userService.getUserById(userId);
+        if (user == null) return null;
+
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
+        if (isAdmin || me.equals(user)) {
+            return orderService.getOrdersByCustomerId(userId);
+        }
+
         return null;
     }
 }

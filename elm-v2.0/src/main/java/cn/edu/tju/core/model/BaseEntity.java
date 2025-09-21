@@ -67,4 +67,12 @@ public class BaseEntity implements Serializable {
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BaseEntity baseEntity = (BaseEntity) o;
+        return this.getId().equals(baseEntity.getId());
+    }
 }

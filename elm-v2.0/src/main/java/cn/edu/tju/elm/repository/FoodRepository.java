@@ -3,5 +3,8 @@ package cn.edu.tju.elm.repository;
 import cn.edu.tju.elm.model.Food;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface FoodRepository extends JpaRepository<Food, Integer> {
+import java.util.List;
+
+public interface FoodRepository extends JpaRepository<Food, Long> {
+    List<Food> findAllByBusinessId(Long businessId);
 }

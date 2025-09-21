@@ -33,6 +33,8 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public User getUserById(Long id) {return userRepository.findById(id).orElse(null);}
+
     public Boolean isEmptyUserTable() {
         List<User> userList = userRepository.findAll();
         return userList.isEmpty();

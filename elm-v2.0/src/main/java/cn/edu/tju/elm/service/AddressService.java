@@ -20,8 +20,8 @@ public class AddressService {
         return addressRepository.save(address);
     }
 
-
-    public DeliveryAddress getById(Long id) {
-        return addressRepository.findById(id).orElse(null);
+    public DeliveryAddress getAddressById(Long id) {
+        Optional<DeliveryAddress> addressOptional = addressRepository.findById(id);
+        return addressOptional.orElse(null);
     }
 }

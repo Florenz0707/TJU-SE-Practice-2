@@ -8,6 +8,8 @@ public enum ResultCodeEnum {
     NOT_FOUND("NOT_FOUND", "not found"),
     // 服务器错误
     SERVER_ERROR("GENERAL_ERROR", "server error"),
+    // 权限不足
+    FORBIDDEN("FORBIDDEN", "AUTHORITY LACKED"),
 
     /* 这里可以根据不同模块用不同的区级分开错误码，例如:
      * 1000～1999 区间表示用户模块错误
