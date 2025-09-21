@@ -1,32 +1,32 @@
 <template>
   <div class="checkout-container">
     <el-steps :active="activeStep" finish-status="success" simple style="margin-bottom: 20px;">
-      <el-step title="Review Order" />
-      <el-step title="Select Address" />
-      <el-step title="Confirm & Pay" />
+      <el-step title="确认订单" />
+      <el-step title="选择地址" />
+      <el-step title="确认并支付" />
     </el-steps>
 
     <!-- Step 1: Review Order -->
     <div v-if="activeStep === 0" class="step-content">
-      <h3>Review Your Order</h3>
+      <h3>确认您的订单</h3>
       <el-table :data="cartStore.items" style="width: 100%">
-        <el-table-column prop="food.foodName" label="Item" />
-        <el-table-column prop="quantity" label="Quantity" width="100" />
-        <el-table-column label="Price" width="120">
-          <template #default="{ row }">${{ row.food.foodPrice.toFixed(2) }}</template>
+        <el-table-column prop="food.foodName" label="商品" />
+        <el-table-column prop="quantity" label="数量" width="100" />
+        <el-table-column label="单价" width="120">
+          <template #default="{ row }">¥{{ row.food.foodPrice.toFixed(2) }}</template>
         </el-table-column>
-        <el-table-column label="Total" width="120">
-          <template #default="{ row }">${{ (row.food.foodPrice * row.quantity).toFixed(2) }}</template>
+        <el-table-column label="总价" width="120">
+          <template #default="{ row }">¥{{ (row.food.foodPrice * row.quantity).toFixed(2) }}</template>
         </el-table-column>
       </el-table>
       <div class="summary-total">
-        <strong>Total: ${{ cartStore.cartTotal.toFixed(2) }}</strong>
+        <strong>总计: ¥{{ cartStore.cartTotal.toFixed(2) }}</strong>
       </div>
     </div>
 
     <!-- Step 2: Select Address -->
     <div v-if="activeStep === 1" class="step-content">
-      <h3>Select Delivery Address</h3>
+      <h3>选择配送地址</h3>
       <el-radio-group v-model="selectedAddressId" class="address-list">
         <el-radio-button v-for="address in addresses" :key="address.id" :label="address.id">
           <div><strong>{{ address.contactName }}</strong> ({{ address.contactTel }})</div>
@@ -37,15 +37,15 @@
 
     <!-- Step 3: Confirm & Pay -->
     <div v-if="activeStep === 2" class="step-content">
-      <h3>Confirm Your Order</h3>
-      <p><strong>Total Price:</strong> ${{ cartStore.cartTotal.toFixed(2) }}</p>
-      <p><strong>Deliver to:</strong> {{ selectedAddress?.address }}</p>
-      <el-button type="primary" @click="placeOrder" :loading="isPlacingOrder">Place Order</el-button>
+      <h3>确认您的订单</h3>
+      <p><strong>总金额:</strong> ¥{{ cartStore.cartTotal.toFixed(2) }}</p>
+      <p><strong>配送至:</strong> {{ selectedAddress?.address }}</p>
+      <el-button type="primary" @click="placeOrder" :loading="isPlacingOrder">提交订单</el-button>
     </div>
 
     <div class="step-actions">
-      <el-button @click="prevStep" :disabled="activeStep === 0">Previous</el-button>
-      <el-button @click="nextStep" :disabled="isNextDisabled">{{ activeStep === 2 ? 'Finish' : 'Next' }}</el-button>
+      <el-button @click="prevStep" :disabled="activeStep === 0">上一步</el-button>
+      <el-button @click="nextStep" :disabled="isNextDisabled">{{ activeStep === 2 ? '完成' : '下一步' }}</el-button>
     </div>
   </div>
 </template>
@@ -85,10 +85,10 @@ const fetchAddresses = async () => {
     if (res.success) {
       addresses.value = res.data;
     } else {
-      ElMessage.error(res.message || 'Failed to load addresses.');
+      ElMessage.error(res.message || '获取地址失败。');
     }
   } catch (e) {
-    ElMessage.error('Failed to load addresses.');
+    ElMessage.error('获取地址失败。');
   }
 };
 
@@ -102,11 +102,11 @@ const prevStep = () => {
 
 const placeOrder = async () => {
   if (!selectedAddressId.value || !selectedAddress.value) {
-    ElMessage.error('Please select a delivery address.');
+    ElMessage.error('请选择配送地址。');
     return;
   }
   if (cartStore.items.length === 0) {
-    ElMessage.error('Your cart is empty.');
+    ElMessage.error('您的购物车是空的。');
     return;
   }
 
@@ -114,7 +114,7 @@ const placeOrder = async () => {
   try {
     const firstItem = cartStore.items[0];
     if (!firstItem || !firstItem.customer || !firstItem.business) {
-        ElMessage.error('Cannot place order due to incomplete cart information.');
+        ElMessage.error('由于购物车信息不完整，无法下单。');
         isPlacingOrder.value = false;
         return;
     }
@@ -128,14 +128,14 @@ const placeOrder = async () => {
     };
     const res = await addOrder(orderPayload);
     if (res.success) {
-      ElMessage.success('Order placed successfully!');
+      ElMessage.success('下单成功！');
       await cartStore.fetchCart(); // Refetch cart, assuming backend clears it post-order.
       router.push({ name: 'OrderHistory' }); // Redirect to order history
     } else {
       throw new Error(res.message);
     }
   } catch (error: any) {
-    ElMessage.error(error.message || 'Failed to place order.');
+    ElMessage.error(error.message || '下单失败。');
   } finally {
     isPlacingOrder.value = false;
   }
@@ -143,7 +143,7 @@ const placeOrder = async () => {
 
 onMounted(() => {
   if (cartStore.items.length === 0) {
-    ElMessage.warning('Your cart is empty. Redirecting to home.');
+    ElMessage.warning('您的购物车是空的，正在跳转到主页。');
     router.push({ name: 'Home' });
   }
   fetchAddresses();

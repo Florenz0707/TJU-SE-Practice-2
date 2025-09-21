@@ -1,7 +1,7 @@
 <template>
   <div class="restaurant-card" @click="goToRestaurant">
     <div class="card-image-wrapper">
-      <img :src="business.businessImg || 'https://placehold.co/600x400/f8f9fa/ccc?text=No+Image'" alt="Restaurant Image" class="restaurant-image" />
+      <img :src="business.businessImg || 'https://placehold.co/600x400/f8f9fa/ccc?text=暂无图片'" alt="餐厅图片" class="restaurant-image" />
     </div>
     <div class="card-info">
       <h3 class="name">{{ business.businessName }}</h3>
@@ -10,11 +10,11 @@
         <span class="separator">·</span>
         <span>{{ business.businessAddress }}</span>
         <span class="separator">·</span>
-        <span>25-35 min</span>
+        <span>25-35 分钟</span>
       </p>
       <div class="price-info">
-        <span>Start Price: ${{ business.startPrice }}</span>
-        <span>Delivery: ${{ business.deliveryPrice }}</span>
+        <span>起送价: ¥{{ business.startPrice }}</span>
+        <span>配送费: ¥{{ business.deliveryPrice }}</span>
       </div>
     </div>
   </div>

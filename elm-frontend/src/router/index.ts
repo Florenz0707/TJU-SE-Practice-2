@@ -32,14 +32,16 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     component: CustomerLayout,
-    redirect: '/home',
-    meta: { requiresAuth: true, roles: ['CUSTOMER'] },
     children: [
-      { path: 'home', name: 'Home', component: Home, meta: { title: '首页' } },
+      // Publicly accessible routes
+      { path: '', name: 'Home', component: Home, meta: { title: '首页' } },
       { path: 'restaurant/:id', name: 'RestaurantDetail', component: RestaurantDetail, meta: { title: '餐厅详情' } },
+
+      // Routes that require authentication
       {
         path: 'profile',
         component: () => import('../views/customer/Profile/ProfileLayout.vue'),
+        meta: { requiresAuth: true, roles: ['CUSTOMER'] },
         redirect: { name: 'UserProfile' },
         children: [
           {
@@ -72,7 +74,7 @@ const routes: Array<RouteRecordRaw> = [
         path: 'checkout',
         name: 'Checkout',
         component: () => import('../views/customer/Checkout.vue'),
-        meta: { title: '结账' },
+        meta: { requiresAuth: true, roles: ['CUSTOMER'], title: '结账' },
       },
     ],
   },

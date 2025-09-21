@@ -1,6 +1,6 @@
 <template>
   <div class="restaurant-detail-container">
-    <div v-if="loading" class="loading">Loading restaurant details...</div>
+    <div v-if="loading" class="loading">正在加载餐厅详情...</div>
     <div v-if="error" class="error">{{ error }}</div>
 
     <div v-if="business" class="restaurant-content">
@@ -13,13 +13,13 @@
         <div class="business-info">
           <el-image :src="business.businessImg" fit="cover" class="business-image" />
           <div class="info-text">
-            <p><strong>Address:</strong> {{ business.businessAddress }}</p>
-            <p><strong>Description:</strong> {{ business.businessExplain }}</p>
+            <p><strong>地址:</strong> {{ business.businessAddress }}</p>
+            <p><strong>介绍:</strong> {{ business.businessExplain }}</p>
           </div>
         </div>
       </el-card>
 
-      <h2 class="menu-title">Menu</h2>
+      <h2 class="menu-title">菜单</h2>
       <div class="menu-grid">
         <MenuItem v-for="food in menu" :key="food.id" :food="food" />
       </div>
@@ -47,7 +47,7 @@ onMounted(async () => {
   const businessId = Number(route.params.id);
 
   if (isNaN(businessId)) {
-    error.value = 'Invalid restaurant ID.';
+    error.value = '无效的餐厅ID。';
     loading.value = false;
     return;
   }
@@ -62,16 +62,16 @@ onMounted(async () => {
     if (businessResponse.success) {
       business.value = businessResponse.data;
     } else {
-      throw new Error(businessResponse.message || 'Failed to fetch restaurant details');
+      throw new Error(businessResponse.message || '获取餐厅详情失败');
     }
 
     if (menuResponse.success) {
       menu.value = menuResponse.data;
     } else {
-      throw new Error(menuResponse.message || 'Failed to fetch menu');
+      throw new Error(menuResponse.message || '获取菜单失败');
     }
   } catch (err: any) {
-    error.value = err.message || 'An unexpected error occurred.';
+    error.value = err.message || '发生未知错误。';
   } finally {
     loading.value = false;
   }

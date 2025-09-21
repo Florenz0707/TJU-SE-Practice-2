@@ -1,18 +1,18 @@
 <template>
   <div class="user-management">
-    <h1>User Management</h1>
+    <h1>用户管理</h1>
 
     <el-input
       v-model="searchQuery"
-      placeholder="Search by username"
+      placeholder="按用户名搜索"
       clearable
       style="width: 300px; margin-bottom: 20px;"
     />
 
     <DataTable :columns="columns" :data="filteredUsers">
       <template #actions="{ row }">
-        <el-button size="small" @click="handleEdit(row as User)">Edit</el-button>
-        <el-button size="small" type="danger" @click="handleDelete(row as User)">Delete</el-button>
+        <el-button size="small" @click="handleEdit(row as User)">编辑</el-button>
+        <el-button size="small" type="danger" @click="handleDelete(row as User)">删除</el-button>
       </template>
     </DataTable>
   </div>
@@ -30,11 +30,11 @@ const searchQuery = ref('');
 
 const columns = [
   { prop: 'id', label: 'ID', width: 80 },
-  { prop: 'username', label: 'Username' },
+  { prop: 'username', label: '用户名' },
   // Note: Email is on the Person type, not the base User type, so it's removed for now.
   // { prop: 'email', label: 'Email' },
-  { prop: 'authorities', label: 'Roles' },
-  { prop: 'createTime', label: 'Created At' },
+  { prop: 'authorities', label: '角色' },
+  { prop: 'createTime', label: '创建时间' },
 ];
 
 const fetchUsers = async () => {
@@ -43,10 +43,10 @@ const fetchUsers = async () => {
     if (res.success) {
       rawUsers.value = res.data || [];
     } else {
-      ElMessage.error(res.message || 'Failed to fetch users.');
+      ElMessage.error(res.message || '获取用户列表失败。');
     }
   } catch (error) {
-    ElMessage.error('Failed to fetch users.');
+    ElMessage.error('获取用户列表失败。');
     console.error(error);
   }
 };
@@ -57,7 +57,7 @@ onMounted(fetchUsers);
 const displayUsers = computed(() => {
   return rawUsers.value.map(user => ({
     ...user,
-    authorities: user.authorities ? user.authorities.map((auth: Authority) => auth.name).join(', ') : 'N/A',
+    authorities: user.authorities ? user.authorities.map((auth: Authority) => auth.name).join(', ') : '暂无',
   }));
 });
 
@@ -72,31 +72,31 @@ const filteredUsers = computed(() => {
 
 const handleEdit = (user: User) => {
   console.log('Editing user:', user);
-  ElMessage.info(`Editing user ID: ${user.id}. Implementation pending.`);
+  ElMessage.info(`正在编辑用户 ID: ${user.id}。功能待实现。`);
 };
 
 const handleDelete = (user: User) => {
   if (!user.id) {
-    ElMessage.error('Cannot delete user without an ID.');
+    ElMessage.error('无法删除没有ID的用户。');
     return;
   }
   ElMessageBox.confirm(
-    `Are you sure you want to delete user "${user.username}"? This action cannot be undone.`,
-    'Warning',
+    `您确定要删除用户 "${user.username}" 吗？此操作无法撤销。`,
+    '警告',
     {
-      confirmButtonText: 'OK',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
       type: 'warning',
     }
   ).then(async () => {
     try {
       if (user.id) { // Redundant check, but good for safety
         await deleteUser(user.id);
-        ElMessage.success('User deleted successfully.');
+        ElMessage.success('用户删除成功。');
         fetchUsers(); // Refresh the list
       }
     } catch (error) {
-      ElMessage.error('Failed to delete user.');
+      ElMessage.error('删除用户失败。');
       console.error(error);
     }
   }).catch(() => {

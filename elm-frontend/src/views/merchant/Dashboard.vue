@@ -16,7 +16,7 @@
         <div class="order-list new-orders">
           <el-card v-for="order in newOrders" :key="order.id" class="order-card">
             <div class="order-content">
-              <p><strong>订单 #{{ order.id }}</strong> from {{ order.customer?.username ?? 'N/A' }}</p>
+              <p><strong>订单 #{{ order.id }}</strong> 来自 {{ order.customer?.username ?? 'N/A' }}</p>
               <p>总价: ¥{{ (order.orderTotal ?? 0).toFixed(2) }}</p>
               <p>下单时间: {{ order.orderDate ? new Date(order.orderDate).toLocaleTimeString() : 'N/A' }}</p>
             </div>
@@ -35,7 +35,7 @@
         <div class="order-list in-progress-orders">
           <el-card v-for="order in inProgressOrders" :key="order.id" class="order-card">
              <div class="order-content">
-              <p><strong>订单 #{{ order.id }}</strong> from {{ order.customer?.username ?? 'N/A' }}</p>
+              <p><strong>订单 #{{ order.id }}</strong> 来自 {{ order.customer?.username ?? 'N/A' }}</p>
               <p>状态:
                 <el-tag :type="getOrderStatusType(order.orderState)">
                   {{ getOrderStatusText(order.orderState) }}

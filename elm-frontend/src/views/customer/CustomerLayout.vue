@@ -3,29 +3,70 @@
     <el-container>
       <!-- Header -->
       <el-header class="app-header">
-        <div class="logo">
-          <router-link to="/" class="logo-link">FoodFleet</router-link>
+        <div class="header-left">
+          <div class="logo">
+            <router-link to="/" class="logo-link">美食速递</router-link>
+          </div>
+          <!-- Profile Section Navigation -->
+          <el-menu
+            v-if="isProfileSection"
+            :default-active="activeProfileRoute"
+            mode="horizontal"
+            :ellipsis="false"
+            router
+            class="header-menu profile-nav-menu"
+          >
+            <el-menu-item index="/profile/details">
+              <el-icon><User /></el-icon>
+              <span>我的资料</span>
+            </el-menu-item>
+            <el-menu-item index="/profile/addresses">
+              <el-icon><Location /></el-icon>
+              <span>地址管理</span>
+            </el-menu-item>
+            <el-menu-item index="/profile/orders">
+              <el-icon><List /></el-icon>
+              <span>订单历史</span>
+            </el-menu-item>
+          </el-menu>
         </div>
-        <div class="user-info">
-          <el-button ref="cartButtonRef" @click="cartVisible = true" type="primary" round>
-            <el-icon class="el-icon--left"><ShoppingCartIcon /></el-icon>
-            Cart
-            <el-badge :value="cartStore.totalItems" :hidden="cartStore.totalItems === 0" class="cart-badge" />
-          </el-button>
-          <el-dropdown>
-            <el-avatar>{{ authStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <router-link to="/profile/details" class="dropdown-link">
-                  <el-dropdown-item>Profile</el-dropdown-item>
-                </router-link>
-                <router-link to="/profile/orders" class="dropdown-link">
-                  <el-dropdown-item>My Orders</el-dropdown-item>
-                </router-link>
-                <el-dropdown-item divided @click="handleLogout">Logout</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+
+        <!-- User Info / Actions -->
+        <div class="user-actions">
+          <!-- Logged-in state -->
+          <template v-if="authStore.isLoggedIn">
+            <div class="user-info">
+              <el-button ref="cartButtonRef" @click="cartVisible = true" type="primary" round class="hide-on-mobile">
+                <el-icon class="el-icon--left"><ShoppingCartIcon /></el-icon>
+                购物车
+                <el-badge :value="cartStore.totalItems" :hidden="cartStore.totalItems === 0" class="cart-badge" />
+              </el-button>
+              <el-button ref="cartButtonRef" @click="cartVisible = true" type="primary" circle class="show-on-mobile">
+                <el-icon><ShoppingCartIcon /></el-icon>
+              </el-button>
+              <el-dropdown>
+                <el-avatar>{{ authStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <router-link to="/profile/details" class="dropdown-link">
+                      <el-dropdown-item>个人资料</el-dropdown-item>
+                    </router-link>
+                    <router-link to="/profile/orders" class="dropdown-link">
+                      <el-dropdown-item>我的订单</el-dropdown-item>
+                    </router-link>
+                    <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+          </template>
+          <!-- Logged-out state -->
+          <template v-else>
+            <div class="auth-buttons">
+              <el-button @click="goTo('/login')">登录</el-button>
+              <el-button @click="goTo('/register')" type="primary">注册</el-button>
+            </div>
+          </template>
         </div>
       </el-header>
 
@@ -45,23 +86,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, watch, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
 import { useCartStore, type AnimationOrigin } from '../../store/cart';
 import ShoppingCart from '../../components/ShoppingCart.vue';
-import { ShoppingCart as ShoppingCartIcon } from '@element-plus/icons-vue';
+import { ShoppingCart as ShoppingCartIcon, User, Location, List } from '@element-plus/icons-vue';
 
 const authStore = useAuthStore();
 const cartStore = useCartStore();
 const router = useRouter();
+const route = useRoute();
 
 const cartVisible = ref(false);
 const cartButtonRef = ref(null);
 
+// Check if the current route is within the profile section
+const isProfileSection = computed(() => route.path.startsWith('/profile'));
+
+// Determine the active route for the profile menu
+const activeProfileRoute = computed(() => {
+  if (route.path.startsWith('/profile/orders')) {
+    return '/profile/orders';
+  }
+  return route.path;
+});
+
 const handleLogout = async () => {
   await authStore.logout();
   router.push({ name: 'Login' });
+};
+
+const goTo = (path: string) => {
+  router.push(path);
 };
 
 const triggerFlyAnimation = (origin: AnimationOrigin) => {
@@ -115,6 +172,12 @@ watch(() => cartStore.animationOrigin, (newOrigin) => {
   border-bottom: 1px solid #e5e7eb;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 32px; // Add space between logo and nav
+}
+
 .logo-link {
   font-size: 1.5rem;
   font-weight: 700;
@@ -122,7 +185,17 @@ watch(() => cartStore.animationOrigin, (newOrigin) => {
   text-decoration: none;
 }
 
-.user-info {
+.profile-nav-menu {
+  .el-menu-item {
+    span {
+      margin-left: 8px;
+    }
+  }
+}
+
+.user-actions,
+.user-info,
+.auth-buttons {
   display: flex;
   align-items: center;
   gap: 15px;
@@ -140,5 +213,11 @@ watch(() => cartStore.animationOrigin, (newOrigin) => {
 .dropdown-link {
   color: inherit;
   text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .profile-nav-menu .el-menu-item span {
+    display: none; // Hide text on mobile, keep only icons
+  }
 }
 </style>

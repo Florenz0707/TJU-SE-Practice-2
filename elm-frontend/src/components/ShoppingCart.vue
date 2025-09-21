@@ -1,7 +1,7 @@
 <template>
   <el-drawer
     v-model="isCartVisible"
-    title="My Cart"
+    title="我的购物车"
     size="400px"
     custom-class="glass-cart"
   >
@@ -9,10 +9,10 @@
       <!-- Cart Items -->
       <div class="cart-items-list">
         <div v-for="item in cartStore.items" :key="item.id" class="cart-item">
-          <img :src="item.food?.foodImg || 'https://placehold.co/80x80/f8f9fa/ccc?text=Item'" alt="item image" class="item-image"/>
+          <img :src="item.food?.foodImg || 'https://placehold.co/80x80/f8f9fa/ccc?text=商品'" alt="商品图片" class="item-image"/>
           <div class="item-details">
-            <span class="item-name">{{ item.food?.foodName ?? 'Unknown Item' }}</span>
-            <span class="item-price">${{ (item.food?.foodPrice ?? 0).toFixed(2) }}</span>
+            <span class="item-name">{{ item.food?.foodName ?? '未知商品' }}</span>
+            <span class="item-price">¥{{ (item.food?.foodPrice ?? 0).toFixed(2) }}</span>
           </div>
           <div class="item-controls" v-if="item.id">
             <el-input-number
@@ -29,27 +29,27 @@
       <!-- Cart Footer -->
       <div class="cart-footer">
         <div class="summary-line">
-          <span>Subtotal</span>
-          <span>${{ cartStore.cartTotal.toFixed(2) }}</span>
+          <span>商品总价</span>
+          <span>¥{{ cartStore.cartTotal.toFixed(2) }}</span>
         </div>
          <div class="summary-line">
-          <span>Delivery Fee</span>
-          <span>$5.00</span>
+          <span>配送费</span>
+          <span>¥5.00</span>
         </div>
         <el-divider />
         <div class="summary-line total">
-          <span>Total</span>
-          <span>${{ (cartStore.cartTotal + 5).toFixed(2) }}</span>
+          <span>合计</span>
+          <span>¥{{ (cartStore.cartTotal + 5).toFixed(2) }}</span>
         </div>
         <el-button type="primary" class="checkout-btn" @click="goToCheckout" round>
-          Continue to Checkout
+          去结算
         </el-button>
       </div>
     </div>
 
     <!-- Empty State -->
     <div v-else class="empty-cart-container">
-      <el-empty description="Your cart is empty. Add some delicious food!" />
+      <el-empty description="购物车是空的，快去添加一些美味的食物吧！" />
     </div>
   </el-drawer>
 </template>

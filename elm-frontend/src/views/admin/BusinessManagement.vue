@@ -1,31 +1,31 @@
 <template>
   <div class="business-management">
-    <h1>Business Management</h1>
+    <h1>店铺管理</h1>
 
     <el-row :gutter="20" style="margin-bottom: 20px;">
       <el-col :span="8">
         <el-input
           v-model="searchQuery"
-          placeholder="Search by business name"
+          placeholder="按店铺名称搜索"
           clearable
         />
       </el-col>
       <el-col :span="8">
-        <el-select v-model="statusFilter" placeholder="Filter by status" clearable>
-          <el-option label="Pending" value="pending"></el-option>
-          <el-option label="Approved" value="approved"></el-option>
-          <el-option label="Rejected" value="rejected"></el-option>
+        <el-select v-model="statusFilter" placeholder="按状态筛选" clearable>
+          <el-option label="待处理" value="pending"></el-option>
+          <el-option label="已批准" value="approved"></el-option>
+          <el-option label="已拒绝" value="rejected"></el-option>
         </el-select>
       </el-col>
     </el-row>
 
     <DataTable :columns="columns" :data="filteredBusinesses">
       <template #actions="{ row }">
-        <div v-if="row.status === 'Pending'">
-          <el-button size="small" type="success" @click="handleApprove(row as Business)">Approve</el-button>
-          <el-button size="small" type="danger" @click="handleReject(row as Business)">Reject</el-button>
+        <div v-if="row.status === '待处理'">
+          <el-button size="small" type="success" @click="handleApprove(row as Business)">批准</el-button>
+          <el-button size="small" type="danger" @click="handleReject(row as Business)">拒绝</el-button>
         </div>
-        <el-button v-else size="small" @click="handleEdit(row as Business)">View/Edit</el-button>
+        <el-button v-else size="small" @click="handleEdit(row as Business)">查看/编辑</el-button>
       </template>
     </DataTable>
   </div>
@@ -44,22 +44,22 @@ const statusFilter = ref('');
 
 const columns = [
   { prop: 'id', label: 'ID', width: 80 },
-  { prop: 'businessName', label: 'Business Name' },
-  { prop: 'businessOwner.username', label: 'Owner' },
-  { prop: 'businessAddress', label: 'Address' },
-  { prop: 'status', label: 'Status' },
-  { prop: 'createTime', label: 'Created At' },
+  { prop: 'businessName', label: '店铺名称' },
+  { prop: 'businessOwner.username', label: '所有者' },
+  { prop: 'businessAddress', label: '地址' },
+  { prop: 'status', label: '状态' },
+  { prop: 'createTime', label: '创建时间' },
 ];
 
-const getStatus = (business: Business): 'Pending' | 'Approved' | 'Rejected' => {
+const getStatus = (business: Business): '待处理' | '已批准' | '已拒绝' => {
   // Assuming 'pending' status is marked in remarks. This is a fragile contract.
   if (business.remarks?.includes('pending')) {
-    return 'Pending';
+    return '待处理';
   }
   if (business.deleted) {
-    return 'Rejected';
+    return '已拒绝';
   }
-  return 'Approved';
+  return '已批准';
 };
 
 const fetchBusinesses = async () => {
@@ -68,10 +68,10 @@ const fetchBusinesses = async () => {
     if (res.success) {
       rawBusinesses.value = res.data || [];
     } else {
-      ElMessage.error(res.message || 'Failed to fetch businesses.');
+      ElMessage.error(res.message || '获取店铺列表失败。');
     }
   } catch (error) {
-    ElMessage.error('Failed to fetch businesses.');
+    ElMessage.error('获取店铺列表失败。');
     console.error(error);
   }
 };
@@ -98,10 +98,10 @@ const handleApprove = async (business: Business) => {
   try {
     const updateData: Business = { ...business, remarks: 'approved', deleted: false };
     await updateBusiness(business.id, updateData);
-    ElMessage.success(`Business "${business.businessName}" approved.`);
+    ElMessage.success(`店铺 "${business.businessName}" 已批准。`);
     fetchBusinesses(); // Refresh list
   } catch (error) {
-    ElMessage.error('Failed to approve business.');
+    ElMessage.error('批准店铺失败。');
   }
 };
 
@@ -109,16 +109,16 @@ const handleReject = async (business: Business) => {
    try {
     const updateData: Business = { ...business, deleted: true };
     await updateBusiness(business.id, updateData);
-    ElMessage.warning(`Business "${business.businessName}" rejected.`);
+    ElMessage.warning(`店铺 "${business.businessName}" 已拒绝。`);
     fetchBusinesses(); // Refresh list
   } catch (error) {
-    ElMessage.error('Failed to reject business.');
+    ElMessage.error('拒绝店铺失败。');
   }
 };
 
 const handleEdit = (business: Business) => {
   console.log('Editing business:', business);
-  ElMessage.info(`Editing business ID: ${business.id}. Implementation pending.`);
+  ElMessage.info(`正在编辑店铺 ID: ${business.id}。功能待实现。`);
 };
 </script>
 

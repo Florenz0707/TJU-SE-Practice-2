@@ -2,30 +2,120 @@
 
 // This file contains styles for the main application layouts.
 
-// Customer Layout
-.customer-layout {
-  .app-header {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid $border-color;
-    padding: 0 24px;
+// Shared Layout Styles
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(50%) blur(8px);
+  border-bottom: 1px solid $border-color;
+  padding: 0 16px; // Adjusted for mobile
+  height: 64px;
+
+  .logo-link {
+    font-family: $font-family-headings;
+    font-weight: $fw-bold;
+    font-size: 20px;
+    color: $text-primary;
+    text-decoration: none;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: $space-unit * 2;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: $space-unit * 2;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+}
+
+.app-main {
+  padding: $space-unit * 2; // Adjusted for mobile
+  background-color: $bg-light;
+  min-height: calc(100vh - 64px); // Full height minus header
+}
+
+
+// Layout-specific styles
+.customer-layout, .admin-layout, .merchant-layout {
+  .mobile-menu-button {
+    display: none; // Hidden on desktop
+  }
+
+  .header-menu {
+    border-bottom: none;
+    background-color: transparent;
     height: 64px;
 
-    .logo {
-      font-family: $font-family-headings;
-      font-weight: $fw-bold;
-      font-size: 20px;
+    .el-menu-item {
+      font-size: 15px;
+      font-weight: 500;
+      color: $text-secondary;
+
+      &:hover {
+        background-color: transparent;
+        color: $primary;
+      }
+
+      &.is-active {
+        color: $primary;
+        border-bottom: 2px solid $primary;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 16px;
+  }
+
+  .admin-layout, .merchant-layout {
+    .header-menu {
+      display: none; // Hide horizontal menu on mobile
+    }
+    .mobile-menu-button {
+      display: inline-flex; // Show hamburger button
     }
   }
 
   .app-main {
-    padding: $space-unit * 3;
-    background-color: $bg-light;
+    padding: $space-unit * 2;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
   }
 }
+
+// Larger screens
+@media (min-width: 769px) {
+  .app-header {
+    padding: 0 24px;
+  }
+  .app-main {
+    padding: $space-unit * 3;
+  }
+  .show-on-mobile {
+      display: none !important;
+  }
+}
+
 
 // Page Transitions
 // -----------------

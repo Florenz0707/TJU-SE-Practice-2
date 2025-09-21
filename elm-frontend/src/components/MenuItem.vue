@@ -3,8 +3,8 @@
     <div class="item-image-wrapper">
       <img
         ref="imageElement"
-        :src="food.foodImg || 'https://placehold.co/100x100/f8f9fa/ccc?text=Food'"
-        alt="Food Image"
+        :src="food.foodImg || 'https://placehold.co/100x100/f8f9fa/ccc?text=食物'"
+        alt="食物图片"
         class="food-image"
       />
     </div>
@@ -12,8 +12,8 @@
       <h4 class="food-name">{{ food.foodName }}</h4>
       <p class="food-explain">{{ food.foodExplain }}</p>
       <div class="food-actions">
-        <span class="food-price">${{ food.foodPrice.toFixed(2) }}</span>
-        <el-button type="primary" @click="handleAddToCart" round>Add</el-button>
+        <span class="food-price">¥{{ food.foodPrice.toFixed(2) }}</span>
+        <el-button type="primary" @click="handleAddToCart" round>添加</el-button>
       </div>
     </div>
   </div>
@@ -47,7 +47,7 @@ const handleAddToCart = () => {
 
   // Show a confirmation message
   ElMessage({
-    message: `${props.food.foodName} added to cart!`,
+    message: `${props.food.foodName} 已添加到购物车！`,
     type: 'success',
   });
 };

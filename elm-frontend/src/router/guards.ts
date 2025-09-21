@@ -12,7 +12,7 @@ router.beforeEach(async (
 ) => {
   // Set page title
   if (to.meta.title && typeof to.meta.title === 'string') {
-    document.title = `${to.meta.title} - 点餐平台`;
+    document.title = `${to.meta.title} - 美食速递`;
   }
 
   const authStore = useAuthStore();
