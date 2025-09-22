@@ -80,27 +80,19 @@
         router
       >
         <el-menu-item index="/merchant/dashboard">
-          <el-icon>
-            <i-ep-data-board />
-          </el-icon>
+          <el-icon><i-ep-data-board /></el-icon>
           <span>仪表盘</span>
         </el-menu-item>
         <el-menu-item index="/merchant/orders">
-          <el-icon>
-            <i-ep-document />
-          </el-icon>
+          <el-icon><i-ep-document /></el-icon>
           <span>历史订单</span>
         </el-menu-item>
         <el-menu-item index="/merchant/menu">
-          <el-icon>
-            <i-ep-notebook />
-          </el-icon>
+          <el-icon><i-ep-notebook /></el-icon>
           <span>菜单管理</span>
         </el-menu-item>
         <el-menu-item index="/merchant/profile">
-          <el-icon>
-            <i-ep-menu />
-          </el-icon>
+          <el-icon><i-ep-menu /></el-icon>
           <span>店铺信息</span>
         </el-menu-item>
       </el-menu>
@@ -130,7 +122,7 @@ const activePath = computed(() => {
 });
 
 const handleLogout = async () => {
-  await authStore.logout()
-  router.push({ name: 'Login' })
-}
+  await authStore.logout();
+  router.push({ name: 'Login' });
+};
 </script>

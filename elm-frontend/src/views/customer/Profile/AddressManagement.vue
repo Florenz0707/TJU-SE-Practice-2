@@ -59,9 +59,9 @@ import {
   addDeliveryAddress,
   updateDeliveryAddress,
   deleteDeliveryAddress,
-} from '../../../api/address'
-import type { DeliveryAddress } from '../../../api/types'
-import { ElMessage, type FormInstance } from 'element-plus'
+} from '../../../api/address';
+import type { DeliveryAddress } from '../../../api/types';
+import { ElMessage, type FormInstance } from 'element-plus';
 
 const authStore = useAuthStore();
 const addresses = ref<DeliveryAddress[]>([]);
@@ -72,36 +72,31 @@ const formRef = ref<FormInstance>();
 const addressForm = ref<Partial<DeliveryAddress>>({});
 
 const fetchAddresses = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getCurrentUserAddresses()
+    const res = await getCurrentUserAddresses();
     if (res.success) {
-      addresses.value = res.data
+      addresses.value = res.data;
     } else {
-      throw new Error(res.message)
+      throw new Error(res.message);
     }
   } catch (error: any) {
     ElMessage.error(error.message || '获取地址失败');
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const openAddressDialog = (address?: DeliveryAddress) => {
   if (address) {
-    isEditing.value = true
-    addressForm.value = { ...address }
+    isEditing.value = true;
+    addressForm.value = { ...address };
   } else {
-    isEditing.value = false
-    addressForm.value = {
-      contactName: '',
-      contactTel: '',
-      address: '',
-      contactSex: 1,
-    }
+    isEditing.value = false;
+    addressForm.value = { contactName: '', contactTel: '', address: '', contactSex: 1 };
   }
-  dialogVisible.value = true
-}
+  dialogVisible.value = true;
+};
 
 const handleSaveAddress = async () => {
   if (!formRef.value) return;
@@ -122,12 +117,12 @@ const handleSaveAddress = async () => {
       await addDeliveryAddress(payload);
       ElMessage.success('地址添加成功！');
     }
-    dialogVisible.value = false
-    fetchAddresses()
+    dialogVisible.value = false;
+    fetchAddresses();
   } catch (error: any) {
     ElMessage.error(error.message || '保存地址失败');
   }
-}
+};
 
 const handleDeleteAddress = async (id: number) => {
   try {
@@ -137,7 +132,7 @@ const handleDeleteAddress = async (id: number) => {
   } catch (error: any) {
     ElMessage.error(error.message || '删除地址失败');
   }
-}
+};
 
-onMounted(fetchAddresses)
+onMounted(fetchAddresses);
 </script>

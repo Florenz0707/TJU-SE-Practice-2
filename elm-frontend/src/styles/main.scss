@@ -34,17 +34,9 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: $fw-bold;
 }
 
-h1 {
-  font-size: $fs-h1;
-}
-
-h2 {
-  font-size: $fs-h2;
-}
-
-h3 {
-  font-size: $fs-h3;
-}
+h1 { font-size: $fs-h1; }
+h2 { font-size: $fs-h2; }
+h3 { font-size: $fs-h3; }
 
 p {
   font-size: $fs-body;

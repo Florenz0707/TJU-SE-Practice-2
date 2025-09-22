@@ -2,7 +2,7 @@
   <div class="business-management">
     <h1>店铺管理</h1>
 
-    <el-row :gutter="20" style="margin-bottom: 20px">
+    <el-row :gutter="20" style="margin-bottom: 20px;">
       <el-col :span="8">
         <el-input
           v-model="searchQuery"
@@ -32,23 +32,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import {
-  ElButton,
-  ElInput,
-  ElSelect,
-  ElOption,
-  ElRow,
-  ElCol,
-  ElMessage,
-} from 'element-plus'
-import DataTable from '@/components/DataTable.vue'
-import { getBusinesses, updateBusiness } from '@/api/business'
-import type { Business } from '@/api/types'
+import { ref, onMounted, computed } from 'vue';
+import { ElButton, ElInput, ElSelect, ElOption, ElRow, ElCol, ElMessage } from 'element-plus';
+import DataTable from '@/components/DataTable.vue';
+import { getBusinesses, updateBusiness } from '@/api/business';
+import type { Business } from '@/api/types';
 
-const rawBusinesses = ref<Business[]>([])
-const searchQuery = ref('')
-const statusFilter = ref('')
+const rawBusinesses = ref<Business[]>([]);
+const searchQuery = ref('');
+const statusFilter = ref('');
 
 const columns = [
   { prop: 'id', label: 'ID', width: 80 },
@@ -72,9 +64,9 @@ const getStatus = (business: Business): '待处理' | '已批准' | '已拒绝' 
 
 const fetchBusinesses = async () => {
   try {
-    const res = await getBusinesses()
+    const res = await getBusinesses();
     if (res.success) {
-      rawBusinesses.value = res.data || []
+      rawBusinesses.value = res.data || [];
     } else {
       ElMessage.error(res.message || '获取店铺列表失败。');
     }
@@ -82,31 +74,25 @@ const fetchBusinesses = async () => {
     ElMessage.error('获取店铺列表失败。');
     console.error(error);
   }
-}
+};
 
-onMounted(fetchBusinesses)
+onMounted(fetchBusinesses);
 
 const displayBusinesses = computed(() => {
   return rawBusinesses.value.map(b => ({
     ...b,
     status: getStatus(b),
     'businessOwner.username': b.businessOwner?.username || 'N/A',
-  }))
-})
+  }));
+});
 
 const filteredBusinesses = computed(() => {
   return displayBusinesses.value.filter(business => {
-    const searchMatch =
-      !searchQuery.value ||
-      business.businessName
-        .toLowerCase()
-        .includes(searchQuery.value.toLowerCase())
-    const statusMatch =
-      !statusFilter.value ||
-      business.status.toLowerCase() === statusFilter.value
-    return searchMatch && statusMatch
-  })
-})
+    const searchMatch = !searchQuery.value || business.businessName.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const statusMatch = !statusFilter.value || business.status.toLowerCase() === statusFilter.value;
+    return searchMatch && statusMatch;
+  });
+});
 
 const handleApprove = async (business: Business) => {
   try {
@@ -117,7 +103,7 @@ const handleApprove = async (business: Business) => {
   } catch (error) {
     ElMessage.error('批准店铺失败。');
   }
-}
+};
 
 const handleReject = async (business: Business) => {
    try {
@@ -128,7 +114,7 @@ const handleReject = async (business: Business) => {
   } catch (error) {
     ElMessage.error('拒绝店铺失败。');
   }
-}
+};
 
 const handleEdit = (business: Business) => {
   console.log('Editing business:', business);

@@ -24,18 +24,10 @@
           </el-upload>
         </el-form-item>
         <el-form-item label="起送价" prop="startPrice">
-          <el-input-number
-            v-model="business.startPrice"
-            :precision="2"
-            :step="1"
-          />
+          <el-input-number v-model="business.startPrice" :precision="2" :step="1" />
         </el-form-item>
         <el-form-item label="配送费" prop="deliveryPrice">
-          <el-input-number
-            v-model="business.deliveryPrice"
-            :precision="2"
-            :step="1"
-          />
+          <el-input-number v-model="business.deliveryPrice" :precision="2" :step="1" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSave">保存更改</el-button>
@@ -53,8 +45,8 @@ import type { Business, HttpResultListBusiness } from '../../api/types';
 import { ElMessage, type UploadProps } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 
-const loading = ref(true)
-const business = ref<Business | null>(null)
+const loading = ref(true);
+const business = ref<Business | null>(null);
 
 const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png') {
@@ -79,41 +71,41 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
 
 onMounted(async () => {
   try {
-    const response: HttpResultListBusiness = await getCurrentUserBusinesses()
+    const response: HttpResultListBusiness = await getCurrentUserBusinesses();
     if (response.success && response.data && response.data.length > 0) {
-      const currentBusiness = response.data[0]
+      const currentBusiness = response.data[0];
       if (currentBusiness) {
-        business.value = currentBusiness
+        business.value = currentBusiness;
       } else {
-        ElMessage.warning('Could not retrieve business details.')
+        ElMessage.warning('Could not retrieve business details.');
       }
     } else {
-      ElMessage.warning('当前用户没有关联的店铺')
+      ElMessage.warning('当前用户没有关联的店铺');
     }
   } catch (error) {
-    ElMessage.error('加载店铺信息失败')
-    console.error(error)
+    ElMessage.error('加载店铺信息失败');
+    console.error(error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
+});
 
 const handleSave = async () => {
   if (!business.value || !business.value.id) {
-    ElMessage.error('没有可保存的店铺信息')
-    return
+    ElMessage.error('没有可保存的店铺信息');
+    return;
   }
-  loading.value = true
+  loading.value = true;
   try {
-    await updateBusiness(business.value.id, business.value)
-    ElMessage.success('店铺信息更新成功！')
+    await updateBusiness(business.value.id, business.value);
+    ElMessage.success('店铺信息更新成功！');
   } catch (error) {
-    ElMessage.error('更新失败，请稍后重试')
-    console.error(error)
+    ElMessage.error('更新失败，请稍后重试');
+    console.error(error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>
 
 <style scoped>

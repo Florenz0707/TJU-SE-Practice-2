@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/auth';
 import { refreshToken as apiRefreshToken } from '../api/auth';
 
 // Module-level variable to hold the token
-let authToken: string | null = null
+let authToken: string | null = null;
 
 /**
  * Sets the authentication token for all subsequent API requests.
@@ -24,7 +24,7 @@ export function setRequestToken(token: string | null) {
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
-})
+});
 
 // Request interceptor for adding the auth token
 service.interceptors.request.use(
@@ -34,13 +34,13 @@ service.interceptors.request.use(
     if (authToken && config.headers && !config.headers['Authorization']) {
       config.headers['Authorization'] = `Bearer ${authToken}`;
     }
-    return config
+    return config;
   },
   (error: AxiosError) => {
-    console.error('Request Error:', error)
-    return Promise.reject(error)
+    console.error('Request Error:', error);
+    return Promise.reject(error);
   }
-)
+);
 
 // Variables to manage the token refresh state
 let isRefreshing = false;
@@ -65,19 +65,19 @@ service.interceptors.response.use(
     if (typeof res === 'object' && res !== null && 'success' in res) {
       if (res.success) {
         // For successful wrapped responses, return the 'data' payload
-        return res
+        return res;
       } else {
         // For failed wrapped responses, show a message and reject the promise
         ElMessage({
           message: res.message || 'Error',
           type: 'error',
           duration: 5 * 1000,
-        })
-        return Promise.reject(new Error(res.message || 'Error'))
+        });
+        return Promise.reject(new Error(res.message || 'Error'));
       }
     }
     // If it's not a wrapped response, return the data directly
-    return res
+    return res;
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
@@ -142,6 +142,6 @@ service.interceptors.response.use(
 
     return Promise.reject(error);
   }
-)
+);
 
-export default service
+export default service;

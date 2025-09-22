@@ -17,14 +17,13 @@
 </template>
 
 <script setup lang="ts">
-import { ElCard } from 'element-plus'
+import { ElCard } from 'element-plus';
 </script>
 
 <style scoped>
 .admin-dashboard {
   padding: 20px;
 }
-
 .card-header {
   font-size: 1.2em;
   font-weight: bold;

@@ -24,27 +24,25 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import type { Business } from '../api/types'
+import { useRouter } from 'vue-router';
+import type { Business } from '../api/types';
 
 const props = defineProps<{
-  business: Business
-}>()
+  business: Business;
+}>();
 
-const router = useRouter()
+const router = useRouter();
 
 const goToRestaurant = () => {
-  router.push({ name: 'RestaurantDetail', params: { id: props.business.id } })
-}
+  router.push({ name: 'RestaurantDetail', params: { id: props.business.id } });
+};
 </script>
 
 <style scoped>
 .restaurant-card {
   background-color: #ffffff;
   border-radius: 16px; /* $border-radius-lg */
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.07),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05); /* $shadow-medium */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* $shadow-medium */
   cursor: pointer;
   overflow: hidden;
   transition: all 0.3s ease-out;
@@ -52,9 +50,7 @@ const goToRestaurant = () => {
 
 .restaurant-card:hover {
   transform: translateY(-8px);
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04); /* $shadow-large */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* $shadow-large */
 }
 
 .card-image-wrapper {
@@ -99,7 +95,7 @@ const goToRestaurant = () => {
 }
 
 .name {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-weight: 600; /* $fw-semibold */
   font-size: 20px; /* A bit smaller than H3 for cards */
   color: #111827; /* $text-primary */
@@ -107,9 +103,9 @@ const goToRestaurant = () => {
 }
 
 .details {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 14px; /* $fs-label */
-  color: #6b7280; /* $text-secondary */
+  color: #6B7280; /* $text-secondary */
   display: flex;
   align-items: center;
   gap: 8px;
@@ -117,7 +113,7 @@ const goToRestaurant = () => {
 }
 
 .separator {
-  color: #e5e7eb; /* $border-color */
+  color: #E5E7EB; /* $border-color */
 }
 
 .price-info {

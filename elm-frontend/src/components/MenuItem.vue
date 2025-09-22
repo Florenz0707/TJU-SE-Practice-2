@@ -24,17 +24,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { Food } from '../api/types'
-import { useCartStore } from '../store/cart'
-import { ElMessage } from 'element-plus'
+import { ref } from 'vue';
+import type { Food } from '../api/types';
+import { useCartStore } from '../store/cart';
+import { ElMessage } from 'element-plus';
 
 const props = defineProps<{
-  food: Food
-}>()
+  food: Food;
+}>();
 
-const cartStore = useCartStore()
-const imageElement = ref<HTMLImageElement | null>(null)
+const cartStore = useCartStore();
+const imageElement = ref<HTMLImageElement | null>(null);
 
 const handleAddToCart = () => {
   let origin: { x: number; y: number; imgSrc: string } | undefined;
@@ -55,8 +55,8 @@ const handleAddToCart = () => {
   ElMessage({
     message: `${props.food.foodName} 已添加到购物车！`,
     type: 'success',
-  })
-}
+  });
+};
 </script>
 
 <style scoped>
@@ -66,11 +66,8 @@ const handleAddToCart = () => {
   padding: 16px;
   background-color: #ffffff;
   border-radius: 16px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
 }
-
 .item-image-wrapper {
   width: 100px;
   height: 100px;
@@ -98,42 +95,36 @@ const handleAddToCart = () => {
   color: #6c757d;
   padding: 5px;
 }
-
 .food-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .food-details {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
 }
-
 .food-name {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-weight: 600;
   font-size: 18px;
   margin: 0 0 8px 0;
 }
-
 .food-explain {
-  font-family: 'Inter', sans-serif;
-  color: #6b7280;
+  font-family: "Inter", sans-serif;
+  color: #6B7280;
   font-size: 14px;
   flex-grow: 1;
   margin-bottom: 10px;
 }
-
 .food-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
 .food-price {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 18px;
   font-weight: 600;
   color: #111827;

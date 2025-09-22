@@ -7,12 +7,7 @@
       <el-input type="textarea" v-model="form.foodExplain" />
     </el-form-item>
     <el-form-item label="价格" prop="foodPrice">
-      <el-input-number
-        v-model="form.foodPrice"
-        :precision="2"
-        :step="0.1"
-        :min="0"
-      />
+      <el-input-number v-model="form.foodPrice" :precision="2" :step="0.1" :min="0" />
     </el-form-item>
     <el-form-item label="图片" prop="foodImg">
       <el-upload
@@ -35,13 +30,13 @@ import type { Food } from '../../api/types';
 import { Plus } from '@element-plus/icons-vue';
 
 interface Props {
-  foodData: Food | null
+  foodData: Food | null;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
-const formRef = ref<FormInstance>()
-const form = ref<Partial<Food>>({})
+const formRef = ref<FormInstance>();
+const form = ref<Partial<Food>>({});
 
 const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png') {
@@ -63,43 +58,40 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
 };
 
 // Watch for changes in the prop and update the form
-watch(
-  () => props.foodData,
-  newFood => {
-    if (newFood) {
-      form.value = { ...newFood }
-    } else {
-      // Reset for 'add new' mode
-      form.value = {
-        foodName: '',
-        foodExplain: '',
-        foodPrice: 0,
-        foodImg: '',
-      }
-    }
-  },
-  { immediate: true }
-)
+watch(() => props.foodData, (newFood) => {
+  if (newFood) {
+    form.value = { ...newFood };
+  } else {
+    // Reset for 'add new' mode
+    form.value = {
+      foodName: '',
+      foodExplain: '',
+      foodPrice: 0,
+      foodImg: '',
+    };
+  }
+}, { immediate: true });
 
 const rules = ref<FormRules>({
   foodName: [{ required: true, message: '请输入菜品名称', trigger: 'blur' }],
   foodPrice: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-})
+});
 
 const getFormData = async () => {
-  if (!formRef.value) return null
+  if (!formRef.value) return null;
   try {
-    await formRef.value.validate()
-    return form.value
+    await formRef.value.validate();
+    return form.value;
   } catch (error) {
-    return null
+    return null;
   }
-}
+};
 
 // Expose the getFormData method to the parent component
 defineExpose({
   getFormData,
-})
+});
+
 </script>
 
 <style scoped>

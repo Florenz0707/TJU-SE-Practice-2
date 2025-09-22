@@ -11,11 +11,7 @@
           </div>
         </template>
         <div class="business-info">
-          <el-image
-            :src="business.businessImg"
-            fit="cover"
-            class="business-image"
-          />
+          <el-image :src="business.businessImg" fit="cover" class="business-image" />
           <div class="info-text">
             <p><strong>地址:</strong> {{ business.businessAddress }}</p>
             <p><strong>介绍:</strong> {{ business.businessExplain }}</p>
@@ -32,23 +28,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { getBusinessById } from '../../api/business'
-import { getAllFoods } from '../../api/food'
-import type { Business, Food } from '../../api/types'
-import MenuItem from '../../components/MenuItem.vue'
+import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { getBusinessById } from '../../api/business';
+import { getAllFoods } from '../../api/food';
+import type { Business, Food } from '../../api/types';
+import MenuItem from '../../components/MenuItem.vue';
 
-const route = useRoute()
-const business = ref<Business | null>(null)
-const menu = ref<Food[]>([])
-const loading = ref(false)
-const error = ref<string | null>(null)
+const route = useRoute();
+const business = ref<Business | null>(null);
+const menu = ref<Food[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
 
 onMounted(async () => {
-  loading.value = true
-  error.value = null
-  const businessId = Number(route.params.id)
+  loading.value = true;
+  error.value = null;
+  const businessId = Number(route.params.id);
 
   if (isNaN(businessId)) {
     error.value = '无效的餐厅ID。';
@@ -61,58 +57,52 @@ onMounted(async () => {
     const [businessResponse, menuResponse] = await Promise.all([
       getBusinessById(businessId),
       getAllFoods({ business: businessId }),
-    ])
+    ]);
 
     if (businessResponse.success) {
-      business.value = businessResponse.data
+      business.value = businessResponse.data;
     } else {
       throw new Error(businessResponse.message || '获取餐厅详情失败');
     }
 
     if (menuResponse.success) {
-      menu.value = menuResponse.data
+      menu.value = menuResponse.data;
     } else {
       throw new Error(menuResponse.message || '获取菜单失败');
     }
   } catch (err: any) {
     error.value = err.message || '发生未知错误。';
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
+});
 </script>
 
 <style scoped>
 .restaurant-detail-container {
   padding: 20px;
 }
-
 .business-header {
   margin-bottom: 30px;
 }
-
 .business-info {
   display: flex;
   gap: 20px;
 }
-
 .business-image {
   width: 200px;
   height: 200px;
   border-radius: 8px;
 }
-
 .info-text {
   flex-grow: 1;
 }
-
 .menu-title {
   margin-bottom: 20px;
   font-size: 1.8rem;
   border-bottom: 2px solid #eee;
   padding-bottom: 10px;
 }
-
 .menu-grid {
   display: grid;
   grid-template-columns: 1fr;

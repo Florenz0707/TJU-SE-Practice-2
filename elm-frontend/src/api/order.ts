@@ -1,10 +1,5 @@
-import request from '../utils/request'
-import type {
-  Order,
-  HttpResultOrder,
-  HttpResultListOrder,
-  HttpResult,
-} from './types'
+import request from '../utils/request';
+import type { Order, HttpResultOrder, HttpResultListOrder, HttpResult } from './types';
 
 /**
  * @description Retrieves a list of orders for a specific user.
@@ -23,8 +18,8 @@ export const listOrdersByUserId = (userId: number): Promise<HttpResultListOrder>
  * @see {@link openapi.json} - operationId: "addOrders"
  */
 export const addOrder = (data: Order): Promise<HttpResultOrder> => {
-  return request.post('/orders', data)
-}
+  return request.post('/orders', data);
+};
 
 /**
  * @description Fetches the current user's order history.
@@ -32,8 +27,8 @@ export const addOrder = (data: Order): Promise<HttpResultOrder> => {
  * @see {@link openapi.json} - operationId: "getCurrentUserOrders"
  */
 export const getCurrentUserOrders = (): Promise<HttpResultListOrder> => {
-  return request.get('/orders/my')
-}
+  return request.get('/orders/my');
+};
 
 /**
  * @description Fetches a single order by its ID.
@@ -42,8 +37,8 @@ export const getCurrentUserOrders = (): Promise<HttpResultListOrder> => {
  * @see {@link openapi.json} - operationId: "getOrderById"
  */
 export const getOrderById = (id: number): Promise<HttpResult<Order>> => {
-  return request.get(`/orders/${id}`)
-}
+  return request.get(`/orders/${id}`);
+};
 
 /**
  * @description Updates the status of an order.

@@ -25,17 +25,17 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn: (state): boolean => !!state.token,
     userRoles: (state): string[] => {
       if (!state.user?.authorities) {
-        return ['GUEST']
+        return ['GUEST'];
       }
       const roleMap: { [key: string]: string } = {
         USER: 'CUSTOMER',
         BUSINESS: 'MERCHANT',
         ADMIN: 'ADMIN',
-      }
+      };
       const roles = state.user.authorities
         .map(auth => roleMap[auth.name] || auth.name)
-        .filter(Boolean)
-      return roles.length > 0 ? roles : ['GUEST']
+        .filter(Boolean);
+      return roles.length > 0 ? roles : ['GUEST'];
     },
   },
 
@@ -61,7 +61,7 @@ export const useAuthStore = defineStore('auth', {
      * Fetch current user info
      */
     async fetchUserInfo(): Promise<void> {
-      if (!this.token) return
+      if (!this.token) return;
       try {
         // The /api/user endpoint returns HttpResult<User>.
         const userInfo = await getActualUser();
@@ -70,7 +70,7 @@ export const useAuthStore = defineStore('auth', {
         console.error('Failed to fetch user info:', error);
         this.logout();
         // Re-throw the error so the calling component knows the login failed.
-        throw new Error('Failed to fetch user info')
+        throw new Error('Failed to fetch user info');
       }
     },
 
@@ -105,7 +105,7 @@ export const useAuthStore = defineStore('auth', {
      * @param {User} newUser
      */
     setUser(newUser: User) {
-      this.user = newUser
+      this.user = newUser;
     },
   },
-})
+});

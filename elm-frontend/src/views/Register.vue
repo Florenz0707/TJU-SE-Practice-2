@@ -23,12 +23,7 @@
             @keyup.enter="handleRegister"
           >
             <el-form-item label="用户名" prop="username">
-              <el-input
-                v-model="registerForm.username"
-                placeholder="请输入用户名"
-                clearable
-                size="large"
-              ></el-input>
+              <el-input v-model="registerForm.username" placeholder="请输入用户名" clearable size="large"></el-input>
             </el-form-item>
 
             <el-form-item label="密码" prop="password">
@@ -76,72 +71,72 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { createUser } from '../api/user'
+import { ref, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import { createUser } from '../api/user';
 
-const router = useRouter()
-const registerFormRef = ref<FormInstance | null>(null)
-const loading = ref(false)
+const router = useRouter();
+const registerFormRef = ref<FormInstance | null>(null);
+const loading = ref(false);
 
 const registerForm = reactive({
   username: '',
   password: '',
   confirmPassword: '',
-})
+});
 
 const validatePass = (_rule: any, value: any, callback: any) => {
   if (value === '') {
-    callback(new Error('请再次输入密码'))
+    callback(new Error('请再次输入密码'));
   } else if (value !== registerForm.password) {
-    callback(new Error('两次输入的密码不一致!'))
+    callback(new Error("两次输入的密码不一致!"));
   } else {
-    callback()
+    callback();
   }
-}
+};
 
 const registerRules = reactive<FormRules>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' },
+    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, validator: validatePass, trigger: 'blur' },
+    { required: true, validator: validatePass, trigger: 'blur' }
   ],
-})
+});
 
 const handleRegister = async () => {
-  if (!registerFormRef.value) return
+  if (!registerFormRef.value) return;
 
   try {
-    await registerFormRef.value.validate()
+    await registerFormRef.value.validate();
 
-    loading.value = true
+    loading.value = true;
     const res = await createUser({
       username: registerForm.username,
-      password: registerForm.password,
-    })
+      password: registerForm.password
+    });
 
     if (res.success) {
-      ElMessage.success('注册成功！将跳转到登录页...')
+      ElMessage.success('注册成功！将跳转到登录页...');
       setTimeout(() => {
-        router.push({ name: 'Login' })
-      }, 1500)
+        router.push({ name: 'Login' });
+      }, 1500);
     } else {
-      ElMessage.error(res.message || '注册失败，请稍后重试')
+      ElMessage.error(res.message || '注册失败，请稍后重试');
     }
   } catch (error) {
-    ElMessage.error('注册失败，请稍后重试')
-    console.error('Registration failed:', error)
+    ElMessage.error('注册失败，请稍后重试');
+    console.error('Registration failed:', error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 </script>
 
 <style lang="scss" scoped>
@@ -160,16 +155,14 @@ const handleRegister = async () => {
   max-width: 960px;
   margin: 1.5rem;
   border-radius: 16px;
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   background-color: #ffffff;
 }
 
 .welcome-panel {
   flex: 1;
-  background-color: #f97316; // Hardcoded orange
+  background-color: #F97316; // Hardcoded orange
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -179,14 +172,14 @@ const handleRegister = async () => {
 }
 
 .welcome-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
 }
 
 .welcome-text {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   font-size: 1.125rem;
   line-height: 1.75;
   opacity: 0.9;
@@ -201,7 +194,7 @@ const handleRegister = async () => {
 }
 
 .form-title {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-size: 1.75rem;
   font-weight: 600;
   color: #111827;

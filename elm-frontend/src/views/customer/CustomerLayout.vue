@@ -108,10 +108,7 @@
       </el-main>
 
       <!-- Shopping Cart Drawer -->
-      <ShoppingCart
-        :visible="cartVisible"
-        @update:visible="cartVisible = $event"
-      />
+      <ShoppingCart :visible="cartVisible" @update:visible="cartVisible = $event" />
     </el-container>
   </div>
 </template>
@@ -129,8 +126,8 @@ const cartStore = useCartStore();
 const router = useRouter();
 const route = useRoute();
 
-const cartVisible = ref(false)
-const cartButtonRef = ref(null)
+const cartVisible = ref(false);
+const cartButtonRef = ref(null);
 
 // Check if the current route is within the profile section
 const isProfileSection = computed(() => route.path.startsWith('/profile'));
@@ -153,64 +150,55 @@ const activePath = computed(() => {
 });
 
 const handleLogout = async () => {
-  await authStore.logout()
-  router.push({ name: 'Login' })
-}
+  await authStore.logout();
+  router.push({ name: 'Login' });
+};
 
 const goTo = (path: string) => {
   router.push(path);
 };
 
 const triggerFlyAnimation = (origin: AnimationOrigin) => {
-  if (!origin || !cartButtonRef.value) return
+  if (!origin || !cartButtonRef.value) return;
 
-  const cartButtonEl = (cartButtonRef.value as any).$el
-  const targetRect = cartButtonEl.getBoundingClientRect()
-  const targetX = targetRect.left + targetRect.width / 2
-  const targetY = targetRect.top + targetRect.height / 2
+  const cartButtonEl = (cartButtonRef.value as any).$el;
+  const targetRect = cartButtonEl.getBoundingClientRect();
+  const targetX = targetRect.left + targetRect.width / 2;
+  const targetY = targetRect.top + targetRect.height / 2;
 
-  const flyingEl = document.createElement('img')
-  flyingEl.src = origin.imgSrc
-  flyingEl.style.position = 'fixed'
-  flyingEl.style.left = `${origin.x}px`
-  flyingEl.style.top = `${origin.y}px`
-  flyingEl.style.width = '50px'
-  flyingEl.style.height = '50px'
-  flyingEl.style.borderRadius = '50%'
-  flyingEl.style.objectFit = 'cover'
-  flyingEl.style.zIndex = '9999'
-  flyingEl.style.pointerEvents = 'none'
-  flyingEl.style.transform = 'translate(-50%, -50%)'
+  const flyingEl = document.createElement('img');
+  flyingEl.src = origin.imgSrc;
+  flyingEl.style.position = 'fixed';
+  flyingEl.style.left = `${origin.x}px`;
+  flyingEl.style.top = `${origin.y}px`;
+  flyingEl.style.width = '50px';
+  flyingEl.style.height = '50px';
+  flyingEl.style.borderRadius = '50%';
+  flyingEl.style.objectFit = 'cover';
+  flyingEl.style.zIndex = '9999';
+  flyingEl.style.pointerEvents = 'none';
+  flyingEl.style.transform = 'translate(-50%, -50%)';
 
-  document.body.appendChild(flyingEl)
+  document.body.appendChild(flyingEl);
 
-  flyingEl.animate(
-    [
-      { transform: `translate(-50%, -50%) scale(1)`, opacity: 1 },
-      {
-        transform: `translate(${targetX - origin.x}px, ${targetY - origin.y}px) scale(0.1)`,
-        opacity: 0.5,
-      },
-    ],
-    {
-      duration: 600,
-      easing: 'cubic-bezier(0.5, -0.5, 1, 1)',
-    }
-  ).onfinish = () => {
-    document.body.removeChild(flyingEl)
+  flyingEl.animate([
+    { transform: `translate(-50%, -50%) scale(1)`, opacity: 1 },
+    { transform: `translate(${(targetX - origin.x)}px, ${(targetY - origin.y)}px) scale(0.1)`, opacity: 0.5 }
+  ], {
+    duration: 600,
+    easing: 'cubic-bezier(0.5, -0.5, 1, 1)',
+  }).onfinish = () => {
+    document.body.removeChild(flyingEl);
     // Reset the store state after animation
-    cartStore.animationOrigin = null
-  }
-}
+    cartStore.animationOrigin = null;
+  };
+};
 
-watch(
-  () => cartStore.animationOrigin,
-  newOrigin => {
-    if (newOrigin) {
-      triggerFlyAnimation(newOrigin)
-    }
+watch(() => cartStore.animationOrigin, (newOrigin) => {
+  if (newOrigin) {
+    triggerFlyAnimation(newOrigin);
   }
-)
+});
 </script>
 
 <style lang="scss" scoped>

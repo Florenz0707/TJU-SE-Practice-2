@@ -109,34 +109,35 @@ const selectedAddress = computed(() => addresses.value.find(a => a.id === select
 
 const isNextDisabled = computed(() => {
   if (activeStep.value === 1 && !selectedAddressId.value) {
-    return true // Disable "Next" on address step if no address is selected
+    return true; // Disable "Next" on address step if no address is selected
   }
   if (activeStep.value === 2) {
-    return true // Disable "Next" on the final step
+      return true; // Disable "Next" on the final step
   }
-  return false
-})
+  return false;
+});
+
 
 const fetchAddresses = async () => {
   try {
-    const res = await getCurrentUserAddresses()
+    const res = await getCurrentUserAddresses();
     if (res.success) {
-      addresses.value = res.data
+      addresses.value = res.data;
     } else {
       ElMessage.error(res.message || '获取地址失败。');
     }
   } catch (e) {
     ElMessage.error('获取地址失败。');
   }
-}
+};
 
 const nextStep = () => {
-  if (activeStep.value++ > 1) activeStep.value = 0
-}
+  if (activeStep.value++ > 1) activeStep.value = 0;
+};
 
 const prevStep = () => {
-  if (activeStep.value-- < 1) activeStep.value = 0
-}
+  if (activeStep.value-- < 1) activeStep.value = 0;
+};
 
 const placeOrder = async () => {
   if (!selectedAddressId.value || !selectedAddress.value) {
@@ -148,9 +149,9 @@ const placeOrder = async () => {
     return;
   }
 
-  isPlacingOrder.value = true
+  isPlacingOrder.value = true;
   try {
-    const firstItem = cartStore.items[0]
+    const firstItem = cartStore.items[0];
     if (!firstItem || !firstItem.customer || !firstItem.business) {
         ElMessage.error('由于购物车信息不完整，无法下单。');
         isPlacingOrder.value = false;
@@ -163,21 +164,21 @@ const placeOrder = async () => {
       orderTotal: cartStore.cartTotal,
       deliveryAddress: selectedAddress.value,
       orderState: 0, // 0: Placed
-    }
-    const res = await addOrder(orderPayload)
+    };
+    const res = await addOrder(orderPayload);
     if (res.success) {
       ElMessage.success('下单成功！');
       await cartStore.fetchCart(); // Refetch cart, assuming backend clears it post-order.
       router.push({ name: 'OrderHistory' }); // Redirect to order history
     } else {
-      throw new Error(res.message)
+      throw new Error(res.message);
     }
   } catch (error: any) {
     ElMessage.error(error.message || '下单失败。');
   } finally {
-    isPlacingOrder.value = false
+    isPlacingOrder.value = false;
   }
-}
+};
 
 onMounted(() => {
   if (cartStore.items.length === 0) {
@@ -239,19 +240,16 @@ const deleteAddress = async (id: number) => {
   max-width: 800px;
   margin: auto;
 }
-
 .step-content {
   margin-top: 20px;
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
-
 .step-actions {
   margin-top: 20px;
   text-align: right;
 }
-
 .summary-total {
   text-align: right;
   margin-top: 20px;

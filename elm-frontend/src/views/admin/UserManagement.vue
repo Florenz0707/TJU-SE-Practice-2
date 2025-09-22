@@ -6,7 +6,7 @@
       v-model="searchQuery"
       placeholder="按用户名搜索"
       clearable
-      style="width: 300px; margin-bottom: 20px"
+      style="width: 300px; margin-bottom: 20px;"
     />
 
     <DataTable :columns="columns" :data="filteredUsers">
@@ -19,14 +19,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { ElButton, ElInput, ElMessage, ElMessageBox } from 'element-plus'
-import DataTable from '@/components/DataTable.vue'
-import { getAllUsers, deleteUser } from '@/api/user'
-import type { User, Authority } from '@/api/types'
+import { ref, onMounted, computed } from 'vue';
+import { ElButton, ElInput, ElMessage, ElMessageBox } from 'element-plus';
+import DataTable from '@/components/DataTable.vue';
+import { getAllUsers, deleteUser } from '@/api/user';
+import type { User, Authority } from '@/api/types';
 
-const rawUsers = ref<User[]>([])
-const searchQuery = ref('')
+const rawUsers = ref<User[]>([]);
+const searchQuery = ref('');
 
 const columns = [
   { prop: 'id', label: 'ID', width: 80 },
@@ -39,9 +39,9 @@ const columns = [
 
 const fetchUsers = async () => {
   try {
-    const res = await getAllUsers()
+    const res = await getAllUsers();
     if (res.success) {
-      rawUsers.value = res.data || []
+      rawUsers.value = res.data || [];
     } else {
       ElMessage.error(res.message || '获取用户列表失败。');
     }
@@ -49,9 +49,9 @@ const fetchUsers = async () => {
     ElMessage.error('获取用户列表失败。');
     console.error(error);
   }
-}
+};
 
-onMounted(fetchUsers)
+onMounted(fetchUsers);
 
 // Create a computed property for display-friendly data
 const displayUsers = computed(() => {
@@ -63,12 +63,12 @@ const displayUsers = computed(() => {
 
 const filteredUsers = computed(() => {
   if (!searchQuery.value) {
-    return displayUsers.value
+    return displayUsers.value;
   }
   return displayUsers.value.filter(user =>
     user.username.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-})
+  );
+});
 
 const handleEdit = (user: User) => {
   console.log('Editing user:', user);

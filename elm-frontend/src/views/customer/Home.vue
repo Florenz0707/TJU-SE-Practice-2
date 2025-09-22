@@ -24,44 +24,43 @@
     <div v-else-if="!loading" class="no-results">
       没有找到符合条件的餐厅。
     </div>
-    <div v-else-if="!loading" class="no-results">No restaurants found.</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { Search } from 'lucide-vue-next'
-import { getBusinesses } from '../../api/business'
-import type { Business } from '../../api/types'
-import RestaurantCard from '../../components/RestaurantCard.vue'
+import { ref, onMounted } from 'vue';
+import { Search } from 'lucide-vue-next';
+import { getBusinesses } from '../../api/business';
+import type { Business } from '../../api/types';
+import RestaurantCard from '../../components/RestaurantCard.vue';
 
-const businesses = ref<Business[]>([])
-const searchQuery = ref('')
-const loading = ref(false)
-const error = ref<string | null>(null)
+const businesses = ref<Business[]>([]);
+const searchQuery = ref('');
+const loading = ref(false);
+const error = ref<string | null>(null);
 
 const fetchBusinesses = async () => {
-  loading.value = true
-  error.value = null
+  loading.value = true;
+  error.value = null;
   try {
     // In a real app, you'd pass search/filter params here
-    const params = searchQuery.value ? { name: searchQuery.value } : {}
-    const response = await getBusinesses(params)
+    const params = searchQuery.value ? { name: searchQuery.value } : {};
+    const response = await getBusinesses(params);
     if (response.success) {
-      businesses.value = response.data
+      businesses.value = response.data;
     } else {
       throw new Error(response.message || '获取商家列表失败');
     }
   } catch (err: any) {
     error.value = err.message || '发生未知错误';
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 onMounted(() => {
-  fetchBusinesses()
-})
+  fetchBusinesses();
+});
 </script>
 
 <style lang="scss" scoped>

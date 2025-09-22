@@ -40,19 +40,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { getOrderById } from '../../../api/order'
-import { getAllFoods } from '../../../api/food'
-import type { Order, Food } from '../../../api/types'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { getOrderById } from '../../../api/order';
+import { getAllFoods } from '../../../api/food';
+import type { Order, Food } from '../../../api/types';
+import { ElMessage } from 'element-plus';
 
-const route = useRoute()
-const router = useRouter()
-const order = ref<Order | null>(null)
-const orderItems = ref<Food[]>([])
-const loading = ref(false)
-const error = ref<string | null>(null)
+const route = useRoute();
+const router = useRouter();
+const order = ref<Order | null>(null);
+const orderItems = ref<Food[]>([]);
+const loading = ref(false);
+const error = ref<string | null>(null);
 
 const getStatusText = (state?: number) => {
   if (state === undefined || state === null) return '未知';
@@ -61,12 +61,12 @@ const getStatusText = (state?: number) => {
 };
 
 const goBack = () => {
-  router.back()
-}
+  router.back();
+};
 
 onMounted(async () => {
-  loading.value = true
-  const orderId = Number(route.params.id)
+  loading.value = true;
+  const orderId = Number(route.params.id);
   if (!orderId) {
     error.value = "无效的订单ID";
     loading.value = false;
@@ -76,32 +76,32 @@ onMounted(async () => {
   try {
     const [orderRes, itemsRes] = await Promise.all([
       getOrderById(orderId),
-      getAllFoods({ order: orderId }),
-    ])
+      getAllFoods({ order: orderId })
+    ]);
 
     if (orderRes.success) {
-      order.value = orderRes.data
+      order.value = orderRes.data;
     } else {
       throw new Error(orderRes.message || '获取订单详情失败');
     }
 
     if (itemsRes.success) {
-      orderItems.value = itemsRes.data
+      orderItems.value = itemsRes.data;
     } else {
       // It's possible an order has no items or the endpoint fails, don't block for this
       ElMessage.warning('无法获取此订单的商品列表。');
     }
+
   } catch (err: any) {
-    error.value = err.message
+    error.value = err.message;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
+});
 </script>
 
 <style scoped>
-.order-summary-card,
-.order-items-card {
+.order-summary-card, .order-items-card {
   margin-top: 20px;
 }
 </style>

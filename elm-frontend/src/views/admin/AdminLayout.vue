@@ -79,21 +79,15 @@
         router
       >
         <el-menu-item index="/admin/dashboard">
-          <el-icon>
-            <i-ep-data-analysis />
-          </el-icon>
+          <el-icon><i-ep-data-analysis /></el-icon>
           <span>平台总览</span>
         </el-menu-item>
         <el-menu-item index="/admin/users">
-          <el-icon>
-            <i-ep-user />
-          </el-icon>
+          <el-icon><i-ep-user /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
         <el-menu-item index="/admin/businesses">
-          <el-icon>
-            <i-ep-shop />
-          </el-icon>
+          <el-icon><i-ep-shop /></el-icon>
           <span>店铺管理</span>
         </el-menu-item>
       </el-menu>
@@ -123,7 +117,7 @@ const activePath = computed(() => {
 });
 
 const handleLogout = async () => {
-  await authStore.logout()
-  router.push({ name: 'Login' })
-}
+  await authStore.logout();
+  router.push({ name: 'Login' });
+};
 </script>
