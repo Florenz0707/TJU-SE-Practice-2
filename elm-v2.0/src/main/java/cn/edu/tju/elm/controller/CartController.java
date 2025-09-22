@@ -86,41 +86,51 @@ public class CartController {
     @GetMapping("/carts")
     public HttpResult<List<Cart>> getCarts() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if(meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
         return HttpResult.success(cartItemService.getUserCarts(me.getId()));
-
     }
 
     @PutMapping("/carts/{id}")
     public HttpResult<Cart> updateCartItem(@PathVariable("id") Long id, @RequestBody Cart cart) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if(meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
+        if (cart.getBusiness() == null || cart.getBusiness().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Business.Id CANT BE NULL");
+        if (cart.getCustomer() == null || cart.getCustomer().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer.Id CANT BE NULL");
+        if (cart.getFood() == null || cart.getFood().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Food.Id CANT BE NULL");
+
         Cart oldCart = cartItemService.getCartById(id);
-        if(oldCart == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "CART NOT FOUND");
+        if (oldCart == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
         User oldOwner = oldCart.getCustomer();
-
-        if(cart.getBusiness() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "BUSINESS CANT BE NULL");
-        if(cart.getCustomer() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "CUSTOMER CANT BE NULL");
-        if(cart.getFood() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "FOOD CANT BE NULL");
-
         User newOwner = userService.getUserById(cart.getCustomer().getId());
-        if(newOwner == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        if (newOwner == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+
+        Food food = foodService.getFoodById(cart.getFood().getId());
+        if (food == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+        Business business = businessService.getBusinessById(cart.getBusiness().getId());
+        if (business == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
         boolean isAdmin = false;
-        for(Authority authority : me.getAuthorities()) {
-            if(authority.getName().equals("ADMIN"))
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
                 isAdmin = true;
+                break;
+            }
         }
-        if(isAdmin || me.equals(oldOwner) && oldOwner.equals(newOwner)){
+        if (isAdmin || me.equals(oldOwner) && oldOwner.equals(newOwner)) {
             cart.setCustomer(newOwner);
+            cart.setFood(food);
+            cart.setBusiness(business);
+
             LocalDateTime now = LocalDateTime.now();
             cart.setId(oldCart.getId());
             cart.setCreateTime(oldCart.getCreateTime());
@@ -128,6 +138,7 @@ public class CartController {
             cart.setCreator(oldCart.getCreator());
             cart.setUpdater(me.getId());
             cart.setDeleted(false);
+
             cartItemService.updateCart(cart);
             return HttpResult.success(cart);
         }
@@ -137,22 +148,25 @@ public class CartController {
     @DeleteMapping("/carts/{id}")
     public HttpResult<Cart> deleteCartItem(@PathVariable("id") Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if(meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Authority NOT FOUND");
         User me = meOptional.get();
 
         Cart cart = cartItemService.getCartById(id);
-        if(cart == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "CART NOT FOUND");
+        if (cart == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
 
         boolean isAdmin = false;
-        for(Authority authority : me.getAuthorities()) {
-            if(authority.getName().equals("ADMIN"))
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
                 isAdmin = true;
+                break;
+            }
         }
 
-        if(isAdmin || cart.getCustomer().equals(me)){
+        if (isAdmin || cart.getCustomer().equals(me)) {
             cart.setDeleted(true);
+
             LocalDateTime now = LocalDateTime.now();
             cart.setUpdateTime(now);
             cart.setUpdater(me.getId());

@@ -135,37 +135,16 @@ public class OrderController {
     }
 
 //    Version of returning HttpResult
-//    @GetMapping("")
-//    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
-//        Optional<User> meOptional = userService.getUserWithAuthorities();
-//        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-//        User me = meOptional.get();
-//
-//        User user = userService.getUserById(userId);
-//        if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
-//
-//        boolean isAdmin = false;
-//        for (Authority authority : me.getAuthorities()) {
-//            if (authority.getName().equals("ADMIN")) {
-//                isAdmin = true;
-//                break;
-//            }
-//        }
-//        if (isAdmin || me.equals(user)) {
-//            return HttpResult.success(orderService.getOrdersByCustomerId(userId));
-//        }
-//
-//        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-//    }
-
     @GetMapping("")
-    public List<Order> listOrdersByUserId(@RequestParam Long userId) {
+    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return null;
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         User user = userService.getUserById(userId);
-        if (user == null) return null;
+        if (user == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
         boolean isAdmin = false;
         for (Authority authority : me.getAuthorities()) {
@@ -174,10 +153,9 @@ public class OrderController {
                 break;
             }
         }
-        if (isAdmin || me.equals(user)) {
-            return orderService.getOrdersByCustomerId(userId);
-        }
+        if (isAdmin || me.equals(user))
+            return HttpResult.success(orderService.getOrdersByCustomerId(userId));
 
-        return null;
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 }

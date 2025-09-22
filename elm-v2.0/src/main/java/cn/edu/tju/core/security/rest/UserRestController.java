@@ -36,48 +36,56 @@ public class UserRestController {
     @PostMapping("/users")
     @Operation(summary = "新增用户（仅登录帐号）", description = "创建一个新的用户（仅登录帐号）")
     public ResponseEntity<User> createUser(@RequestBody User newUser) {
-        User user = userService.getUserWithAuthorities().get();
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return null;
+        User me = meOptional.get();
+
         LocalDateTime now = LocalDateTime.now();
-        newUser.setCreator(user.getId());
+        newUser.setCreator(me.getId());
         newUser.setCreateTime(now);
-        newUser.setUpdater(user.getId());
+        newUser.setUpdater(me.getId());
         newUser.setUpdateTime(now);
         newUser.setDeleted(false);
         newUser.setPassword(SecurityUtils.BCryptPasswordEncode("password"));
         newUser.setActivated(true);
-        User user1 = userService.addUser(newUser);
-        return ResponseEntity.ok(user1);
+
+        User user = userService.addUser(newUser);
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping("/user")
     @Operation(summary = "判断当前登录的用户", description = "判断当前登录的用户")
     public ResponseEntity<User> getActualUser() {
-        return ResponseEntity.ok(userService.getUserWithAuthorities().get());
+        Optional<User> userOptional = userService.getUserWithAuthorities();
+        return userOptional.map(ResponseEntity::ok).orElse(null);
     }
 
     @PostMapping("/password")
     @Operation(summary = "修改密码", description = "已登录的用户只可以修改自己的密码，Admin可以修改任何人的密码")
     public ResponseEntity<String> updateUserPassword(@RequestBody LoginDto loginDto) {
-        Optional<User> userOptional = userService.getUserWithAuthorities();
-        if (userOptional.isPresent()) {
-            User me = userOptional.get();
-            boolean isAdmin = false;
-            for (Authority authority : me.getAuthorities()) {
-                if (authority.getName().equals("ADMIN")) {
-                    isAdmin = true;
-                    break;
-                }
-            }
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return ResponseEntity.unprocessableEntity().body("Failed to update the password.");
 
-            Optional<User> updateUserOptional = userRepository.findOneWithAuthoritiesByUsername(loginDto.getUsername());
-            if (updateUserOptional.isPresent()) {
-                User updateUser = updateUserOptional.get();
-                if (me.getUsername().equals(loginDto.getUsername()) || isAdmin) {
-                    updateUser.setPassword(SecurityUtils.BCryptPasswordEncode(loginDto.getPassword()));
-                    userService.updateUser(updateUser);
-                    return ResponseEntity.ok().body("Update the password successfully.");
-                }
+        User me = meOptional.get();
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
             }
+        }
+
+        Optional<User> updateUserOptional = userRepository.findOneWithAuthoritiesByUsername(loginDto.getUsername());
+        if (updateUserOptional.isEmpty())
+            return ResponseEntity.unprocessableEntity().body("Failed to update the password.");
+
+        User updateUser = updateUserOptional.get();
+        if (isAdmin || me.getUsername().equals(loginDto.getUsername())) {
+            updateUser.setPassword(SecurityUtils.BCryptPasswordEncode(loginDto.getPassword()));
+            userService.updateUser(updateUser);
+            return ResponseEntity.ok().body("Update the password successfully.");
         }
         return ResponseEntity.unprocessableEntity().body("Failed to update the password.");
     }
@@ -85,92 +93,92 @@ public class UserRestController {
     @PostMapping("/persons")
     @Operation(summary = "新增用户（自然人）", description = "创建一个新的用户（自然人）")
     public Person addPerson(@RequestBody Person person) {
-        Optional<User> userOptional = userService.getUserWithAuthorities();
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            LocalDateTime now = LocalDateTime.now();
-            person.setCreator(user.getId());
-            person.setCreateTime(now);
-            person.setUpdater(user.getId());
-            person.setUpdateTime(now);
-            person.setDeleted(false);
-            person.setPassword(SecurityUtils.BCryptPasswordEncode("password"));
-            person.setActivated(true);
-            return personRepository.save(person);
-        }
-        return null;
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return null;
+
+        User me = meOptional.get();
+        LocalDateTime now = LocalDateTime.now();
+        person.setCreator(me.getId());
+        person.setCreateTime(now);
+        person.setUpdater(me.getId());
+        person.setUpdateTime(now);
+        person.setDeleted(false);
+        person.setPassword(SecurityUtils.BCryptPasswordEncode("password"));
+        person.setActivated(true);
+        return personRepository.save(person);
     }
 
     @GetMapping("/users")
     public HttpResult<List<User>> getUsers() {
         Optional<User> meoptional = userService.getUserWithAuthorities();
-        if(meoptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        if (meoptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meoptional.get();
 
-        boolean isAdmin = false;
         for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN"))
-                isAdmin = true;
-        }
-
-        if(isAdmin){
-            return HttpResult.success(userService.getUsers());
+            if (authority.getName().equals("ADMIN")) {
+                return HttpResult.success(userService.getUsers());
+            }
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     @GetMapping("/users/{id}")
     public HttpResult<User> getUser(@PathVariable Long id) {
-        Optional<User> userOptional = userService.getUserWithAuthorities();
-        if(userOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
-        User user = userOptional.get();
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        User user = userService.getUserById(id);
+        if (user == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
         boolean isAdmin = false;
-        for (Authority authority : user.getAuthorities()) {
+        for (Authority authority : me.getAuthorities()) {
             if (authority.getName().equals("ADMIN")) {
                 isAdmin = true;
+                break;
             }
         }
-        if(isAdmin){
-            User user1 = userService.getUserById(id);
-            return HttpResult.success(user1);
-        }
-        return null;
+
+        if (isAdmin || me.equals(user))
+            return HttpResult.success(user);
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     @PutMapping("/users/{id}")
     public HttpResult<User> updateUser(@PathVariable Long id, @RequestBody User user) {
-        Optional<User> userOptional = userService.getUserWithAuthorities();
-        if(userOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
-        User user1 = userOptional.get();
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
 
         User oldUser = userService.getUserById(id);
-        if(oldUser == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        if (oldUser == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        if(user.getPassword() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "PASSWORD CANT BE NULL");
-        if(user.getUsername() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "USER CANT BE NULL");
-        if(user.getAuthorities() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "AUTHORITY LACKED");
-        User newUser = userService.getUserById(user.getId());
-        if(newUser == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        if (user.getPassword() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Password CANT BE NULL");
+        if (user.getUsername() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Username CANT BE NULL");
 
         boolean isAdmin = false;
-        for (Authority authority : user1.getAuthorities()) {
+        for (Authority authority : me.getAuthorities()) {
             if (authority.getName().equals("ADMIN")) {
                 isAdmin = true;
+                break;
             }
         }
-        if(isAdmin || (user1.equals(oldUser) && oldUser.equals(newUser))){
-            user.setUpdater(user1.getId());
+        if (isAdmin || me.equals(oldUser)) {
             LocalDateTime now = LocalDateTime.now();
-            user.setUpdateTime(now);
             user.setCreateTime(oldUser.getCreateTime());
-            user.setCreator(oldUser.getId());
+            user.setUpdateTime(now);
+            user.setCreator(oldUser.getCreator());
+            user.setUpdater(me.getId());
+            user.setDeleted(false);
+            user.setPassword(SecurityUtils.BCryptPasswordEncode(user.getPassword()));
+
             userService.updateUser(user);
             return HttpResult.success(user);
         }
@@ -179,24 +187,29 @@ public class UserRestController {
 
     @DeleteMapping("/users/{id}")
     public HttpResult<User> deleteUser(@PathVariable Long id) {
-        Optional<User> userOptional = userService.getUserWithAuthorities();
-        if(userOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
-        User user = userOptional.get();
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        User user = userService.getUserById(id);
+        if (user == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
         boolean isAdmin = false;
-        for (Authority authority : user.getAuthorities()) {
+        for (Authority authority : me.getAuthorities()) {
             if (authority.getName().equals("ADMIN")) {
                 isAdmin = true;
+                break;
             }
         }
-        if(isAdmin){
+        if (isAdmin || me.equals(user)) {
             LocalDateTime now = LocalDateTime.now();
             user.setUpdateTime(now);
-            user.setUpdater(user.getId());
+            user.setUpdater(me.getId());
             user.setDeleted(true);
             userService.updateUser(user);
-            return HttpResult.success(userService.getUserById(id));
+            return HttpResult.success(user);
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
