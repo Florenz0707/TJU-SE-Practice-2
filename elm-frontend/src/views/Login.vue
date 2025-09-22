@@ -23,7 +23,12 @@
             @keyup.enter="handleLogin"
           >
             <el-form-item label="用户名" prop="username">
-              <el-input v-model="loginForm.username" placeholder="请输入用户名" clearable size="large"></el-input>
+              <el-input
+                v-model="loginForm.username"
+                placeholder="请输入用户名"
+                clearable
+                size="large"
+              ></el-input>
             </el-form-item>
 
             <el-form-item label="密码" prop="password">
@@ -60,65 +65,64 @@
     </div>
   </div>
 </template>
-  
+
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '../store/auth';
-import { ElMessage, type FormInstance } from 'element-plus';
+import { ref, reactive } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '../store/auth'
+import { ElMessage, type FormInstance } from 'element-plus'
 
-const authStore = useAuthStore();
-const router = useRouter();
-const route = useRoute();
+const authStore = useAuthStore()
+const router = useRouter()
+const route = useRoute()
 
-const loginFormRef = ref<FormInstance | null>(null);
-const loading = ref(false);
+const loginFormRef = ref<FormInstance | null>(null)
+const loading = ref(false)
 
 const loginForm = reactive({
   username: 'user',
   password: 'user',
-});
+})
 
 const loginRules = reactive({
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-});
+})
 
 const getRedirectPath = (): string => {
-  const redirect = route.query.redirect as string | undefined;
+  const redirect = route.query.redirect as string | undefined
   if (redirect) {
-    return redirect;
+    return redirect
   }
-  const roles = authStore.userRoles;
+  const roles = authStore.userRoles
   if (roles.includes('ADMIN')) {
-    return '/admin';
+    return '/admin'
   }
   if (roles.includes('MERCHANT')) {
-    return '/merchant';
+    return '/merchant'
   }
-  return '/';
-};
+  return '/'
+}
 
 const handleLogin = async () => {
-  if (!loginFormRef.value) return;
+  if (!loginFormRef.value) return
 
   try {
-    await loginFormRef.value.validate();
-    loading.value = true;
-    await authStore.login(loginForm);
-    ElMessage.success('登录成功！');
+    await loginFormRef.value.validate()
+    loading.value = true
+    await authStore.login(loginForm)
+    ElMessage.success('登录成功！')
 
-    const redirectPath = getRedirectPath();
-    router.push(redirectPath);
-
+    const redirectPath = getRedirectPath()
+    router.push(redirectPath)
   } catch (error) {
-    console.error('Login process failed:', error);
+    console.error('Login process failed:', error)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 </script>
-  
+
 <style lang="scss" scoped>
 .auth-container {
   display: flex;
@@ -134,14 +138,16 @@ const handleLogin = async () => {
   max-width: 960px;
   margin: 1.5rem;
   border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   background-color: #ffffff;
 }
 
 .welcome-panel {
   flex: 1;
-  background-color: #F97316; // Hardcoded orange
+  background-color: #f97316; // Hardcoded orange
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -151,14 +157,14 @@ const handleLogin = async () => {
 }
 
 .welcome-title {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
 }
 
 .welcome-text {
-  font-family: "Inter", sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1.125rem;
   line-height: 1.75;
   opacity: 0.9;
@@ -173,7 +179,7 @@ const handleLogin = async () => {
 }
 
 .form-title {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 1.75rem;
   font-weight: 600;
   color: #111827;
@@ -206,4 +212,3 @@ const handleLogin = async () => {
   }
 }
 </style>
-  

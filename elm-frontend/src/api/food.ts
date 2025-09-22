@@ -1,18 +1,23 @@
-import request from '../utils/request';
-import type { Food, HttpResultFood, HttpResultListFood, HttpResultEmpty } from './types';
+import request from '../utils/request'
+import type {
+  Food,
+  HttpResultFood,
+  HttpResultListFood,
+  HttpResultEmpty,
+} from './types'
 
 // The request body for creating a food is a specific DTO, not the full Food object.
 // It requires the business to be an object with just an ID.
 export interface FoodCreationDto {
-  id?: number;
-  foodName: string;
-  foodPrice: number;
-  foodExplain?: string;
-  foodImg?: string;
+  id?: number
+  foodName: string
+  foodPrice: number
+  foodExplain?: string
+  foodImg?: string
   business: {
-    id: number;
-  };
-  remarks?: string;
+    id: number
+  }
+  remarks?: string
 }
 
 /**
@@ -21,9 +26,12 @@ export interface FoodCreationDto {
  * @returns {Promise<HttpResultListFood>}
  * @see {@link openapi.json} - operationId: "getAllFoods"
  */
-export const getAllFoods = (params?: { business?: number; order?: number }): Promise<HttpResultListFood> => {
-  return request.get('/foods', { params });
-};
+export const getAllFoods = (params?: {
+  business?: number
+  order?: number
+}): Promise<HttpResultListFood> => {
+  return request.get('/foods', { params })
+}
 
 /**
  * @description Adds a new food item to a business.
@@ -32,8 +40,8 @@ export const getAllFoods = (params?: { business?: number; order?: number }): Pro
  * @see {@link openapi.json} - operationId: "addFood"
  */
 export const addFood = (data: FoodCreationDto): Promise<HttpResultFood> => {
-  return request.post('/foods', data);
-};
+  return request.post('/foods', data)
+}
 
 /**
  * @description Retrieves a single food item by its ID.
@@ -42,8 +50,8 @@ export const addFood = (data: FoodCreationDto): Promise<HttpResultFood> => {
  * @see {@link openapi.json} - operationId: "getFoodById"
  */
 export const getFoodById = (id: number): Promise<HttpResultFood> => {
-  return request.get(`/foods/${id}`);
-};
+  return request.get(`/foods/${id}`)
+}
 
 /**
  * @description Updates an existing food item by its ID.
@@ -53,8 +61,8 @@ export const getFoodById = (id: number): Promise<HttpResultFood> => {
  * @see {@link openapi.json} - operationId: "updateFood"
  */
 export const updateFood = (id: number, data: Food): Promise<HttpResultFood> => {
-  return request.put(`/foods/${id}`, data);
-};
+  return request.put(`/foods/${id}`, data)
+}
 
 /**
  * @description Deletes a food item by its ID.
@@ -63,5 +71,5 @@ export const updateFood = (id: number, data: Food): Promise<HttpResultFood> => {
  * @see {@link openapi.json} - operationId: "deleteFood"
  */
 export const deleteFood = (id: number): Promise<HttpResultEmpty> => {
-  return request.delete(`/foods/${id}`);
-};
+  return request.delete(`/foods/${id}`)
+}

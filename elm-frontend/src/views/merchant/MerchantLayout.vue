@@ -14,19 +14,27 @@
         router
       >
         <el-menu-item index="/merchant/dashboard">
-          <el-icon><i-ep-data-board /></el-icon>
+          <el-icon>
+            <i-ep-data-board />
+          </el-icon>
           <span>仪表盘</span>
         </el-menu-item>
         <el-menu-item index="/merchant/orders">
-          <el-icon><i-ep-document /></el-icon>
+          <el-icon>
+            <i-ep-document />
+          </el-icon>
           <span>历史订单</span>
         </el-menu-item>
         <el-menu-item index="/merchant/menu">
-          <el-icon><i-ep-notebook /></el-icon>
+          <el-icon>
+            <i-ep-notebook />
+          </el-icon>
           <span>菜单管理</span>
         </el-menu-item>
         <el-menu-item index="/merchant/profile">
-          <el-icon><i-ep-menu /></el-icon>
+          <el-icon>
+            <i-ep-menu />
+          </el-icon>
           <span>店铺信息</span>
         </el-menu-item>
       </el-menu>
@@ -44,7 +52,9 @@
             <el-avatar src="https://placehold.co/40x40/a0aec0/ffffff?text=M" />
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+                <el-dropdown-item @click="handleLogout"
+                  >退出登录</el-dropdown-item
+                >
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -60,20 +70,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '../../store/auth';
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '../../store/auth'
 
-const authStore = useAuthStore();
-const router = useRouter();
-const route = useRoute();
+const authStore = useAuthStore()
+const router = useRouter()
+const route = useRoute()
 
-const activeRoute = computed(() => route.path);
+const activeRoute = computed(() => route.path)
 
 const handleLogout = async () => {
-  await authStore.logout();
-  router.push({ name: 'Login' });
-};
+  await authStore.logout()
+  router.push({ name: 'Login' })
+}
 </script>
 
 <style scoped>

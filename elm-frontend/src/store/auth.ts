@@ -1,16 +1,16 @@
-import { defineStore } from 'pinia';
-import { login as apiLogin } from '../api/auth';
-import { getActualUser } from '../api/user';
-import { setRequestToken } from '../utils/request';
-import type { User, LoginDto } from '../api/types';
+import { defineStore } from 'pinia'
+import { login as apiLogin } from '../api/auth'
+import { getActualUser } from '../api/user'
+import { setRequestToken } from '../utils/request'
+import type { User, LoginDto } from '../api/types'
 
 // Define the state shape with types
 interface AuthState {
-  token: string | null;
-  user: User | null;
+  token: string | null
+  user: User | null
 }
 
-const AUTH_TOKEN_KEY = 'authToken';
+const AUTH_TOKEN_KEY = 'authToken'
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
@@ -22,17 +22,17 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn: (state): boolean => !!state.token,
     userRoles: (state): string[] => {
       if (!state.user?.authorities) {
-        return ['GUEST'];
+        return ['GUEST']
       }
       const roleMap: { [key: string]: string } = {
         USER: 'CUSTOMER',
         BUSINESS: 'MERCHANT',
         ADMIN: 'ADMIN',
-      };
+      }
       const roles = state.user.authorities
         .map(auth => roleMap[auth.name] || auth.name)
-        .filter(Boolean);
-      return roles.length > 0 ? roles : ['GUEST'];
+        .filter(Boolean)
+      return roles.length > 0 ? roles : ['GUEST']
     },
   },
 
@@ -43,18 +43,18 @@ export const useAuthStore = defineStore('auth', {
      */
     async login(credentials: LoginDto): Promise<void> {
       try {
-        const response = await apiLogin(credentials);
-        this.token = response.id_token;
-        localStorage.setItem(AUTH_TOKEN_KEY, this.token);
-        setRequestToken(this.token); // Set token for axios
-        await this.fetchUserInfo();
+        const response = await apiLogin(credentials)
+        this.token = response.id_token
+        localStorage.setItem(AUTH_TOKEN_KEY, this.token)
+        setRequestToken(this.token) // Set token for axios
+        await this.fetchUserInfo()
       } catch (error) {
-        console.error('Login failed:', error);
-        this.token = null;
-        this.user = null;
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        setRequestToken(null); // Clear token for axios
-        throw error; // Re-throw the error to be handled by the component
+        console.error('Login failed:', error)
+        this.token = null
+        this.user = null
+        localStorage.removeItem(AUTH_TOKEN_KEY)
+        setRequestToken(null) // Clear token for axios
+        throw error // Re-throw the error to be handled by the component
       }
     },
 
@@ -62,19 +62,19 @@ export const useAuthStore = defineStore('auth', {
      * Fetch current user info
      */
     async fetchUserInfo(): Promise<void> {
-      if (!this.token) return;
+      if (!this.token) return
       try {
         // The /api/user endpoint returns the User object directly, not wrapped in HttpResult.
-        const userInfo = await getActualUser();
-        this.user = userInfo;
+        const userInfo = await getActualUser()
+        this.user = userInfo
       } catch (error) {
-        console.error('Failed to fetch user info:', error);
-        this.token = null;
-        this.user = null;
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        setRequestToken(null); // Clear token for axios
+        console.error('Failed to fetch user info:', error)
+        this.token = null
+        this.user = null
+        localStorage.removeItem(AUTH_TOKEN_KEY)
+        setRequestToken(null) // Clear token for axios
         // Re-throw the error so the calling component knows the login failed.
-        throw new Error('Failed to fetch user info');
+        throw new Error('Failed to fetch user info')
       }
     },
 
@@ -83,10 +83,10 @@ export const useAuthStore = defineStore('auth', {
      * NOTE: openapi.json does not specify a backend logout endpoint.
      */
     logout(): void {
-      this.token = null;
-      this.user = null;
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      setRequestToken(null); // Clear token for axios
+      this.token = null
+      this.user = null
+      localStorage.removeItem(AUTH_TOKEN_KEY)
+      setRequestToken(null) // Clear token for axios
       // Here you might also want to clear other stores, e.g., cart
     },
 
@@ -95,9 +95,9 @@ export const useAuthStore = defineStore('auth', {
      * @param {string} newToken
      */
     setToken(newToken: string) {
-      this.token = newToken;
-      localStorage.setItem(AUTH_TOKEN_KEY, newToken);
-      setRequestToken(newToken); // Also update the token for axios
+      this.token = newToken
+      localStorage.setItem(AUTH_TOKEN_KEY, newToken)
+      setRequestToken(newToken) // Also update the token for axios
     },
 
     /**
@@ -105,7 +105,7 @@ export const useAuthStore = defineStore('auth', {
      * @param {User} newUser
      */
     setUser(newUser: User) {
-      this.user = newUser;
+      this.user = newUser
     },
   },
-});
+})

@@ -16,12 +16,12 @@
 </template>
 
 <script setup lang="ts">
-import type { PropType } from 'vue';
+import type { PropType } from 'vue'
 
 interface Column {
-  prop: string;
-  label: string;
-  width?: string | number;
+  prop: string
+  label: string
+  width?: string | number
 }
 
 defineProps({
@@ -33,7 +33,7 @@ defineProps({
     type: Array as PropType<Column[]>,
     required: true,
   },
-});
+})
 </script>
 
 <style scoped>

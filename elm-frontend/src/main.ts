@@ -31,7 +31,7 @@ if (initialToken) {
 }
 
 // 3. Set up cross-tab state synchronization
-window.addEventListener('storage', (event) => {
+window.addEventListener('storage', event => {
   // The key for the auth token is 'authToken' as defined in the auth store
   if (event.key === 'authToken') {
     if (event.newValue) {

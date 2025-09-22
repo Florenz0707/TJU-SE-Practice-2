@@ -1,19 +1,20 @@
-import request from '../utils/request';
+import request from '../utils/request'
 import type {
   DeliveryAddress,
   HttpResultDeliveryAddress,
   HttpResultListDeliveryAddress,
   HttpResultEmpty,
-} from './types';
+} from './types'
 
 /**
  * @description Retrieves the current user's delivery addresses.
  * @returns {Promise<HttpResultListDeliveryAddress>}
  * @see {@link openapi.json} - operationId: "getCurrentUserAddresses"
  */
-export const getCurrentUserAddresses = (): Promise<HttpResultListDeliveryAddress> => {
-  return request.get('/addresses');
-};
+export const getCurrentUserAddresses =
+  (): Promise<HttpResultListDeliveryAddress> => {
+    return request.get('/addresses')
+  }
 
 /**
  * @description Adds a new delivery address for the current user.
@@ -21,9 +22,11 @@ export const getCurrentUserAddresses = (): Promise<HttpResultListDeliveryAddress
  * @returns {Promise<HttpResultDeliveryAddress>}
  * @see {@link openapi.json} - operationId: "addDeliveryAddress"
  */
-export const addDeliveryAddress = (data: DeliveryAddress): Promise<HttpResultDeliveryAddress> => {
-  return request.post('/addresses', data);
-};
+export const addDeliveryAddress = (
+  data: DeliveryAddress
+): Promise<HttpResultDeliveryAddress> => {
+  return request.post('/addresses', data)
+}
 
 /**
  * @description Updates an existing delivery address.
@@ -32,9 +35,12 @@ export const addDeliveryAddress = (data: DeliveryAddress): Promise<HttpResultDel
  * @returns {Promise<HttpResultDeliveryAddress>}
  * @see {@link openapi.json} - operationId: "updateDeliveryAddress"
  */
-export const updateDeliveryAddress = (id: number, data: DeliveryAddress): Promise<HttpResultDeliveryAddress> => {
-  return request.put(`/addresses/${id}`, data);
-};
+export const updateDeliveryAddress = (
+  id: number,
+  data: DeliveryAddress
+): Promise<HttpResultDeliveryAddress> => {
+  return request.put(`/addresses/${id}`, data)
+}
 
 /**
  * @description Deletes a delivery address.
@@ -43,5 +49,5 @@ export const updateDeliveryAddress = (id: number, data: DeliveryAddress): Promis
  * @see {@link openapi.json} - operationId: "deleteDeliveryAddress"
  */
 export const deleteDeliveryAddress = (id: number): Promise<HttpResultEmpty> => {
-  return request.delete(`/addresses/${id}`);
-};
+  return request.delete(`/addresses/${id}`)
+}
