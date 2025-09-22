@@ -1,6 +1,5 @@
 package cn.edu.tju.core.security.service;
 
-import cn.edu.tju.elm.model.DeliveryAddress;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import cn.edu.tju.core.security.SecurityUtils;
@@ -42,9 +41,5 @@ public class UserService {
 
     public List<User> getUsers() {
         return userRepository.findAll();
-    }
-
-    public User getById(Long id) {
-        return userRepository.findById(id).orElse(null);
     }
 }

@@ -93,11 +93,13 @@ public class UserRestController {
     @PostMapping("/persons")
     @Operation(summary = "新增用户（自然人）", description = "创建一个新的用户（自然人）")
     public Person addPerson(@RequestBody Person person) {
+        // TODO: 去除authority检查，允许任意新建用户
+        // TODO: 同时新设System角色于初始User表中，作为默认Admin
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return null;
-
         User me = meOptional.get();
+
         LocalDateTime now = LocalDateTime.now();
         person.setCreator(me.getId());
         person.setCreateTime(now);
@@ -158,11 +160,6 @@ public class UserRestController {
         if (oldUser == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        if (user.getPassword() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Password CANT BE NULL");
-        if (user.getUsername() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Username CANT BE NULL");
-
         boolean isAdmin = false;
         for (Authority authority : me.getAuthorities()) {
             if (authority.getName().equals("ADMIN")) {
@@ -171,13 +168,18 @@ public class UserRestController {
             }
         }
         if (isAdmin || me.equals(oldUser)) {
+            user.setId(oldUser.getId());
+            user.setUsername(oldUser.getUsername());
+            user.setPassword(oldUser.getPassword());
+            user.setActivated(oldUser.isActivated());
+            user.setAuthorities(oldUser.getAuthorities());
+
             LocalDateTime now = LocalDateTime.now();
             user.setCreateTime(oldUser.getCreateTime());
             user.setUpdateTime(now);
             user.setCreator(oldUser.getCreator());
             user.setUpdater(me.getId());
             user.setDeleted(false);
-            user.setPassword(SecurityUtils.BCryptPasswordEncode(user.getPassword()));
 
             userService.updateUser(user);
             return HttpResult.success(user);
