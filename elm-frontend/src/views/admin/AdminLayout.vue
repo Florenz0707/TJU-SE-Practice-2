@@ -10,6 +10,7 @@
           <!-- Role-based Navigation -->
           <el-menu
             v-if="authStore.isLoggedIn && authStore.userRoles.length > 1"
+            :default-active="activePath"
             mode="horizontal"
             :ellipsis="false"
             router
@@ -95,15 +96,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
 import { Menu } from 'lucide-vue-next';
 import { HomeFilled, Shop, Setting } from '@element-plus/icons-vue';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 const drawerVisible = ref(false);
+
+const activePath = computed(() => {
+  if (route.path.startsWith('/admin')) {
+    return '/admin/dashboard';
+  } else if (route.path.startsWith('/merchant')) {
+    return '/merchant/dashboard';
+  }
+  return '/';
+});
 
 const handleLogout = async () => {
   await authStore.logout();

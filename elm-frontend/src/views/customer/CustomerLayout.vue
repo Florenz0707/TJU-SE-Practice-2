@@ -10,6 +10,7 @@
           <!-- Role-based Navigation -->
           <el-menu
             v-if="authStore.isLoggedIn && authStore.userRoles.length > 1"
+            :default-active="activePath"
             mode="horizontal"
             :ellipsis="false"
             router
@@ -137,6 +138,15 @@ const activeProfileRoute = computed(() => {
     return '/profile/orders';
   }
   return route.path;
+});
+
+const activePath = computed(() => {
+  if (route.path.startsWith('/admin')) {
+    return '/admin/dashboard';
+  } else if (route.path.startsWith('/merchant')) {
+    return '/merchant/dashboard';
+  }
+  return '/';
 });
 
 const handleLogout = async () => {
