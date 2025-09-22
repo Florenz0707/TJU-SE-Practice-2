@@ -1,5 +1,6 @@
 package cn.edu.tju.elm.service;
 
+import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.repository.BusinessRepository;
 import cn.edu.tju.elm.utils.Utils;
@@ -27,6 +28,15 @@ public class BusinessService {
         Optional<Business> businessOptional = businessRepository.findOneById(businessId);
         if (businessOptional.isEmpty() || businessOptional.get().getDeleted()) return null;
         return businessOptional.get();
+    }
+
+    public Business getById(Long id) {
+        return businessRepository.findById(id).orElse(null);
+    }
+
+    public List<Business> getBusinessByOwner(User owner) {
+        List<Business> businessList = businessRepository.findAllByBusinessOwner(owner);
+        return Utils.removeDeleted(businessList);
     }
 
     public Business addBusiness(Business business) {
