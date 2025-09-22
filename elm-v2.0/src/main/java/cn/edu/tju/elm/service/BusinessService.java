@@ -36,4 +36,6 @@ public class BusinessService {
     public void updateBusiness(Business business) {
         businessRepository.save(business);
     }
+
+
 }

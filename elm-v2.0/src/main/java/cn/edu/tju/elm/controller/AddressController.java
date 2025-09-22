@@ -1,20 +1,20 @@
 package cn.edu.tju.elm.controller;
 
+import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.repository.UserRepository;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.model.DeliveryAddress;
 import cn.edu.tju.elm.service.AddressService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -64,5 +64,100 @@ public class AddressController {
                 return HttpResult.success(deliveryAddress);
         }
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "UNKNOWN ERROR");
+    }
+
+    @GetMapping("/addresses")
+    public HttpResult<List<DeliveryAddress>> getMyAddresses() {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+
+        User me = meOptional.get();
+
+        List<DeliveryAddress> myAddresses = addressService.getAddressesByCustomerId(me.getId());
+
+        return HttpResult.success(myAddresses);
+    }
+
+    @PutMapping("/{id}")
+    public HttpResult<DeliveryAddress> updateAddress(
+            @PathVariable("id") Long id,
+            @RequestBody DeliveryAddress addressDetails) {
+
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+
+        User me = meOptional.get();
+
+        // 获取现有地址
+        DeliveryAddress address = addressService.getAddressById(id);
+        if (address == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
+
+        // 检查权限：只能更新自己的地址
+        if (!address.getCustomer().getId().equals(me.getId()))
+            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+
+        // 验证并更新可修改的字段
+        if (addressDetails.getContactName() != null) {
+            if (addressDetails.getContactName().trim().isEmpty())
+                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ContactName CANT BE EMPTY");
+            address.setContactName(addressDetails.getContactName());
+        }
+
+        if (addressDetails.getContactTel() != null) {
+            if (addressDetails.getContactTel().trim().isEmpty())
+                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ContactTel CANT BE EMPTY");
+            address.setContactTel(addressDetails.getContactTel());
+        }
+
+        if (addressDetails.getAddress() != null) {
+            if (addressDetails.getAddress().trim().isEmpty())
+                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE EMPTY");
+            address.setAddress(addressDetails.getAddress());
+        }
+
+        // 更新可选字段
+        if (addressDetails.getContactSex() != null) {
+            address.setContactSex(addressDetails.getContactSex());
+        }
+
+        // 更新审计字段
+        address.setUpdateTime(LocalDateTime.now());
+        address.setUpdater(me.getId());
+
+        // 保存更新
+        DeliveryAddress updatedAddress = addressService.updateAddress(address);
+
+        return HttpResult.success(updatedAddress);
+    }
+
+    @DeleteMapping("/{id}")
+    public HttpResult<Object> deleteAddress(@PathVariable("id") Long id) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+
+        User me = meOptional.get();
+
+        DeliveryAddress address = addressService.getAddressById(id);
+        if (address == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
+
+        // 检查权限：只能删除自己的地址
+        if (!address.getCustomer().getId().equals(me.getId()))
+            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+
+        // 软删除地址
+        address.setDeleted(true);
+        address.setUpdateTime(LocalDateTime.now());
+        address.setUpdater(me.getId());
+
+        // 更新地址
+        addressService.updateAddress(address);
+
+        // 返回成功响应，data字段为null
+        return HttpResult.success(null);
     }
 }

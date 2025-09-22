@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -191,5 +192,42 @@ public class BusinessController {
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN);
+    }
+
+    @GetMapping("/my")
+    public HttpResult<List<Business>> getMyBusinesses() {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+
+        User me = meOptional.get();
+
+        // 检查用户是否有BUSINESS权限
+        boolean hasBusinessAuthority = false;
+        for (Authority authority : me.getAuthorities()) {
+            if ("BUSINESS".equals(authority.getName())) {
+                hasBusinessAuthority = true;
+                break;
+            }
+        }
+
+        if (!hasBusinessAuthority)
+            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "用户没有店铺管理权限");
+
+        // 获取所有未删除的店铺
+        List<Business> allBusinesses = businessService.getBusinesses();
+
+        // 过滤出属于当前用户的店铺
+        List<Business> myBusinesses = new ArrayList<>();
+        for (Business business : allBusinesses) {
+            // 检查店铺所有者是否为当前用户
+            if (business.getBusinessOwner() != null &&
+                    business.getBusinessOwner().getId() != null &&
+                    business.getBusinessOwner().getId().equals(me.getId())) {
+                myBusinesses.add(business);
+            }
+        }
+
+        return HttpResult.success(myBusinesses);
     }
 }
