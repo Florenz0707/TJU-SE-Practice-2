@@ -12,8 +12,16 @@
         <el-form-item label="店铺介绍" prop="businessExplain">
           <el-input type="textarea" v-model="business.businessExplain" />
         </el-form-item>
-        <el-form-item label="店铺图片URL" prop="businessImg">
-          <el-input v-model="business.businessImg" />
+        <el-form-item label="店铺图片" prop="businessImg">
+          <el-upload
+            class="avatar-uploader"
+            action="#"
+            :show-file-list="false"
+            :before-upload="handleBeforeUpload"
+          >
+            <img v-if="business.businessImg" :src="`data:image/jpeg;base64,${business.businessImg}`" class="avatar" />
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          </el-upload>
         </el-form-item>
         <el-form-item label="起送价" prop="startPrice">
           <el-input-number
@@ -39,13 +47,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { getCurrentUserBusinesses, updateBusiness } from '../../api/business'
-import type { Business, HttpResultListBusiness } from '../../api/types'
-import { ElMessage } from 'element-plus'
+import { ref, onMounted } from 'vue';
+import { getCurrentUserBusinesses, updateBusiness } from '../../api/business';
+import type { Business, HttpResultListBusiness } from '../../api/types';
+import { ElMessage, type UploadProps } from 'element-plus';
+import { Plus } from '@element-plus/icons-vue';
 
 const loading = ref(true)
 const business = ref<Business | null>(null)
+
+const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
+  if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png') {
+    ElMessage.error('Avatar picture must be JPG or PNG format!');
+    return false;
+  } else if (rawFile.size / 1024 / 1024 > 2) {
+    ElMessage.error('Avatar picture size can not exceed 2MB!');
+    return false;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (business.value) {
+      const base64 = e.target?.result as string;
+      business.value.businessImg = base64.split(',')[1];
+    }
+  };
+  reader.readAsDataURL(rawFile);
+
+  return false;
+};
 
 onMounted(async () => {
   try {
@@ -89,5 +119,34 @@ const handleSave = async () => {
 <style scoped>
 .business-profile-container {
   padding: 20px;
+}
+
+.avatar-uploader .avatar {
+  width: 178px;
+  height: 178px;
+  display: block;
+}
+</style>
+
+<style>
+.avatar-uploader .el-upload {
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: var(--el-transition-duration-fast);
+}
+
+.avatar-uploader .el-upload:hover {
+  border-color: var(--el-color-primary);
+}
+
+.el-icon.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 178px;
+  height: 178px;
+  text-align: center;
 }
 </style>

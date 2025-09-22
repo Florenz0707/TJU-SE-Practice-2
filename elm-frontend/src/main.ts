@@ -33,16 +33,9 @@ if (initialToken) {
 // 3. Set up cross-tab state synchronization
 window.addEventListener('storage', event => {
   // The key for the auth token is 'authToken' as defined in the auth store
-  if (event.key === 'authToken') {
-    if (event.newValue) {
-      // A token was set or updated in another tab
-      authStore.setToken(event.newValue)
-      // Re-fetch user info with the new token
-      authStore.fetchUserInfo().catch(() => authStore.logout())
-    } else {
-      // The token was removed in another tab
-      authStore.logout()
-    }
+  if (event.key === 'authToken' || event.key === 'refreshToken') {
+    // If the auth state changes in another tab, reload this tab to sync.
+    location.reload();
   }
 })
 

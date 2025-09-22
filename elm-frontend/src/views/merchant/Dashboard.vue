@@ -21,10 +21,7 @@
             class="order-card"
           >
             <div class="order-content">
-              <p>
-                <strong>订单 #{{ order.id }}</strong> from
-                {{ order.customer?.username ?? 'N/A' }}
-              </p>
+              <p><strong>订单 #{{ order.id }}</strong> 来自 {{ order.customer?.username ?? 'N/A' }}</p>
               <p>总价: ¥{{ (order.orderTotal ?? 0).toFixed(2) }}</p>
               <p>
                 下单时间:
@@ -55,18 +52,10 @@
       <el-col :span="12">
         <h3>进行中订单</h3>
         <div class="order-list in-progress-orders">
-          <el-card
-            v-for="order in inProgressOrders"
-            :key="order.id"
-            class="order-card"
-          >
-            <div class="order-content">
-              <p>
-                <strong>订单 #{{ order.id }}</strong> from
-                {{ order.customer?.username ?? 'N/A' }}
-              </p>
-              <p>
-                状态:
+          <el-card v-for="order in inProgressOrders" :key="order.id" class="order-card">
+             <div class="order-content">
+              <p><strong>订单 #{{ order.id }}</strong> 来自 {{ order.customer?.username ?? 'N/A' }}</p>
+              <p>状态:
                 <el-tag :type="getOrderStatusType(order.orderState)">
                   {{ getOrderStatusText(order.orderState) }}
                 </el-tag>
@@ -136,12 +125,14 @@ const fetchInitialData = async () => {
       business.value = currentBusiness
       const ownerId = currentBusiness.businessOwner?.id
       if (ownerId) {
-        const allFetchedOrders = await listOrdersByUserId(ownerId)
-        newOrders.value = allFetchedOrders.filter(o => o.orderState === 0) // New
-        inProgressOrders.value = allFetchedOrders.filter(
-          o =>
-            o.orderState !== undefined && o.orderState > 0 && o.orderState < 5
-        )
+        const allFetchedOrdersResponse = await listOrdersByUserId(ownerId);
+        if (allFetchedOrdersResponse.success) {
+          const allFetchedOrders = allFetchedOrdersResponse.data;
+          newOrders.value = allFetchedOrders.filter((o:Order) => o.orderState === 0); // New
+          inProgressOrders.value = allFetchedOrders.filter((o:Order) => o.orderState !== undefined && o.orderState > 0 && o.orderState < 5);
+        } else {
+          ElMessage.error(allFetchedOrdersResponse.message || '获取订单列表失败');
+        }
       }
     } else {
       ElMessage.warning(businessResponse.message || '当前用户没有关联的店铺')

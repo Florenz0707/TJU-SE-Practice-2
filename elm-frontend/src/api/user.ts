@@ -7,8 +7,7 @@ import type {
   HttpResultPerson,
   HttpResultEmpty,
   HttpResultString,
-  User,
-} from './types'
+} from './types';
 
 /**
  * @description Creates a new user account with a password.
@@ -51,12 +50,12 @@ export const getAllUsers = (): Promise<HttpResultListUser> => {
 
 /**
  * @description Gets the currently logged-in user's information.
- * @returns {Promise<User>}
+ * @returns {Promise<HttpResultUser>}
  * @see {@link openapi.json} - operationId: "getActualUser"
  */
-export const getActualUser = (): Promise<User> => {
-  return request.get('/user')
-}
+export const getActualUser = (): Promise<HttpResultUser> => {
+  return request.get('/user');
+};
 
 /**
  * @description Retrieves a single user by their ID.

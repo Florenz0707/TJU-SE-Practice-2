@@ -1,12 +1,8 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import {
-  getCurrentUserCart,
-  addCartItem,
-  updateCartItem,
-  deleteCartItem,
-} from '../api/cart'
-import type { Cart, Food } from '../api/types'
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { getCurrentUserCart, addCartItem, updateCartItem, deleteCartItem } from '../api/cart';
+import type { Cart, Food } from '../api/types';
+import { useAuthStore } from './auth';
 
 export interface AnimationOrigin {
   x: number
@@ -71,13 +67,17 @@ export const useCartStore = defineStore('cart', () => {
       loading.value = true
       error.value = null
       try {
+        const authStore = useAuthStore();
+        if (!authStore.user) {
+          throw new Error('User not logged in. Cannot add items to cart.');
+        }
         const newCartItem: Cart = {
           food: food,
           quantity: quantity,
           business: food.business,
-          // Customer will be identified by the backend via JWT
-        }
-        const response = await addCartItem(newCartItem)
+          customer: authStore.user,
+        };
+        const response = await addCartItem(newCartItem);
         if (response.success) {
           items.value.push(response.data)
         } else {

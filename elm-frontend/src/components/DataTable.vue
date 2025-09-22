@@ -7,7 +7,7 @@
       :label="column.label"
       :width="column.width"
     />
-    <el-table-column label="Actions" v-if="$slots.actions">
+    <el-table-column label="操作" v-if="$slots.actions">
       <template #default="scope">
         <slot name="actions" :row="scope.row"></slot>
       </template>

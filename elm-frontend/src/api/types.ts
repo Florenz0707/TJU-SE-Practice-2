@@ -45,7 +45,8 @@ export interface LoginDto {
 }
 
 export interface JWTToken {
-  id_token: string
+  id_token: string;
+  refresh_token: string;
 }
 
 export interface Business {

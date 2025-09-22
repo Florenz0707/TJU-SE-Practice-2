@@ -21,18 +21,22 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public Optional<User> getUserWithAuthorities() {
-        return SecurityUtils.getCurrentUsername().flatMap(userRepository::findOneWithAuthoritiesByUsername);
+        return SecurityUtils.getCurrentUsername().flatMap(userRepository::getOneWithAuthoritiesByUsername);
     }
 
     public User addUser(User user) {
-        return userRepository.save(user);
+        if (this.getUserWithUsername(user.getUsername()) == null)
+            return userRepository.save(user);
+        return null;
     }
 
     public void updateUser(User user) {
         userRepository.save(user);
     }
 
-    public User getUserById(Long id) {return userRepository.findById(id).orElse(null);}
+    public User getUserById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
 
     public Boolean isEmptyUserTable() {
         List<User> userList = userRepository.findAll();
@@ -41,5 +45,13 @@ public class UserService {
 
     public List<User> getUsers() {
         return userRepository.findAll();
+    }
+
+    public User getOneWithAuthoritiesByUsername(String username) {
+        return userRepository.getOneWithAuthoritiesByUsername(username).orElse(null);
+    }
+
+    public User getUserWithUsername(String username) {
+        return userRepository.getOneByUsername(username).orElse(null);
     }
 }

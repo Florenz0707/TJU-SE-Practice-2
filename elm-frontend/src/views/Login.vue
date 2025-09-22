@@ -4,7 +4,7 @@
       <!-- Left Panel: Welcome Message -->
       <div class="welcome-panel">
         <div class="welcome-content">
-          <h1 class="welcome-title">欢迎回来！</h1>
+          <h1 class="welcome-title">欢迎光临！</h1>
           <p class="welcome-text">
             登录以继续您的美食之旅。发现、订购并享受您最喜爱的菜肴。
           </p>
@@ -14,7 +14,7 @@
       <!-- Right Panel: Login Form -->
       <div class="form-panel">
         <div class="form-content">
-          <h2 class="form-title">登录您的账户</h2>
+          <h2 class="form-title">登录您的帐户</h2>
           <el-form
             ref="loginFormRef"
             :model="loginForm"
@@ -55,7 +55,7 @@
           </el-form>
 
           <div class="form-footer">
-            <el-link type="info">忘记密码?</el-link>
+            <el-link type="info">忘记密码？</el-link>
             <router-link to="/register">
               <el-link type="primary">还没有账户？去注册</el-link>
             </router-link>
@@ -89,12 +89,11 @@ const loginRules = reactive({
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 })
 
-const getRedirectPath = (): string => {
-  const redirect = route.query.redirect as string | undefined
+const getRedirectPath = (roles: string[]): string => {
+  const redirect = route.query.redirect as string | undefined;
   if (redirect) {
     return redirect
   }
-  const roles = authStore.userRoles
   if (roles.includes('ADMIN')) {
     return '/admin'
   }
@@ -108,10 +107,13 @@ const handleLogin = async () => {
   if (!loginFormRef.value) return
 
   try {
-    await loginFormRef.value.validate()
-    loading.value = true
-    await authStore.login(loginForm)
-    ElMessage.success('登录成功！')
+    await loginFormRef.value.validate();
+    loading.value = true;
+    const userRoles = await authStore.login(loginForm);
+    ElMessage.success('登录成功！');
+
+    const redirectPath = getRedirectPath(userRoles);
+    router.push(redirectPath);
 
     const redirectPath = getRedirectPath()
     router.push(redirectPath)

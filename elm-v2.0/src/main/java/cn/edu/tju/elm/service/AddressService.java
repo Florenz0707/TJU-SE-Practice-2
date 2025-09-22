@@ -30,7 +30,7 @@ public class AddressService {
     public List<DeliveryAddress> getAddressesByCustomerId(Long customerId) {
         return Utils.removeDeleted(addressRepository.findByCustomerId(customerId));
     }
-    public DeliveryAddress updateAddress(DeliveryAddress address) {
-        return addressRepository.save(address);
+    public void updateAddress(DeliveryAddress address) {
+        addressRepository.save(address);
     }
 }
