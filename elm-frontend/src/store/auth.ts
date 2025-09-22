@@ -44,11 +44,12 @@ export const useAuthStore = defineStore('auth', {
      * User login
      * @param {LoginDto} credentials
      */
-    async login(credentials: LoginDto): Promise<void> {
+    async login(credentials: LoginDto): Promise<string[]> {
       try {
         const response = await apiLogin(credentials);
         this.setTokens(response);
         await this.fetchUserInfo();
+        return this.userRoles;
       } catch (error) {
         console.error('Login failed:', error);
         this.logout();
@@ -62,9 +63,9 @@ export const useAuthStore = defineStore('auth', {
     async fetchUserInfo(): Promise<void> {
       if (!this.token) return;
       try {
-        // The /api/user endpoint returns the User object directly, not wrapped in HttpResult.
+        // The /api/user endpoint returns HttpResult<User>.
         const userInfo = await getActualUser();
-        this.user = userInfo;
+        this.user = userInfo.data;
       } catch (error) {
         console.error('Failed to fetch user info:', error);
         this.logout();

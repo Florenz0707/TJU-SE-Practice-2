@@ -1,7 +1,10 @@
 <template>
   <div class="restaurant-card" @click="goToRestaurant">
     <div class="card-image-wrapper">
-      <img :src="business.businessImg || 'https://placehold.co/600x400/f8f9fa/ccc?text=暂无图片'" alt="餐厅图片" class="restaurant-image" />
+      <img v-if="business.businessImg" :src="business.businessImg" alt="餐厅图片" class="restaurant-image" />
+      <div v-else class="placeholder-image">
+        <span class="placeholder-text">{{ business.businessName }}</span>
+      </div>
     </div>
     <div class="card-info">
       <h3 class="name">{{ business.businessName }}</h3>
@@ -54,6 +57,26 @@ const goToRestaurant = () => {
   width: 100%;
   height: 160px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+}
+
+.placeholder-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.placeholder-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #6c757d;
+  padding: 10px;
 }
 
 .restaurant-image {

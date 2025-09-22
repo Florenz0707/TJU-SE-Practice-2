@@ -2,11 +2,15 @@
   <div class="menu-item-card">
     <div class="item-image-wrapper">
       <img
+        v-if="food.foodImg"
         ref="imageElement"
-        :src="food.foodImg || 'https://placehold.co/100x100/f8f9fa/ccc?text=食物'"
+        :src="food.foodImg"
         alt="食物图片"
         class="food-image"
       />
+      <div v-else class="placeholder-image">
+        <span class="placeholder-text">{{ food.foodName }}</span>
+      </div>
     </div>
     <div class="food-details">
       <h4 class="food-name">{{ food.foodName }}</h4>
@@ -33,16 +37,18 @@ const cartStore = useCartStore();
 const imageElement = ref<HTMLImageElement | null>(null);
 
 const handleAddToCart = () => {
-  // Add item to cart via store
-  if (!imageElement.value) return;
+  let origin: { x: number; y: number; imgSrc: string } | undefined;
 
-  const rect = imageElement.value.getBoundingClientRect();
-  const origin = {
-    x: rect.left + rect.width / 2,
-    y: rect.top + rect.height / 2,
-    imgSrc: imageElement.value.src,
-  };
+  if (imageElement.value && imageElement.value.src) {
+    const rect = imageElement.value.getBoundingClientRect();
+    origin = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      imgSrc: imageElement.value.src,
+    };
+  }
 
+  // The animation is a bonus, but adding to cart should always work.
   cartStore.addItem(props.food, 1, origin);
 
   // Show a confirmation message
@@ -68,6 +74,26 @@ const handleAddToCart = () => {
   flex-shrink: 0;
   border-radius: 8px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+}
+
+.placeholder-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.placeholder-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6c757d;
+  padding: 5px;
 }
 .food-image {
   width: 100%;

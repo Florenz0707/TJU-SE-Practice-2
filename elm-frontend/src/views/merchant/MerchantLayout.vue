@@ -7,6 +7,33 @@
           <div class="logo">
             <router-link to="/merchant/dashboard" class="logo-link">商家中心</router-link>
           </div>
+          <!-- Role-based Navigation -->
+          <el-menu
+            v-if="authStore.isLoggedIn && authStore.userRoles.length > 1"
+            mode="horizontal"
+            :ellipsis="false"
+            router
+            class="header-menu"
+          >
+            <template v-if="authStore.userRoles.includes('CUSTOMER')">
+              <el-menu-item index="/">
+                <el-icon><HomeFilled /></el-icon>
+                <span>顾客主页</span>
+              </el-menu-item>
+            </template>
+            <template v-if="authStore.userRoles.includes('MERCHANT')">
+              <el-menu-item index="/merchant/dashboard">
+                <el-icon><Shop /></el-icon>
+                <span>商家中心</span>
+              </el-menu-item>
+            </template>
+            <template v-if="authStore.userRoles.includes('ADMIN')">
+              <el-menu-item index="/admin/dashboard">
+                <el-icon><Setting /></el-icon>
+                <span>管理后台</span>
+              </el-menu-item>
+            </template>
+          </el-menu>
           <el-menu
             :default-active="$route.path"
             class="header-menu"
@@ -77,6 +104,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
 import { Menu } from 'lucide-vue-next';
+import { HomeFilled, Shop, Setting } from '@element-plus/icons-vue';
 
 const authStore = useAuthStore();
 const router = useRouter();

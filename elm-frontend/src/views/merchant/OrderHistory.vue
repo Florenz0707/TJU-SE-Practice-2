@@ -62,8 +62,12 @@ const fetchBusinessAndOrders = async () => {
         business.value = currentBusiness;
         const ownerId = currentBusiness.businessOwner?.id;
         if (ownerId) {
-          const orders = await listOrdersByUserId(ownerId);
-          allOrders.value = orders || [];
+          const ordersResponse = await listOrdersByUserId(ownerId);
+          if (ordersResponse.success) {
+            allOrders.value = ordersResponse.data || [];
+          } else {
+            ElMessage.error(ordersResponse.message || '获取订单列表失败');
+          }
         } else {
           ElMessage.warning('无法确定店铺所有者，无法加载订单');
         }

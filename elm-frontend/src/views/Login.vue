@@ -84,12 +84,11 @@ const loginRules = reactive({
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 });
 
-const getRedirectPath = (): string => {
+const getRedirectPath = (roles: string[]): string => {
   const redirect = route.query.redirect as string | undefined;
   if (redirect) {
     return redirect;
   }
-  const roles = authStore.userRoles;
   if (roles.includes('ADMIN')) {
     return '/admin';
   }
@@ -105,10 +104,10 @@ const handleLogin = async () => {
   try {
     await loginFormRef.value.validate();
     loading.value = true;
-    await authStore.login(loginForm);
+    const userRoles = await authStore.login(loginForm);
     ElMessage.success('登录成功！');
 
-    const redirectPath = getRedirectPath();
+    const redirectPath = getRedirectPath(userRoles);
     router.push(redirectPath);
 
   } catch (error) {

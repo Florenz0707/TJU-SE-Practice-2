@@ -53,6 +53,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useAuthStore } from '../../../store/auth';
 import {
   getCurrentUserAddresses,
   addDeliveryAddress,
@@ -62,6 +63,7 @@ import {
 import type { DeliveryAddress } from '../../../api/types';
 import { ElMessage, type FormInstance } from 'element-plus';
 
+const authStore = useAuthStore();
 const addresses = ref<DeliveryAddress[]>([]);
 const loading = ref(false);
 const dialogVisible = ref(false);
@@ -99,8 +101,15 @@ const openAddressDialog = (address?: DeliveryAddress) => {
 const handleSaveAddress = async () => {
   if (!formRef.value) return;
   await formRef.value.validate();
+  if (!authStore.user) {
+    ElMessage.error('用户未登录，无法保存地址。');
+    return;
+  }
   try {
-    const payload = addressForm.value as DeliveryAddress;
+    const payload: DeliveryAddress = {
+      ...addressForm.value as DeliveryAddress,
+      customer: authStore.user,
+    };
     if (isEditing.value && payload.id) {
       await updateDeliveryAddress(payload.id, payload);
       ElMessage.success('地址更新成功！');

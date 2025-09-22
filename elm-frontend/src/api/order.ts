@@ -4,10 +4,10 @@ import type { Order, HttpResultOrder, HttpResultListOrder, HttpResult } from './
 /**
  * @description Retrieves a list of orders for a specific user.
  * @param {number} userId - The ID of the user whose orders to retrieve.
- * @returns {Promise<Order[]>} - Note: Spec indicates a raw array response, not HttpResult.
+ * @returns {Promise<HttpResultListOrder>}
  * @see {@link openapi.json} - operationId: "listOrdersByUserId"
  */
-export const listOrdersByUserId = (userId: number): Promise<Order[]> => {
+export const listOrdersByUserId = (userId: number): Promise<HttpResultListOrder> => {
   return request.get('/orders', { params: { userId } });
 };
 
@@ -48,5 +48,5 @@ export const getOrderById = (id: number): Promise<HttpResult<Order>> => {
  * @see {@link openapi.json} - operationId: "updateOrderStatus"
  */
 export const updateOrderStatus = (id: number, orderState: number): Promise<HttpResultOrder> => {
-  return request.put(`/orders/${id}`, { orderState });
+  return request.patch(`/orders/${id}`, { orderState });
 };

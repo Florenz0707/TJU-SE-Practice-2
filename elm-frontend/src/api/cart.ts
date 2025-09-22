@@ -28,7 +28,7 @@ export const addCartItem = (data: Cart): Promise<HttpResultCart> => {
  * @see {@link openapi.json} - operationId: "updateCartItem"
  */
 export const updateCartItem = (id: number, quantity: number): Promise<HttpResultCart> => {
-  return request.put(`/carts/${id}`, { quantity });
+  return request.patch(`/carts/${id}`, { quantity });
 };
 
 /**

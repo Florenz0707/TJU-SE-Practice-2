@@ -26,11 +26,20 @@
 
     <!-- Step 2: Select Address -->
     <div v-if="activeStep === 1" class="step-content">
-      <h3>选择配送地址</h3>
+      <div class="address-header">
+        <h3>选择配送地址</h3>
+        <el-button type="primary" @click="openAddressDialog()">添加新地址</el-button>
+      </div>
       <el-radio-group v-model="selectedAddressId" class="address-list">
         <el-radio-button v-for="address in addresses" :key="address.id" :label="address.id">
-          <div><strong>{{ address.contactName }}</strong> ({{ address.contactTel }})</div>
-          <div>{{ address.address }}</div>
+          <div class="address-info">
+            <div><strong>{{ address.contactName }}</strong> ({{ address.contactTel }})</div>
+            <div>{{ address.address }}</div>
+          </div>
+          <div class="address-actions">
+            <el-button type="text" @click.stop.prevent="openAddressDialog(address)">编辑</el-button>
+            <el-button type="text" @click.stop.prevent="deleteAddress(address.id!)">删除</el-button>
+          </div>
         </el-radio-button>
       </el-radio-group>
     </div>
@@ -47,6 +56,31 @@
       <el-button @click="prevStep" :disabled="activeStep === 0">上一步</el-button>
       <el-button @click="nextStep" :disabled="isNextDisabled">{{ activeStep === 2 ? '完成' : '下一步' }}</el-button>
     </div>
+
+    <!-- Address Dialog -->
+    <el-dialog v-model="isAddressDialogVisible" :title="addressForm.id ? '编辑地址' : '添加新地址'">
+      <el-form :model="addressForm" label-width="80px">
+        <el-form-item label="联系人">
+          <el-input v-model="addressForm.contactName"></el-input>
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model="addressForm.contactTel"></el-input>
+        </el-form-item>
+        <el-form-item label="地址">
+          <el-input v-model="addressForm.address"></el-input>
+        </el-form-item>
+        <el-form-item label="性别">
+          <el-radio-group v-model="addressForm.contactSex">
+            <el-radio :label="1">先生</el-radio>
+            <el-radio :label="2">女士</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="isAddressDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="saveAddress">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -54,17 +88,22 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '../../store/cart';
-import { getCurrentUserAddresses } from '../../api/address';
+import { useAuthStore } from '../../store/auth';
+import { getCurrentUserAddresses, addDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress } from '../../api/address';
 import { addOrder } from '../../api/order';
 import type { DeliveryAddress, Order } from '../../api/types';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const router = useRouter();
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 const activeStep = ref(0);
 const addresses = ref<DeliveryAddress[]>([]);
 const selectedAddressId = ref<number | null>(null);
 const isPlacingOrder = ref(false);
+
+const isAddressDialogVisible = ref(false);
+const addressForm = ref<Partial<DeliveryAddress>>({});
 
 const selectedAddress = computed(() => addresses.value.find(a => a.id === selectedAddressId.value));
 
@@ -148,6 +187,51 @@ onMounted(() => {
   }
   fetchAddresses();
 });
+
+const openAddressDialog = (address: DeliveryAddress | null = null) => {
+  addressForm.value = address ? { ...address } : { contactName: '', contactTel: '', address: '', contactSex: 1 };
+  isAddressDialogVisible.value = true;
+};
+
+const saveAddress = async () => {
+  if (!authStore.user) {
+    ElMessage.error('用户未登录，无法保存地址。');
+    return;
+  }
+  try {
+    const payload: DeliveryAddress = {
+      ...addressForm.value as DeliveryAddress,
+      customer: authStore.user, // Make sure customer info is in the payload
+    };
+    if (addressForm.value.id) {
+      await updateDeliveryAddress(addressForm.value.id, payload);
+      ElMessage.success('地址更新成功！');
+    } else {
+      await addDeliveryAddress(payload);
+      ElMessage.success('地址添加成功！');
+    }
+    isAddressDialogVisible.value = false;
+    fetchAddresses();
+  } catch (e) {
+    ElMessage.error('保存地址失败。');
+  }
+};
+
+const deleteAddress = async (id: number) => {
+  ElMessageBox.confirm('确定要删除这个地址吗？', '确认删除', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(async () => {
+    try {
+      await deleteDeliveryAddress(id);
+      ElMessage.success('地址删除成功！');
+      fetchAddresses();
+    } catch (e) {
+      ElMessage.error('删除地址失败。');
+    }
+  });
+};
 </script>
 
 <style scoped>
@@ -171,15 +255,34 @@ onMounted(() => {
   margin-top: 20px;
   font-size: 1.2rem;
 }
-.address-list .el-radio-button {
-  display: block;
+.address-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
 }
+.address-list .el-radio-button {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  width: 100%;
+}
 .address-list .el-radio-button :deep(.el-radio-button__inner) {
+  width: 100%;
   white-space: normal;
   height: auto;
   padding: 10px;
   text-align: left;
   line-height: 1.5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.address-info {
+  flex-grow: 1;
+}
+.address-actions {
+  flex-shrink: 0;
+  margin-left: 20px;
 }
 </style>

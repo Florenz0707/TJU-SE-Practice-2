@@ -86,9 +86,14 @@ const fetchInitialData = async () => {
       business.value = currentBusiness;
       const ownerId = currentBusiness.businessOwner?.id;
       if (ownerId) {
-        const allFetchedOrders = await listOrdersByUserId(ownerId);
-        newOrders.value = allFetchedOrders.filter(o => o.orderState === 0); // New
-        inProgressOrders.value = allFetchedOrders.filter(o => o.orderState !== undefined && o.orderState > 0 && o.orderState < 5);
+        const allFetchedOrdersResponse = await listOrdersByUserId(ownerId);
+        if (allFetchedOrdersResponse.success) {
+          const allFetchedOrders = allFetchedOrdersResponse.data;
+          newOrders.value = allFetchedOrders.filter((o:Order) => o.orderState === 0); // New
+          inProgressOrders.value = allFetchedOrders.filter((o:Order) => o.orderState !== undefined && o.orderState > 0 && o.orderState < 5);
+        } else {
+          ElMessage.error(allFetchedOrdersResponse.message || '获取订单列表失败');
+        }
       }
     } else {
        ElMessage.warning(businessResponse.message || '当前用户没有关联的店铺');

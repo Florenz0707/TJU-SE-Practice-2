@@ -7,7 +7,6 @@ import type {
   HttpResultPerson,
   HttpResultEmpty,
   HttpResultString,
-  User,
 } from './types';
 
 /**
@@ -51,10 +50,10 @@ export const getAllUsers = (): Promise<HttpResultListUser> => {
 
 /**
  * @description Gets the currently logged-in user's information.
- * @returns {Promise<User>}
+ * @returns {Promise<HttpResultUser>}
  * @see {@link openapi.json} - operationId: "getActualUser"
  */
-export const getActualUser = (): Promise<User> => {
+export const getActualUser = (): Promise<HttpResultUser> => {
   return request.get('/user');
 };
 
