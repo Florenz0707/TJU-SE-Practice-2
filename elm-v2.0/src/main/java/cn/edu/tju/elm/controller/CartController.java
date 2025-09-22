@@ -42,6 +42,9 @@ public class CartController {
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
+        if (cart == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart CANT BE NULL");
+
         if (cart.getFood() == null || cart.getFood().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
         if (cart.getBusiness() == null || cart.getBusiness().getId() == null)
@@ -74,10 +77,8 @@ public class CartController {
             cart.setCreator(me.getId());
             cart.setUpdater(me.getId());
             cart.setDeleted(false);
-            if (cart.equals(cartItemService.addCart(cart))) {
-                return HttpResult.success(cart);
-            }
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "UNKNOWN ERROR");
+            cartItemService.addCart(cart);
+            return HttpResult.success(cart);
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -97,6 +98,9 @@ public class CartController {
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
+        if (newCart == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart CANT BE NULL");
+
         if (newCart.getQuantity() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart.Quantity CANT BE NULL");
 
@@ -114,6 +118,7 @@ public class CartController {
         }
         if (isAdmin || me.equals(owner)) {
             cart.setQuantity(newCart.getQuantity());
+
             LocalDateTime now = LocalDateTime.now();
             cart.setUpdateTime(now);
             cart.setUpdater(me.getId());

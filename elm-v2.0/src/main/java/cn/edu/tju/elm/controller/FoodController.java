@@ -80,6 +80,9 @@ public class FoodController {
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
         User me = meOptional.get();
 
+        if (food == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food CANT BE NULL");
+
         if (food.getFoodName() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodName CANT BE NULL");
         if (food.getFoodPrice() == null)
@@ -115,7 +118,9 @@ public class FoodController {
     }
 
     @PutMapping("/{id}")
-    public HttpResult<Food> updateFood(@PathVariable Long id, @RequestBody Food food) {
+    public HttpResult<Food> updateFood(
+            @PathVariable Long id,
+            @RequestBody Food food) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -124,6 +129,9 @@ public class FoodController {
         Food oldFood = foodService.getFoodById(id);
         if (oldFood == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+
+        if (food == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food CANT BE NULL");
 
         if (food.getFoodName() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodName CANT BE NULL");

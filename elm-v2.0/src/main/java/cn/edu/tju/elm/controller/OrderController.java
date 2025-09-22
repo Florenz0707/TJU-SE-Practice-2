@@ -44,6 +44,9 @@ public class OrderController {
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
+        if (order == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
+
         if (order.getBusiness() == null || order.getBusiness().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
         if (order.getCustomer() == null || order.getCustomer().getId() == null)
@@ -157,18 +160,25 @@ public class OrderController {
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("")
     public HttpResult<Order> updateOrderStatus(
-            @PathVariable("id") Long id,
-            @RequestParam("orderState") Integer orderState) {
+            @RequestBody Order order) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        Order order = orderService.getOrderById(id);
         if (order == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
+        if (order.getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.Id CANT BE NULL");
+
+        Order newOrder = orderService.getOrderById(order.getId());
+        if (newOrder == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+        if (order.getOrderState() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.OrderState CANT BE NULL");
+        Integer orderState = order.getOrderState();
         if (orderState == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OrderState CANT BE NULL");
         if (!OrderState.isValidOrderState(orderState))
@@ -181,13 +191,13 @@ public class OrderController {
                 break;
             }
         }
-        if (isAdmin || me.equals(order.getCustomer())) {
-            order.setOrderState(orderState);
+        if (isAdmin || me.equals(newOrder.getCustomer())) {
+            newOrder.setOrderState(orderState);
             LocalDateTime now = LocalDateTime.now();
-            order.setUpdateTime(now);
-            order.setUpdater(me.getId());
-            orderService.updateOrder(order);
-            return HttpResult.success(order);
+            newOrder.setUpdateTime(now);
+            newOrder.setUpdater(me.getId());
+            orderService.updateOrder(newOrder);
+            return HttpResult.success(newOrder);
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
