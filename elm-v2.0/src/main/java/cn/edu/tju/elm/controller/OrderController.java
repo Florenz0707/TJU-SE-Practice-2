@@ -67,15 +67,13 @@ public class OrderController {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
         if (me.equals(customer) && me.equals(address.getCustomer())) {
-            // TODO: Complete Order info and OrderDetailet with cart(customer_id, business_id)
-            // TODO: Await to be tested
             BigDecimal totalPrice = new BigDecimal(0);
             for (Cart cart : cartList) {
                 BigDecimal quantity = new BigDecimal(cart.getQuantity());
                 totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
             }
             order.setOrderTotal(totalPrice);
-            order.setOrderState(0);
+            order.setOrderState(OrderState.UNPAID);
 
             order.setBusiness(business);
             order.setCustomer(customer);
@@ -157,5 +155,52 @@ public class OrderController {
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+
+    @PatchMapping("/{id}")
+    public HttpResult<Order> updateOrderStatus(
+            @PathVariable("id") Long id,
+            @RequestParam("orderState") Integer orderState) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Order order = orderService.getOrderById(id);
+        if (order == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+        if (orderState == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OrderState CANT BE NULL");
+        if (!OrderState.isValidOrderState(orderState))
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
+
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
+        if (isAdmin || me.equals(order.getCustomer())) {
+            order.setOrderState(orderState);
+            LocalDateTime now = LocalDateTime.now();
+            order.setUpdateTime(now);
+            order.setUpdater(me.getId());
+            orderService.updateOrder(order);
+            return HttpResult.success(order);
+        }
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+
+    @GetMapping("/my")
+    public HttpResult<List<Order>> getMyOrders() {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        List<Order> myOrders = orderService.getOrdersByCustomerId(me.getId());
+        return HttpResult.success(myOrders);
     }
 }

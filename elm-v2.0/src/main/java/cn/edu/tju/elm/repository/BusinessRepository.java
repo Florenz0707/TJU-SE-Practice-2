@@ -9,5 +9,5 @@ import java.util.Optional;
 public interface BusinessRepository extends JpaRepository<Business, Long> {
     Optional<Business> findOneById(Long id);
 
-    List<Business> findByBusinessOwnerAndDeletedFalse(User businessOwner);
+    List<Business> findAllByBusinessOwner(User businessOwner);
 }
