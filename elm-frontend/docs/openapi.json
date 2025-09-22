@@ -1,0 +1,314 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "吃饱了吗点餐平台",
+    "description": "Tianjin University Software Engineering Project",
+    "version": "1.0.0"
+  },
+  "tags": [
+    { "name": "管理店铺" },
+    { "name": "管理用户" },
+    { "name": "管理订单" },
+    { "name": "管理商品" },
+    { "name": "管理购物车" },
+    { "name": "管理认证" },
+    { "name": "管理地址" },
+    { "name": "统一结果测试" }
+  ],
+  "paths": {
+    "/api/businesses/{id}": {
+      "get": {
+        "summary": "getBusiness", "deprecated": false, "description": "",
+        "operationId": "getBusiness", "tags": ["管理店铺"],
+        "parameters": [ { "name": "id", "in": "path", "description": "", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultBusiness" } } }, "headers": {} } }, "security": []
+      },
+      "put": {
+        "summary": "updateBusiness", "deprecated": false, "description": "",
+        "operationId": "updateBusiness", "tags": ["管理店铺"],
+        "parameters": [ { "name": "id", "in": "path", "description": "", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Business" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultBusiness" } } }, "headers": {} } }, "security": []
+      },
+      "delete": {
+        "summary": "deleteBusiness", "deprecated": false, "description": "",
+        "operationId": "deleteBusiness", "tags": ["管理店铺"],
+        "parameters": [ { "name": "id", "in": "path", "description": "", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultBusiness" } } }, "headers": {} } }, "security": []
+      },
+      "patch": {
+        "summary": "patchBusiness", "deprecated": false, "description": "",
+        "operationId": "patchBusiness", "tags": ["管理店铺"],
+        "parameters": [ { "name": "id", "in": "path", "description": "", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Business" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultBusiness" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/businesses": {
+      "get": {
+        "summary": "getBusinesses", "deprecated": false, "description": "",
+        "operationId": "getBusinesses", "tags": ["管理店铺"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultListBusiness" } } }, "headers": {} } }, "security": []
+      },
+      "post": {
+        "summary": "addBusiness", "deprecated": false, "description": "",
+        "operationId": "addBusiness", "tags": ["管理店铺"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Business" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultBusiness" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/businesses/my": {
+      "get": {
+        "summary": "获取当前用户的店铺", "deprecated": false, "description": "获取当前登录用户所拥有的所有店铺列表",
+        "operationId": "getCurrentUserBusinesses", "tags": ["管理店铺"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultListBusiness" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/users": {
+      "post": {
+        "summary": "新增用户（包括密码）", "deprecated": false, "description": "创建一个新的用户并设置密码",
+        "operationId": "createUser", "tags": ["管理用户"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginDto" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/User" } } }, "headers": {} } }, "security": []
+      },
+      "get": {
+        "summary": "获取所有用户", "deprecated": false, "description": "获取所有用户的列表，主要用于管理界面",
+        "operationId": "getAllUsers", "tags": ["管理用户"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultListUser" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/persons": {
+      "post": {
+        "summary": "新增用户（自然人）", "deprecated": false, "description": "创建一个新的用户（自然人）",
+        "operationId": "addPerson", "tags": ["管理用户"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Person" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/Person" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/password": {
+      "post": {
+        "summary": "修改密码", "deprecated": false, "description": "已登录的用户只可以修改自己的密码，Admin可以修改任何人的密码",
+        "operationId": "updateUserPassword", "tags": ["管理用户"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginDto" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "string" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "summary": "根据ID获取用户", "deprecated": false, "description": "查询单个用户的详细信息",
+        "operationId": "getUserById", "tags": ["管理用户"],
+        "parameters": [ { "name": "id", "in": "path", "description": "用户ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultUser" } } }, "headers": {} } }, "security": []
+      },
+      "put": {
+        "summary": "更新用户信息", "deprecated": false, "description": "更新指定ID用户的详细信息",
+        "operationId": "updateUser", "tags": ["管理用户"],
+        "parameters": [ { "name": "id", "in": "path", "description": "用户ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Person" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultUser" } } }, "headers": {} } }, "security": []
+      },
+      "delete": {
+        "summary": "删除用户", "deprecated": false, "description": "删除指定ID的用户",
+        "operationId": "deleteUser", "tags": ["管理用户"],
+        "parameters": [ { "name": "id", "in": "path", "description": "用户ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResult" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/user": {
+      "get": {
+        "summary": "判断当前登录的用户", "deprecated": false, "description": "判断当前登录的用户",
+        "operationId": "getActualUser", "tags": ["管理用户"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/User" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "listOrdersByUserId", "deprecated": false, "description": "",
+        "operationId": "listOrdersByUserId", "tags": ["管理订单"],
+        "parameters": [ { "name": "userId", "in": "query", "description": "", "required": true, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } } } }, "headers": {} } }, "security": []
+      },
+      "post": {
+        "summary": "addOrders", "deprecated": false, "description": "",
+        "operationId": "addOrders", "tags": ["管理订单"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultOrder" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "summary": "getOrderById", "deprecated": false, "description": "",
+        "operationId": "getOrderById", "tags": ["管理订单"],
+        "parameters": [ { "name": "id", "in": "path", "description": "", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResult" } } }, "headers": {} } }, "security": []
+      },
+      "put": {
+        "summary": "updateOrderStatus", "deprecated": false, "description": "更新订单状态",
+        "operationId": "updateOrderStatus", "tags": ["管理订单"],
+        "parameters": [ { "name": "id", "in": "path", "description": "订单ID", "required": true, "schema": { "type": "integer", "format": "int64" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "orderState": { "type": "integer", "format": "int32" } } } } } },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultOrder" } } } } }
+      }
+    },
+    "/api/orders/my": {
+      "get": {
+        "summary": "获取当前用户的订单", "deprecated": false, "description": "获取当前登录用户的所有订单历史",
+        "operationId": "getCurrentUserOrders", "tags": ["管理订单"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultListOrder" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/foods": {
+      "get": {
+        "summary": "getAllFoods", "deprecated": false, "description": "",
+        "operationId": "getAllFoods", "tags": ["管理商品"],
+        "parameters": [
+          { "name": "business", "in": "query", "description": "", "required": false, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "order", "in": "query", "description": "", "required": false, "schema": { "type": "integer", "format": "int64" } }
+        ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultListFood" } } }, "headers": {} } }, "security": []
+      },
+      "post": {
+        "summary": "addFood", "deprecated": false, "description": "",
+        "operationId": "addFood", "tags": ["管理商品"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "foodName": { "type": "string" }, "foodExplain": { "type": "string" }, "foodImg": { "type": "string" }, "foodPrice": { "type": "number" }, "business": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "businessName": { "type": "string" }, "businessOwner": { "$ref": "#/components/schemas/User" }, "businessAddress": { "type": "string" }, "businessExplain": { "type": "string" }, "businessImg": { "type": "string" }, "orderTypeId": { "type": "integer", "format": "int32" }, "startPrice": { "type": "number" }, "deliveryPrice": { "type": "number" }, "remarks": { "type": "string" } }, "required": [ "id" ] }, "remarks": { "type": "string" } }, "required": [ "foodName", "foodPrice", "business" ] }, "examples": {} } } },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultFood" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/foods/{id}": {
+      "get": {
+        "summary": "返回查询到的一条商品记录", "deprecated": false, "description": "",
+        "operationId": "getFoodById", "tags": ["管理商品"],
+        "parameters": [ { "name": "id", "in": "path", "description": "", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultFood" } } }, "headers": {} } }, "security": []
+      },
+      "put": {
+        "summary": "更新商品信息", "deprecated": false, "description": "更新指定ID的商品信息",
+        "operationId": "updateFood", "tags": ["管理商品"],
+        "parameters": [ { "name": "id", "in": "path", "description": "商品ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Food" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultFood" } } }, "headers": {} } }, "security": []
+      },
+      "delete": {
+        "summary": "删除商品", "deprecated": false, "description": "删除指定ID的商品",
+        "operationId": "deleteFood", "tags": ["管理商品"],
+        "parameters": [ { "name": "id", "in": "path", "description": "商品ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResult" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/carts": {
+      "get": {
+        "summary": "获取当前用户的购物车", "deprecated": false, "description": "获取当前登录用户的所有购物车项目",
+        "operationId": "getCurrentUserCart", "tags": ["管理购物车"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultListCart" } } }, "headers": {} } }, "security": []
+      },
+      "post": {
+        "summary": "addCartItem", "deprecated": false, "description": "",
+        "operationId": "addCartItem", "tags": ["管理购物车"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Cart" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultCart" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/carts/{id}": {
+      "put": {
+        "summary": "更新购物车项目", "deprecated": false, "description": "更新购物车中某个项目的数量",
+        "operationId": "updateCartItem", "tags": ["管理购物车"],
+        "parameters": [ { "name": "id", "in": "path", "description": "购物车项目ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "quantity": { "type": "integer", "format": "int32" } }, "required": [ "quantity" ] } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultCart" } } }, "headers": {} } }, "security": []
+      },
+      "delete": {
+        "summary": "删除购物车项目", "deprecated": false, "description": "从购物车中删除一个项目",
+        "operationId": "deleteCartItem", "tags": ["管理购物车"],
+        "parameters": [ { "name": "id", "in": "path", "description": "购物车项目ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResult" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/auth": {
+      "post": {
+        "summary": "authorize", "deprecated": false, "description": "身份认证成功后拿到令牌",
+        "operationId": "authorize", "tags": ["管理认证"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginDto" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/JWTToken" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/addresses": {
+      "get": {
+        "summary": "获取当前用户的收货地址", "deprecated": false, "description": "获取当前登录用户的所有收货地址列表",
+        "operationId": "getCurrentUserAddresses", "tags": ["管理地址"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultListDeliveryAddress" } } }, "headers": {} } }, "security": []
+      },
+      "post": {
+        "summary": "addDeliveryAddress", "deprecated": false, "description": "",
+        "operationId": "addDeliveryAddress", "tags": ["管理地址"], "parameters": [],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeliveryAddress" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultDeliveryAddress" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/api/addresses/{id}": {
+      "put": {
+        "summary": "更新收货地址", "deprecated": false, "description": "更新指定的收货地址信息",
+        "operationId": "updateDeliveryAddress", "tags": ["管理地址"],
+        "parameters": [ { "name": "id", "in": "path", "description": "地址ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeliveryAddress" } } }, "required": true },
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResultDeliveryAddress" } } }, "headers": {} } }, "security": []
+      },
+      "delete": {
+        "summary": "删除收货地址", "deprecated": false, "description": "删除指定的收货地址",
+        "operationId": "deleteDeliveryAddress", "tags": ["管理地址"],
+        "parameters": [ { "name": "id", "in": "path", "description": "地址ID", "required": true, "example": 0, "schema": { "type": "integer", "format": "int64" } } ],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResult" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/httpRest/success": {
+      "get": {
+        "summary": "通用返回成功（没有返回结果）", "deprecated": false, "description": "",
+        "operationId": "success", "tags": ["统一结果测试"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResult" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/httpRest/successWithData": {
+      "get": {
+        "summary": "返回成功（有返回结果）", "deprecated": false, "description": "",
+        "operationId": "successWithData", "tags": ["统一结果测试"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResult" } } }, "headers": {} } }, "security": []
+      }
+    },
+    "/httpRest/failure": {
+      "get": {
+        "summary": "通用返回失败", "deprecated": false, "description": "",
+        "operationId": "failure", "tags": ["统一结果测试"], "parameters": [],
+        "responses": { "200": { "description": "OK", "content": { "*/*": { "schema": { "$ref": "#/components/schemas/HttpResult" } } }, "headers": {} } }, "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Authority": { "required": [ "name" ], "type": "object", "properties": { "name": { "type": "string" } } },
+      "Business": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "businessName": { "type": "string" }, "businessOwner": { "$ref": "#/components/schemas/User" }, "businessAddress": { "type": "string" }, "businessExplain": { "type": "string" }, "businessImg": { "type": "string" }, "orderTypeId": { "type": "integer", "format": "int32" }, "startPrice": { "type": "number" }, "deliveryPrice": { "type": "number" }, "remarks": { "type": "string" } }, "required": [ "id" ] },
+      "User": { "required": [ "username" ], "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "username": { "maxLength": 100, "minLength": 1, "type": "string" }, "authorities": { "uniqueItems": true, "type": "array", "items": { "$ref": "#/components/schemas/Authority" } } } },
+      "HttpResultBusiness": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/Business" }, "message": { "type": "string", "nullable": true } } },
+      "Person": { "required": [ "username" ], "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "username": { "maxLength": 100, "minLength": 1, "type": "string" }, "authorities": { "uniqueItems": true, "type": "array", "items": { "$ref": "#/components/schemas/Authority" } }, "firstName": { "type": "string", "nullable": true }, "lastName": { "type": "string", "nullable": true }, "email": { "type": "string", "nullable": true }, "phone": { "type": "string", "nullable": true }, "gender": { "type": "string", "nullable": true }, "photo": { "type": "string", "nullable": true } } },
+      "LoginDto": { "required": [ "password", "username" ], "type": "object", "properties": { "username": { "maxLength": 50, "minLength": 1, "type": "string" }, "password": { "maxLength": 100, "minLength": 4, "type": "string" }, "rememberMe": { "type": "boolean" } } },
+      "DeliveryAddress": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "contactName": { "type": "string" }, "contactSex": { "type": "integer", "format": "int32" }, "contactTel": { "type": "string" }, "address": { "type": "string" }, "customer": { "$ref": "#/components/schemas/User" } } },
+      "Order": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "customer": { "$ref": "#/components/schemas/User" }, "business": { "$ref": "#/components/schemas/Business" }, "orderDate": { "type": "string", "format": "date-time" }, "orderTotal": { "type": "number" }, "deliveryAddress": { "$ref": "#/components/schemas/DeliveryAddress" }, "orderState": { "type": "integer", "format": "int32" } } },
+      "HttpResultOrder": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/Order" }, "message": { "type": "string", "nullable": true } } },
+      "Food": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "foodName": { "type": "string" }, "foodExplain": { "type": "string" }, "foodImg": { "type": "string" }, "foodPrice": { "type": "number" }, "business": { "$ref": "#/components/schemas/Business" }, "remarks": { "type": "string" } } },
+      "HttpResultFood": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/Food" }, "message": { "type": "string", "nullable": true } } },
+      "Cart": { "type": "object", "properties": { "id": { "type": "integer", "format": "int64" }, "createTime": { "type": "string", "format": "date-time" }, "updateTime": { "type": "string", "format": "date-time" }, "creator": { "type": "integer", "format": "int64" }, "updater": { "type": "integer", "format": "int64" }, "deleted": { "type": "boolean" }, "food": { "$ref": "#/components/schemas/Food" }, "customer": { "$ref": "#/components/schemas/User" }, "business": { "$ref": "#/components/schemas/Business" }, "quantity": { "type": "integer", "format": "int32" } } },
+      "HttpResultCart": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/Cart" }, "message": { "type": "string", "nullable": true } } },
+      "JWTToken": { "type": "object", "properties": { "id_token": { "type": "string" } } },
+      "HttpResultDeliveryAddress": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/DeliveryAddress" }, "message": { "type": "string", "nullable": true } } },
+      "HttpResult": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "object", "properties": {} }, "message": { "type": "string", "nullable": true } } },
+      "HttpResultListFood": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Food" } }, "message": { "type": "string", "nullable": true } } },
+      "HttpResultListBusiness": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Business" } }, "message": { "type": "string", "nullable": true } } },
+      "HttpResultListDeliveryAddress": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/DeliveryAddress" } }, "message": { "type": "string" } } },
+      "HttpResultListOrder": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } }, "message": { "type": "string" } } },
+      "HttpResultListCart": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/Cart" } }, "message": { "type": "string" } } },
+      "HttpResultUser": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "$ref": "#/components/schemas/User" }, "message": { "type": "string" } } },
+      "HttpResultListUser": { "type": "object", "properties": { "success": { "type": "boolean" }, "code": { "type": "string" }, "data": { "type": "array", "items": { "$ref": "#/components/schemas/User" } }, "message": { "type": "string" } } }
+    },
+    "securitySchemes": { "JWT Bearer": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" } }
+  },
+  "servers": [],
+  "security": []
+}

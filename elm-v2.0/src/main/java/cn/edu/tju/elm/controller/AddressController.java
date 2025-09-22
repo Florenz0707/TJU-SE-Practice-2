@@ -39,7 +39,8 @@ public class AddressController {
 
         // 通过Header: Authorization进行鉴权
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         // 检查参数关键数据是否为空，以及是否有效
@@ -49,7 +50,7 @@ public class AddressController {
         if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
 
         // 检查token指向的user是否与deliveryAddress中的customer一致
-        if (me.getUsername().equals(user.getUsername())) {
+        if (me.equals(user)) {
             // 使user被jpa接管，否则会报错
             deliveryAddress.setCustomer(user);
             // 注意：当且仅当user对jpa来说是“陌生”的时候需要，如直接在外部通过sql脚本执行插入
@@ -63,6 +64,6 @@ public class AddressController {
             if (deliveryAddress.equals(addressService.addAddress(deliveryAddress)))
                 return HttpResult.success(deliveryAddress);
         }
-        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "UNKNOWN ERROR");
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "AUTHORITY LACKED");
     }
 }

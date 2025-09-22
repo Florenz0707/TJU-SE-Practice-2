@@ -13,7 +13,6 @@ import cn.edu.tju.elm.service.FoodService;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.service.OrderDetailetService;
 import cn.edu.tju.elm.service.OrderService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -36,16 +35,18 @@ public class FoodController {
 
     @Autowired
     private BusinessService businessService;
+
     @Autowired
     private OrderService orderService;
+
     @Autowired
     private OrderDetailetService orderDetailetService;
 
     @GetMapping("/{id}")
-    @Operation(summary = "返回查询到的一条商品记录", method = "GET")
     public HttpResult<Food> getFoodById(@PathVariable Long id) {
         Food food = foodService.getFoodById(id);
-        if (food == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+        if (food == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
         return HttpResult.success(food);
     }
 
@@ -111,5 +112,79 @@ public class FoodController {
         }
 
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR);
+    }
+
+    @PutMapping("/{id}")
+    public HttpResult<Food> updateFood(@PathVariable Long id, @RequestBody Food food) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Food oldFood = foodService.getFoodById(id);
+        if (oldFood == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+
+        if (food.getFoodName() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodName CANT BE NULL");
+        if (food.getFoodPrice() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "FoodPrice CANT BE NULL");
+        if (food.getBusiness() == null || food.getBusiness().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
+
+        Business business = businessService.getBusinessById(food.getBusiness().getId());
+        if (business == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+
+        boolean isAdmin = false;
+        boolean isBusiness = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) isAdmin = true;
+            if (authority.getName().equals("BUSINESS")) isBusiness = true;
+        }
+
+        if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner()))) {
+            food.setId(oldFood.getId());
+            food.setBusiness(business);
+
+            LocalDateTime now = LocalDateTime.now();
+            food.setCreator(oldFood.getCreator());
+            food.setUpdater(me.getId());
+            food.setCreateTime(oldFood.getCreateTime());
+            food.setUpdateTime(now);
+            food.setDeleted(false);
+            foodService.updateFood(food);
+            return HttpResult.success(food);
+        }
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+
+    @DeleteMapping("/{id}")
+    public HttpResult<Food> deleteFood(@PathVariable Long id) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Food food = foodService.getFoodById(id);
+        if (food == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+
+        boolean isAdmin = false;
+        boolean isBusiness = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) isAdmin = true;
+            if (authority.getName().equals("BUSINESS")) isBusiness = true;
+        }
+
+        if (isAdmin || (isBusiness && me.equals(food.getBusiness().getBusinessOwner()))) {
+            LocalDateTime now = LocalDateTime.now();
+            food.setUpdateTime(now);
+            food.setUpdater(me.getId());
+            food.setDeleted(true);
+            foodService.updateFood(food);
+            return HttpResult.success(food);
+        }
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 }

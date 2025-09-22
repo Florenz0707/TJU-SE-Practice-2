@@ -134,7 +134,6 @@ public class OrderController {
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
-//    Version of returning HttpResult
     @GetMapping("")
     public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
@@ -153,8 +152,9 @@ public class OrderController {
                 break;
             }
         }
-        if (isAdmin || me.equals(user))
+        if (isAdmin || me.equals(user)) {
             return HttpResult.success(orderService.getOrdersByCustomerId(userId));
+        }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }

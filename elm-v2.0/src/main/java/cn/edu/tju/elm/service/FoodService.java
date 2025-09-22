@@ -30,4 +30,8 @@ public class FoodService {
         Optional<Food> foodOptional = foodRepository.findById(id);
         return foodOptional.orElse(null);
     }
+
+    public void updateFood(Food food) {
+        foodRepository.save(food);
+    }
 }
