@@ -38,14 +38,13 @@ public class WebSecurityConfig {
     @Bean // <-- IMPORTANT: Expose this as a Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // IMPORTANT: Configure your frontend's actual origin
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173")); // Replace with your frontend URL
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Collections.singletonList("*"));
-        configuration.setAllowCredentials(true); // Allow credentials
-        
+        configuration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Apply this configuration to all paths
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
@@ -53,6 +52,7 @@ public class WebSecurityConfig {
     private final String[] permitUrlArr = new String[]{
             "/hello",
             "/api/auth",
+            "/api/persons",
             "/swagger-ui/**",
             "/v3/api-docs/**",
             "/h2-console/**",
@@ -64,7 +64,7 @@ public class WebSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         String token = "ZmQ0ZGI5NjQ0MDQwY2I4MjMxY2Y3ZmI3MjdhN2ZmMjNhODViOTg1ZGE0NTBjMGM4NDA5NzYxMjdjOWMwYWRmZTBlZjlhNGY3ZTg4Y2U3YTE1ODVkZDU5Y2Y3OGYwZWE1NzUzNWQ2YjFjZDc0NGMxZWU2MmQ3MjY1NzJmNTE0MzI=";
         var jwtTokenFilter = new JWTFilter(new TokenProvider(token, 86400L, 108000L));
-        
+
         httpSecurity.removeConfigurers(DefaultLoginPageConfigurer.class);
 
         return httpSecurity

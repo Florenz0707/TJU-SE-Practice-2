@@ -18,14 +18,6 @@ import java.util.Set;
 @Inheritance(strategy = InheritanceType.JOINED)
 public class User extends BaseEntity {
 
-//   @JsonIgnore
-//   @Id
-//   @Column(name = "ID")
-//   @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "USER_SEQ")
-//   @SequenceGenerator(name = "USER_SEQ", sequenceName = "USER_SEQ", allocationSize = 1)
-//   @GeneratedValue(strategy = GenerationType.IDENTITY)
-//   private Long id;
-
     @Column(name = "USERNAME", length = 100, unique = true)
     @NotNull
     @Size(min = 1, max = 100)
