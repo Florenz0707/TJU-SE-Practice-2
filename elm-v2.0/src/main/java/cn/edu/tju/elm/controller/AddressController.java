@@ -4,9 +4,7 @@ import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.core.security.repository.UserRepository;
 import cn.edu.tju.core.security.service.UserService;
-import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.model.DeliveryAddress;
 import cn.edu.tju.elm.service.AddressService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -71,7 +69,6 @@ public class AddressController {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-
         User me = meOptional.get();
 
         List<DeliveryAddress> myAddresses = addressService.getAddressesByCustomerId(me.getId());
@@ -82,55 +79,45 @@ public class AddressController {
     @PutMapping("/{id}")
     public HttpResult<DeliveryAddress> updateAddress(
             @PathVariable("id") Long id,
-            @RequestBody DeliveryAddress addressDetails) {
-
+            @RequestBody DeliveryAddress address) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-
         User me = meOptional.get();
 
-        // 获取现有地址
-        DeliveryAddress address = addressService.getAddressById(id);
-        if (address == null)
+        if (address.getCustomer() == null || address.getCustomer().getId() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
+        User customer = userService.getUserById(address.getCustomer().getId());
+        if (customer == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer NOT FOUND");
+
+        DeliveryAddress oldAddress = addressService.getAddressById(id);
+        if (oldAddress == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
+        User oldCustomer = oldAddress.getCustomer();
 
-        // 检查权限：只能更新自己的地址
-        if (!address.getCustomer().getId().equals(me.getId()))
-            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-
-        // 验证并更新可修改的字段
-        if (addressDetails.getContactName() != null) {
-            if (addressDetails.getContactName().trim().isEmpty())
-                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ContactName CANT BE EMPTY");
-            address.setContactName(addressDetails.getContactName());
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
         }
 
-        if (addressDetails.getContactTel() != null) {
-            if (addressDetails.getContactTel().trim().isEmpty())
-                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ContactTel CANT BE EMPTY");
-            address.setContactTel(addressDetails.getContactTel());
+        if (isAdmin || (me.equals(oldCustomer) && me.equals(customer))) {
+            address.setId(oldAddress.getId());
+            address.setCustomer(customer);
+
+            LocalDateTime now = LocalDateTime.now();
+            address.setCreateTime(oldAddress.getCreateTime());
+            address.setUpdateTime(now);
+            address.setCreator(oldAddress.getCreator());
+            address.setUpdater(me.getId());
+            address.setDeleted(false);
+            addressService.updateAddress(address);
+            return HttpResult.success(address);
         }
-
-        if (addressDetails.getAddress() != null) {
-            if (addressDetails.getAddress().trim().isEmpty())
-                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE EMPTY");
-            address.setAddress(addressDetails.getAddress());
-        }
-
-        // 更新可选字段
-        if (addressDetails.getContactSex() != null) {
-            address.setContactSex(addressDetails.getContactSex());
-        }
-
-        // 更新审计字段
-        address.setUpdateTime(LocalDateTime.now());
-        address.setUpdater(me.getId());
-
-        // 保存更新
-        DeliveryAddress updatedAddress = addressService.updateAddress(address);
-
-        return HttpResult.success(updatedAddress);
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     @DeleteMapping("/{id}")
@@ -138,26 +125,29 @@ public class AddressController {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-
         User me = meOptional.get();
 
         DeliveryAddress address = addressService.getAddressById(id);
         if (address == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
 
-        // 检查权限：只能删除自己的地址
-        if (!address.getCustomer().getId().equals(me.getId()))
-            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+        boolean isAdmin = false;
+        for (Authority authority : me.getAuthorities()) {
+            if (authority.getName().equals("ADMIN")) {
+                isAdmin = true;
+                break;
+            }
+        }
 
-        // 软删除地址
-        address.setDeleted(true);
-        address.setUpdateTime(LocalDateTime.now());
-        address.setUpdater(me.getId());
+        if (isAdmin || (me.equals(address.getCustomer()))) {
+            address.setDeleted(true);
 
-        // 更新地址
-        addressService.updateAddress(address);
-
-        // 返回成功响应，data字段为null
-        return HttpResult.success(null);
+            LocalDateTime now = LocalDateTime.now();
+            address.setUpdateTime(now);
+            address.setUpdater(me.getId());
+            addressService.updateAddress(address);
+            return HttpResult.success(address);
+        }
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 }

@@ -67,15 +67,13 @@ public class OrderController {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
         if (me.equals(customer) && me.equals(address.getCustomer())) {
-            // TODO: Complete Order info and OrderDetailet with cart(customer_id, business_id)
-            // TODO: Await to be tested
             BigDecimal totalPrice = new BigDecimal(0);
             for (Cart cart : cartList) {
                 BigDecimal quantity = new BigDecimal(cart.getQuantity());
                 totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
             }
             order.setOrderTotal(totalPrice);
-            order.setOrderState(0);
+            order.setOrderState(OrderState.UNPAID);
 
             order.setBusiness(business);
             order.setCustomer(customer);
@@ -134,38 +132,14 @@ public class OrderController {
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
-//    Version of returning HttpResult
-//    @GetMapping("")
-//    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
-//        Optional<User> meOptional = userService.getUserWithAuthorities();
-//        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-//        User me = meOptional.get();
-//
-//        User user = userService.getUserById(userId);
-//        if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
-//
-//        boolean isAdmin = false;
-//        for (Authority authority : me.getAuthorities()) {
-//            if (authority.getName().equals("ADMIN")) {
-//                isAdmin = true;
-//                break;
-//            }
-//        }
-//        if (isAdmin || me.equals(user)) {
-//            return HttpResult.success(orderService.getOrdersByCustomerId(userId));
-//        }
-//
-//        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-//    }
-
     @GetMapping("")
-    public List<Order> listOrdersByUserId(@RequestParam Long userId) {
+    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return null;
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         User user = userService.getUserById(userId);
-        if (user == null) return null;
+        if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
         boolean isAdmin = false;
         for (Authority authority : me.getAuthorities()) {
@@ -175,84 +149,56 @@ public class OrderController {
             }
         }
         if (isAdmin || me.equals(user)) {
-            return orderService.getOrdersByCustomerId(userId);
+            return HttpResult.success(orderService.getOrdersByCustomerId(userId));
         }
 
-        return null;
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     @PatchMapping("/{id}")
     public HttpResult<Order> updateOrderStatus(
             @PathVariable("id") Long id,
-            @RequestParam(value = "orderState", required = false) Integer orderState) {
-        // 检查是否提供了 orderState 参数
-        if (orderState == null) {
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "orderState parameter is required");
-        }
+            @RequestParam("orderState") Integer orderState) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-
         User me = meOptional.get();
 
-        // 获取订单
         Order order = orderService.getOrderById(id);
         if (order == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+        if (orderState == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OrderState CANT BE NULL");
+        if (!OrderState.isValidOrderState(orderState))
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
 
-        // 验证订单状态值的有效性（需调整）
-        if (orderState < 0 || orderState > 5)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Invalid order state");
-
-        // 检查用户权限
         boolean isAdmin = false;
-        boolean isBusiness = false;
-        boolean isOrderOwner = order.getCustomer().getId().equals(me.getId());
-
         for (Authority authority : me.getAuthorities()) {
-            if ("ADMIN".equals(authority.getName())) {
+            if (authority.getName().equals("ADMIN")) {
                 isAdmin = true;
-            }
-            if ("BUSINESS".equals(authority.getName())) {
-                isBusiness = true;
+                break;
             }
         }
-
-        // 商家只能更新自己店铺的订单
-        boolean isBusinessOwner = false;
-        if (isBusiness && order.getBusiness() != null && order.getBusiness().getBusinessOwner() != null) {
-            isBusinessOwner = order.getBusiness().getBusinessOwner().getId().equals(me.getId());
-        }
-
-        // 权限验证：管理员、订单所属用户或商家所有者可以更新订单状态
-        if (isAdmin || isOrderOwner || isBusinessOwner) {
-            // 更新订单状态
+        if (isAdmin || me.equals(order.getCustomer())) {
             order.setOrderState(orderState);
-            order.setUpdateTime(LocalDateTime.now());
+            LocalDateTime now = LocalDateTime.now();
+            order.setUpdateTime(now);
             order.setUpdater(me.getId());
-
-            // 保存更新
             orderService.updateOrder(order);
-
-            // 返回更新后的订单
             return HttpResult.success(order);
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
-    // 获取当前用户的订单 - 使用现有的Service方法
     @GetMapping("/my")
     public HttpResult<List<Order>> getMyOrders() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-
         User me = meOptional.get();
 
-        // 直接使用现有的Service方法获取当前用户的订单
         List<Order> myOrders = orderService.getOrdersByCustomerId(me.getId());
-
         return HttpResult.success(myOrders);
     }
 }
