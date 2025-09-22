@@ -32,4 +32,8 @@ public class OrderService {
     public List<Order> getOrdersByCustomerId(Long id) {
         return Utils.removeDeleted(orderRepository.findAllByCustomerId(id));
     }
+
+    public void updateOrder(Order order) {
+        orderRepository.save(order);
+    }
 }

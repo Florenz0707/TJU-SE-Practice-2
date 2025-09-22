@@ -1,4 +1,4 @@
-package cn.edu.tju.core.security.rest.dto;
+package cn.edu.tju.core.security.controller.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
