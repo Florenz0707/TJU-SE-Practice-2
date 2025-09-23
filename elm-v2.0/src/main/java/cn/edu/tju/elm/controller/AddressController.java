@@ -3,7 +3,6 @@ package cn.edu.tju.elm.controller;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.core.security.repository.UserRepository;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.model.DeliveryAddress;
 import cn.edu.tju.elm.service.AddressService;

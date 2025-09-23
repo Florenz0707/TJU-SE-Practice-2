@@ -11,11 +11,11 @@ public class BusinessApplication extends BaseEntity {
     private Business business;
 
     @ManyToOne
-    @JoinColumn(name = "approver_id", nullable = false)
-    private User approver;
+    @JoinColumn(name = "handler_id", nullable = false)
+    private User handler;
 
     @Column(columnDefinition = "TEXT")
-    private String applicationExplein;
+    private String applicationExplain;
 
     private Integer applicationState;
 
@@ -23,13 +23,13 @@ public class BusinessApplication extends BaseEntity {
 
     public void setBusiness(Business business) { this.business = business; }
 
-    public User getApprover() { return approver; }
+    public User getHandler() { return handler; }
 
-    public void setApprover(User approver) { this.approver = approver; }
+    public void setHandler(User handler) { this.handler = handler; }
 
-    public String getApplicationExplein() { return applicationExplein; }
+    public String getApplicationExplain() { return applicationExplain; }
 
-    public void setApplicationExplein(String applicationExplein) {this.applicationExplein = applicationExplein; }
+    public void setApplicationExplain(String applicationExplain) {this.applicationExplain = applicationExplain; }
 
     public Integer getApplicationState() { return applicationState; }
 

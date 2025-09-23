@@ -16,8 +16,8 @@ public class MerchantApplication extends BaseEntity {
     private Integer applicationState;
 
     @ManyToOne
-    @JoinColumn(name = "approver_id", nullable = false)
-    private User approver;
+    @JoinColumn(name = "handler_id", nullable = false)
+    private User handler;
 
     public User getApplicant() { return applicant; }
 
@@ -31,7 +31,7 @@ public class MerchantApplication extends BaseEntity {
 
     public void setApplicationState(Integer applicationState) { this.applicationState = applicationState; }
 
-    public User getApprover() { return approver; }
+    public User getHandler() { return handler; }
 
-    public void setApprover(User approver) { this.approver = approver; }
+    public void setHandler(User handler) { this.handler = handler; }
 }
