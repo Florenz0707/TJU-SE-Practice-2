@@ -21,26 +21,21 @@ public class BusinessService {
     }
 
     public List<Business> getBusinesses() {
-        return Utils.removeDeleted(businessRepository.findAll());
+        return Utils.filterEntityList(businessRepository.findAll());
     }
 
     public Business getBusinessById(Long businessId) {
         Optional<Business> businessOptional = businessRepository.findOneById(businessId);
-        if (businessOptional.isEmpty() || businessOptional.get().getDeleted()) return null;
-        return businessOptional.get();
-    }
-
-    public Business getById(Long id) {
-        return businessRepository.findById(id).orElse(null);
+        return businessOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public List<Business> getBusinessByOwner(User owner) {
         List<Business> businessList = businessRepository.findAllByBusinessOwner(owner);
-        return Utils.removeDeleted(businessList);
+        return Utils.filterEntityList(businessList);
     }
 
-    public Business addBusiness(Business business) {
-        return businessRepository.save(business);
+    public void addBusiness(Business business) {
+        businessRepository.save(business);
     }
 
     public void updateBusiness(Business business) {

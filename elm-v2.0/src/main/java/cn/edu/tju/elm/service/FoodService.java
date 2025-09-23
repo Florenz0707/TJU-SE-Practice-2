@@ -18,17 +18,17 @@ public class FoodService {
         this.foodRepository = foodRepository;
     }
 
-    public Food addFood(Food food) {
-        return foodRepository.save(food);
+    public void addFood(Food food) {
+        foodRepository.save(food);
     }
 
     public List<Food> getFoodsByBusinessId(Long businessId) {
-        return Utils.removeDeleted(foodRepository.findAllByBusinessId(businessId));
+        return Utils.filterEntityList(foodRepository.findAllByBusinessId(businessId));
     }
 
     public Food getFoodById(Long id) {
         Optional<Food> foodOptional = foodRepository.findById(id);
-        return foodOptional.orElse(null);
+        return foodOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public void updateFood(Food food) {

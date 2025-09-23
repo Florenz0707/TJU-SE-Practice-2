@@ -6,17 +6,6 @@ import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 
 public class ObjectUtils {
-    /**
-     * @param existObj 原对象
-     * @param newObj   新对象
-     *                 功能：用 newObj 更新 existObj 对象。将 newObj 中有值的字段赋给 existObj，没有值的（即值为null）的不影响 existObj 的原值。
-     *                 existObj 和 newObj 必须是同一个类的对象
-     *                 只处理以下类型：String, Integer, Long, Boolean, java.time.LocalDateTime，需要正确提供public的getter和setter方法。
-     *                 不能处理：int, long, boolean
-     *                 不处理字段属性为其它自定义类的字段
-     *                 不处理从父类中继承的字段
-     *                 不处理名为 id 的字段
-     */
     public static void patch(Object existObj, Object newObj) {
         Class<?> clazz = existObj.getClass();
         // getFields() 返回 Class 对象所表示的类或接口所声明的所有字段，包括公共、保护、默认（包）访问和私有字段，但不包括继承的字段。
@@ -55,23 +44,12 @@ public class ObjectUtils {
                         Method setMethod = clazz.getMethod("set" + methodName, LocalDateTime.class);
                         setMethod.invoke(existObj, (LocalDateTime) result);
                     }
-//                    } else if (field.getGenericType() == int.class) {
-//                        Method setMethod = clazz.getMethod("set" + methodName, int.class);
-//                        setMethod.invoke(existObj, (int) result);
-//                    } else if (field.getGenericType() == long.class) {
-//                        Method setMethod = clazz.getMethod("set" + methodName, long.class);
-//                        setMethod.invoke(existObj, (Long) result);
-//                    } else if (field.getGenericType() == boolean.class) {
-//                        Method setMethod = clazz.getMethod("is" + methodName, boolean.class);
-//                        setMethod.invoke(existObj, (boolean) result);
-//                    }
                 }
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
-
         }
     }
 }

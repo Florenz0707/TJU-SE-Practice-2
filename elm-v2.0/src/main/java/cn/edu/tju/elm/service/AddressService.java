@@ -18,17 +18,17 @@ public class AddressService {
         this.addressRepository = addressRepository;
     }
 
-    public DeliveryAddress addAddress(DeliveryAddress address) {
-        return addressRepository.save(address);
+    public void addAddress(DeliveryAddress address) {
+        addressRepository.save(address);
     }
 
     public DeliveryAddress getAddressById(Long id) {
         Optional<DeliveryAddress> addressOptional = addressRepository.findById(id);
-        return addressOptional.orElse(null);
+        return addressOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public List<DeliveryAddress> getAddressesByCustomerId(Long customerId) {
-        return Utils.removeDeleted(addressRepository.findByCustomerId(customerId));
+        return Utils.filterEntityList(addressRepository.findByCustomerId(customerId));
     }
     public void updateAddress(DeliveryAddress address) {
         addressRepository.save(address);

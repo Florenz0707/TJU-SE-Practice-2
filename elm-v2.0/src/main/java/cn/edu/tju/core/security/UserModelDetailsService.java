@@ -37,7 +37,7 @@ public class UserModelDetailsService implements UserDetailsService {
         log.debug("Authenticating user '{}'", login);
 
         String lowercaseLogin = login.toLowerCase(Locale.ENGLISH);
-        return userRepository.getOneWithAuthoritiesByUsername(lowercaseLogin)
+        return userRepository.getUserWithAuthoritiesByUsername(lowercaseLogin)
                 .map(user -> createSpringSecurityUser(lowercaseLogin, user))
                 .orElseThrow(() -> new UsernameNotFoundException("User " + lowercaseLogin + " was not found in the database"));
 

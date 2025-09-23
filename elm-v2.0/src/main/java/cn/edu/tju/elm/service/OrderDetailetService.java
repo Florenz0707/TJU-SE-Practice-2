@@ -18,11 +18,11 @@ public class OrderDetailetService {
         this.orderDetailetRepository = orderDetailetRepository;
     }
 
-    public OrderDetailet addOrderDetailet(OrderDetailet orderDetailet) {
-        return orderDetailetRepository.save(orderDetailet);
+    public void addOrderDetailet(OrderDetailet orderDetailet) {
+        orderDetailetRepository.save(orderDetailet);
     }
 
-    public List<OrderDetailet> getOrderDetailetByOrderId(Long orderId) {
-        return Utils.removeDeleted(orderDetailetRepository.findAllByOrderId(orderId));
+    public List<OrderDetailet> getOrderDetailetsByOrderId(Long orderId) {
+        return Utils.filterEntityList(orderDetailetRepository.findAllByOrderId(orderId));
     }
 }

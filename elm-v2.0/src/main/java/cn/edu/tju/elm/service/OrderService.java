@@ -19,18 +19,17 @@ public class OrderService {
         this.orderRepository = orderRepository;
     }
 
-    public Order addOrder(Order order) {
-        return orderRepository.save(order);
+    public void addOrder(Order order) {
+        orderRepository.save(order);
     }
 
     public Order getOrderById(Long id) {
         Optional<Order> orderOptional = orderRepository.findById(id);
-        if (orderOptional.isEmpty() || orderOptional.get().getDeleted()) return null;
-        return orderOptional.get();
+        return orderOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public List<Order> getOrdersByCustomerId(Long id) {
-        return Utils.removeDeleted(orderRepository.findAllByCustomerId(id));
+        return Utils.filterEntityList(orderRepository.findAllByCustomerId(id));
     }
 
     public void updateOrder(Order order) {

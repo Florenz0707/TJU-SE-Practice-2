@@ -1,6 +1,5 @@
 package cn.edu.tju.elm.controller;
 
-import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.Business;
@@ -11,6 +10,7 @@ import cn.edu.tju.elm.service.CartItemService;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.service.FoodService;
+import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -62,22 +62,17 @@ public class CartController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
         if (!food.getBusiness().equals(business))
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND IN THE Business");
-        User user = userService.getUserById(cart.getCustomer().getId());
-        if (user == null)
+        User customer = userService.getUserById(cart.getCustomer().getId());
+        if (customer == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        if (user.equals(me)) {
+        if (me.equals(customer)) {
+            Utils.setNewEntity(cart, me);
+            cartItemService.addCart(cart);
+
             cart.setFood(food);
             cart.setBusiness(business);
-            cart.setCustomer(user);
-
-            LocalDateTime now = LocalDateTime.now();
-            cart.setCreateTime(now);
-            cart.setUpdateTime(now);
-            cart.setCreator(me.getId());
-            cart.setUpdater(me.getId());
-            cart.setDeleted(false);
-            cartItemService.addCart(cart);
+            cart.setCustomer(customer);
             return HttpResult.success(cart);
         }
 
@@ -109,13 +104,7 @@ public class CartController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
         User owner = cart.getCustomer();
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
+        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(owner)) {
             cart.setQuantity(newCart.getQuantity());
 
@@ -140,22 +129,10 @@ public class CartController {
         if (cart == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
-
-        if (isAdmin || cart.getCustomer().equals(me)) {
-            cart.setDeleted(true);
-
-            LocalDateTime now = LocalDateTime.now();
-            cart.setUpdateTime(now);
-            cart.setUpdater(me.getId());
-            cartItemService.updateCart(cart);
-            return HttpResult.success(cart);
+        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        if (isAdmin || me.equals(cart.getCustomer())) {
+            cartItemService.deleteCart(cart);
+            return HttpResult.success();
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }

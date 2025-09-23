@@ -1,12 +1,12 @@
 package cn.edu.tju.elm.controller;
 
-import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.*;
 import cn.edu.tju.elm.service.*;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -81,36 +81,24 @@ public class OrderController {
                     totalPrice.compareTo(business.getStartPrice()) < 0)
                 return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order.TotalPrice IS LESS THAN BUSINESS START PRICE");
 
+            Utils.setNewEntity(order, me);
             order.setOrderTotal(totalPrice);
             order.setOrderState(OrderState.UNPAID);
-
+            order.setOrderDate(order.getCreateTime());
             order.setBusiness(business);
             order.setCustomer(customer);
             order.setDeliveryAddress(address);
-
-            LocalDateTime now = LocalDateTime.now();
-            order.setCreateTime(now);
-            order.setUpdateTime(now);
-            order.setOrderDate(now);
-            order.setCreator(me.getId());
-            order.setUpdater(me.getId());
-            order.setDeleted(false);
-
             orderService.addOrder(order);
+
             for (Cart cart : cartList) {
+                cartItemService.deleteCart(cart);
+
                 OrderDetailet orderDetailet = new OrderDetailet();
-                orderDetailet.setCreateTime(now);
-                orderDetailet.setUpdateTime(now);
-                orderDetailet.setCreator(me.getId());
-                orderDetailet.setUpdater(me.getId());
-                orderDetailet.setDeleted(false);
+                Utils.setNewEntity(orderDetailet, me);
                 orderDetailet.setOrder(order);
                 orderDetailet.setFood(cart.getFood());
                 orderDetailet.setQuantity(cart.getQuantity());
                 orderDetailetService.addOrderDetailet(orderDetailet);
-
-                cart.setDeleted(true);
-                cartItemService.updateCart(cart);
             }
             return HttpResult.success(order);
         }
@@ -121,21 +109,16 @@ public class OrderController {
     @GetMapping("/{id}")
     public HttpResult<Order> getOrderById(@PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         Order order = orderService.getOrderById(id);
         if (order == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
-        if (isAdmin || order.getCustomer().equals(me))
+        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        if (isAdmin || me.equals(order.getCustomer()))
             return HttpResult.success(order);
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -152,16 +135,9 @@ public class OrderController {
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
-        if (isAdmin || me.equals(user)) {
+        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        if (isAdmin || me.equals(user))
             return HttpResult.success(orderService.getOrdersByCustomerId(userId));
-        }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
@@ -189,13 +165,7 @@ public class OrderController {
         if (!OrderState.isValidOrderState(orderState))
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
+        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(newOrder.getCustomer())) {
             newOrder.setOrderState(orderState);
             LocalDateTime now = LocalDateTime.now();
@@ -206,16 +176,5 @@ public class OrderController {
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
-
-    @GetMapping("/my")
-    public HttpResult<List<Order>> getMyOrders() {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        List<Order> myOrders = orderService.getOrdersByCustomerId(me.getId());
-        return HttpResult.success(myOrders);
     }
 }
