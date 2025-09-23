@@ -41,7 +41,8 @@ public class OrderController {
     @PostMapping(value = "")
     public HttpResult<Order> addOrders(@RequestBody Order order) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         if (order == null)
@@ -51,9 +52,8 @@ public class OrderController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
         if (order.getCustomer() == null || order.getCustomer().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
-        if (order.getDeliveryAddress() == null || order.getDeliveryAddress().getId() == null) {
+        if (order.getDeliveryAddress() == null || order.getDeliveryAddress().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress.Id CANT BE NULL");
-        }
 
         Business business = businessService.getBusinessById(order.getBusiness().getId());
         if (business == null)
@@ -75,6 +75,12 @@ public class OrderController {
                 BigDecimal quantity = new BigDecimal(cart.getQuantity());
                 totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
             }
+            if (business.getDeliveryPrice() != null)
+                totalPrice = totalPrice.add(business.getDeliveryPrice());
+            if (business.getStartPrice() != null &&
+                    totalPrice.compareTo(business.getStartPrice()) < 0)
+                return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order.TotalPrice IS LESS THAN BUSINESS START PRICE");
+
             order.setOrderTotal(totalPrice);
             order.setOrderState(OrderState.UNPAID);
 
@@ -161,8 +167,7 @@ public class OrderController {
     }
 
     @PatchMapping("")
-    public HttpResult<Order> updateOrderStatus(
-            @RequestBody Order order) {
+    public HttpResult<Order> updateOrderStatus(@RequestBody Order order) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
