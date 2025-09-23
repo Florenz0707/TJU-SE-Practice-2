@@ -66,7 +66,7 @@ public class FoodController {
 
         Order order = orderService.getOrderById(orderId);
         if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
-        List<OrderDetailet> orderDetailetList = orderDetailetService.getOrderDetailetByOrderId(orderId);
+        List<OrderDetailet> orderDetailetList = orderDetailetService.getOrderDetailetsByOrderId(orderId);
         List<Food> foodList = new ArrayList<>(orderDetailetList.size());
         for (OrderDetailet orderDetailet : orderDetailetList) {
             foodList.add(orderDetailet.getFood());

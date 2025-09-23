@@ -3,18 +3,21 @@ package cn.edu.tju.elm.utils;
 import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.BaseEntity;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Utils {
-    public static <T extends BaseEntity> List<T> removeDeleted(List<T> list) {
+    public static <T extends BaseEntity> List<T> checkEntityList(List<T> list) {
         List<T> newList = new ArrayList<>(list.size());
         for (T t : list) {
-            if (!t.getDeleted()) newList.add(t);
+            if (t.getDeleted() && ! t.getReferred()) continue;
+            newList.add(t);
         }
         return newList;
+    }
+
+    public static <T extends BaseEntity> T checkEntity(T t) {
+        if (t.getDeleted() && !t.getReferred()) return null;
+        return t;
     }
 
     public static Set<Authority> getAuthoritySet(String authorities) {

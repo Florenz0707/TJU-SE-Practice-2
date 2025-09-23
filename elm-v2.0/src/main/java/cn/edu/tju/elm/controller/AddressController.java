@@ -62,8 +62,9 @@ public class AddressController {
             address.setCreator(user.getId());
             address.setUpdater(user.getId());
             address.setDeleted(false);
-            if (address.equals(addressService.addAddress(address)))
-                return HttpResult.success(address);
+            address.setReferred(false);
+            addressService.addAddress(address);
+            return HttpResult.success(address);
         }
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "AUTHORITY LACKED");
     }
@@ -112,15 +113,25 @@ public class AddressController {
         }
 
         if (isAdmin || (me.equals(oldCustomer) && me.equals(customer))) {
-            address.setId(oldAddress.getId());
-            address.setCustomer(customer);
-
             LocalDateTime now = LocalDateTime.now();
-            address.setCreateTime(oldAddress.getCreateTime());
+            if (oldAddress.getReferred()) {
+                oldAddress.setDeleted(true);
+                oldAddress.setUpdateTime(now);
+                oldAddress.setUpdater(me.getId());
+                addressService.updateAddress(oldAddress);
+                address.setCreator(me.getId());
+                address.setCreateTime(now);
+            }
+            else {
+                address.setId(oldAddress.getId());
+                address.setCreateTime(oldAddress.getCreateTime());
+                address.setCreator(oldAddress.getCreator());
+            }
+            address.setCustomer(customer);
             address.setUpdateTime(now);
-            address.setCreator(oldAddress.getCreator());
             address.setUpdater(me.getId());
             address.setDeleted(false);
+            address.setReferred(false);
             addressService.updateAddress(address);
             return HttpResult.success(address);
         }

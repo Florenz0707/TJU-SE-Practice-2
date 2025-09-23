@@ -83,7 +83,6 @@ public class OrderController {
 
             order.setOrderTotal(totalPrice);
             order.setOrderState(OrderState.UNPAID);
-
             order.setBusiness(business);
             order.setCustomer(customer);
             order.setDeliveryAddress(address);
@@ -95,6 +94,7 @@ public class OrderController {
             order.setCreator(me.getId());
             order.setUpdater(me.getId());
             order.setDeleted(false);
+            order.setReferred(true);
 
             orderService.addOrder(order);
             for (Cart cart : cartList) {
@@ -110,6 +110,7 @@ public class OrderController {
                 orderDetailetService.addOrderDetailet(orderDetailet);
 
                 cart.setDeleted(true);
+                cart.setReferred(true);
                 cartItemService.updateCart(cart);
             }
             return HttpResult.success(order);
@@ -121,7 +122,8 @@ public class OrderController {
     @GetMapping("/{id}")
     public HttpResult<Order> getOrderById(@PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         Order order = orderService.getOrderById(id);
@@ -135,7 +137,7 @@ public class OrderController {
                 break;
             }
         }
-        if (isAdmin || order.getCustomer().equals(me))
+        if (isAdmin || me.equals(order.getCustomer()))
             return HttpResult.success(order);
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -159,9 +161,8 @@ public class OrderController {
                 break;
             }
         }
-        if (isAdmin || me.equals(user)) {
+        if (isAdmin || me.equals(user))
             return HttpResult.success(orderService.getOrdersByCustomerId(userId));
-        }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
@@ -206,16 +207,5 @@ public class OrderController {
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
-
-    @GetMapping("/my")
-    public HttpResult<List<Order>> getMyOrders() {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        List<Order> myOrders = orderService.getOrdersByCustomerId(me.getId());
-        return HttpResult.success(myOrders);
     }
 }
