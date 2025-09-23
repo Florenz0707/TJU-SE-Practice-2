@@ -14,11 +14,18 @@ public class BaseEntity implements Serializable {
     private Long id;
 
     private LocalDateTime createTime;
+
     private LocalDateTime updateTime;
+
     private Long creator;
+
     private Long updater;
+
     @Column(name = "is_deleted")
     private Boolean deleted;
+
+    @Column(name = "is_referred")
+    private Boolean referred;
 
     public LocalDateTime getCreateTime() {
         return createTime;
@@ -66,6 +73,14 @@ public class BaseEntity implements Serializable {
 
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public Boolean getReferred() {
+        return referred;
+    }
+
+    public void setReferred(Boolean referred) {
+        this.referred = referred;
     }
 
     @Override

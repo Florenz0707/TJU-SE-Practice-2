@@ -42,6 +42,9 @@ public class CartController {
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
+        if (cart == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart CANT BE NULL");
+
         if (cart.getFood() == null || cart.getFood().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
         if (cart.getBusiness() == null || cart.getBusiness().getId() == null)
@@ -74,10 +77,8 @@ public class CartController {
             cart.setCreator(me.getId());
             cart.setUpdater(me.getId());
             cart.setDeleted(false);
-            if (cart.equals(cartItemService.addCart(cart))) {
-                return HttpResult.success(cart);
-            }
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "UNKNOWN ERROR");
+            cartItemService.addCart(cart);
+            return HttpResult.success(cart);
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -91,33 +92,22 @@ public class CartController {
         return HttpResult.success(cartItemService.getUserCarts(me.getId()));
     }
 
-    @PutMapping("/carts/{id}")
-    public HttpResult<Cart> updateCartItem(@PathVariable("id") Long id, @RequestBody Cart cart) {
+    @PatchMapping("/carts/{id}")
+    public HttpResult<Cart> updateCartItem(@PathVariable("id") Long id, @RequestBody Cart newCart) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        if (cart.getBusiness() == null || cart.getBusiness().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Business.Id CANT BE NULL");
-        if (cart.getCustomer() == null || cart.getCustomer().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer.Id CANT BE NULL");
-        if (cart.getFood() == null || cart.getFood().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Food.Id CANT BE NULL");
+        if (newCart == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart CANT BE NULL");
 
-        Cart oldCart = cartItemService.getCartById(id);
-        if (oldCart == null)
+        if (newCart.getQuantity() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart.Quantity CANT BE NULL");
+
+        Cart cart = cartItemService.getCartById(id);
+        if (cart == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
-        User oldOwner = oldCart.getCustomer();
-        User newOwner = userService.getUserById(cart.getCustomer().getId());
-        if (newOwner == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
-
-        Food food = foodService.getFoodById(cart.getFood().getId());
-        if (food == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
-        Business business = businessService.getBusinessById(cart.getBusiness().getId());
-        if (business == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        User owner = cart.getCustomer();
 
         boolean isAdmin = false;
         for (Authority authority : me.getAuthorities()) {
@@ -126,18 +116,12 @@ public class CartController {
                 break;
             }
         }
-        if (isAdmin || me.equals(oldOwner) && oldOwner.equals(newOwner)) {
-            cart.setCustomer(newOwner);
-            cart.setFood(food);
-            cart.setBusiness(business);
+        if (isAdmin || me.equals(owner)) {
+            cart.setQuantity(newCart.getQuantity());
 
             LocalDateTime now = LocalDateTime.now();
-            cart.setId(oldCart.getId());
-            cart.setCreateTime(oldCart.getCreateTime());
             cart.setUpdateTime(now);
-            cart.setCreator(oldCart.getCreator());
             cart.setUpdater(me.getId());
-            cart.setDeleted(false);
 
             cartItemService.updateCart(cart);
             return HttpResult.success(cart);

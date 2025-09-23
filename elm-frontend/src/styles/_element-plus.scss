@@ -1,0 +1,63 @@
+// This file overrides Element Plus default variables and adds custom styles.
+
+// 1. Forward and override Element Plus variables.
+// We use the modern @forward rule to modify the default variables before they are used.
+@forward "element-plus/theme-chalk/src/common/var.scss" with (
+  $colors: (
+    "primary": (
+      "base": #F97316, // A passionate orange
+    ),
+    "success": (
+      "base": #10B981,
+    ),
+    "warning": (
+      "base": #F59E0B,
+    ),
+    "danger": (
+      "base": #EF4444,
+    ),
+    "info": (
+      "base": #6B7280,
+    ),
+  ),
+  $font-family: (
+    "sans-serif": "Inter",
+  ),
+  // Modernizing the border radius for a softer look
+  $border-radius: (
+    "base": 8px,
+    "small": 6px,
+    "round": 12px,
+    "circle": 100%,
+  )
+);
+
+// 2. Import the base Element Plus styles.
+// This will now use our overridden variables.
+@use "element-plus/theme-chalk/src/index.scss" as *;
+
+// 3. Add custom component styles that can't be done with variables.
+// =================================================================
+
+// Custom Button Animations
+.el-button {
+  transition: all 0.2s ease-out !important;
+
+  // Primary Button Hover Animation
+  &.el-button--primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.15), 0 4px 6px -2px rgba(249, 115, 22, 0.1);
+  }
+}
+
+// Custom Input Styles
+.el-input__wrapper {
+  transition: all 0.2s ease-out !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  &:hover {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  }
+  &.is-focus {
+    box-shadow: 0 0 0 2px rgba(251, 146, 60, 0.4); // A lighter orange for focus ring
+  }
+}
