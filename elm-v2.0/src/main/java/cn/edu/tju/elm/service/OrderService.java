@@ -25,11 +25,11 @@ public class OrderService {
 
     public Order getOrderById(Long id) {
         Optional<Order> orderOptional = orderRepository.findById(id);
-        return orderOptional.map(Utils::checkEntity).orElse(null);
+        return orderOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public List<Order> getOrdersByCustomerId(Long id) {
-        return Utils.checkEntityList(orderRepository.findAllByCustomerId(id));
+        return Utils.filterEntityList(orderRepository.findAllByCustomerId(id));
     }
 
     public void updateOrder(Order order) {

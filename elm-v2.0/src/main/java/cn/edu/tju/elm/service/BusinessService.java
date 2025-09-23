@@ -21,17 +21,17 @@ public class BusinessService {
     }
 
     public List<Business> getBusinesses() {
-        return Utils.checkEntityList(businessRepository.findAll());
+        return Utils.filterEntityList(businessRepository.findAll());
     }
 
     public Business getBusinessById(Long businessId) {
         Optional<Business> businessOptional = businessRepository.findOneById(businessId);
-        return businessOptional.map(Utils::checkEntity).orElse(null);
+        return businessOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public List<Business> getBusinessByOwner(User owner) {
         List<Business> businessList = businessRepository.findAllByBusinessOwner(owner);
-        return Utils.checkEntityList(businessList);
+        return Utils.filterEntityList(businessList);
     }
 
     public void addBusiness(Business business) {

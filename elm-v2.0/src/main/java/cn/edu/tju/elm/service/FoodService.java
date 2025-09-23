@@ -23,12 +23,12 @@ public class FoodService {
     }
 
     public List<Food> getFoodsByBusinessId(Long businessId) {
-        return Utils.checkEntityList(foodRepository.findAllByBusinessId(businessId));
+        return Utils.filterEntityList(foodRepository.findAllByBusinessId(businessId));
     }
 
     public Food getFoodById(Long id) {
         Optional<Food> foodOptional = foodRepository.findById(id);
-        return foodOptional.map(Utils::checkEntity).orElse(null);
+        return foodOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public void updateFood(Food food) {

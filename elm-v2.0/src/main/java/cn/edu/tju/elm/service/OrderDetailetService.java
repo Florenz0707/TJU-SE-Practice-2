@@ -23,6 +23,6 @@ public class OrderDetailetService {
     }
 
     public List<OrderDetailet> getOrderDetailetsByOrderId(Long orderId) {
-        return Utils.checkEntityList(orderDetailetRepository.findAllByOrderId(orderId));
+        return Utils.filterEntityList(orderDetailetRepository.findAllByOrderId(orderId));
     }
 }

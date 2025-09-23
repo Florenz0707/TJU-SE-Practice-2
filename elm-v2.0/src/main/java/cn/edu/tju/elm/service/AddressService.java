@@ -24,11 +24,11 @@ public class AddressService {
 
     public DeliveryAddress getAddressById(Long id) {
         Optional<DeliveryAddress> addressOptional = addressRepository.findById(id);
-        return addressOptional.map(Utils::checkEntity).orElse(null);
+        return addressOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public List<DeliveryAddress> getAddressesByCustomerId(Long customerId) {
-        return Utils.checkEntityList(addressRepository.findByCustomerId(customerId));
+        return Utils.filterEntityList(addressRepository.findByCustomerId(customerId));
     }
     public void updateAddress(DeliveryAddress address) {
         addressRepository.save(address);

@@ -24,19 +24,23 @@ public class CartItemService {
     }
 
     public List<Cart> getCart(Long businessId, Long customerId) {
-        return Utils.checkEntityList(cartItemRepository.findAllByBusinessIdAndCustomerId(businessId, customerId));
+        return Utils.filterEntityList(cartItemRepository.findAllByBusinessIdAndCustomerId(businessId, customerId));
     }
 
     public List<Cart> getUserCarts(Long customerId) {
-        return Utils.checkEntityList(cartItemRepository.findAllByCustomerId(customerId));
+        return Utils.filterEntityList(cartItemRepository.findAllByCustomerId(customerId));
     }
 
     public Cart getCartById(Long cartId) {
         Optional<Cart> cartOptional = cartItemRepository.findById(cartId);
-        return cartOptional.map(Utils::checkEntity).orElse(null);
+        return cartOptional.map(Utils::filterEntity).orElse(null);
     }
 
     public void updateCart(Cart cart) {
         cartItemRepository.save(cart);
+    }
+
+    public void deleteCart(Cart cart) {
+        cartItemRepository.delete(cart);
     }
 }
