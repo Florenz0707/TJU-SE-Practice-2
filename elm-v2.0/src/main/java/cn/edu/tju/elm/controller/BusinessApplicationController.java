@@ -6,12 +6,14 @@ import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.model.BusinessApplication;
 import cn.edu.tju.elm.service.BusinessApplicationService;
 import cn.edu.tju.elm.service.BusinessService;
+import cn.edu.tju.elm.service.MerchantApplicationService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -55,4 +57,65 @@ public class BusinessApplicationController {
         businessApplicationService.addApplication(businessApplication);
         return HttpResult.success(businessApplication);
     }
+
+    @GetMapping("/applications/business")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public HttpResult<List<BusinessApplication>> getBusinessApplications() {
+        return HttpResult.success(businessApplicationService.getAllBusinessApplications());
+    }
+
+    @GetMapping("/applications/business/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public HttpResult<BusinessApplication> getBusinessApplication(@PathVariable Long id) {
+        BusinessApplication businessApplication = businessApplicationService.getBusinessApplicationById(id);
+        if (businessApplication == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication NOT FOUND");
+        return HttpResult.success(businessApplicationService.getBusinessApplicationById(id));
+    }
+
+    @PatchMapping("/applications/business/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public HttpResult<BusinessApplication> approveBusinessApplication(@PathVariable Long id, @RequestBody BusinessApplication businessApplication) {
+        Optional<User>  meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        BusinessApplication oldApplication = businessApplicationService.getBusinessApplicationById(id);
+        if (oldApplication == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication NOT FOUND");
+
+        if (oldApplication.getBusiness() == null || oldApplication.getBusiness().getBusinessName() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.BusinessName NOT FOUND");
+
+        if (!oldApplication.getApplicationState().equals(ApplicationState.UNDISPOSED))
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ALREADY DISPOSED");
+
+        businessApplication.setApplicationState(ApplicationState.APPROVED);
+        businessApplication.setHandler(me);
+        return HttpResult.success(businessApplication);
+
+    }
+
+    @PatchMapping("/applications/business/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    public HttpResult<BusinessApplication> rejectBusinessApplication(@PathVariable Long id, @RequestBody BusinessApplication businessApplication) {
+        Optional<User>  meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        BusinessApplication oldApplication = businessApplicationService.getBusinessApplicationById(id);
+        if (oldApplication == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication NOT FOUND");
+
+        if (oldApplication.getBusiness() == null || oldApplication.getBusiness().getBusinessName() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.BusinessName NOT FOUND");
+
+        if (!oldApplication.getApplicationState().equals(ApplicationState.UNDISPOSED))
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ALREADY DISPOSED");
+
+        businessApplication.setApplicationState(ApplicationState.REJECTED);
+        businessApplication.setHandler(me);
+        return HttpResult.success(businessApplication);
+    }
+
 }

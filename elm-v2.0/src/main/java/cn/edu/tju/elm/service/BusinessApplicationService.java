@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -24,5 +25,14 @@ public class BusinessApplicationService {
 
     public void addApplication(BusinessApplication businessApplication){
         businessApplicationRepository.save(businessApplication);
+    }
+
+    public List<BusinessApplication> getAllBusinessApplications(){
+        return businessApplicationRepository.findAll();
+    }
+
+    public BusinessApplication getBusinessApplicationById(Long id){
+        Optional<BusinessApplication> businessApplicationOptional = businessApplicationRepository.findById(id);
+        return businessApplicationOptional.map(Utils::filterEntity).orElse(null);
     }
 }
