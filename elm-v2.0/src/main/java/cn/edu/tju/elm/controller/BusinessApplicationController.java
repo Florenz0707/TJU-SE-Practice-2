@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/applications/business")
 @Tag(name = "管理开店申请", description = "对商家提出的开店申请进行增删改查")
 public class BusinessApplicationController {
 
@@ -30,9 +30,10 @@ public class BusinessApplicationController {
     @Autowired
     private BusinessApplicationService businessApplicationService;
 
-    @PostMapping("/applications/business")
+    @PostMapping("")
     @PreAuthorize("hasAuthority('BUSINESS')")
-    public HttpResult<BusinessApplication> addBusinessApplication(@RequestBody BusinessApplication businessApplication) {
+    public HttpResult<BusinessApplication> addBusinessApplication(
+            @RequestBody BusinessApplication businessApplication) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -58,37 +59,39 @@ public class BusinessApplicationController {
         return HttpResult.success(businessApplication);
     }
 
-    @GetMapping("/applications/business")
+    @GetMapping("")
     @PreAuthorize("hasAuthority('ADMIN')")
     public HttpResult<List<BusinessApplication>> getBusinessApplications() {
         return HttpResult.success(businessApplicationService.getAllBusinessApplications());
     }
 
-    @GetMapping("/applications/business/{id}")
+    @GetMapping("/{id}")
     public HttpResult<BusinessApplication> getBusinessApplication(@PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        boolean isAdmin =  Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
 
         BusinessApplication businessApplication = businessApplicationService.getBusinessApplicationById(id);
-
         if (businessApplication == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication NOT FOUND");
 
-        if(isAdmin || (isBusiness && me.equals(businessApplication.getBusiness().getBusinessOwner())))
+        if (isAdmin || (isBusiness && me.equals(businessApplication.getBusiness().getBusinessOwner())))
             return HttpResult.success(businessApplication);
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN);
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
-    @PatchMapping("/applications/business/{id}")
+    @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public HttpResult<BusinessApplication> approveBusinessApplication(@PathVariable Long id, @RequestBody BusinessApplication businessApplication) {
-        Optional<User>  meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    public HttpResult<BusinessApplication> handleBusinessApplication(
+            @PathVariable Long id,
+            @RequestBody BusinessApplication businessApplication) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         BusinessApplication oldApplication = businessApplicationService.getBusinessApplicationById(id);
@@ -101,13 +104,30 @@ public class BusinessApplicationController {
         if (!oldApplication.getApplicationState().equals(ApplicationState.UNDISPOSED))
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ALREADY DISPOSED");
 
-        oldApplication.setApplicationState(businessApplication.getApplicationState());
-        oldApplication.setHandler(me);
-        oldApplication.setUpdater(me.getId());
-        oldApplication.setUpdateTime(LocalDateTime.now());
-        businessApplicationService.updateBusinessApplication(oldApplication);
+        if (businessApplication == null || businessApplication.getApplicationState() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ApplicationState CANT BE NULL");
 
-        return HttpResult.success(businessApplication);
+        if (me.equals(businessApplication.getHandler())) {
+            oldApplication.setApplicationState(businessApplication.getApplicationState());
+            oldApplication.setUpdateTime(LocalDateTime.now());
+            oldApplication.setUpdater(me.getId());
+            businessApplicationService.updateBusinessApplication(oldApplication);
 
+            if (businessApplication.getApplicationState().equals(ApplicationState.APPROVED)) {
+                Business business = businessApplication.getBusiness();
+                business.setDeleted(false);
+                business.setUpdater(me.getId());
+                business.setUpdateTime(LocalDateTime.now());
+                businessService.updateBusiness(business);
+            }
+            return HttpResult.success(businessApplication);
+        }
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+
+    @GetMapping("/my")
+    public HttpResult<List<BusinessApplication>> getMyBusinessApplication() {
+        return null;
     }
 }
