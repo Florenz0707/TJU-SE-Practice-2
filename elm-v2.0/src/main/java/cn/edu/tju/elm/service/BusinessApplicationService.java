@@ -33,8 +33,8 @@ public class BusinessApplicationService {
         return businessApplicationOptional.map(Utils::filterEntity).orElse(null);
     }
 
-    public BusinessApplication updateBusinessApplication(BusinessApplication businessApplication){
-        return businessApplicationRepository.save(businessApplication);
+    public void updateBusinessApplication(BusinessApplication businessApplication){
+        businessApplicationRepository.save(businessApplication);
     }
 
     public List<BusinessApplication> getBusinessApplicationsByApplicant(User applicant){
