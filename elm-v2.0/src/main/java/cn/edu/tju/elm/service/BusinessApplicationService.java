@@ -21,28 +21,28 @@ public class BusinessApplicationService {
         this.businessApplicationRepository = businessApplicationRepository;
     }
 
-    public void addApplication(BusinessApplication businessApplication){
+    public void addApplication(BusinessApplication businessApplication) {
         businessApplicationRepository.save(businessApplication);
     }
 
-    public List<BusinessApplication> getAllBusinessApplications(){
+    public List<BusinessApplication> getAllBusinessApplications() {
         return businessApplicationRepository.findAll();
     }
 
-    public BusinessApplication getBusinessApplicationById(Long id){
+    public BusinessApplication getBusinessApplicationById(Long id) {
         Optional<BusinessApplication> businessApplicationOptional = businessApplicationRepository.findById(id);
         return businessApplicationOptional.map(Utils::filterEntity).orElse(null);
     }
 
-    public void updateBusinessApplication(BusinessApplication businessApplication){
+    public void updateBusinessApplication(BusinessApplication businessApplication) {
         businessApplicationRepository.save(businessApplication);
     }
 
-    public List<BusinessApplication> getBusinessApplicationsByApplicant(User applicant){
+    public List<BusinessApplication> getBusinessApplicationsByApplicant(User applicant) {
         List<BusinessApplication> allBusinessApplications = businessApplicationRepository.findAll();
-        List<BusinessApplication> businessApplicationsByApplicant = new ArrayList<>();
-        for(BusinessApplication businessApplication : allBusinessApplications){
-            if(businessApplication.getBusiness().getBusinessOwner().equals(applicant)){
+        List<BusinessApplication> businessApplicationsByApplicant = new ArrayList<>(allBusinessApplications.size());
+        for (BusinessApplication businessApplication : allBusinessApplications) {
+            if (businessApplication.getBusiness().getBusinessOwner().equals(applicant)) {
                 businessApplicationsByApplicant.add(businessApplication);
             }
         }

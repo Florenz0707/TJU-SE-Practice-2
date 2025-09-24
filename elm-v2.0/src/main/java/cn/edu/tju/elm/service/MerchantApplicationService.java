@@ -21,7 +21,7 @@ public class MerchantApplicationService {
         this.merchantApplicationRepository = merchantApplicationRepository;
     }
 
-    public void addApplication(MerchantApplication merchantApplication){
+    public void addApplication(MerchantApplication merchantApplication) {
         merchantApplicationRepository.save(merchantApplication);
     }
 
@@ -38,15 +38,7 @@ public class MerchantApplicationService {
         merchantApplicationRepository.save(merchantApplication);
     }
 
-    public List<MerchantApplication> getMyMerchantApplications(User applicant){
-        List<MerchantApplication> allMerchantApplications = merchantApplicationRepository.findAll();
-        List<MerchantApplication> myMerchantApplications = new ArrayList<>();
-
-        for(MerchantApplication merchantApplication : allMerchantApplications){
-            if(merchantApplication.getApplicant().getId().equals(applicant.getId())){
-                myMerchantApplications.add(merchantApplication);
-            }
-        }
-        return myMerchantApplications;
+    public List<MerchantApplication> getMyMerchantApplications(Long applicantId) {
+        return merchantApplicationRepository.findAllByApplicantId(applicantId);
     }
 }

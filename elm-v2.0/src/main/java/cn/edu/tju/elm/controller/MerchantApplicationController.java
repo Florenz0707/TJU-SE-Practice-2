@@ -113,6 +113,6 @@ public class MerchantApplicationController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
         User me = meOptional.get();
 
-        return HttpResult.success(merchantApplicationService.getMyMerchantApplications(me));
+        return HttpResult.success(merchantApplicationService.getMyMerchantApplications(me.getId()));
     }
 }
