@@ -47,29 +47,23 @@ public class OrderController {
 
         if (order == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
-
         if (order.getBusiness() == null || order.getBusiness().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
-        if (order.getCustomer() == null || order.getCustomer().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
         if (order.getDeliveryAddress() == null || order.getDeliveryAddress().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress.Id CANT BE NULL");
 
         Business business = businessService.getBusinessById(order.getBusiness().getId());
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-        User customer = userService.getUserById(order.getCustomer().getId());
-        if (customer == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer NOT FOUND");
         DeliveryAddress address = addressService.getAddressById(order.getDeliveryAddress().getId());
         if (address == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
 
-        List<Cart> cartList = cartItemService.getCart(business.getId(), customer.getId());
+        List<Cart> cartList = cartItemService.getCart(business.getId(), me.getId());
         if (cartList.isEmpty())
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
-        if (me.equals(customer) && me.equals(address.getCustomer())) {
+        if (me.equals(address.getCustomer())) {
             BigDecimal totalPrice = new BigDecimal(0);
             for (Cart cart : cartList) {
                 BigDecimal quantity = new BigDecimal(cart.getQuantity());
@@ -86,7 +80,7 @@ public class OrderController {
             order.setOrderState(OrderState.UNPAID);
             order.setOrderDate(order.getCreateTime());
             order.setBusiness(business);
-            order.setCustomer(customer);
+            order.setCustomer(me);
             order.setDeliveryAddress(address);
             orderService.addOrder(order);
 

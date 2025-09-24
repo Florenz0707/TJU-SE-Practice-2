@@ -33,9 +33,6 @@ public class CartController {
     @Autowired
     private FoodService foodService;
 
-    @Autowired
-    private BusinessService businessService;
-
     @PostMapping("/carts")
     public HttpResult<Cart> addCartItem(@RequestBody Cart cart) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
@@ -47,36 +44,23 @@ public class CartController {
 
         if (cart.getFood() == null || cart.getFood().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
-        if (cart.getBusiness() == null || cart.getBusiness().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
-        if (cart.getCustomer() == null || cart.getCustomer().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
         if (cart.getQuantity() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Quantity CANT BE NULL");
 
         Food food = foodService.getFoodById(cart.getFood().getId());
         if (food == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
-        Business business = businessService.getBusinessById(cart.getBusiness().getId());
+        Business business = food.getBusiness();
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-        if (!food.getBusiness().equals(business))
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND IN THE Business");
-        User customer = userService.getUserById(cart.getCustomer().getId());
-        if (customer == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        if (me.equals(customer)) {
-            Utils.setNewEntity(cart, me);
-            cartItemService.addCart(cart);
+        Utils.setNewEntity(cart, me);
+        cartItemService.addCart(cart);
 
-            cart.setFood(food);
-            cart.setBusiness(business);
-            cart.setCustomer(customer);
-            return HttpResult.success(cart);
-        }
-
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+        cart.setFood(food);
+        cart.setBusiness(business);
+        cart.setCustomer(me);
+        return HttpResult.success(cart);
     }
 
     @GetMapping("/carts")

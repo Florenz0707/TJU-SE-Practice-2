@@ -43,21 +43,11 @@ public class AddressController {
         if (address == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
-        // 检查参数关键数据是否为空，以及是否有效
-        if (address.getCustomer() == null || address.getCustomer().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
-        User customer = userService.getUserById(address.getCustomer().getId());
-        if (customer == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
+        address.setCustomer(me);
+        Utils.setNewEntity(address, me);
+        addressService.addAddress(address);
 
-        // 检查token指向的user是否与deliveryAddress中的customer一致
-        if (me.equals(customer)) {
-            address.setCustomer(customer);
-            Utils.setNewEntity(address, me);
-            addressService.addAddress(address);
-
-            return HttpResult.success(address);
-        }
-        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "AUTHORITY LACKED");
+        return HttpResult.success(address);
     }
 
     @GetMapping("/addresses")
