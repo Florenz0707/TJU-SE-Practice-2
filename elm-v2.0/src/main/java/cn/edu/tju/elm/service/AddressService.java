@@ -22,6 +22,10 @@ public class AddressService {
         addressRepository.save(address);
     }
 
+    public void updateAddress(DeliveryAddress address) {
+        addressRepository.save(address);
+    }
+
     public DeliveryAddress getAddressById(Long id) {
         Optional<DeliveryAddress> addressOptional = addressRepository.findById(id);
         return addressOptional.map(Utils::filterEntity).orElse(null);
@@ -29,8 +33,5 @@ public class AddressService {
 
     public List<DeliveryAddress> getAddressesByCustomerId(Long customerId) {
         return Utils.filterEntityList(addressRepository.findByCustomerId(customerId));
-    }
-    public void updateAddress(DeliveryAddress address) {
-        addressRepository.save(address);
     }
 }

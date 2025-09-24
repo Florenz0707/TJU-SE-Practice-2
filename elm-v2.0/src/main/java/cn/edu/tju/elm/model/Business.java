@@ -10,18 +10,26 @@ import java.math.BigDecimal;
 public class Business extends BaseEntity {
     @Column(nullable = false)
     private String businessName;
-    @ManyToOne(fetch = FetchType.EAGER)
+
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User businessOwner;
+
     private String businessAddress;
+
     private String businessExplain;
+
     @Column(columnDefinition = "TEXT")
     private String businessImg;
+
     private Integer orderTypeId;
+
     @Column(precision = 10, scale = 2)
     private BigDecimal startPrice;
+
     @Column(precision = 10, scale = 2)
     private BigDecimal deliveryPrice;
+
     private String remarks;
 
     public String getBusinessName() {

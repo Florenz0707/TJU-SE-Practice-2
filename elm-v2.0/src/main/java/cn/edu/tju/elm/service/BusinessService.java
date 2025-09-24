@@ -25,7 +25,7 @@ public class BusinessService {
     }
 
     public Business getBusinessById(Long businessId) {
-        Optional<Business> businessOptional = businessRepository.findOneById(businessId);
+        Optional<Business> businessOptional = businessRepository.findById(businessId);
         return businessOptional.map(Utils::filterEntity).orElse(null);
     }
 
