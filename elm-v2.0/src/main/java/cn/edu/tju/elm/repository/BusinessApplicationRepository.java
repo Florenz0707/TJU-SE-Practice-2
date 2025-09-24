@@ -7,5 +7,4 @@ import java.util.List;
 
 public interface BusinessApplicationRepository extends JpaRepository<BusinessApplication,Long> {
     List<BusinessApplication> findAllByBusinessId(Long businessId);
-
 }
