@@ -31,67 +31,66 @@ public class UserRestController {
     @PostMapping("/users")
     @PreAuthorize("hasAuthority('ADMIN')")
     @Operation(summary = "新增用户（仅登录帐号）", description = "创建一个新的用户（仅登录帐号）")
-    public HttpResult<User> createUser(@RequestBody User user) {
+    public User createUser(@RequestBody User user) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+            return null;
         User me = meOptional.get();
 
         if (user == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User CANT BE NULL");
+            return null;
 
         if (user.getUsername() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User.Username CANT BE NULL");
+            return null;
         if (user.getPassword() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User.Password CANT BE NULL");
+            return null;
 
         Utils.setNewEntity(user, me);
         user.setPassword(SecurityUtils.BCryptPasswordEncode(user.getPassword()));
         user.setActivated(true);
 
         if (userService.getUserWithUsername(user.getUsername()) != null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Username ALREADY EXISTS");
+            return null;
         userService.addUser(user);
-        return HttpResult.success(user);
+        return user;
     }
 
     @GetMapping("/user")
     @Operation(summary = "判断当前登录的用户", description = "判断当前登录的用户")
-    public HttpResult<User> getActualUser() {
+    public User getActualUser() {
         Optional<User> userOptional = userService.getUserWithAuthorities();
-        return userOptional.map(HttpResult::success).
-                orElseGet(() -> HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND"));
+        return userOptional.orElse(null);
     }
 
     @PostMapping("/password")
     @Operation(summary = "修改密码", description = "已登录的用户只可以修改自己的密码，Admin可以修改任何人的密码")
-    public HttpResult<String> updateUserPassword(@RequestBody LoginDto loginDto) {
+    public String updateUserPassword(@RequestBody LoginDto loginDto) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+            return "AUTHORITY NOT FOUND";
         User me = meOptional.get();
 
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
 
         User user = userService.getUserWithAuthoritiesByUsername(loginDto.getUsername());
         if (user == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+            return "User NOT FOUND";
 
         if (isAdmin || me.getUsername().equals(loginDto.getUsername())) {
             user.setPassword(SecurityUtils.BCryptPasswordEncode(loginDto.getPassword()));
             userService.updateUser(user);
-            return HttpResult.success("Update successfully.");
+            return "Update successfully.";
         }
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+        return "AUTHORITY LACKED";
     }
 
     @PostMapping("/persons")
     @Operation(summary = "新增用户（自然人）", description = "创建一个新的用户（自然人）")
-    public HttpResult<Person> addPerson(@RequestBody Person person) {
+    public Person addPerson(@RequestBody Person person) {
         if (person == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person CANT BE NULL");
+            return null;
         if (person.getUsername() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person.Username CANT BE NULL");
+            return null;
 
         if (person.getAuthorities() == null || person.getAuthorities().isEmpty())
             person.setAuthorities(Utils.getAuthoritySet("USER"));
@@ -106,11 +105,11 @@ public class UserRestController {
         person.setDeleted(false);
 
         if (userService.getUserWithUsername(person.getUsername()) != null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Username ALREADY EXISTS");
+            return null;
 
         userService.addUser(person);
         personService.addPerson(person);
-        return HttpResult.success(person);
+        return person;
     }
 
     @GetMapping("/users")
