@@ -32,5 +32,7 @@ public class MerchantApplicationService {
         return merchantApplication.map(Utils::filterEntity).orElse(null);
     }
 
-
+    public MerchantApplication updateMerchantApplication(MerchantApplication merchantApplication) {
+        return merchantApplicationRepository.save(merchantApplication);
+    }
 }

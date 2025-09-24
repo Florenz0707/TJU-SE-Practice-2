@@ -31,4 +31,8 @@ public class BusinessApplicationService {
         Optional<BusinessApplication> businessApplicationOptional = businessApplicationRepository.findById(id);
         return businessApplicationOptional.map(Utils::filterEntity).orElse(null);
     }
+
+    public BusinessApplication updateBusinessApplication(BusinessApplication businessApplication){
+        return businessApplicationRepository.save(businessApplication);
+    }
 }

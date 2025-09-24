@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,12 +65,23 @@ public class BusinessApplicationController {
     }
 
     @GetMapping("/applications/business/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
     public HttpResult<BusinessApplication> getBusinessApplication(@PathVariable Long id) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        boolean isAdmin =  Utils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+
         BusinessApplication businessApplication = businessApplicationService.getBusinessApplicationById(id);
+
         if (businessApplication == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication NOT FOUND");
-        return HttpResult.success(businessApplicationService.getBusinessApplicationById(id));
+
+        if(isAdmin || (isBusiness && me.equals(businessApplication.getBusiness().getBusinessOwner())))
+            return HttpResult.success(businessApplication);
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN);
     }
 
     @PatchMapping("/applications/business/{id}")
@@ -89,32 +101,13 @@ public class BusinessApplicationController {
         if (!oldApplication.getApplicationState().equals(ApplicationState.UNDISPOSED))
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ALREADY DISPOSED");
 
-        businessApplication.setApplicationState(ApplicationState.APPROVED);
-        businessApplication.setHandler(me);
+        oldApplication.setApplicationState(businessApplication.getApplicationState());
+        oldApplication.setHandler(me);
+        oldApplication.setUpdater(me.getId());
+        oldApplication.setUpdateTime(LocalDateTime.now());
+        businessApplicationService.updateBusinessApplication(oldApplication);
+
         return HttpResult.success(businessApplication);
 
     }
-
-    @PatchMapping("/applications/business/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public HttpResult<BusinessApplication> rejectBusinessApplication(@PathVariable Long id, @RequestBody BusinessApplication businessApplication) {
-        Optional<User>  meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        BusinessApplication oldApplication = businessApplicationService.getBusinessApplicationById(id);
-        if (oldApplication == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication NOT FOUND");
-
-        if (oldApplication.getBusiness() == null || oldApplication.getBusiness().getBusinessName() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.BusinessName NOT FOUND");
-
-        if (!oldApplication.getApplicationState().equals(ApplicationState.UNDISPOSED))
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ALREADY DISPOSED");
-
-        businessApplication.setApplicationState(ApplicationState.REJECTED);
-        businessApplication.setHandler(me);
-        return HttpResult.success(businessApplication);
-    }
-
 }
