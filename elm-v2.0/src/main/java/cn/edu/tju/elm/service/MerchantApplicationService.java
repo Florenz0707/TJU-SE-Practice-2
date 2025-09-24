@@ -1,11 +1,13 @@
 package cn.edu.tju.elm.service;
 
+import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.MerchantApplication;
 import cn.edu.tju.elm.repository.MerchantApplicationRepository;
 import cn.edu.tju.elm.utils.Utils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,5 +36,17 @@ public class MerchantApplicationService {
 
     public void updateMerchantApplication(MerchantApplication merchantApplication) {
         merchantApplicationRepository.save(merchantApplication);
+    }
+
+    public List<MerchantApplication> getMyMerchantApplications(User applicant){
+        List<MerchantApplication> allMerchantApplications = merchantApplicationRepository.findAll();
+        List<MerchantApplication> myMerchantApplications = new ArrayList<>();
+
+        for(MerchantApplication merchantApplication : allMerchantApplications){
+            if(merchantApplication.getApplicant().getId().equals(applicant.getId())){
+                myMerchantApplications.add(merchantApplication);
+            }
+        }
+        return myMerchantApplications;
     }
 }
