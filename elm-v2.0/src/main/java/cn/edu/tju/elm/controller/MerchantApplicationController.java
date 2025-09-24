@@ -3,8 +3,6 @@ package cn.edu.tju.elm.controller;
 import cn.edu.tju.core.model.*;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.model.MerchantApplication;
-import cn.edu.tju.elm.repository.MerchantApplicationRepository;
-import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.MerchantApplicationService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;

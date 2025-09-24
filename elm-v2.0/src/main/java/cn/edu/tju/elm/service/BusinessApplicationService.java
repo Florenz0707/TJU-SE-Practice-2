@@ -19,10 +19,6 @@ public class BusinessApplicationService {
         this.businessApplicationRepository = businessApplicationRepository;
     }
 
-    public List<BusinessApplication> getBusinessApplications(Long businessId){
-        return Utils.filterEntityList(businessApplicationRepository.findAllByBusinessId(businessId));
-    }
-
     public void addApplication(BusinessApplication businessApplication){
         businessApplicationRepository.save(businessApplication);
     }
