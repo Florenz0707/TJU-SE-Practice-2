@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface MerchantApplicationRepository extends JpaRepository<MerchantApplication,Long> {
     List<MerchantApplication> findAllByApplicantId(Long merchantId);
+
 }

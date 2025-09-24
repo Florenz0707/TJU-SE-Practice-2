@@ -108,6 +108,11 @@ public class MerchantApplicationController {
 
     @GetMapping("/my")
     public HttpResult<List<MerchantApplication>> getMyMerchantApplication() {
-        return null;
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
+        User me = meOptional.get();
+
+        return HttpResult.success(merchantApplicationService.getMyMerchantApplications(me));
     }
 }

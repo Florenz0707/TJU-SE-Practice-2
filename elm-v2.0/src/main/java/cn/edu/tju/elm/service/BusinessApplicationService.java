@@ -7,6 +7,7 @@ import cn.edu.tju.elm.utils.Utils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,6 +39,13 @@ public class BusinessApplicationService {
     }
 
     public List<BusinessApplication> getBusinessApplicationsByApplicant(User applicant){
-        return businessApplicationRepository.findAllByApplicant(applicant);
+        List<BusinessApplication> allBusinessApplications = businessApplicationRepository.findAll();
+        List<BusinessApplication> businessApplicationsByApplicant = new ArrayList<>();
+        for(BusinessApplication businessApplication : allBusinessApplications){
+            if(businessApplication.getBusiness().getBusinessOwner().equals(applicant)){
+                businessApplicationsByApplicant.add(businessApplication);
+            }
+        }
+        return businessApplicationsByApplicant;
     }
 }
