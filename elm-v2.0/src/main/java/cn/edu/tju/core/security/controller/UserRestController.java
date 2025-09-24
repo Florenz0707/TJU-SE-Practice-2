@@ -93,7 +93,8 @@ public class UserRestController {
         if (person.getUsername() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person.Username CANT BE NULL");
 
-        person.setAuthorities(Utils.getAuthoritySet("USER"));
+        if (person.getAuthorities() == null || person.getAuthorities().isEmpty())
+            person.setAuthorities(Utils.getAuthoritySet("USER"));
         person.setPassword(SecurityUtils.BCryptPasswordEncode("password"));
         person.setActivated(true);
 
@@ -102,6 +103,7 @@ public class UserRestController {
         person.setUpdateTime(now);
         person.setCreator(0L);
         person.setUpdater(0L);
+        person.setDeleted(false);
 
         if (userService.getUserWithUsername(person.getUsername()) != null)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Username ALREADY EXISTS");
