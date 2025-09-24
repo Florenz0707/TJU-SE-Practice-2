@@ -24,12 +24,7 @@ public class MerchantApplicationController {
     private UserService userService;
 
     @Autowired
-    private BusinessService businessService;
-
-    @Autowired
     private MerchantApplicationService merchantApplicationService;
-    @Autowired
-    private MerchantApplicationRepository merchantApplicationRepository;
 
     @PostMapping("/applications/merchant")
     public HttpResult<MerchantApplication> addMerchantApplication(@RequestBody MerchantApplication merchantApplication) {
