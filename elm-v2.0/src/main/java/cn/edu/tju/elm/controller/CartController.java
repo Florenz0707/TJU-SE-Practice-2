@@ -41,7 +41,6 @@ public class CartController {
 
         if (cart == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart CANT BE NULL");
-
         if (cart.getFood() == null || cart.getFood().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
         if (cart.getQuantity() == null)
@@ -55,11 +54,10 @@ public class CartController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
         Utils.setNewEntity(cart, me);
-        cartItemService.addCart(cart);
-
         cart.setFood(food);
         cart.setBusiness(business);
         cart.setCustomer(me);
+        cartItemService.addCart(cart);
         return HttpResult.success(cart);
     }
 
