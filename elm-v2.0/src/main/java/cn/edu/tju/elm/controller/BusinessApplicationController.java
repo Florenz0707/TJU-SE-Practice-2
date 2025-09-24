@@ -6,7 +6,6 @@ import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.model.BusinessApplication;
 import cn.edu.tju.elm.service.BusinessApplicationService;
 import cn.edu.tju.elm.service.BusinessService;
-import cn.edu.tju.elm.service.MerchantApplicationService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
