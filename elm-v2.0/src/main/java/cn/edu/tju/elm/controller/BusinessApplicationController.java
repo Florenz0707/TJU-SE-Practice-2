@@ -127,7 +127,13 @@ public class BusinessApplicationController {
     }
 
     @GetMapping("/my")
+    @PreAuthorize("hasAuthority('BUSINESS')")
     public HttpResult<List<BusinessApplication>> getMyBusinessApplication() {
-        return null;
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        return HttpResult.success(businessApplicationService.getBusinessApplicationsByApplicant(me));
     }
 }

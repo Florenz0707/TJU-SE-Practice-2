@@ -1,5 +1,6 @@
 package cn.edu.tju.elm.service;
 
+import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.BusinessApplication;
 import cn.edu.tju.elm.repository.BusinessApplicationRepository;
 import cn.edu.tju.elm.utils.Utils;
@@ -34,5 +35,9 @@ public class BusinessApplicationService {
 
     public BusinessApplication updateBusinessApplication(BusinessApplication businessApplication){
         return businessApplicationRepository.save(businessApplication);
+    }
+
+    public List<BusinessApplication> getBusinessApplicationsByApplicant(User applicant){
+        return businessApplicationRepository.findAllByApplicant(applicant);
     }
 }
