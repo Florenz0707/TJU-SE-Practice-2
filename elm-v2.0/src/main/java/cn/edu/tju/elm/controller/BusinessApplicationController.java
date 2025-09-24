@@ -4,17 +4,14 @@ import cn.edu.tju.core.model.*;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.model.BusinessApplication;
-import cn.edu.tju.elm.model.DeliveryAddress;
-import cn.edu.tju.elm.service.AddressService;
 import cn.edu.tju.elm.service.BusinessApplicationService;
 import cn.edu.tju.elm.service.BusinessService;
+import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -27,44 +24,35 @@ public class BusinessApplicationController {
 
     @Autowired
     private BusinessService businessService;
+
     @Autowired
     private BusinessApplicationService businessApplicationService;
 
-    @PostMapping("/business-applications")
+    @PostMapping("/applications/business")
     @PreAuthorize("hasAuthority('BUSINESS')")
     public HttpResult<BusinessApplication> addBusinessApplication(@RequestBody BusinessApplication businessApplication) {
-
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if(meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        if(businessApplication == null)
+        if (businessApplication == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication CANT BE NULL");
 
-        if(businessApplication.getBusiness() == null || businessApplication.getBusiness().getBusinessName() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business CANT BE NULL");
+        if (businessApplication.getBusiness() == null || businessApplication.getBusiness().getBusinessName() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.BusinessName NOT FOUND");
 
         Business business = businessApplication.getBusiness();
+        Utils.setNewEntity(business, me);
         business.setDeleted(true);
-        business.setCreator(me.getId());
-        business.setCreateTime(LocalDateTime.now());
-        business.setUpdateTime(LocalDateTime.now());
-        business.setUpdater(me.getId());
-        business.setBusinessOwner(me);
+        businessService.addBusiness(business);
 
+        Utils.setNewEntity(businessApplication, me);
         businessApplication.setBusiness(business);
-               // getBusinessById(businessApplication.getBusiness().getId());
-//        if(business == null)
-//            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-
-
-        businessApplication.setCreateTime(LocalDateTime.now());
-        businessApplication.setUpdateTime(LocalDateTime.now());
-        businessApplication.setCreator(business.getBusinessOwner().getId());
-        businessApplication.setUpdater(business.getBusinessOwner().getId());
         businessApplication.setApplicationState(ApplicationState.UNDISPOSED);
+        User admin = userService.getUserWithUsername("admin");
+        businessApplication.setHandler(admin);
         businessApplicationService.addApplication(businessApplication);
         return HttpResult.success(businessApplication);
-
     }
 }
