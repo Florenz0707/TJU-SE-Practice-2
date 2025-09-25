@@ -36,6 +36,14 @@
         <!-- Quantity is not available on the Food object, so we can't display it yet -->
       </el-table>
     </el-card>
+
+    <el-card v-if="review" class="review-card">
+      <template #header>
+        <h4>我的评价</h4>
+      </template>
+      <el-rate :model-value="review.stars" disabled />
+      <p>{{ review.content }}</p>
+    </el-card>
   </div>
 </template>
 
@@ -43,21 +51,25 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getOrderById } from '../../../api/order';
+import { getOrderReview } from '../../../api/review';
 import { getAllFoods } from '../../../api/food';
-import type { Order, Food } from '../../../api/types';
+import type { Order, Food, Review } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 
 const route = useRoute();
 const router = useRouter();
 const order = ref<Order | null>(null);
 const orderItems = ref<Food[]>([]);
+const review = ref<Review | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-const getStatusText = (state?: number) => {
-  if (state === undefined || state === null) return '未知';
-  const statuses: { [key: number]: string } = { 1: '已下单', 2: '准备中', 3: '配送中', 4: '已送达', 5: '已取消' };
-  return statuses[state] || '未知';
+const getStatusText = (status?: number): string => {
+  if (status === undefined) return '未知状态';
+  const statusMap: { [key: number]: string } = {
+    0: '已取消', 1: '未支付', 2: '配送中', 3: '已完成', 4: '已评价',
+  };
+  return statusMap[status] || '未知状态';
 };
 
 const goBack = () => {
@@ -81,6 +93,15 @@ onMounted(async () => {
 
     if (orderRes.success) {
       order.value = orderRes.data;
+      // If order is reviewed, fetch the review
+      if (order.value.orderState === 4) {
+        const reviewRes = await getOrderReview(orderId);
+        if (reviewRes.success) {
+          review.value = reviewRes.data;
+        } else {
+          console.error('获取评价失败:', reviewRes.message);
+        }
+      }
     } else {
       throw new Error(orderRes.message || '获取订单详情失败');
     }
@@ -101,7 +122,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.order-summary-card, .order-items-card {
+.order-summary-card, .order-items-card, .review-card {
   margin-top: 20px;
 }
 </style>

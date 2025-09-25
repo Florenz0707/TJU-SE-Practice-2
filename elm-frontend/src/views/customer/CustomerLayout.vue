@@ -56,6 +56,10 @@
               <el-icon><List /></el-icon>
               <span>订单历史</span>
             </el-menu-item>
+            <el-menu-item index="/profile/apply-merchant">
+              <el-icon><Shop /></el-icon>
+              <span>成为商家</span>
+            </el-menu-item>
           </el-menu>
         </div>
 

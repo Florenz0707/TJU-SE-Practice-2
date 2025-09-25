@@ -1,47 +1,44 @@
 <template>
-  <div class="order-history-container" v-loading="loading">
+  <div class="mobile-order-history" v-loading="loading">
     <div class="header">
-      <h2>历史订单查询</h2>
-      <el-input
-        v-model="searchQuery"
-        placeholder="搜索订单ID或顾客信息"
-        class="search-input"
-        @keyup.enter="handleSearch"
-        clearable
-        @clear="handleSearch"
-      >
-        <template #append>
-          <el-button @click="handleSearch">搜索</el-button>
-        </template>
-      </el-input>
+      <h4>历史订单查询</h4>
     </div>
+    <el-input
+      v-model="searchQuery"
+      placeholder="搜索订单ID或顾客信息"
+      class="search-input"
+      @keyup.enter="handleSearch"
+      clearable
+      @clear="handleSearch"
+      size="large"
+    >
+      <template #prefix>
+        <Search :size="18" />
+      </template>
+    </el-input>
 
-    <el-table :data="filteredOrders" stripe style="width: 100%">
-      <el-table-column prop="id" label="订单ID" width="100" />
-      <el-table-column prop="orderDate" label="下单时间" width="200">
-        <template #default="{ row }">
-          <span>{{ row.orderDate ? new Date(row.orderDate).toLocaleString() : 'N/A' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="customer.username" label="顾客用户名" />
-      <el-table-column prop="orderTotal" label="订单总额">
-        <template #default="{ row }">
-          <span>¥{{ (row.orderTotal ?? 0).toFixed(2) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="orderState" label="订单状态">
-         <template #default="{ row }">
-          <el-tag :type="getOrderStatusType(row.orderState)">
-            {{ getOrderStatusText(row.orderState) }}
+    <div v-if="filteredOrders.length" class="order-list">
+      <el-card v-for="order in filteredOrders" :key="order.id" class="order-card">
+        <div class="order-info">
+          <p class="order-id"><strong>订单 #{{ order.id }}</strong></p>
+          <p class="customer-name">顾客: {{ order.customer?.username ?? 'N/A' }}</p>
+          <p class="order-time">{{ order.orderDate ? new Date(order.orderDate).toLocaleString() : 'N/A' }}</p>
+        </div>
+        <div class="order-status">
+          <p class="order-total">¥{{ (order.orderTotal ?? 0).toFixed(2) }}</p>
+          <el-tag :type="getOrderStatusType(order.orderState)" size="small">
+            {{ getOrderStatusText(order.orderState) }}
           </el-tag>
-        </template>
-      </el-table-column>
-    </el-table>
+        </div>
+      </el-card>
+    </div>
+    <el-empty v-else description="没有找到相关订单"></el-empty>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { Search } from 'lucide-vue-next';
 import { listOrders } from '../../api/order';
 import { getCurrentUserBusinesses } from '../../api/business';
 import type { Order, Business, HttpResultListBusiness } from '../../api/types';
@@ -120,7 +117,45 @@ const getOrderStatusType = (status?: number): string => {
 </script>
 
 <style scoped>
-.order-history-container { padding: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.search-input { width: 300px; }
+.mobile-order-history {
+  padding: 1rem;
+}
+.header {
+  margin-bottom: 1rem;
+}
+.search-input {
+  margin-bottom: 1.5rem;
+}
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.order-card {
+  width: 100%;
+}
+.order-card :deep(.el-card__body) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.order-info p, .order-status p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+}
+.order-id {
+  font-weight: bold;
+}
+.order-time {
+  font-size: 0.75rem;
+  color: #909399;
+}
+.order-status {
+  text-align: right;
+}
+.order-total {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #f56c6c;
+}
 </style>

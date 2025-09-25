@@ -66,6 +66,7 @@ import { ref, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../store/auth';
 import { ElMessage, type FormInstance } from 'element-plus';
+import { isMobile } from '../utils/device';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -89,13 +90,17 @@ const getRedirectPath = (roles: string[]): string => {
   if (redirect) {
     return redirect;
   }
+
+  const mobile = isMobile();
+
   if (roles.includes('ADMIN')) {
-    return '/admin';
+    return mobile ? '/mobile/admin' : '/admin';
   }
   if (roles.includes('MERCHANT')) {
-    return '/merchant';
+    return mobile ? '/mobile/merchant' : '/merchant';
   }
-  return '/';
+
+  return mobile ? '/mobile/home' : '/';
 };
 
 const handleLogin = async () => {
