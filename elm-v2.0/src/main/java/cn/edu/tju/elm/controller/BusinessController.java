@@ -88,17 +88,12 @@ public class BusinessController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business CANT BE NULL");
         if (business.getBusinessName() == null)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "BusinessName CANT BE NULL");
-        if (business.getBusinessOwner() == null || business.getBusinessOwner().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner.Id CANT BE NULL");
-        User newOwner = userService.getUserById(business.getBusinessOwner().getId());
-        if (newOwner == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner NOT FOUND");
 
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
-        if (isAdmin || (isBusiness && me.equals(oldOwner) && oldOwner.equals(newOwner))) {
+        if (isAdmin || (isBusiness && me.equals(oldOwner))) {
             Utils.substituteEntity(oldBusiness, business, me);
-            business.setBusinessOwner(newOwner);
+            business.setBusinessOwner(oldOwner);
             businessService.updateBusiness(oldBusiness);
             businessService.updateBusiness(business);
 
@@ -126,14 +121,7 @@ public class BusinessController {
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(oldOwner))) {
-            if (business.getBusinessOwner() == null)
-                business.setBusinessOwner(oldOwner);
-            else if (isBusiness) {
-                if (business.getBusinessOwner().getId() == null)
-                    return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "IF BusinessOwner NOT NULL THEN BusinessOwner.Id MUST BE NOT NULL");
-                if (!oldOwner.getId().equals(business.getBusinessOwner().getId()))
-                    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-            }
+            business.setBusinessOwner(oldOwner);
             if (business.getBusinessName() == null)
                 business.setBusinessName(oldBusiness.getBusinessName());
             if (business.getBusinessAddress() == null)

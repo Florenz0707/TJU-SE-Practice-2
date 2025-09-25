@@ -42,6 +42,7 @@ public class MerchantApplicationController {
 
         Utils.setNewEntity(merchantApplication, me);
         merchantApplication.setApplicationState(ApplicationState.UNDISPOSED);
+        merchantApplication.setApplicant(me);
         User admin = userService.getUserWithUsername("admin");
         merchantApplication.setHandler(admin);
         merchantApplicationService.addApplication(merchantApplication);
