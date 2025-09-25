@@ -51,6 +51,7 @@ import { getAllFoods } from '../../api/food';
 import { getBusinessReviews } from '../../api/review';
 import type { Business, Food, Review } from '../../api/types';
 import MenuItem from '../../components/MenuItem.vue';
+import { useCartStore } from '../../store/cart';
 
 const route = useRoute();
 const business = ref<Business | null>(null);
@@ -58,11 +59,13 @@ const menu = ref<Food[]>([]);
 const reviews = ref<Review[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const cartStore = useCartStore();
 
 onMounted(async () => {
   loading.value = true;
   error.value = null;
   const businessId = Number(route.params.id);
+  cartStore.setCurrentBusinessId(businessId);
 
   if (isNaN(businessId)) {
     error.value = '无效的餐厅ID。';
@@ -81,6 +84,9 @@ onMounted(async () => {
     const businessResult = results[0];
     if (businessResult.status === 'fulfilled' && businessResult.value.success) {
       business.value = businessResult.value.data;
+      if (business.value) {
+        cartStore.setBusinessFees(business.value.deliveryPrice ?? 0, business.value.startPrice ?? 0);
+      }
     } else {
       const errorMessage = businessResult.status === 'fulfilled'
         ? businessResult.value.message

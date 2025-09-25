@@ -6,7 +6,7 @@
       <div v-for="order in orders" :key="order.id" class="order-card">
         <div class="card-header">
           <h4>{{ order.business?.businessName }}</h4>
-          <span class="status">{{ getOrderStatusText(order.orderState) }}</span>
+          <span class="status" :style="{ color: getOrderStatusInfo(order.orderState as OrderStatus).type }">{{ getOrderStatusInfo(order.orderState as OrderStatus).text }}</span>
         </div>
         <div class="card-body">
           <p>总价: ¥{{ order.orderTotal!.toFixed(2) }}</p>
@@ -14,7 +14,7 @@
         </div>
         <div class="card-footer">
           <el-button size="small" @click="viewOrderDetails(order.id!)">查看详情</el-button>
-          <el-button v-if="order.orderState === 3" size="small" type="primary" @click="goToReview(order.id!)">评价</el-button>
+          <el-button v-if="order.orderState === OrderStatusEnum.COMPLETE" size="small" type="primary" @click="goToReview(order.id!)">评价</el-button>
         </div>
       </div>
     </div>
@@ -29,23 +29,13 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getMyOrdersCustomer } from '../../../api/order';
-import type { Order } from '../../../api/types';
+import type { Order, OrderStatus } from '../../../api/types';
+import { getOrderStatusInfo, OrderStatus as OrderStatusEnum } from '../../../api/types';
 
 const loading = ref(false);
 const error = ref<string | null>(null);
 const orders = ref<Order[]>([]);
 const router = useRouter();
-
-const getOrderStatusText = (state?: number) => {
-  switch (state) {
-    case 0: return '待支付';
-    case 1: return '已支付';
-    case 2: return '配送中';
-    case 3: return '已送达';
-    case 4: return '已取消';
-    default: return '未知状态';
-  }
-};
 
 onMounted(async () => {
   loading.value = true;

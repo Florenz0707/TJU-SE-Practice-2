@@ -46,7 +46,6 @@
             <el-menu-item index="/merchant/orders">历史订单</el-menu-item>
             <el-menu-item index="/merchant/menu">菜单管理</el-menu-item>
             <el-menu-item index="/merchant/profile">店铺信息</el-menu-item>
-            <el-menu-item index="/merchant/apply">开店申请</el-menu-item>
             <el-menu-item index="/merchant/applications">我的申请</el-menu-item>
           </el-menu>
         </div>
@@ -111,10 +110,6 @@
         <el-menu-item index="/merchant/profile">
           <el-icon><i-ep-menu /></el-icon>
           <span>店铺信息</span>
-        </el-menu-item>
-        <el-menu-item index="/merchant/apply">
-          <el-icon><i-ep-plus /></el-icon>
-          <span>开店申请</span>
         </el-menu-item>
         <el-menu-item index="/merchant/applications">
           <el-icon><i-ep-list /></el-icon>

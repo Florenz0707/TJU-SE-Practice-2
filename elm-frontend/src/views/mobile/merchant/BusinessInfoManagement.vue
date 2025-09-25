@@ -13,7 +13,7 @@
 
     <div class="menu-list">
       <el-card class="menu-card">
-        <router-link to="/mobile/merchant/apply" class="menu-item">
+        <router-link to="/mobile/merchant/applications" class="menu-item">
           <span>开店申请</span>
           <ChevronRight :size="20" color="#999" />
         </router-link>

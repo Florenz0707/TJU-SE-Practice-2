@@ -6,10 +6,10 @@
       :prop="column.prop"
       :label="column.label"
       :width="column.width"
-    />
-    <el-table-column label="操作" v-if="$slots.actions">
-      <template #default="scope">
-        <slot name="actions" :row="scope.row"></slot>
+      :formatter="column.formatter"
+    >
+      <template v-if="column.slot" #default="scope">
+        <slot :name="column.slot" :row="scope.row"></slot>
       </template>
     </el-table-column>
   </el-table>
@@ -22,6 +22,8 @@ interface Column {
   prop: string;
   label: string;
   width?: string | number;
+  slot?: string;
+  formatter?: (row: any, column: any, cellValue: any, index: number) => string;
 }
 
 defineProps({

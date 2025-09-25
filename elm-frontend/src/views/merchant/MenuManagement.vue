@@ -4,21 +4,26 @@
       <h2>菜单管理</h2>
       <el-button type="primary" @click="handleOpenEditor()">添加新菜品</el-button>
     </div>
-    <el-table :data="foods" stripe style="width: 100%">
-      <el-table-column prop="foodName" label="菜品名称" />
-      <el-table-column prop="foodExplain" label="描述" />
-      <el-table-column prop="foodPrice" label="价格">
-        <template #default="{ row }">
-          <span>¥{{ row.foodPrice.toFixed(2) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="200">
-        <template #default="{ row }">
-          <el-button size="small" @click="handleOpenEditor(row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div v-if="!showNoBusinessMessage">
+      <el-table :data="foods" stripe style="width: 100%">
+        <el-table-column prop="foodName" label="菜品名称" />
+        <el-table-column prop="foodExplain" label="描述" />
+        <el-table-column prop="foodPrice" label="价格">
+          <template #default="{ row }">
+            <span>¥{{ row.foodPrice.toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200">
+          <template #default="{ row }">
+            <el-button size="small" @click="handleOpenEditor(row)">编辑</el-button>
+            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <el-empty v-if="showNoBusinessMessage" description="您当前未选择任何店铺，或您还未开设店铺。">
+      <el-button type="primary" @click="$router.push({ name: 'ApplyForBusiness' })">成为商家</el-button>
+    </el-empty>
 
     <el-dialog v-model="dialogVisible" :title="isEditMode ? '编辑菜品' : '添加新菜品'" width="500px" @closed="selectedFood = null">
       <FoodEditor v-if="dialogVisible" :food-data="selectedFood" ref="foodEditorRef" />
@@ -53,11 +58,12 @@ const { selectedBusinessId } = storeToRefs(businessStore);
 const isEditMode = computed(() => !!selectedFood.value);
 
 const fetchFoods = async () => {
+  loading.value = true;
   if (!selectedBusinessId.value) {
     foods.value = [];
+    loading.value = false;
     return;
   }
-  loading.value = true;
   try {
     const foodsResponse: HttpResultListFood = await getAllFoods({ business: selectedBusinessId.value });
     if (foodsResponse.success) {
@@ -73,6 +79,8 @@ const fetchFoods = async () => {
     loading.value = false;
   }
 };
+
+const showNoBusinessMessage = computed(() => !selectedBusinessId.value && !loading.value);
 
 onMounted(fetchFoods);
 

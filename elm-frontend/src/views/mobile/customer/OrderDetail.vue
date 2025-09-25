@@ -8,7 +8,7 @@
         <template #header>
           <h3>{{ order.business?.businessName }}</h3>
         </template>
-        <p><strong>订单状态:</strong> <el-tag :type="getStatusType(order.orderState)">{{ getStatusText(order.orderState) }}</el-tag></p>
+        <p><strong>订单状态:</strong> <el-tag :type="getOrderStatusInfo(order.orderState as OrderStatus).type">{{ getOrderStatusInfo(order.orderState as OrderStatus).text }}</el-tag></p>
         <p><strong>订单号:</strong> {{ order.id }}</p>
         <p><strong>下单时间:</strong> {{ new Date(order.orderDate!).toLocaleString() }}</p>
       </el-card>
@@ -52,7 +52,8 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getOrderById } from '../../../api/order';
 import { getOrderReview } from '../../../api/review';
-import type { Order, Review } from '../../../api/types';
+import type { Order, Review, OrderStatus } from '../../../api/types';
+import { getOrderStatusInfo, OrderStatus as OrderStatusEnum } from '../../../api/types';
 
 const route = useRoute();
 const router = useRouter();
@@ -76,7 +77,7 @@ const fetchOrderDetails = async () => {
     const res = await getOrderById(orderId);
     if (res.success) {
       order.value = res.data;
-      if (order.value.orderState === 4) {
+      if (order.value.orderState === OrderStatusEnum.COMMENTED) {
         const reviewRes = await getOrderReview(orderId);
         if (reviewRes.success) {
           review.value = reviewRes.data;
@@ -94,16 +95,6 @@ const fetchOrderDetails = async () => {
 
 const goBack = () => {
   router.back();
-};
-
-const getStatusType = (status?: number) => {
-  const typeMap: { [key: number]: string } = { 0: 'danger', 1: 'warning', 2: 'primary', 3: 'success', 4: 'info' };
-  return status !== undefined ? typeMap[status] || 'info' : 'info';
-};
-
-const getStatusText = (status?: number) => {
-  const statusMap: { [key: number]: string } = { 0: '已取消', 1: '未支付', 2: '配送中', 3: '已完成', 4: '已评价' };
-  return status !== undefined ? statusMap[status] || '未知状态' : '未知状态';
 };
 
 onMounted(fetchOrderDetails);

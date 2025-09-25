@@ -173,6 +173,36 @@ export type HttpResultListCart = HttpResult<Cart[]>;
 export type HttpResultDeliveryAddress = HttpResult<DeliveryAddress>;
 export type HttpResultListDeliveryAddress = HttpResult<DeliveryAddress[]>;
 
+export const OrderStatus = {
+  CANCELED: 0,
+  PAID: 1,
+  ACCEPTED: 2,
+  DELIVERY: 3,
+  COMPLETE: 4,
+  COMMENTED: 5,
+} as const;
+
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+
+export function getOrderStatusInfo(status: OrderStatus) {
+  switch (status) {
+    case OrderStatus.CANCELED:
+      return { text: '已取消', type: 'info' as const };
+    case OrderStatus.PAID:
+      return { text: '已支付', type: 'primary' as const };
+    case OrderStatus.ACCEPTED:
+      return { text: '已接单', type: 'warning' as const };
+    case OrderStatus.DELIVERY:
+      return { text: '配送中', type: 'warning' as const };
+    case OrderStatus.COMPLETE:
+      return { text: '已完成', type: 'success' as const };
+    case OrderStatus.COMMENTED:
+      return { text: '已评价', type: 'success' as const };
+    default:
+      return { text: '未知状态', type: 'info' as const };
+  }
+}
+
 export interface BusinessApplication {
   id: number;
   createTime?: string;

@@ -9,7 +9,7 @@
     <!-- Step 1: Review Order -->
     <div v-if="activeStep === 0" class="step-content">
       <h3>确认您的订单</h3>
-      <el-table :data="cartStore.items" style="width: 100%">
+      <el-table :data="cartStore.itemsForCurrentBusiness" style="width: 100%">
         <el-table-column prop="food.foodName" label="商品" />
         <el-table-column prop="quantity" label="数量" width="100" />
         <el-table-column label="单价" width="120">
@@ -20,7 +20,9 @@
         </el-table-column>
       </el-table>
       <div class="summary-total">
-        <strong>总计: ¥{{ cartStore.cartTotal.toFixed(2) }}</strong>
+        <p>商品总价: ¥{{ cartStore.cartTotal.toFixed(2) }}</p>
+        <p>配送费: ¥{{ cartStore.deliveryPrice.toFixed(2) }}</p>
+        <strong>总计: ¥{{ cartStore.finalOrderTotal.toFixed(2) }}</strong>
       </div>
     </div>
 
@@ -47,7 +49,7 @@
     <!-- Step 3: Confirm & Pay -->
     <div v-if="activeStep === 2" class="step-content">
       <h3>确认您的订单</h3>
-      <p><strong>总金额:</strong> ¥{{ cartStore.cartTotal.toFixed(2) }}</p>
+      <p><strong>总金额:</strong> ¥{{ cartStore.finalOrderTotal.toFixed(2) }}</p>
       <p><strong>配送至:</strong> {{ selectedAddress?.address }}</p>
       <el-button type="primary" @click="placeOrder" :loading="isPlacingOrder">提交订单</el-button>
     </div>
@@ -144,14 +146,14 @@ const placeOrder = async () => {
     ElMessage.error('请选择配送地址。');
     return;
   }
-  if (cartStore.items.length === 0) {
+  if (cartStore.itemsForCurrentBusiness.length === 0) {
     ElMessage.error('您的购物车是空的。');
     return;
   }
 
   isPlacingOrder.value = true;
   try {
-    const firstItem = cartStore.items[0];
+    const firstItem = cartStore.itemsForCurrentBusiness[0];
     if (!firstItem || !firstItem.customer || !firstItem.business) {
         ElMessage.error('由于购物车信息不完整，无法下单。');
         isPlacingOrder.value = false;
@@ -161,7 +163,7 @@ const placeOrder = async () => {
     const orderPayload: Order = {
       customer: firstItem.customer,
       business: firstItem.business,
-      orderTotal: cartStore.cartTotal,
+      orderTotal: cartStore.finalOrderTotal,
       deliveryAddress: selectedAddress.value,
       orderState: 0, // 0: Placed
     };
@@ -181,7 +183,7 @@ const placeOrder = async () => {
 };
 
 onMounted(() => {
-  if (cartStore.items.length === 0) {
+  if (cartStore.itemsForCurrentBusiness.length === 0) {
     ElMessage.warning('您的购物车是空的，正在跳转到主页。');
     router.push({ name: 'Home' });
   }
