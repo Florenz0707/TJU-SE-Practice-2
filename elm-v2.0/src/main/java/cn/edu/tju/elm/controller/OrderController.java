@@ -191,7 +191,6 @@ public class OrderController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
         return HttpResult.success(orderService.getOrdersByCustomerId(me.getId()));
-
     }
 
     @GetMapping("/merchant/my")
@@ -225,11 +224,10 @@ public class OrderController {
 
         Business business = businessService.getBusinessById(id);
         if (business == null)
-            return  HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-
+        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner())))
             return HttpResult.success(orderService.getOrdersByBusinessId(business.getId()));
 

@@ -39,5 +39,4 @@ public class OrderService {
     public List<Order> getOrdersByBusinessId(Long businessId) {
         return Utils.filterEntityList(orderRepository.findAllByBusinessId(businessId));
     }
-
 }
