@@ -45,6 +45,8 @@ public class UserRestController {
         if (user.getPassword() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User.Password CANT BE NULL");
 
+        if (user.getAuthorities() == null)
+            user.setAuthorities(Utils.getAuthoritySet("USER"));
         Utils.setNewEntity(user, me);
         user.setPassword(SecurityUtils.BCryptPasswordEncode(user.getPassword()));
         user.setActivated(true);
@@ -93,8 +95,7 @@ public class UserRestController {
         if (person.getUsername() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person.Username CANT BE NULL");
 
-        if (person.getAuthorities() == null || person.getAuthorities().isEmpty())
-            person.setAuthorities(Utils.getAuthoritySet("USER"));
+        person.setAuthorities(Utils.getAuthoritySet("USER"));
         person.setPassword(SecurityUtils.BCryptPasswordEncode("password"));
         person.setActivated(true);
 

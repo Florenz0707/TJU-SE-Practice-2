@@ -107,7 +107,7 @@ public class FoodController {
     }
 
     @PutMapping("/{id}")
-    public HttpResult<Food> updateFood(
+    public HttpResult<Food> substituteFood(
             @PathVariable Long id,
             @RequestBody Food food) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
@@ -144,8 +144,46 @@ public class FoodController {
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
+    @PatchMapping("/{id}")
+    public HttpResult<Food> updateFood(
+            @PathVariable Long id,
+            @RequestBody Food newFood) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Food food = foodService.getFoodById(id);
+        if (food == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+
+        if (newFood == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food CANT BE NULL");
+
+        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+
+        if (isAdmin || (isBusiness && me.equals(food.getBusiness().getBusinessOwner()))) {
+            if (newFood.getFoodName() == null)
+                newFood.setFoodName(food.getFoodName());
+            if (newFood.getFoodPrice() == null)
+                newFood.setFoodPrice(food.getFoodPrice());
+            if (newFood.getFoodExplain() == null)
+                newFood.setFoodExplain(food.getFoodExplain());
+            if (newFood.getFoodImg() == null)
+                newFood.setFoodImg(food.getFoodImg());
+            if (newFood.getRemarks() == null)
+                newFood.setRemarks(food.getRemarks());
+            Utils.substituteEntity(food, newFood, me);
+            foodService.updateFood(food);
+            foodService.updateFood(newFood);
+            return HttpResult.success(newFood);
+        }
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+
     @DeleteMapping("/{id}")
-    public HttpResult<Food> deleteFood(@PathVariable Long id) {
+    public HttpResult<String> deleteFood(@PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -161,7 +199,7 @@ public class FoodController {
         if (isAdmin || (isBusiness && me.equals(food.getBusiness().getBusinessOwner()))) {
             Utils.deleteEntity(food, me);
             foodService.updateFood(food);
-            return HttpResult.success(food);
+            return HttpResult.success("Delete food successfully.");
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
