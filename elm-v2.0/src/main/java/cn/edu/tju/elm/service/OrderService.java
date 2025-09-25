@@ -35,4 +35,8 @@ public class OrderService {
     public void updateOrder(Order order) {
         orderRepository.save(order);
     }
+
+    public List<Order> getOrdersByBusinessId(Long businessId) {
+        return Utils.filterEntityList(orderRepository.findAllByBusinessId(businessId));
+    }
 }

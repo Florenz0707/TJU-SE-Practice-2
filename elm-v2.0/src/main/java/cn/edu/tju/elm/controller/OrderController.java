@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -168,6 +169,61 @@ public class OrderController {
             orderService.updateOrder(newOrder);
             return HttpResult.success(newOrder);
         }
+
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+
+    @GetMapping("/user/my")
+    public HttpResult<List<Order>> getMyOrders() {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        User user = userService.getUserById(me.getId());
+        if (user == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+
+        return HttpResult.success(orderService.getOrdersByCustomerId(me.getId()));
+    }
+
+    @GetMapping("/merchant/my")
+    public HttpResult<List<Order>> getMerchantOrders() {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        if (!isBusiness)
+            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+
+        List<Business> myBusinesses = businessService.getBusinessByOwner(me);
+        List<Order> myOrders = new ArrayList<>();
+
+        for (Business business : myBusinesses) {
+            List<Order> orders = orderService.getOrdersByBusinessId(business.getId());
+            myOrders.addAll(orders);
+        }
+
+        return HttpResult.success(myOrders);
+    }
+
+    @GetMapping("/business/{id}")
+    public HttpResult<List<Order>> getOrdersByBusinessId(@PathVariable Long id) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        User me = meOptional.get();
+
+        Business business = businessService.getBusinessById(id);
+        if (business == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+
+        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner())))
+            return HttpResult.success(orderService.getOrdersByBusinessId(business.getId()));
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
