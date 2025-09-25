@@ -2,9 +2,25 @@
   <div class="mobile-merchant-layout">
     <header class="top-bar">
       <h1 class="page-title">{{ $route.meta.title }}</h1>
+      <el-select
+        v-if="businesses.length > 0"
+        v-model="selectedBusinessId"
+        placeholder="选择店铺"
+        @change="handleBusinessChange"
+        filterable
+        size="small"
+        class="business-selector"
+      >
+        <el-option
+          v-for="business in businesses"
+          :key="business.id"
+          :label="business.businessName"
+          :value="business.id"
+        />
+      </el-select>
     </header>
     <main class="main-content">
-      <router-view />
+      <router-view :key="selectedBusinessId || 0" />
     </main>
     <nav class="bottom-nav">
       <router-link to="/mobile/merchant/dashboard" class="nav-item">
@@ -20,15 +36,29 @@
         <span>历史订单</span>
       </router-link>
       <router-link to="/mobile/merchant/profile" class="nav-item">
-        <Store :size="24" />
-        <span>店铺</span>
+        <User :size="24" />
+        <span>我的</span>
       </router-link>
     </nav>
   </div>
 </template>
 
 <script setup lang="ts">
-import { LayoutDashboard, BookCopy, ScrollText, Store } from 'lucide-vue-next';
+import { onMounted } from 'vue';
+import { useBusinessStore } from '../store/business';
+import { storeToRefs } from 'pinia';
+import { LayoutDashboard, BookCopy, ScrollText, User } from 'lucide-vue-next';
+
+const businessStore = useBusinessStore();
+const { businesses, selectedBusinessId } = storeToRefs(businessStore);
+
+onMounted(() => {
+  businessStore.fetchBusinesses();
+});
+
+const handleBusinessChange = (businessId: number) => {
+  businessStore.selectBusiness(businessId);
+};
 </script>
 
 <style scoped>
@@ -44,12 +74,16 @@ import { LayoutDashboard, BookCopy, ScrollText, Store } from 'lucide-vue-next';
   right: 0;
   z-index: 10;
   display: flex;
-  justify-content: center; /* Center the title */
+  justify-content: space-between; /* Adjusted for title and selector */
   align-items: center;
   padding: 0 1rem;
   height: 56px;
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
+}
+
+.business-selector {
+  max-width: 150px; /* Adjust as needed */
 }
 
 .page-title {
@@ -92,6 +126,6 @@ import { LayoutDashboard, BookCopy, ScrollText, Store } from 'lucide-vue-next';
 }
 
 .nav-item.router-link-active {
-  color: #409eff; /* Element Plus primary color */
+  color: var(--el-color-primary);
 }
 </style>

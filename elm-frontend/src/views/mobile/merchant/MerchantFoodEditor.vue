@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { ref, watch, defineProps, defineExpose } from 'vue';
 import { ElMessage, type FormInstance, type FormRules, type UploadProps } from 'element-plus';
-import type { Food } from '../../api/types';
+import type { Food } from '../../../api/types';
 import { Plus } from '@element-plus/icons-vue';
 
 interface Props {

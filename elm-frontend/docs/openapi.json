@@ -619,6 +619,145 @@
         "security": []
       }
     },
+    "/api/orders/user/my": {
+      "get": {
+        "summary": "getMyOrders(Customer)",
+        "deprecated": false,
+        "description": "根据token的用户信息，获取该消费者的所有订单",
+        "tags": [
+          "管理订单"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Order"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/orders/merchant/my": {
+      "get": {
+        "summary": "getMyOrders(Merchant)",
+        "deprecated": false,
+        "description": "根据token获取商家信息，查看商家的所有订单",
+        "tags": [
+          "管理订单"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Order"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/orders/business/{id}": {
+      "get": {
+        "summary": "getOrdersByBusinessId",
+        "deprecated": false,
+        "description": "根据BusinessId获取该店铺的所有订单",
+        "tags": [
+          "管理订单"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "businessId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Order"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
     "/api/orders": {
       "get": {
         "summary": "listOrdersByUserId",

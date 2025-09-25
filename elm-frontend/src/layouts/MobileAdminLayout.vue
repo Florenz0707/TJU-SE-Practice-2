@@ -19,12 +19,16 @@
         <Store :size="24" />
         <span>店铺</span>
       </router-link>
+      <router-link to="/mobile/admin/profile" class="nav-item">
+        <User :size="24" />
+        <span>我的</span>
+      </router-link>
     </nav>
   </div>
 </template>
 
 <script setup lang="ts">
-import { LayoutDashboard, Users, Store } from 'lucide-vue-next';
+import { LayoutDashboard, Users, Store, User } from 'lucide-vue-next';
 </script>
 
 <style scoped>

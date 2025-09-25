@@ -37,42 +37,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Search } from 'lucide-vue-next';
-import { listOrders } from '../../api/order';
-import { getCurrentUserBusinesses } from '../../api/business';
-import type { Order, Business, HttpResultListBusiness } from '../../api/types';
+import { getOrdersByBusinessId } from '../../../api/order';
+import { useBusinessStore } from '../../../store/business';
+import type { Order } from '../../../api/types';
 import { ElMessage } from 'element-plus';
+import { storeToRefs } from 'pinia';
 
 const loading = ref(true);
 const allOrders = ref<Order[]>([]);
-const business = ref<Business | null>(null);
 const searchQuery = ref('');
 
-const fetchBusinessAndOrders = async () => {
+const businessStore = useBusinessStore();
+const { selectedBusinessId } = storeToRefs(businessStore);
+
+const fetchOrdersForBusiness = async (businessId: number) => {
+  if (!businessId) {
+    allOrders.value = [];
+    return;
+  }
   loading.value = true;
   try {
-    const businessResponse: HttpResultListBusiness = await getCurrentUserBusinesses();
-    if (businessResponse.success && businessResponse.data && businessResponse.data.length > 0) {
-      const currentBusiness = businessResponse.data[0];
-      if (currentBusiness) {
-        business.value = currentBusiness;
-        const ownerId = currentBusiness.businessOwner?.id;
-        if (ownerId) {
-          const ordersResponse = await listOrders(ownerId);
-          if (ordersResponse.success) {
-            allOrders.value = ordersResponse.data || [];
-          } else {
-            ElMessage.error(ordersResponse.message || '获取订单列表失败');
-          }
-        } else {
-          ElMessage.warning('无法确定店铺所有者，无法加载订单');
-        }
-      } else {
-         ElMessage.warning('Could not retrieve business details.');
-      }
+    const res = await getOrdersByBusinessId(businessId);
+    if (res.success) {
+      allOrders.value = res.data || [];
     } else {
-      ElMessage.warning(businessResponse.message || '当前用户没有关联的店铺');
+      ElMessage.error(res.message || '获取订单列表失败');
     }
   } catch (error) {
     ElMessage.error('加载订单历史失败');
@@ -82,7 +73,11 @@ const fetchBusinessAndOrders = async () => {
   }
 };
 
-onMounted(fetchBusinessAndOrders);
+watch(selectedBusinessId, (newId) => {
+  if (newId) {
+    fetchOrdersForBusiness(newId);
+  }
+}, { immediate: true });
 
 const filteredOrders = computed(() => {
   if (!searchQuery.value) {
@@ -121,7 +116,14 @@ const getOrderStatusType = (status?: number): string => {
   padding: 1rem;
 }
 .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
+}
+.business-selector {
+  flex-grow: 1;
+  max-width: 200px;
 }
 .search-input {
   margin-bottom: 1.5rem;

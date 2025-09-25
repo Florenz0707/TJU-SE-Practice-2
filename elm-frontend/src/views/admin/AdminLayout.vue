@@ -45,6 +45,7 @@
             <el-menu-item index="/admin/dashboard">平台总览</el-menu-item>
             <el-menu-item index="/admin/users">用户管理</el-menu-item>
             <el-menu-item index="/admin/businesses">店铺管理</el-menu-item>
+            <el-menu-item index="/admin/applications">申请管理</el-menu-item>
           </el-menu>
         </div>
 
@@ -89,6 +90,10 @@
         <el-menu-item index="/admin/businesses">
           <el-icon><i-ep-shop /></el-icon>
           <span>店铺管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/applications">
+          <el-icon><i-ep-document-checked /></el-icon>
+          <span>申请管理</span>
         </el-menu-item>
       </el-menu>
     </el-drawer>
