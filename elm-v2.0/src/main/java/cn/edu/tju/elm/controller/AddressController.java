@@ -64,35 +64,27 @@ public class AddressController {
     @PutMapping("/addresses/{id}")
     public HttpResult<DeliveryAddress> updateAddress(
             @PathVariable("id") Long id,
-            @RequestBody DeliveryAddress address) {
+            @RequestBody DeliveryAddress newAddress) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        if (address == null)
+        if (newAddress == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
-        if (address.getCustomer() == null || address.getCustomer().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
-        User customer = userService.getUserById(address.getCustomer().getId());
-        if (customer == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer NOT FOUND");
-
-        DeliveryAddress oldAddress = addressService.getAddressById(id);
-        if (oldAddress == null)
+        DeliveryAddress address = addressService.getAddressById(id);
+        if (address == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
-        User oldCustomer = oldAddress.getCustomer();
+        User oldCustomer = address.getCustomer();
 
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        if (isAdmin || (me.equals(oldCustomer) && me.equals(customer))) {
-            address.setCustomer(customer);
-            Utils.substituteEntity(oldAddress, address, me);
-            addressService.updateAddress(oldAddress);
+        if (isAdmin || me.equals(oldCustomer)) {
+            newAddress.setCustomer(oldCustomer);
+            Utils.substituteEntity(address, newAddress, me);
             addressService.updateAddress(address);
-
-            userService.updateUser(customer);
-            return HttpResult.success(address);
+            addressService.updateAddress(newAddress);
+            return HttpResult.success(newAddress);
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
