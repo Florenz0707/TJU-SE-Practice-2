@@ -27,11 +27,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getOrderById } from '../../api/order';
-import { addReview } from '../../api/review';
-import type { Order, Review } from '../../api/types';
+import { getOrderById } from '../../../api/order';
+import { addReview } from '../../../api/review';
+import type { Order, Review } from '../../../api/types';
 import { ElMessage, type FormInstance } from 'element-plus';
-import { useAuthStore } from '../../store/auth';
+import { useAuthStore } from '../../../store/auth';
 
 const route = useRoute();
 const router = useRouter();

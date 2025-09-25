@@ -1,81 +1,78 @@
 <template>
   <div class="order-history-container" v-loading="loading">
-    <div class="header">
-      <h2>历史订单查询</h2>
-      <el-input
-        v-model="searchQuery"
-        placeholder="搜索订单ID或顾客信息"
-        class="search-input"
-        @keyup.enter="handleSearch"
-        clearable
-        @clear="handleSearch"
-      >
-        <template #append>
-          <el-button @click="handleSearch">搜索</el-button>
-        </template>
-      </el-input>
-    </div>
+    <el-card>
+      <template #header>
+        <div class="header">
+          <h2>历史订单查询</h2>
+          <div class="actions">
+            <el-input
+              v-model="searchQuery"
+              placeholder="搜索订单ID或顾客信息"
+              class="search-input"
+              @keyup.enter="handleSearch"
+              clearable
+              @clear="handleSearch"
+            >
+              <template #append>
+                <el-button @click="handleSearch">搜索</el-button>
+              </template>
+            </el-input>
+          </div>
+        </div>
+      </template>
 
-    <el-table :data="filteredOrders" stripe style="width: 100%">
-      <el-table-column prop="id" label="订单ID" width="100" />
-      <el-table-column prop="orderDate" label="下单时间" width="200">
-        <template #default="{ row }">
-          <span>{{ row.orderDate ? new Date(row.orderDate).toLocaleString() : 'N/A' }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="customer.username" label="顾客用户名" />
-      <el-table-column prop="orderTotal" label="订单总额">
-        <template #default="{ row }">
-          <span>¥{{ (row.orderTotal ?? 0).toFixed(2) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="orderState" label="订单状态">
-         <template #default="{ row }">
-          <el-tag :type="getOrderStatusType(row.orderState)">
-            {{ getOrderStatusText(row.orderState) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-    </el-table>
+      <el-table :data="filteredOrders" stripe style="width: 100%">
+        <el-table-column prop="id" label="订单ID" width="100" />
+        <el-table-column prop="orderDate" label="下单时间" width="200">
+          <template #default="{ row }">
+            <span>{{ row.orderDate ? new Date(row.orderDate).toLocaleString() : 'N/A' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="customer.username" label="顾客用户名" />
+        <el-table-column prop="orderTotal" label="订单总额">
+          <template #default="{ row }">
+            <span>¥{{ (row.orderTotal ?? 0).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="orderState" label="订单状态">
+          <template #default="{ row }">
+            <el-tag :type="getOrderStatusType(row.orderState)">
+              {{ getOrderStatusText(row.orderState) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { listOrders } from '../../api/order';
-import { getCurrentUserBusinesses } from '../../api/business';
-import type { Order, Business, HttpResultListBusiness } from '../../api/types';
+import { ref, computed, watch } from 'vue';
+import { getOrdersByBusinessId } from '../../api/order';
+import { useBusinessStore } from '../../store/business';
+import type { Order } from '../../api/types';
 import { ElMessage } from 'element-plus';
+import { storeToRefs } from 'pinia';
 
 const loading = ref(true);
 const allOrders = ref<Order[]>([]);
-const business = ref<Business | null>(null);
 const searchQuery = ref('');
 
-const fetchBusinessAndOrders = async () => {
+const businessStore = useBusinessStore();
+const { selectedBusinessId } = storeToRefs(businessStore);
+
+const fetchOrdersForBusiness = async (businessId: number) => {
+  if (!businessId) {
+    allOrders.value = [];
+    return;
+  }
   loading.value = true;
   try {
-    const businessResponse: HttpResultListBusiness = await getCurrentUserBusinesses();
-    if (businessResponse.success && businessResponse.data && businessResponse.data.length > 0) {
-      const currentBusiness = businessResponse.data[0];
-      if (currentBusiness) {
-        business.value = currentBusiness;
-        const ownerId = currentBusiness.businessOwner?.id;
-        if (ownerId) {
-          const ordersResponse = await listOrders(ownerId);
-          if (ordersResponse.success) {
-            allOrders.value = ordersResponse.data || [];
-          } else {
-            ElMessage.error(ordersResponse.message || '获取订单列表失败');
-          }
-        } else {
-          ElMessage.warning('无法确定店铺所有者，无法加载订单');
-        }
-      } else {
-         ElMessage.warning('Could not retrieve business details.');
-      }
+    const res = await getOrdersByBusinessId(businessId);
+    if (res.success) {
+      allOrders.value = res.data || [];
     } else {
-      ElMessage.warning(businessResponse.message || '当前用户没有关联的店铺');
+      ElMessage.error(res.message || '获取订单列表失败');
     }
   } catch (error) {
     ElMessage.error('加载订单历史失败');
@@ -85,7 +82,11 @@ const fetchBusinessAndOrders = async () => {
   }
 };
 
-onMounted(fetchBusinessAndOrders);
+watch(selectedBusinessId, (newId) => {
+  if (newId) {
+    fetchOrdersForBusiness(newId);
+  }
+}, { immediate: true });
 
 const filteredOrders = computed(() => {
   if (!searchQuery.value) {
@@ -120,7 +121,20 @@ const getOrderStatusType = (status?: number): string => {
 </script>
 
 <style scoped>
-.order-history-container { padding: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.search-input { width: 300px; }
+.order-history-container {
+  padding: 20px;
+  background-color: #f5f7fa;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.actions {
+  display: flex;
+  gap: 1rem;
+}
+.search-input {
+  width: 300px;
+}
 </style>

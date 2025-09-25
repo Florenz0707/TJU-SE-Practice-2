@@ -4,7 +4,7 @@
       <img
         v-if="food.foodImg"
         ref="imageElement"
-        :src="food.foodImg"
+        :src="formatBase64Image(food.foodImg)"
         alt="食物图片"
         class="food-image"
       />
@@ -28,6 +28,7 @@ import { ref } from 'vue';
 import type { Food } from '../api/types';
 import { useCartStore } from '../store/cart';
 import { ElMessage } from 'element-plus';
+import { formatBase64Image } from '../utils/image';
 
 const props = defineProps<{
   food: Food;

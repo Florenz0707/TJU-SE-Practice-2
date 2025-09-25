@@ -24,9 +24,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAuthStore } from '../../../store/auth';
-import { addBusiness } from '../../../api/business';
-import type { Business } from '../../../api/types';
+import { useAuthStore } from '../../../../store/auth';
+import { addBusiness } from '../../../../api/business';
+import type { Business } from '../../../../api/types';
 import { ElMessage, type FormInstance } from 'element-plus';
 import { useRouter } from 'vue-router';
 

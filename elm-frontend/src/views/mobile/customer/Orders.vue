@@ -28,9 +28,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { listOrders } from '../../api/order';
-import { getActualUser } from '../../api/user';
-import type { Order } from '../../api/types';
+import { getMyOrdersCustomer } from '../../../api/order';
+import type { Order } from '../../../api/types';
 
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -51,11 +50,7 @@ const getOrderStatusText = (state?: number) => {
 onMounted(async () => {
   loading.value = true;
   try {
-    const userRes = await getActualUser();
-    if (!userRes.success || !userRes.data.id) {
-      throw new Error(userRes.message || '无法获取当前用户信息');
-    }
-    const res = await listOrders(userRes.data.id);
+    const res = await getMyOrdersCustomer();
     if (res.success) {
       orders.value = res.data;
     } else {

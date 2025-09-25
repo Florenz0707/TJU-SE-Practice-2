@@ -1,6 +1,6 @@
 <template>
   <div class="business-management">
-    <h1>店铺管理</h1>
+    <h1>商家管理</h1>
 
     <el-row :gutter="20" style="margin-bottom: 20px;">
       <el-col :span="8">
@@ -12,9 +12,9 @@
       </el-col>
       <el-col :span="8">
         <el-select v-model="statusFilter" placeholder="按状态筛选" clearable>
-          <el-option label="待处理" value="pending"></el-option>
-          <el-option label="已批准" value="approved"></el-option>
-          <el-option label="已拒绝" value="rejected"></el-option>
+          <el-option label="待处理" value="待处理"></el-option>
+          <el-option label="已批准" value="已批准"></el-option>
+          <el-option label="已拒绝" value="已拒绝"></el-option>
         </el-select>
       </el-col>
     </el-row>
@@ -66,7 +66,12 @@ const fetchBusinesses = async () => {
   try {
     const res = await getBusinesses();
     if (res.success) {
-      rawBusinesses.value = res.data || [];
+      rawBusinesses.value = (res.data || []).sort((a, b) => {
+        if (a.createTime && b.createTime) {
+          return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
+        }
+        return 0;
+      });
     } else {
       ElMessage.error(res.message || '获取店铺列表失败。');
     }
@@ -89,12 +94,16 @@ const displayBusinesses = computed(() => {
 const filteredBusinesses = computed(() => {
   return displayBusinesses.value.filter(business => {
     const searchMatch = !searchQuery.value || business.businessName.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const statusMatch = !statusFilter.value || business.status.toLowerCase() === statusFilter.value;
+    const statusMatch = !statusFilter.value || business.status === statusFilter.value;
     return searchMatch && statusMatch;
   });
 });
 
 const handleApprove = async (business: Business) => {
+  if (business.id === undefined) {
+    ElMessage.error('无法批准没有ID的店铺。');
+    return;
+  }
   try {
     const updateData: Business = { ...business, remarks: 'approved', deleted: false };
     await updateBusiness(business.id, updateData);
@@ -106,6 +115,10 @@ const handleApprove = async (business: Business) => {
 };
 
 const handleReject = async (business: Business) => {
+  if (business.id === undefined) {
+    ElMessage.error('无法拒绝没有ID的店铺。');
+    return;
+  }
    try {
     const updateData: Business = { ...business, deleted: true };
     await updateBusiness(business.id, updateData);

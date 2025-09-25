@@ -16,7 +16,7 @@
         :show-file-list="false"
         :before-upload="handleBeforeUpload"
       >
-        <img v-if="form.foodImg" :src="`data:image/jpeg;base64,${form.foodImg}`" class="avatar" />
+        <img v-if="form.foodImg" :src="formatBase64Image(form.foodImg)" class="avatar" />
         <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
       </el-upload>
     </el-form-item>
@@ -28,6 +28,7 @@ import { ref, watch, defineProps, defineExpose } from 'vue';
 import { ElMessage, type FormInstance, type FormRules, type UploadProps } from 'element-plus';
 import type { Food } from '../../api/types';
 import { Plus } from '@element-plus/icons-vue';
+import { formatBase64Image } from '../../utils/image';
 
 interface Props {
   foodData: Food | null;
@@ -49,8 +50,7 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    const base64 = e.target?.result as string;
-    form.value.foodImg = base64.split(',')[1];
+    form.value.foodImg = e.target?.result as string;
   };
   reader.readAsDataURL(rawFile);
 
