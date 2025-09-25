@@ -98,7 +98,7 @@ public class AddressController {
     }
 
     @DeleteMapping("/{id}")
-    public HttpResult<Object> deleteAddress(@PathVariable("id") Long id) {
+    public HttpResult<String> deleteAddress(@PathVariable("id") Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -113,7 +113,7 @@ public class AddressController {
         if (isAdmin || (me.equals(customer))) {
             Utils.deleteEntity(address, me);
             addressService.updateAddress(address);
-            return HttpResult.success(address);
+            return HttpResult.success("Delete address successfully.");
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }

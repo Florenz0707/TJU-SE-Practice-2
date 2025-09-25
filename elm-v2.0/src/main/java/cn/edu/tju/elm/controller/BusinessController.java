@@ -134,6 +134,8 @@ public class BusinessController {
                 if (!oldOwner.getId().equals(business.getBusinessOwner().getId()))
                     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
             }
+            if (business.getBusinessName() == null)
+                business.setBusinessName(oldBusiness.getBusinessName());
             if (business.getBusinessAddress() == null)
                 business.setBusinessAddress(oldBusiness.getBusinessAddress());
             if (business.getBusinessExplain() == null)
@@ -159,7 +161,7 @@ public class BusinessController {
     }
 
     @DeleteMapping("/{id}")
-    public HttpResult<Business> deleteBusiness(@PathVariable("id") Long id) {
+    public HttpResult<String> deleteBusiness(@PathVariable("id") Long id) {
         Business business = businessService.getBusinessById(id);
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
@@ -174,7 +176,7 @@ public class BusinessController {
         if (isAdmin || (isBusiness && business.getBusinessOwner().equals(me))) {
             Utils.deleteEntity(business, me);
             businessService.updateBusiness(business);
-            return HttpResult.success(business);
+            return HttpResult.success("Delete business successfully.");
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");

@@ -101,7 +101,7 @@ public class CartController {
     }
 
     @DeleteMapping("/carts/{id}")
-    public HttpResult<Cart> deleteCartItem(@PathVariable("id") Long id) {
+    public HttpResult<String> deleteCartItem(@PathVariable("id") Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Authority NOT FOUND");
@@ -114,7 +114,7 @@ public class CartController {
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(cart.getCustomer())) {
             cartItemService.deleteCart(cart);
-            return HttpResult.success();
+            return HttpResult.success("Delete cart successfully.");
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
