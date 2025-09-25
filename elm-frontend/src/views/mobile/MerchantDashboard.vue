@@ -1,18 +1,16 @@
 <template>
-  <div class="dashboard-container" v-loading="loading">
+  <div class="mobile-dashboard-container" v-loading="loading">
     <div class="header">
-      <h2>实时订单仪表盘</h2>
-      <p>WebSocket 状态:
-        <el-tag :type="isConnected ? 'success' : 'danger'">
-          {{ isConnected ? '已连接' : '已断开' }}
+      <h4>实时订单仪表盘</h4>
+      <p>
+        <el-tag :type="isConnected ? 'success' : 'danger'" size="small">
+          {{ isConnected ? '已连接' : '未连接' }}
         </el-tag>
       </p>
     </div>
 
-    <el-row :gutter="20">
-      <!-- New Orders Column -->
-      <el-col :span="12">
-        <h3>新进订单</h3>
+    <el-tabs v-model="activeTab">
+      <el-tab-pane label="新进订单" name="new">
         <div class="order-list new-orders">
           <el-card v-for="order in newOrders" :key="order.id" class="order-card">
             <div class="order-content">
@@ -20,37 +18,34 @@
               <p>总价: ¥{{ (order.orderTotal ?? 0).toFixed(2) }}</p>
               <p>下单时间: {{ order.orderDate ? new Date(order.orderDate).toLocaleTimeString() : 'N/A' }}</p>
             </div>
-            <div class="order-actions" v-if="order.id">
-              <el-button type="success" @click="handleAccept(order)">接单</el-button>
-              <el-button type="danger" @click="handleReject(order)">拒单</el-button>
+            <div class="order-actions">
+              <el-button type="success" size="small" @click="handleAccept(order)">接单</el-button>
+              <el-button type="danger" size="small" @click="handleReject(order)">拒单</el-button>
             </div>
           </el-card>
           <el-empty v-if="newOrders.length === 0" description="暂无新订单"></el-empty>
         </div>
-      </el-col>
-
-      <!-- In-Progress Orders Column -->
-      <el-col :span="12">
-        <h3>进行中订单</h3>
+      </el-tab-pane>
+      <el-tab-pane label="进行中订单" name="in-progress">
         <div class="order-list in-progress-orders">
           <el-card v-for="order in inProgressOrders" :key="order.id" class="order-card">
              <div class="order-content">
               <p><strong>订单 #{{ order.id }}</strong> 来自 {{ order.customer?.username ?? 'N/A' }}</p>
               <p>状态:
-                <el-tag :type="getOrderStatusType(order.orderState)">
+                <el-tag :type="getOrderStatusType(order.orderState)" size="small">
                   {{ getOrderStatusText(order.orderState) }}
                 </el-tag>
               </p>
             </div>
-            <div class="order-actions" v-if="order.id">
-              <el-button v-if="order.orderState === 1" @click="updateStatus(order, 2)">开始配送</el-button>
-              <el-button v-if="order.orderState === 2" @click="updateStatus(order, 3)">订单完成</el-button>
+            <div class="order-actions">
+              <el-button v-if="order.orderState === 1" size="small" @click="updateStatus(order, 2)">开始配送</el-button>
+              <el-button v-if="order.orderState === 2" size="small" @click="updateStatus(order, 3)">订单完成</el-button>
             </div>
           </el-card>
            <el-empty v-if="inProgressOrders.length === 0" description="暂无进行中订单"></el-empty>
         </div>
-      </el-col>
-    </el-row>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -62,13 +57,13 @@ import { getCurrentUserBusinesses } from '../../api/business';
 import type { Order, Business, HttpResultListBusiness } from '../../api/types';
 import { ElMessage } from 'element-plus';
 
-// Assuming WebSocket URL is configured elsewhere, using a placeholder
 const WEBSOCKET_URL = 'ws://localhost:8080/api/ws/orders';
 
 const loading = ref(true);
 const business = ref<Business | null>(null);
 const newOrders = ref<Order[]>([]);
 const inProgressOrders = ref<Order[]>([]);
+const activeTab = ref('new');
 
 const { isConnected, message } = useWebSocket(WEBSOCKET_URL);
 
@@ -162,10 +157,17 @@ const getOrderStatusType = (status?: number): string => {
 </script>
 
 <style scoped>
-.dashboard-container { padding: 20px; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.order-list { height: 60vh; overflow-y: auto; padding: 10px; border: 1px solid #eee; border-radius: 4px; }
-.order-card { margin-bottom: 15px; }
-.order-content { margin-bottom: 10px; }
+.mobile-dashboard-container { padding: 1rem; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.order-list {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+.order-card { margin-bottom: 1rem; }
+.order-content { margin-bottom: 0.75rem; font-size: 0.875rem; }
 .order-actions { text-align: right; }
+p {
+  margin: 0.25rem 0;
+}
 </style>

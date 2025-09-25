@@ -4,6 +4,14 @@ import router from './router' // Import router instance
 import './router/guards' // Import to activate the route guards
 import './styles/main.scss' // Import our new global stylesheet
 import App from './App.vue'
+
+import { isMobile } from './utils/device';
+
+// Conditional styles for mobile
+if (isMobile()) {
+  import('./styles/mobile.scss');
+}
+
 import { useAuthStore } from './store/auth'
 import { setRequestToken } from './utils/request'
 

@@ -30,6 +30,7 @@ export interface User {
 }
 
 export interface Person extends User {
+  password?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
@@ -109,6 +110,29 @@ export interface Order {
   orderTotal?: number;
   deliveryAddress?: DeliveryAddress;
   orderState?: number;
+  orderDetails?: OrderDetail[];
+}
+
+export interface OrderDetail {
+  id?: number;
+  order?: Order;
+  food?: Food;
+  quantity?: number;
+}
+
+export interface Review {
+  id: number;
+  createTime?: string;
+  updateTime?: string;
+  creator?: number;
+  updater?: number;
+  deleted?: boolean;
+  customer?: User;
+  business?: Business;
+  order?: Order;
+  anonymous?: boolean;
+  stars: number;
+  content: string;
 }
 
 export interface Cart {
@@ -148,3 +172,29 @@ export type HttpResultListCart = HttpResult<Cart[]>;
 
 export type HttpResultDeliveryAddress = HttpResult<DeliveryAddress>;
 export type HttpResultListDeliveryAddress = HttpResult<DeliveryAddress[]>;
+
+export interface BusinessApplication {
+  id: number;
+  createTime?: string;
+  updateTime?: string;
+  creator?: number;
+  updater?: number;
+  deleted?: boolean;
+  business: Business;
+  handler?: User;
+  applicationExplain?: string;
+  applicationState?: number;
+}
+
+export interface MerchantApplication {
+  id: number;
+  createTime?: string;
+  updateTime?: string;
+  creator?: number;
+  updater?: number;
+  deleted?: boolean;
+  applicant: User;
+  applicationExplain?: string;
+  applicationState?: number;
+  handler?: User;
+}

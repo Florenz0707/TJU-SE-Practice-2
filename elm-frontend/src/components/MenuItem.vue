@@ -104,12 +104,15 @@ const handleAddToCart = () => {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  text-align: left;
+  gap: 8px;
 }
 .food-name {
   font-family: "Poppins", sans-serif;
   font-weight: 600;
   font-size: 18px;
   margin: 0 0 8px 0;
+  text-align: left;
 }
 .food-explain {
   font-family: "Inter", sans-serif;
@@ -117,6 +120,7 @@ const handleAddToCart = () => {
   font-size: 14px;
   flex-grow: 1;
   margin-bottom: 10px;
+  text-align: left;
 }
 .food-actions {
   display: flex;

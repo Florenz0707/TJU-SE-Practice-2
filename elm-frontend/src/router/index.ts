@@ -6,6 +6,9 @@ import Register from '../views/Register.vue';
 import CustomerLayout from '../views/customer/CustomerLayout.vue';
 import MerchantLayout from '../views/merchant/MerchantLayout.vue';
 import AdminLayout from '../views/admin/AdminLayout.vue';
+import MobileLayout from '../layouts/MobileLayout.vue';
+import MobileMerchantLayout from '../layouts/MobileMerchantLayout.vue';
+import MobileAdminLayout from '../layouts/MobileAdminLayout.vue';
 import Forbidden from '../views/error/Forbidden.vue';
 import NotFound from '../views/error/NotFound.vue';
 
@@ -68,6 +71,18 @@ const routes: Array<RouteRecordRaw> = [
             component: () => import('../views/customer/Profile/OrderDetail.vue'),
             meta: { title: '订单详情' },
           },
+          {
+            path: 'review/:orderId',
+            name: 'SubmitReview',
+            component: () => import('../views/customer/SubmitReview.vue'),
+            meta: { title: '评价订单' },
+          },
+          {
+            path: 'apply-merchant',
+            name: 'ApplyAsMerchant',
+            component: () => import('../views/customer/Profile/ApplyAsMerchant.vue'),
+            meta: { title: '成为商家' },
+          },
         ],
       },
       {
@@ -84,15 +99,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/merchant',
     component: MerchantLayout,
     redirect: '/merchant/dashboard',
-    meta: {
-      requiresAuth: true,
-      roles: ['MERCHANT', 'ADMIN']
-    },
     children: [
-      { path: 'dashboard', name: 'MerchantDashboard', component: MerchantDashboard, meta: { title: '商家仪表盘' } },
+      { path: 'dashboard', name: 'MerchantDashboard', component: MerchantDashboard, meta: { title: '商家仪表盘', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
       { path: 'menu', name: 'MenuManagement', component: MenuManagement, meta: { title: '菜单管理' } },
-      { path: 'profile', name: 'BusinessProfile', component: BusinessProfile, meta: { title: '店铺信息' } },
-      { path: 'orders', name: 'MerchantOrderHistory', component: OrderHistory, meta: { title: '历史订单' } }
+      { path: 'profile', name: 'BusinessProfile', component: BusinessProfile, meta: { title: '店铺信息', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'orders', name: 'MerchantOrderHistory', component: OrderHistory, meta: { title: '历史订单', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } }
     ]
   },
 
@@ -121,9 +132,168 @@ const routes: Array<RouteRecordRaw> = [
   }
 ];
 
+// Mobile customer routes
+const mobileRoutes: RouteRecordRaw = {
+  path: '/mobile',
+  component: MobileLayout,
+  children: [
+    {
+      path: 'home',
+      name: 'MobileHome',
+      component: () => import('../views/mobile/MobileHome.vue'),
+      meta: { title: '首页' }
+    },
+    {
+      path: 'restaurant/:id',
+      name: 'MobileRestaurantDetail',
+      component: () => import('../views/mobile/MobileRestaurantDetail.vue'),
+      meta: { title: '餐厅详情' }
+    },
+    {
+      path: 'orders',
+      name: 'MobileOrders',
+      component: () => import('../views/mobile/Orders.vue'),
+      meta: { title: '我的订单', requiresAuth: true, roles: ['CUSTOMER'] }
+    },
+    {
+      path: 'profile',
+      component: () => import('../views/mobile/Profile/ProfileLayout.vue'),
+      meta: { requiresAuth: true, roles: ['CUSTOMER'] },
+      redirect: { name: 'MobileUserProfile' },
+      children: [
+        {
+          path: 'details',
+          name: 'MobileUserProfile',
+          component: () => import('../views/mobile/Profile/UserProfile.vue'),
+          meta: { title: '我的信息' },
+        },
+        {
+          path: 'addresses',
+          name: 'MobileAddressManagement',
+          component: () => import('../views/mobile/Profile/AddressManagement.vue'),
+          meta: { title: '地址管理' },
+        },
+        {
+          path: 'apply-merchant',
+          name: 'MobileApplyAsMerchant',
+          component: () => import('../views/mobile/Profile/ApplyAsMerchant.vue'),
+          meta: { title: '成为商家' },
+        },
+      ],
+    },
+    {
+      path: 'cart',
+      name: 'MobileCart',
+      component: () => import('../views/mobile/Cart.vue'),
+      meta: { title: '购物车', requiresAuth: true, roles: ['CUSTOMER'] }
+    },
+    {
+      path: 'checkout',
+      name: 'MobileCheckout',
+      component: () => import('../views/mobile/Checkout.vue'),
+      meta: { title: '确认订单', requiresAuth: true, roles: ['CUSTOMER'] }
+    },
+    {
+      path: 'orders/:id',
+      name: 'MobileOrderDetail',
+      component: () => import('../views/mobile/OrderDetail.vue'),
+      meta: { title: '订单详情', requiresAuth: true, roles: ['CUSTOMER'] }
+    },
+    {
+      path: 'review/:orderId',
+      name: 'MobileSubmitReview',
+      component: () => import('../views/mobile/SubmitReview.vue'),
+      meta: { title: '评价订单', requiresAuth: true, roles: ['CUSTOMER'] }
+    }
+  ]
+};
+
+// Mobile merchant routes
+const mobileMerchantRoutes: RouteRecordRaw = {
+    path: '/mobile/merchant',
+    component: MobileMerchantLayout,
+    redirect: '/mobile/merchant/dashboard',
+    children: [
+      { path: 'dashboard', name: 'MobileMerchantDashboard', component: () => import('../views/mobile/MerchantDashboard.vue'), meta: { title: '商家仪表盘', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'menu', name: 'MobileMenuManagement', component: () => import('../views/mobile/MerchantMenuManagement.vue'), meta: { title: '菜单管理' } },
+      { path: 'profile', name: 'MobileBusinessProfile', component: () => import('../views/mobile/MerchantBusinessProfile.vue'), meta: { title: '店铺信息', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'orders', name: 'MobileMerchantOrderHistory', component: () => import('../views/mobile/MerchantOrderHistory.vue'), meta: { title: '历史订单', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } }
+    ]
+};
+
+// Mobile admin routes
+const mobileAdminRoutes: RouteRecordRaw = {
+    path: '/mobile/admin',
+    component: MobileAdminLayout,
+    redirect: '/mobile/admin/dashboard',
+    meta: {
+      requiresAuth: true,
+      roles: ['ADMIN']
+    },
+    children: [
+      { path: 'dashboard', name: 'MobileAdminDashboard', component: () => import('../views/mobile/admin/Dashboard.vue'), meta: { title: '管理仪表盘' } },
+      { path: 'users', name: 'MobileUserManagement', component: () => import('../views/mobile/admin/UserManagement.vue'), meta: { title: '用户管理' } },
+      { path: 'businesses', name: 'MobileBusinessManagement', component: () => import('../views/mobile/admin/BusinessManagement.vue'), meta: { title: '店铺管理' } }
+    ]
+};
+
+
+routes.push(mobileRoutes, mobileMerchantRoutes, mobileAdminRoutes);
+
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(_to, _from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition;
+    } else {
+      return { top: 0 };
+    }
+  },
+});
+
+import { useAuthStore } from '../store/auth';
+import { isMobile } from '../utils/device';
+
+router.beforeEach((to, _from, next) => {
+  const authStore = useAuthStore();
+  const isAuthenticated = authStore.user !== null;
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+
+  // Redirect root to mobile home on mobile devices
+  if (to.path === '/' && isMobile()) {
+    return next('/mobile/home');
+  }
+
+  // Redirect merchant dashboard to mobile version on mobile devices
+  if (to.path === '/merchant/dashboard' && isMobile()) {
+    return next('/mobile/merchant/dashboard');
+  }
+
+  // Redirect admin dashboard to mobile version on mobile devices
+  if (to.path === '/admin/dashboard' && isMobile()) {
+    return next('/mobile/admin/dashboard');
+  }
+
+  if (requiresAuth && !isAuthenticated) {
+    // Redirect to login page, preserving the intended destination
+    return next({
+      path: '/login',
+      query: { redirect: to.fullPath },
+    });
+  }
+
+  // Check for role-based authorization
+  const requiredRoles = to.matched.flatMap(record => (record.meta.roles as string[]) || []);
+  if (requiredRoles.length > 0) {
+    const userRoles = authStore.userRoles;
+    const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
+    if (!isAuthenticated || !hasRequiredRole) {
+      return next('/forbidden');
+    }
+  }
+
+  next();
 });
 
 export default router;

@@ -31,6 +31,15 @@
       "name": "统一结果测试"
     },
     {
+      "name": "管理店铺申请"
+    },
+    {
+      "name": "管理商家申请"
+    },
+    {
+      "name": "管理评价"
+    },
+    {
       "name": "认证 (Authentication)"
     }
   ],
@@ -145,7 +154,22 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/HttpResultBusiness"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
                 }
               }
             },
@@ -398,10 +422,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LoginDto"
-              }
+              },
+              "examples": {}
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -409,7 +433,22 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "type": "string"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
                 }
               }
             },
@@ -529,7 +568,22 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/HttpResultOrder"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
                 }
               }
             },
@@ -537,54 +591,6 @@
           }
         },
         "security": []
-      },
-      "patch": {
-        "summary": "updateOrderStatus",
-        "deprecated": false,
-        "description": "更新订单状态",
-        "operationId": "updateOrderStatusId",
-        "tags": [
-          "管理订单"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "订单ID",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "orderState": {
-                    "type": "integer",
-                    "format": "int32"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpResultOrder"
-                }
-              }
-            }
-          }
-        }
       }
     },
     "/api/user": {
@@ -682,6 +688,40 @@
           }
         },
         "security": []
+      },
+      "patch": {
+        "summary": "updateOrderStatus",
+        "deprecated": false,
+        "description": "更新订单状态",
+        "operationId": "updateOrderStatus",
+        "tags": [
+          "管理订单"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Order"
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpResultOrder"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
       }
     },
     "/api/orders/{id}": {
@@ -713,32 +753,6 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpResult"
-                }
-              }
-            },
-            "headers": {}
-          }
-        },
-        "security": []
-      }
-    },
-    "/api/orders/my": {
-      "get": {
-        "summary": "获取当前用户的订单",
-        "deprecated": false,
-        "description": "获取当前登录用户的所有订单历史",
-        "operationId": "getCurrentUserOrders",
-        "tags": [
-          "管理订单"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpResultListOrder"
                 }
               }
             },
@@ -1043,7 +1057,22 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/HttpResult"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
                 }
               }
             },
@@ -1196,7 +1225,22 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/HttpResult"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
                 }
               }
             },
@@ -1420,7 +1464,22 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/HttpResult"
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
                 }
               }
             },
@@ -1499,6 +1558,1272 @@
               "*/*": {
                 "schema": {
                   "$ref": "#/components/schemas/HttpResult"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/applications/business": {
+      "post": {
+        "summary": "提交店铺申请",
+        "deprecated": false,
+        "description": "商家申请店铺",
+        "tags": [
+          "管理店铺申请"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "createTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updateTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "creator": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "updater": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  },
+                  "business": {
+                    "$ref": "#/components/schemas/Business"
+                  },
+                  "handler": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "applicationExplain": {
+                    "type": "string"
+                  },
+                  "applicationState": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                },
+                "required": [
+                  "business",
+                  "id"
+                ]
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "createTime": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updateTime": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "creator": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "updater": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "deleted": {
+                          "type": "boolean"
+                        },
+                        "business": {
+                          "$ref": "#/components/schemas/Business"
+                        },
+                        "handler": {
+                          "$ref": "#/components/schemas/User"
+                        },
+                        "applicationExplain": {
+                          "type": "string"
+                        },
+                        "applicationState": {
+                          "type": "integer",
+                          "format": "int32"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ]
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "get": {
+        "summary": "获取申请列表",
+        "deprecated": false,
+        "description": "获取所有店铺申请",
+        "tags": [
+          "管理店铺申请"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BusinessApplication"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/applications/business/{id}": {
+      "get": {
+        "summary": "获取申请详情",
+        "deprecated": false,
+        "description": "获取单个店铺申请",
+        "tags": [
+          "管理店铺申请"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BusinessApplication"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "patch": {
+        "summary": "审批店铺申请",
+        "deprecated": false,
+        "description": "管理员审批店铺申请",
+        "tags": [
+          "管理店铺申请"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "createTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updateTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "creator": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "updater": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  },
+                  "business": {
+                    "$ref": "#/components/schemas/Business"
+                  },
+                  "handler": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "applicationExplain": {
+                    "type": "string"
+                  },
+                  "applicationState": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                },
+                "required": [
+                  "id",
+                  "applicationState"
+                ]
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/BusinessApplication"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/applications/business/my": {
+      "get": {
+        "summary": "获取个人店铺申请",
+        "deprecated": false,
+        "description": "获取个人店铺申请列表",
+        "tags": [
+          "管理店铺申请"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BusinessApplication"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/applications/merchant": {
+      "post": {
+        "summary": "提交商家申请",
+        "deprecated": false,
+        "description": "用户申请商家",
+        "tags": [
+          "管理商家申请"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "createTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updateTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "creator": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "updater": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  },
+                  "applicant": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "applicationExplain": {
+                    "type": "string"
+                  },
+                  "applicationState": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "handler": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                },
+                "required": [
+                  "id",
+                  "applicant"
+                ]
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "createTime": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updateTime": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "creator": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "updater": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "deleted": {
+                          "type": "boolean"
+                        },
+                        "applicant": {
+                          "$ref": "#/components/schemas/User"
+                        },
+                        "applicationExplain": {
+                          "type": "string"
+                        },
+                        "applicationState": {
+                          "type": "integer",
+                          "format": "int32"
+                        },
+                        "handler": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      },
+                      "required": [
+                        "id"
+                      ]
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "get": {
+        "summary": "获取申请列表",
+        "deprecated": false,
+        "description": "",
+        "tags": [
+          "管理商家申请"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MerchantApplication"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/applications/merchant/{id}": {
+      "get": {
+        "summary": "获取申请详细",
+        "deprecated": false,
+        "description": "获取单个商家申请",
+        "tags": [
+          "管理商家申请"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MerchantApplication"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "patch": {
+        "summary": "审批商家申请 ",
+        "deprecated": false,
+        "description": "管理员审批商家申请",
+        "tags": [
+          "管理商家申请"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "createTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updateTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "creator": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "updater": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  },
+                  "applicant": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "applicationExplain": {
+                    "type": "string"
+                  },
+                  "applicationState": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "handler": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                },
+                "required": [
+                  "applicationState",
+                  "id"
+                ]
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "createTime": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updateTime": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "creator": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "updater": {
+                          "type": "integer",
+                          "format": "int64"
+                        },
+                        "deleted": {
+                          "type": "boolean"
+                        },
+                        "applicant": {
+                          "$ref": "#/components/schemas/User"
+                        },
+                        "applicationExplain": {
+                          "type": "string"
+                        },
+                        "applicationState": {
+                          "type": "integer",
+                          "format": "int32"
+                        },
+                        "handler": {
+                          "$ref": "#/components/schemas/User"
+                        }
+                      },
+                      "required": [
+                        "applicationState",
+                        "id"
+                      ]
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/applications/merchant/my": {
+      "get": {
+        "summary": "获取个人商家申请",
+        "deprecated": false,
+        "description": "获取个人商家申请列表",
+        "tags": [
+          "管理商家申请"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MerchantApplication"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/reviews/order/{orderId}": {
+      "post": {
+        "summary": "添加评价",
+        "deprecated": false,
+        "description": "用户评价订单",
+        "tags": [
+          "管理评价"
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "createTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updateTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "creator": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "updater": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  },
+                  "customer": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "business": {
+                    "$ref": "#/components/schemas/Business"
+                  },
+                  "order": {
+                    "$ref": "#/components/schemas/Order"
+                  },
+                  "anonymous": {
+                    "type": "boolean"
+                  },
+                  "stars": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "stars",
+                  "id",
+                  "content",
+                  "anonymous"
+                ]
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Review"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "get": {
+        "summary": "获取订单评价 ",
+        "deprecated": false,
+        "description": "获取指定订单评价",
+        "tags": [
+          "管理评价"
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "null"
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Review"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/reviews/{reviewId}": {
+      "patch": {
+        "summary": "修改评价 ",
+        "deprecated": false,
+        "description": "用户修改评价（仅能修改stars, content和anonymous）",
+        "tags": [
+          "管理评价"
+        ],
+        "parameters": [
+          {
+            "name": "reviewId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "createTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "updateTime": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "creator": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "updater": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  },
+                  "customer": {
+                    "$ref": "#/components/schemas/User"
+                  },
+                  "business": {
+                    "$ref": "#/components/schemas/Business"
+                  },
+                  "order": {
+                    "$ref": "#/components/schemas/Order"
+                  },
+                  "anonymous": {
+                    "type": "boolean"
+                  },
+                  "stars": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Review"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "delete": {
+        "summary": "删除评价",
+        "deprecated": false,
+        "description": "用户或管理员删除评价",
+        "tags": [
+          "管理评价"
+        ],
+        "parameters": [
+          {
+            "name": "reviewId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "null"
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/reviews/my": {
+      "get": {
+        "summary": "获取当前用户所有订单评价",
+        "deprecated": false,
+        "description": "获取当前用户所有订单评价·",
+        "tags": [
+          "管理评价"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Review"
+                }
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Review"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/reviews/business/{businessId}": {
+      "get": {
+        "summary": "获取店铺全部订单评价",
+        "deprecated": false,
+        "description": "获取店铺全部订单评价，若用户设置匿名，则order, customer, creator置null",
+        "tags": [
+          "管理评价"
+        ],
+        "parameters": [
+          {
+            "name": "businessId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "null"
+              },
+              "examples": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "code": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Review"
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
                 }
               }
             },
@@ -1591,6 +2916,51 @@
           }
         }
       },
+      "BusinessApplication": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "creator": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updater": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "business": {
+            "$ref": "#/components/schemas/Business"
+          },
+          "handler": {
+            "$ref": "#/components/schemas/User"
+          },
+          "applicationExplain": {
+            "type": "string"
+          },
+          "applicationState": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "required": [
+          "business",
+          "id"
+        ]
+      },
       "Authority": {
         "required": [
           "name"
@@ -1658,6 +3028,57 @@
           }
         },
         "required": [
+          "id"
+        ]
+      },
+      "Review": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "creator": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updater": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "customer": {
+            "$ref": "#/components/schemas/User"
+          },
+          "business": {
+            "$ref": "#/components/schemas/Business"
+          },
+          "order": {
+            "$ref": "#/components/schemas/Order"
+          },
+          "anonymous": {
+            "type": "boolean"
+          },
+          "stars": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stars",
           "id"
         ]
       },
@@ -2008,9 +3429,6 @@
         "properties": {
           "id_token": {
             "type": "string"
-          },
-          "refresh_token": {
-            "type": "string"
           }
         }
       },
@@ -2173,6 +3591,51 @@
             "nullable": true
           }
         }
+      },
+      "MerchantApplication": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "creator": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updater": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "applicant": {
+            "$ref": "#/components/schemas/User"
+          },
+          "applicationExplain": {
+            "type": "string"
+          },
+          "applicationState": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "handler": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "id",
+          "applicant"
+        ]
       }
     },
     "securitySchemes": {
