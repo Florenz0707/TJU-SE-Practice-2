@@ -17,7 +17,7 @@ export const getBusinesses = (params?: any): Promise<HttpResultListBusiness> => 
  * @returns {Promise<HttpResultBusiness>}
  * @see {@link openapi.json} - operationId: "addBusiness"
  */
-export const addBusiness = (data: Business): Promise<HttpResultBusiness> => {
+export const addBusiness = (data: Partial<Business>): Promise<HttpResultBusiness> => {
   return request.post('/businesses', data);
 };
 

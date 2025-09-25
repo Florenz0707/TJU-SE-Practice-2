@@ -22,6 +22,7 @@
       <el-table-column label="操作">
         <template #default="{ row }">
           <el-button size="small" @click="viewOrderDetails(row.id)">查看详情</el-button>
+          <el-button v-if="row.orderState === 3" size="small" type="primary" @click="goToReview(row.id)">评价</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -31,7 +32,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getCurrentUserOrders } from '../../../api/order';
+import { listOrders } from '../../../api/order';
+import { getActualUser } from '../../../api/user';
 import type { Order } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 
@@ -42,7 +44,15 @@ const loading = ref(false);
 const fetchOrders = async () => {
   loading.value = true;
   try {
-    const res = await getCurrentUserOrders();
+    const userRes = await getActualUser();
+    if (!userRes.success) {
+      throw new Error(userRes.message || '无法获取当前用户信息');
+    }
+    const userId = userRes.data.id;
+    if (!userId) {
+      throw new Error('用户ID无效');
+    }
+    const res = await listOrders(userId);
     if (res.success) {
       orders.value = res.data;
     } else {
@@ -55,26 +65,28 @@ const fetchOrders = async () => {
   }
 };
 
-const getStatusType = (state: number) => {
-  // Assuming 1: Placed, 2: Preparing, 3: Delivering, 4: Delivered, 5: Cancelled
-  if (state === 4) return 'success';
-  if (state === 5) return 'danger';
-  return 'primary';
+const getStatusType = (status?: number): string => {
+  if (status === undefined) return 'info';
+  const typeMap: { [key: number]: string } = {
+    0: 'danger', 1: 'warning', 2: 'primary', 3: 'success', 4: 'info',
+  };
+  return typeMap[status] || 'info';
 };
 
-const getStatusText = (state: number) => {
-  const statuses: { [key: number]: string } = {
-    1: '已下单',
-    2: '准备中',
-    3: '配送中',
-    4: '已送达',
-    5: '已取消',
+const getStatusText = (status?: number): string => {
+  if (status === undefined) return '未知状态';
+  const statusMap: { [key: number]: string } = {
+    0: '已取消', 1: '未支付', 2: '配送中', 3: '已完成', 4: '已评价',
   };
-  return statuses[state] || '未知';
+  return statusMap[status] || '未知状态';
 };
 
 const viewOrderDetails = (id: number) => {
   router.push({ name: 'OrderDetail', params: { id } });
+};
+
+const goToReview = (id: number) => {
+  router.push({ name: 'SubmitReview', params: { orderId: id } });
 };
 
 onMounted(fetchOrders);

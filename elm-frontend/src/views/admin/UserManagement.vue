@@ -2,12 +2,15 @@
   <div class="user-management">
     <h1>用户管理</h1>
 
-    <el-input
-      v-model="searchQuery"
-      placeholder="按用户名搜索"
-      clearable
-      style="width: 300px; margin-bottom: 20px;"
-    />
+    <div class="toolbar">
+      <el-input
+        v-model="searchQuery"
+        placeholder="按用户名搜索"
+        clearable
+        style="width: 300px; margin-right: 10px;"
+      />
+      <el-button type="primary" @click="showCreateDialog = true">创建用户</el-button>
+    </div>
 
     <DataTable :columns="columns" :data="filteredUsers">
       <template #actions="{ row }">
@@ -15,18 +18,59 @@
         <el-button size="small" type="danger" @click="handleDelete(row as User)">删除</el-button>
       </template>
     </DataTable>
+
+    <!-- Create User Dialog -->
+    <el-dialog v-model="showCreateDialog" title="创建新用户" @closed="resetForm">
+      <el-form ref="createUserFormRef" :model="newUser" :rules="rules" label-position="top">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="newUser.username" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="newUser.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="角色" prop="authorities">
+          <el-select v-model="newUser.authorities" multiple placeholder="选择角色">
+            <el-option label="顾客" value="CUSTOMER"></el-option>
+            <el-option label="商家" value="MERCHANT"></el-option>
+            <el-option label="管理员" value="ADMIN"></el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleCreateUser">创建</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { ElButton, ElInput, ElMessage, ElMessageBox } from 'element-plus';
+import { ref, onMounted, computed, reactive } from 'vue';
+import { ElButton, ElInput, ElMessage, ElMessageBox, ElDialog, ElForm, ElFormItem, ElSelect, ElOption, type FormInstance, type FormRules } from 'element-plus';
 import DataTable from '@/components/DataTable.vue';
-import { getAllUsers, deleteUser } from '@/api/user';
-import type { User, Authority } from '@/api/types';
+import { getAllUsers, deleteUser, addPerson } from '@/api/user';
+import type { User, Authority, Person } from '@/api/types';
 
 const rawUsers = ref<User[]>([]);
 const searchQuery = ref('');
+const showCreateDialog = ref(false);
+const createUserFormRef = ref<FormInstance>();
+
+const newUser = reactive<{
+  username: string;
+  password?: string;
+  authorities: string[];
+}>({
+  username: '',
+  password: '',
+  authorities: ['CUSTOMER'],
+});
+
+const rules = reactive<FormRules>({
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  authorities: [{ required: true, message: '请至少选择一个角色', trigger: 'change' }],
+});
 
 const columns = [
   { prop: 'id', label: 'ID', width: 80 },
@@ -103,10 +147,49 @@ const handleDelete = (user: User) => {
     // User cancelled the action
   });
 };
+
+const handleCreateUser = async () => {
+  if (!createUserFormRef.value) return;
+  await createUserFormRef.value.validate(async (valid) => {
+    if (valid) {
+      const personData: Person = {
+        username: newUser.username,
+        password: newUser.password,
+        authorities: newUser.authorities.map(name => ({ name })),
+      };
+      try {
+        const res = await addPerson(personData);
+        if (res.success) {
+          ElMessage.success('用户创建成功');
+          showCreateDialog.value = false;
+          fetchUsers();
+        } else {
+          ElMessage.error(res.message || '创建用户失败');
+        }
+      } catch (error) {
+        ElMessage.error('创建用户失败');
+      }
+    }
+  });
+};
+
+const resetForm = () => {
+  if (!createUserFormRef.value) return;
+  createUserFormRef.value.resetFields();
+  Object.assign(newUser, {
+    username: '',
+    password: '',
+    authorities: ['CUSTOMER'],
+  });
+};
 </script>
 
 <style scoped>
 .user-management {
   padding: 20px;
+}
+.toolbar {
+  display: flex;
+  margin-bottom: 20px;
 }
 </style>
