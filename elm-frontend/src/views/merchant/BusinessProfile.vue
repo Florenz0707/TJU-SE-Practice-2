@@ -19,7 +19,7 @@
             :show-file-list="false"
             :before-upload="handleBeforeUpload"
           >
-            <img v-if="business.businessImg" :src="`data:image/jpeg;base64,${business.businessImg}`" class="avatar" />
+            <img v-if="business.businessImg" :src="formatBase64Image(business.businessImg)" class="avatar" />
             <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
           </el-upload>
         </el-form-item>
@@ -39,14 +39,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getCurrentUserBusinesses, updateBusiness } from '../../api/business';
-import type { Business, HttpResultListBusiness } from '../../api/types';
+import { ref, computed } from 'vue';
+import { useBusinessStore } from '../../store/business';
+import { storeToRefs } from 'pinia';
+import { updateBusiness } from '../../api/business';
 import { ElMessage, type UploadProps } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
+import { formatBase64Image } from '../../utils/image';
 
-const loading = ref(true);
-const business = ref<Business | null>(null);
+const loading = ref(false);
+const businessStore = useBusinessStore();
+const { selectedBusinessId, businesses } = storeToRefs(businessStore);
+
+const business = computed({
+  get: () => businesses.value.find(b => b.id === selectedBusinessId.value) || null,
+  set: (val) => {
+    if (val) {
+      const index = businesses.value.findIndex(b => b.id === val.id);
+      if (index !== -1) {
+        businesses.value[index] = val;
+      }
+    }
+  }
+});
 
 const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png') {
@@ -60,8 +75,7 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   const reader = new FileReader();
   reader.onload = (e) => {
     if (business.value) {
-      const base64 = e.target?.result as string;
-      business.value.businessImg = base64.split(',')[1];
+      business.value.businessImg = e.target?.result as string;
     }
   };
   reader.readAsDataURL(rawFile);
@@ -69,26 +83,6 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   return false;
 };
 
-onMounted(async () => {
-  try {
-    const response: HttpResultListBusiness = await getCurrentUserBusinesses();
-    if (response.success && response.data && response.data.length > 0) {
-      const currentBusiness = response.data[0];
-      if (currentBusiness) {
-        business.value = currentBusiness;
-      } else {
-        ElMessage.warning('Could not retrieve business details.');
-      }
-    } else {
-      ElMessage.warning('当前用户没有关联的店铺');
-    }
-  } catch (error) {
-    ElMessage.error('加载店铺信息失败');
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
-});
 
 const handleSave = async () => {
   if (!business.value || !business.value.id) {

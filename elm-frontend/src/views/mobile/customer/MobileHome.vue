@@ -7,7 +7,6 @@
         clearable
         size="large"
         class="search-input"
-        @keyup.enter="fetchBusinesses"
       >
         <template #prefix>
           <Search :size="18" :stroke-width="2.5" />
@@ -18,9 +17,9 @@
     <div v-if="loading" class="loading-state">加载中...</div>
     <div v-if="error" class="error-state">{{ error }}</div>
 
-    <div v-if="businesses.length" class="restaurant-list">
+    <div v-if="filteredBusinesses.length" class="restaurant-list">
       <MobileRestaurantCard
-        v-for="business in businesses"
+        v-for="business in filteredBusinesses"
         :key="business.id"
         :business="business"
         class="restaurant-list-item"
@@ -33,13 +32,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Search } from 'lucide-vue-next';
-import { getBusinesses } from '../../api/business';
-import type { Business } from '../../api/types';
-import MobileRestaurantCard from '../../components/mobile/MobileRestaurantCard.vue';
+import { getBusinesses } from '../../../api/business';
+import type { Business } from '../../../api/types';
+import MobileRestaurantCard from '../../../components/mobile/MobileRestaurantCard.vue';
 
-const businesses = ref<Business[]>([]);
+const allBusinesses = ref<Business[]>([]);
 const searchQuery = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -48,10 +47,9 @@ const fetchBusinesses = async () => {
   loading.value = true;
   error.value = null;
   try {
-    const params = searchQuery.value ? { name: searchQuery.value } : {};
-    const response = await getBusinesses(params);
+    const response = await getBusinesses();
     if (response.success) {
-      businesses.value = response.data;
+      allBusinesses.value = response.data;
     } else {
       throw new Error(response.message || '获取商家列表失败');
     }
@@ -61,6 +59,15 @@ const fetchBusinesses = async () => {
     loading.value = false;
   }
 };
+
+const filteredBusinesses = computed(() => {
+  if (!searchQuery.value) {
+    return allBusinesses.value;
+  }
+  return allBusinesses.value.filter(business =>
+    business.businessName.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
 
 onMounted(() => {
   fetchBusinesses();

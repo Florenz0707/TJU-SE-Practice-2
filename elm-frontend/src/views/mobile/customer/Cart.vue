@@ -41,8 +41,8 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useCartStore } from '../../store/cart';
-import type { Cart } from '../../api/types';
+import { useCartStore } from '../../../store/cart';
+import type { Cart } from '../../../api/types';
 
 const cartStore = useCartStore();
 const router = useRouter();

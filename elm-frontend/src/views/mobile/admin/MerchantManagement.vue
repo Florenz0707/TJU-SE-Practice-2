@@ -1,5 +1,5 @@
 <template>
-  <div class="mobile-business-management">
+  <div class="mobile-merchant-management">
     <div class="filters">
       <input
         v-model="searchQuery"
@@ -86,7 +86,7 @@ const filteredBusinesses = computed(() => {
 </script>
 
 <style scoped>
-.mobile-business-management {
+.mobile-merchant-management {
   padding: 1rem;
 }
 

@@ -32,8 +32,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { listOrders } from '../../../api/order';
-import { getActualUser } from '../../../api/user';
+import { getMyOrdersCustomer } from '../../../api/order';
 import type { Order } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 
@@ -44,17 +43,14 @@ const loading = ref(false);
 const fetchOrders = async () => {
   loading.value = true;
   try {
-    const userRes = await getActualUser();
-    if (!userRes.success) {
-      throw new Error(userRes.message || '无法获取当前用户信息');
-    }
-    const userId = userRes.data.id;
-    if (!userId) {
-      throw new Error('用户ID无效');
-    }
-    const res = await listOrders(userId);
+    const res = await getMyOrdersCustomer();
     if (res.success) {
-      orders.value = res.data;
+      orders.value = res.data.sort((a, b) => {
+        if (a.createTime && b.createTime) {
+          return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
+        }
+        return 0;
+      });
     } else {
       throw new Error(res.message);
     }

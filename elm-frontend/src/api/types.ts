@@ -51,7 +51,7 @@ export interface JWTToken {
 }
 
 export interface Business {
-  id: number;
+  id?: number;
   createTime?: string;
   updateTime?: string;
   creator?: number;

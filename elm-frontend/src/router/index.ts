@@ -103,7 +103,9 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'dashboard', name: 'MerchantDashboard', component: MerchantDashboard, meta: { title: '商家仪表盘', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
       { path: 'menu', name: 'MenuManagement', component: MenuManagement, meta: { title: '菜单管理' } },
       { path: 'profile', name: 'BusinessProfile', component: BusinessProfile, meta: { title: '店铺信息', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
-      { path: 'orders', name: 'MerchantOrderHistory', component: OrderHistory, meta: { title: '历史订单', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } }
+      { path: 'orders', name: 'MerchantOrderHistory', component: OrderHistory, meta: { title: '历史订单', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'apply', name: 'ApplyForBusiness', component: () => import('../views/merchant/ApplyForBusiness.vue'), meta: { title: '开店申请', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'applications', name: 'MyApplications', component: () => import('../views/merchant/MyApplications.vue'), meta: { title: '我的申请', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } }
     ]
   },
 
@@ -119,7 +121,8 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard, meta: { title: '平台总览' } },
       { path: 'users', name: 'UserManagement', component: () => import('../views/admin/UserManagement.vue'), meta: { title: '用户管理' } },
-      { path: 'businesses', name: 'BusinessManagement', component: () => import('../views/admin/BusinessManagement.vue'), meta: { title: '店铺管理' } }
+      { path: 'businesses', name: 'MerchantManagement', component: () => import('../views/admin/MerchantManagement.vue'), meta: { title: '商家管理' } },
+      { path: 'applications', name: 'ShopManagement', component: () => import('../views/admin/ShopManagement.vue'), meta: { title: '店铺管理' } }
     ]
   },
 
@@ -140,69 +143,61 @@ const mobileRoutes: RouteRecordRaw = {
     {
       path: 'home',
       name: 'MobileHome',
-      component: () => import('../views/mobile/MobileHome.vue'),
+      component: () => import('../views/mobile/customer/MobileHome.vue'),
       meta: { title: '首页' }
     },
     {
       path: 'restaurant/:id',
       name: 'MobileRestaurantDetail',
-      component: () => import('../views/mobile/MobileRestaurantDetail.vue'),
+      component: () => import('../views/mobile/customer/MobileRestaurantDetail.vue'),
       meta: { title: '餐厅详情' }
     },
     {
       path: 'orders',
       name: 'MobileOrders',
-      component: () => import('../views/mobile/Orders.vue'),
+      component: () => import('../views/mobile/customer/Orders.vue'),
       meta: { title: '我的订单', requiresAuth: true, roles: ['CUSTOMER'] }
     },
     {
       path: 'profile',
-      component: () => import('../views/mobile/Profile/ProfileLayout.vue'),
-      meta: { requiresAuth: true, roles: ['CUSTOMER'] },
-      redirect: { name: 'MobileUserProfile' },
-      children: [
-        {
-          path: 'details',
-          name: 'MobileUserProfile',
-          component: () => import('../views/mobile/Profile/UserProfile.vue'),
-          meta: { title: '我的信息' },
-        },
-        {
-          path: 'addresses',
-          name: 'MobileAddressManagement',
-          component: () => import('../views/mobile/Profile/AddressManagement.vue'),
-          meta: { title: '地址管理' },
-        },
-        {
-          path: 'apply-merchant',
-          name: 'MobileApplyAsMerchant',
-          component: () => import('../views/mobile/Profile/ApplyAsMerchant.vue'),
-          meta: { title: '成为商家' },
-        },
-      ],
+      name: 'MobileUserProfile',
+      component: () => import('../views/mobile/customer/Profile/UserProfile.vue'),
+      meta: { title: '我的', requiresAuth: true, roles: ['CUSTOMER'] },
+    },
+    {
+      path: 'profile/addresses',
+      name: 'MobileAddressManagement',
+      component: () => import('../views/mobile/customer/Profile/AddressManagement.vue'),
+      meta: { title: '地址管理', requiresAuth: true, roles: ['CUSTOMER'] },
+    },
+    {
+      path: 'profile/apply-merchant',
+      name: 'MobileApplyAsMerchant',
+      component: () => import('../views/mobile/customer/Profile/ApplyAsMerchant.vue'),
+      meta: { title: '成为商家', requiresAuth: true, roles: ['CUSTOMER'] },
     },
     {
       path: 'cart',
       name: 'MobileCart',
-      component: () => import('../views/mobile/Cart.vue'),
+      component: () => import('../views/mobile/customer/Cart.vue'),
       meta: { title: '购物车', requiresAuth: true, roles: ['CUSTOMER'] }
     },
     {
       path: 'checkout',
       name: 'MobileCheckout',
-      component: () => import('../views/mobile/Checkout.vue'),
+      component: () => import('../views/mobile/customer/Checkout.vue'),
       meta: { title: '确认订单', requiresAuth: true, roles: ['CUSTOMER'] }
     },
     {
       path: 'orders/:id',
       name: 'MobileOrderDetail',
-      component: () => import('../views/mobile/OrderDetail.vue'),
+      component: () => import('../views/mobile/customer/OrderDetail.vue'),
       meta: { title: '订单详情', requiresAuth: true, roles: ['CUSTOMER'] }
     },
     {
       path: 'review/:orderId',
       name: 'MobileSubmitReview',
-      component: () => import('../views/mobile/SubmitReview.vue'),
+      component: () => import('../views/mobile/customer/SubmitReview.vue'),
       meta: { title: '评价订单', requiresAuth: true, roles: ['CUSTOMER'] }
     }
   ]
@@ -214,10 +209,11 @@ const mobileMerchantRoutes: RouteRecordRaw = {
     component: MobileMerchantLayout,
     redirect: '/mobile/merchant/dashboard',
     children: [
-      { path: 'dashboard', name: 'MobileMerchantDashboard', component: () => import('../views/mobile/MerchantDashboard.vue'), meta: { title: '商家仪表盘', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
-      { path: 'menu', name: 'MobileMenuManagement', component: () => import('../views/mobile/MerchantMenuManagement.vue'), meta: { title: '菜单管理' } },
-      { path: 'profile', name: 'MobileBusinessProfile', component: () => import('../views/mobile/MerchantBusinessProfile.vue'), meta: { title: '店铺信息', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
-      { path: 'orders', name: 'MobileMerchantOrderHistory', component: () => import('../views/mobile/MerchantOrderHistory.vue'), meta: { title: '历史订单', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } }
+      { path: 'dashboard', name: 'MobileMerchantDashboard', component: () => import('../views/mobile/merchant/MerchantDashboard.vue'), meta: { title: '商家仪表盘', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'menu', name: 'MobileMenuManagement', component: () => import('../views/mobile/merchant/MerchantMenuManagement.vue'), meta: { title: '菜单管理' } },
+      { path: 'profile', name: 'MobileBusinessProfile', component: () => import('../views/mobile/merchant/BusinessInfoManagement.vue'), meta: { title: '商家信息管理', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'orders', name: 'MobileMerchantOrderHistory', component: () => import('../views/mobile/merchant/MerchantOrderHistory.vue'), meta: { title: '历史订单', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'apply', name: 'MobileApplyForBusiness', component: () => import('../views/mobile/merchant/ApplyForBusiness.vue'), meta: { title: '开店申请', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } }
     ]
 };
 
@@ -233,7 +229,9 @@ const mobileAdminRoutes: RouteRecordRaw = {
     children: [
       { path: 'dashboard', name: 'MobileAdminDashboard', component: () => import('../views/mobile/admin/Dashboard.vue'), meta: { title: '管理仪表盘' } },
       { path: 'users', name: 'MobileUserManagement', component: () => import('../views/mobile/admin/UserManagement.vue'), meta: { title: '用户管理' } },
-      { path: 'businesses', name: 'MobileBusinessManagement', component: () => import('../views/mobile/admin/BusinessManagement.vue'), meta: { title: '店铺管理' } }
+      { path: 'businesses', name: 'MobileMerchantManagement', component: () => import('../views/mobile/admin/MerchantManagement.vue'), meta: { title: '商家管理' } },
+      { path: 'shops', name: 'MobileShopManagement', component: () => import('../views/mobile/admin/ShopManagement.vue'), meta: { title: '店铺管理' } },
+      { path: 'profile', name: 'MobileAdminProfile', component: () => import('../views/mobile/admin/Profile.vue'), meta: { title: '我的' } }
     ]
 };
 

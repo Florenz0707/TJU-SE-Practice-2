@@ -37,18 +37,58 @@
       </el-form>
     </el-card>
     <el-empty v-else-if="!loading" description="未能加载店铺信息"></el-empty>
+
+    <el-card class="menu-card" style="margin-top: 1rem;">
+      <div class="menu-item" @click="showRoles = !showRoles">
+        <span>切换身份</span>
+        <ChevronRight :size="20" color="#999" />
+      </div>
+      <el-collapse-transition>
+        <div v-show="showRoles">
+          <router-link to="/mobile/home" class="menu-item sub-item">
+            <span>顾客</span>
+          </router-link>
+          <router-link v-if="isMerchant" to="/mobile/merchant/dashboard" class="menu-item sub-item">
+            <span>商家</span>
+          </router-link>
+          <router-link v-if="isAdmin" to="/mobile/admin/dashboard" class="menu-item sub-item">
+            <span>管理</span>
+          </router-link>
+        </div>
+      </el-collapse-transition>
+    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getCurrentUserBusinesses, updateBusiness } from '../../api/business';
-import type { Business, HttpResultListBusiness } from '../../api/types';
+import { ref, computed } from 'vue';
+import { useAuthStore } from '../../../store/auth';
+import { useBusinessStore } from '../../../store/business';
+import { storeToRefs } from 'pinia';
+import { updateBusiness } from '../../../api/business';
 import { ElMessage, type UploadProps } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
+import { Plus, ChevronRight } from 'lucide-vue-next';
 
-const loading = ref(true);
-const business = ref<Business | null>(null);
+const loading = ref(false);
+const businessStore = useBusinessStore();
+const { selectedBusinessId, businesses } = storeToRefs(businessStore);
+const authStore = useAuthStore();
+const showRoles = ref(false);
+
+const business = computed({
+  get: () => businesses.value.find(b => b.id === selectedBusinessId.value) || null,
+  set: (val) => {
+    if (val) {
+      const index = businesses.value.findIndex(b => b.id === val.id);
+      if (index !== -1) {
+        businesses.value[index] = val;
+      }
+    }
+  }
+});
+
+const isMerchant = computed(() => authStore.userRoles.includes('MERCHANT'));
+const isAdmin = computed(() => authStore.userRoles.includes('ADMIN'));
 
 const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png') {
@@ -71,26 +111,6 @@ const handleBeforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   return false;
 };
 
-onMounted(async () => {
-  try {
-    const response: HttpResultListBusiness = await getCurrentUserBusinesses();
-    if (response.success && response.data && response.data.length > 0) {
-      const currentBusiness = response.data[0];
-      if (currentBusiness) {
-        business.value = currentBusiness;
-      } else {
-        ElMessage.warning('Could not retrieve business details.');
-      }
-    } else {
-      ElMessage.warning('当前用户没有关联的店铺');
-    }
-  } catch (error) {
-    ElMessage.error('加载店铺信息失败');
-    console.error(error);
-  } finally {
-    loading.value = false;
-  }
-});
 
 const handleSave = async () => {
   if (!business.value || !business.value.id) {

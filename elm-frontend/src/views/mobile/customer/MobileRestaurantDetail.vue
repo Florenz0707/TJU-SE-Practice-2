@@ -19,8 +19,18 @@
 
       <div class="menu-section">
         <h2 class="section-title">菜单</h2>
-        <div v-if="foods.length" class="menu-items">
-          <div v-for="food in foods" :key="food.id" class="menu-item">
+        <el-input
+          v-model="foodSearchQuery"
+          placeholder="搜索菜单"
+          clearable
+          class="search-input"
+        >
+          <template #prefix>
+            <Search :size="16" />
+          </template>
+        </el-input>
+        <div v-if="filteredFoods.length" class="menu-items">
+          <div v-for="food in filteredFoods" :key="food.id" class="menu-item">
             <img :src="food.foodImg" alt="" class="food-image" v-if="food.foodImg">
             <div class="food-info">
               <h3 class="food-name">{{ food.foodName }}</h3>
@@ -53,13 +63,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { getBusinessById } from '../../api/business';
-import { getAllFoods } from '../../api/food';
-import { getBusinessReviews } from '../../api/review';
-import type { Business, Food, Review } from '../../api/types';
-import { useCartStore } from '../../store/cart';
+import { Search } from 'lucide-vue-next';
+import { getBusinessById } from '../../../api/business';
+import { getAllFoods } from '../../../api/food';
+import { getBusinessReviews } from '../../../api/review';
+import type { Business, Food, Review } from '../../../api/types';
+import { useCartStore } from '../../../store/cart';
 
 const route = useRoute();
 const business = ref<Business | null>(null);
@@ -67,6 +78,7 @@ const foods = ref<Food[]>([]);
 const reviews = ref<Review[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const foodSearchQuery = ref('');
 
 const businessId = Number(route.params.id);
 const cartStore = useCartStore();
@@ -74,6 +86,15 @@ const cartStore = useCartStore();
 const handleAddItem = (food: Food) => {
   cartStore.addItem(food, 1);
 };
+
+const filteredFoods = computed(() => {
+  if (!foodSearchQuery.value) {
+    return foods.value;
+  }
+  return foods.value.filter(food =>
+    food.foodName.toLowerCase().includes(foodSearchQuery.value.toLowerCase())
+  );
+});
 
 onMounted(async () => {
   loading.value = true;
