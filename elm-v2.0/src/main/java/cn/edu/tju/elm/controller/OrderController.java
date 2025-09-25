@@ -173,7 +173,7 @@ public class OrderController {
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
-    @GetMapping("/users/my")
+    @GetMapping("/user/my")
     public HttpResult<List<Order>> getMyOrders() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())

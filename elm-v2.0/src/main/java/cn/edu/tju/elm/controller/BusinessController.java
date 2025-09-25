@@ -171,13 +171,14 @@ public class BusinessController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasAuthority('BUSINESS')")
     public HttpResult<List<Business>> getMyBusinesses() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        return HttpResult.success(businessService.getBusinessByOwner(me));
+        if (Utils.hasAuthority(me, "BUSINESS"))
+            return HttpResult.success(businessService.getBusinessByOwner(me));
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 }
