@@ -17,18 +17,61 @@
       </el-form-item>
     </el-form>
     <div v-else>正在加载用户数据...</div>
+
+    <h2 style="margin-top: 2rem;">修改密码</h2>
+    <el-form
+      ref="passwordFormRef"
+      :model="passwordForm"
+      :rules="passwordRules"
+      label-width="120px"
+      style="max-width: 600px"
+      @submit.prevent="handleUpdatePassword"
+    >
+      <el-form-item label="新密码" prop="newPassword">
+        <el-input v-model="passwordForm.newPassword" type="password" show-password />
+      </el-form-item>
+      <el-form-item label="确认新密码" prop="confirmPassword">
+        <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleUpdatePassword">更新密码</el-button>
+      </el-form-item>
+    </el-form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, reactive } from 'vue';
 import { useAuthStore } from '../../../store/auth';
-import { updateUser, getUserById } from '../../../api/user';
-import { ElMessage } from 'element-plus';
+import { updateUser, getUserById, updateUserPassword }from '../../../api/user';
+import { ElMessage, ElForm, ElFormItem, ElInput, ElButton, type FormInstance } from 'element-plus';
 import type { Person } from '../../../api/types';
 
 const authStore = useAuthStore();
 const user = authStore.user;
+
+const passwordFormRef = ref<FormInstance>();
+const passwordForm = reactive({
+  newPassword: '',
+  confirmPassword: '',
+});
+
+const passwordRules = {
+  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: any, callback: any) => {
+        if (value !== passwordForm.newPassword) {
+          callback(new Error('两次输入的密码不一致'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
+};
 
 // Use a local ref for the form to avoid directly mutating the store's state
 const userForm = ref<Partial<Person>>({});
@@ -75,5 +118,30 @@ const handleUpdateProfile = async () => {
   } catch (error: any) {
     ElMessage.error(error.message || '发生错误');
   }
+};
+
+const handleUpdatePassword = async () => {
+  if (!passwordFormRef.value || !user) return;
+
+  await passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        const res = await updateUserPassword({
+          username: user.username,
+          password: passwordForm.newPassword,
+        });
+        if (res.success) {
+          ElMessage.success('密码更新成功');
+          passwordForm.newPassword = '';
+          passwordForm.confirmPassword = '';
+          passwordFormRef.value?.resetFields();
+        } else {
+          ElMessage.error(res.message || '密码更新失败');
+        }
+      } catch (error) {
+        ElMessage.error('密码更新失败');
+      }
+    }
+  });
 };
 </script>

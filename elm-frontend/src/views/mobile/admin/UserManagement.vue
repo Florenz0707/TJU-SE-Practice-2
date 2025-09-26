@@ -19,26 +19,66 @@
           <span>ID: {{ user.id }}</span>
           <span>注册于: {{ user.createTime }}</span>
         </div>
+        <div class="user-actions">
+          <el-button size="small" type="warning" @click="handlePasswordChange(user)">修改密码</el-button>
+        </div>
       </div>
     </div>
     <div v-else class="no-results">
       <p>没有找到用户。</p>
     </div>
 
-    <div class="floating-notice">
-      <p>用户创建和编辑功能请在桌面端进行操作。</p>
-    </div>
+    <!-- Change Password Dialog -->
+    <el-dialog v-model="showPasswordDialog" title="修改密码" @closed="resetPasswordForm" width="90%">
+      <el-form ref="passwordFormRef" :model="passwordData" :rules="passwordRules" label-position="top">
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="passwordData.newPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="确认新密码" prop="confirmPassword">
+          <el-input v-model="passwordData.confirmPassword" type="password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showPasswordDialog = false">取消</el-button>
+        <el-button type="primary" @click="updatePassword">更新密码</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { ElMessage } from 'element-plus';
-import { getAllUsers } from '@/api/user';
+import { ref, onMounted, computed, reactive } from 'vue';
+import { ElMessage, ElButton, ElDialog, ElForm, ElFormItem, ElInput, type FormInstance } from 'element-plus';
+import { getAllUsers, updateUserPassword } from '@/api/user';
 import type { User, Authority } from '@/api/types';
 
 const rawUsers = ref<User[]>([]);
 const searchQuery = ref('');
+
+const showPasswordDialog = ref(false);
+const passwordFormRef = ref<FormInstance>();
+const selectedUser = ref<User | null>(null);
+const passwordData = reactive({
+  newPassword: '',
+  confirmPassword: '',
+});
+
+const passwordRules = {
+  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: any, callback: any) => {
+        if (value !== passwordData.newPassword) {
+          callback(new Error('两次输入的密码不一致'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
+};
 
 const fetchUsers = async () => {
   try {
@@ -72,6 +112,47 @@ const filteredUsers = computed(() => {
     user.username.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 });
+
+const handlePasswordChange = (user: { id?: number }) => {
+  const originalUser = rawUsers.value.find(u => u.id === user.id);
+  if (originalUser) {
+    selectedUser.value = originalUser;
+    showPasswordDialog.value = true;
+  } else {
+    ElMessage.error('未能找到该用户。');
+  }
+};
+
+const updatePassword = async () => {
+  if (!passwordFormRef.value || !selectedUser.value) return;
+
+  await passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        const res = await updateUserPassword({
+          username: selectedUser.value!.username,
+          password: passwordData.newPassword,
+        });
+        if (res.success) {
+          ElMessage.success('密码更新成功');
+          showPasswordDialog.value = false;
+        } else {
+          ElMessage.error(res.message || '密码更新失败');
+        }
+      } catch (error) {
+        ElMessage.error('密码更新失败');
+      }
+    }
+  });
+};
+
+const resetPasswordForm = () => {
+  if (!passwordFormRef.value) return;
+  passwordFormRef.value.resetFields();
+  passwordData.newPassword = '';
+  passwordData.confirmPassword = '';
+  selectedUser.value = null;
+};
 </script>
 
 <style scoped>
@@ -129,6 +210,11 @@ const filteredUsers = computed(() => {
   color: #909399;
   display: flex;
   justify-content: space-between;
+}
+
+.user-actions {
+  margin-top: 1rem;
+  text-align: right;
 }
 
 .no-results {
