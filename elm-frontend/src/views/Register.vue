@@ -193,7 +193,7 @@ const handleRegister = async () => {
       } catch (error) {
         console.error('An error occurred during the background password update:', error);
       }
-    }, 1000); // 1-second delay.
+    }, 2000); // 1-second delay.
 
   } catch (error: any) {
     ElMessage.error(error.message || '注册流程失败，请稍后重试');
