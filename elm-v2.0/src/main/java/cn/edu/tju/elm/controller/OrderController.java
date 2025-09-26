@@ -157,7 +157,8 @@ public class OrderController {
         Integer orderState = order.getOrderState();
         if (orderState == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OrderState CANT BE NULL");
-        if (!OrderState.isValidOrderState(orderState))
+        if (order.getOrderState().equals(OrderState.CANCELED) ||
+                !OrderState.isValidOrderState(orderState))
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
 
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
