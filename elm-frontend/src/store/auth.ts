@@ -11,18 +11,13 @@ interface AuthState {
   user: User | null;
 }
 
-const AUTH_TOKEN_KEY = 'authToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
-const USER_KEY = 'user';
-
 export const useAuthStore = defineStore('auth', {
+  // The state is now initialized as empty and is not persisted.
   state: (): AuthState => {
-    // Retrieve the user from localStorage and parse it
-    const storedUser = localStorage.getItem(USER_KEY);
     return {
-      token: localStorage.getItem(AUTH_TOKEN_KEY),
-      refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY),
-      user: storedUser ? JSON.parse(storedUser) : null,
+      token: null,
+      refreshToken: null,
+      user: null,
     };
   },
 
@@ -69,7 +64,7 @@ export const useAuthStore = defineStore('auth', {
       if (!this.token) return;
       try {
         const userInfo = await getActualUser();
-        this.setUser(userInfo.data); // Use the setUser action to ensure data is saved
+        this.setUser(userInfo.data);
       } catch (error) {
         console.error('Failed to fetch user info:', error);
         this.logout();
@@ -78,39 +73,31 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
-     * User logout. Clears session locally.
-     * NOTE: openapi.json does not specify a backend logout endpoint.
+     * User logout. Clears session from memory.
      */
     logout(): void {
       this.token = null;
       this.refreshToken = null;
       this.user = null;
-      localStorage.removeItem(AUTH_TOKEN_KEY);
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
-      localStorage.removeItem(USER_KEY); // Clear the user from storage
       setRequestToken(null);
     },
 
     /**
-     * Set new tokens
+     * Set new tokens in memory
      * @param {JWTToken} tokens
      */
     setTokens(tokens: JWTToken) {
       this.token = tokens.id_token;
       this.refreshToken = tokens.refresh_token;
-      localStorage.setItem(AUTH_TOKEN_KEY, this.token);
-      localStorage.setItem(REFRESH_TOKEN_KEY, this.refreshToken);
       setRequestToken(this.token); // Also update the token for axios
     },
 
     /**
-     * Manually set user data
+     * Manually set user data in memory
      * @param {User} newUser
      */
     setUser(newUser: User) {
       this.user = newUser;
-      // Also save the user to localStorage
-      localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     },
   },
 });
