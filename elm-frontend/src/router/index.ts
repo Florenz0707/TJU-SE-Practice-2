@@ -166,7 +166,7 @@ const mobileRoutes: RouteRecordRaw = {
     {
       path: 'profile',
       name: 'MobileUserProfile',
-      component: () => import('../views/mobile/customer/Profile/UserProfile.vue'),
+      component: () => import('../components/UserProfile.vue'),
       meta: { title: '我的', requiresAuth: true, roles: ['CUSTOMER'] },
     },
     {
@@ -223,7 +223,7 @@ const mobileMerchantRoutes: RouteRecordRaw = {
       { path: 'profile', name: 'MobileBusinessProfile', component: () => import('../views/mobile/merchant/BusinessInfoManagement.vue'), meta: { title: '商家信息管理' } },
       { path: 'orders', name: 'MobileMerchantOrderHistory', component: () => import('../views/mobile/merchant/MerchantOrderHistory.vue'), meta: { title: '历史订单' } },
       { path: 'applications', name: 'MobileMyApplications', component: () => import('../views/mobile/merchant/MyApplications.vue'), meta: { title: '我的申请' } },
-      { path: 'user-profile', name: 'MobileMerchantUserProfile', component: () => import('../views/mobile/merchant/UserProfile.vue'), meta: { title: '我的资料' } }
+      { path: 'user-profile', name: 'MobileMerchantUserProfile', component: () => import('../components/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
 };
 
@@ -241,7 +241,7 @@ const mobileAdminRoutes: RouteRecordRaw = {
       { path: 'users', name: 'MobileUserManagement', component: () => import('../views/mobile/admin/UserManagement.vue'), meta: { title: '用户管理' } },
       { path: 'businesses', name: 'MobileMerchantManagement', component: () => import('../views/mobile/admin/MerchantManagement.vue'), meta: { title: '商家管理' } },
       { path: 'shops', name: 'MobileShopManagement', component: () => import('../views/mobile/admin/ShopManagement.vue'), meta: { title: '店铺管理' } },
-      { path: 'user-profile', name: 'MobileAdminProfile', component: () => import('../views/mobile/admin/UserProfile.vue'), meta: { title: '我的资料' } }
+      { path: 'user-profile', name: 'MobileAdminProfile', component: () => import('../components/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
 };
 

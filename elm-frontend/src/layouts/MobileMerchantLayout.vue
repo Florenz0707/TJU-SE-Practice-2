@@ -35,7 +35,7 @@
         <ScrollText :size="24" />
         <span>历史订单</span>
       </router-link>
-      <router-link to="/mobile/merchant/profile" class="nav-item">
+      <router-link to="/mobile/merchant/user-profile" class="nav-item">
         <User :size="24" />
         <span>我的</span>
       </router-link>

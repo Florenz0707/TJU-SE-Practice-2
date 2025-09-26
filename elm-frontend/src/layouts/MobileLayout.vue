@@ -2,7 +2,7 @@
   <div class="mobile-layout">
     <header class="top-bar">
       <h1 class="page-title">{{ $route.meta.title }}</h1>
-      <router-link to="/mobile/cart" class="cart-icon-wrapper">
+      <router-link to="/mobile/cart" class="cart-icon-wrapper" v-if="route.name === 'MobileRestaurantDetail'">
         <ShoppingCart :size="26" />
         <span v-if="cartStore.totalItems > 0" class="cart-badge">{{ cartStore.totalItems }}</span>
       </router-link>
@@ -30,8 +30,10 @@
 <script setup lang="ts">
 import { Home, ScrollText, User, ShoppingCart } from 'lucide-vue-next';
 import { useCartStore } from '../store/cart';
+import { useRoute } from 'vue-router';
 
 const cartStore = useCartStore();
+const route = useRoute();
 </script>
 
 <style scoped>

@@ -23,7 +23,7 @@
         <Building :size="24" />
         <span>店铺管理</span>
       </router-link>
-      <router-link to="/mobile/admin/profile" class="nav-item">
+      <router-link to="/mobile/admin/user-profile" class="nav-item">
         <User :size="24" />
         <span>我的</span>
       </router-link>
@@ -96,6 +96,6 @@ import { LayoutDashboard, Users, Store, User, Building } from 'lucide-vue-next';
 }
 
 .nav-item.router-link-active {
-  color: #409eff; /* Element Plus primary color */
+  color: #f97316; /* Orange color */
 }
 </style>

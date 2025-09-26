@@ -191,31 +191,44 @@ onMounted(async () => {
 }
 .menu-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem 0;
   border-bottom: 1px solid #f0f0f0;
+  gap: 1rem;
 }
 .food-image {
   width: 80px;
   height: 80px;
   border-radius: 8px;
   object-fit: cover;
-  margin-right: 1rem;
+  flex-shrink: 0;
+}
+.food-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .food-name {
   font-size: 1rem;
   font-weight: 600;
+  margin: 0;
 }
 .food-desc {
   font-size: 0.875rem;
   color: #888;
   margin: 0.25rem 0;
+  line-height: 1.4;
+  word-break: break-word;
+  white-space: normal;
 }
 .food-price {
   font-size: 1rem;
   font-weight: 700;
   color: var(--el-color-primary);
+  margin-top: 0.5rem;
+}
+.actions {
+  align-self: center;
 }
 .reviews-section {
   background: #fff;
