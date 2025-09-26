@@ -39,7 +39,7 @@
         <el-divider />
         <div class="summary-line total">
           <span>合计</span>
-          <span>¥{{ (cartStore.cartTotal + 5).toFixed(2) }}</span>
+          <span>¥{{ (cartStore.cartTotal + cartStore.deliveryPrice).toFixed(2) }}</span>
         </div>
         <el-button type="primary" class="checkout-btn" @click="goToCheckout" round>
           去结算
