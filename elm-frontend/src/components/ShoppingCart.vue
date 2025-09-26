@@ -34,7 +34,7 @@
         </div>
          <div class="summary-line">
           <span>配送费</span>
-          <span>¥5.00</span>
+          <span>¥{{ cartStore.deliveryPrice.toFixed(2) }}</span>
         </div>
         <el-divider />
         <div class="summary-line total">
