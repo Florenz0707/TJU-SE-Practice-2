@@ -16,7 +16,7 @@ import type {
  * @see {@link openapi.json} - operationId: "createUser"
  */
 export function createUser(data: LoginDto): Promise<HttpResultUser> {
-  return request.post('/users', data);
+  return request.post('/persons', data);
 }
 
 /**

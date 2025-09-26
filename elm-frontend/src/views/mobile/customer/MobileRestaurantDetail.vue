@@ -110,6 +110,10 @@ onMounted(async () => {
     const businessResult = results[0];
     if (businessResult.status === 'fulfilled' && businessResult.value.success) {
       business.value = businessResult.value.data;
+      if (business.value) {
+        cartStore.setCurrentBusinessId(businessId);
+        cartStore.setBusinessFees(business.value.deliveryPrice ?? 0, business.value.startPrice ?? 0);
+      }
     } else {
       const errorMessage = businessResult.status === 'fulfilled'
         ? businessResult.value.message

@@ -79,6 +79,7 @@ const columns = [
   // { prop: 'email', label: 'Email' },
   { prop: 'authorities', label: '角色' },
   { prop: 'createTime', label: '创建时间' },
+  { prop: 'actions', label: '操作', slot: 'actions' },
 ];
 
 const fetchUsers = async () => {

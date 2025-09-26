@@ -16,13 +16,13 @@
       </el-table-column>
       <el-table-column prop="orderState" label="状态">
         <template #default="{ row }">
-          <el-tag :type="getStatusType(row.orderState)">{{ getStatusText(row.orderState) }}</el-tag>
+          <el-tag :type="getOrderStatusInfo(row.orderState as OrderStatus).type">{{ getOrderStatusInfo(row.orderState as OrderStatus).text }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作">
         <template #default="{ row }">
           <el-button size="small" @click="viewOrderDetails(row.id)">查看详情</el-button>
-          <el-button v-if="row.orderState === 3" size="small" type="primary" @click="goToReview(row.id)">评价</el-button>
+          <el-button v-if="row.orderState === OrderStatusEnum.COMPLETE" size="small" type="primary" @click="goToReview(row.id)">评价</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -33,7 +33,8 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getMyOrdersCustomer } from '../../../api/order';
-import type { Order } from '../../../api/types';
+import type { Order, OrderStatus } from '../../../api/types';
+import { getOrderStatusInfo, OrderStatus as OrderStatusEnum } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 
 const router = useRouter();
@@ -59,22 +60,6 @@ const fetchOrders = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-const getStatusType = (status?: number): string => {
-  if (status === undefined) return 'info';
-  const typeMap: { [key: number]: string } = {
-    0: 'danger', 1: 'warning', 2: 'primary', 3: 'success', 4: 'info',
-  };
-  return typeMap[status] || 'info';
-};
-
-const getStatusText = (status?: number): string => {
-  if (status === undefined) return '未知状态';
-  const statusMap: { [key: number]: string } = {
-    0: '已取消', 1: '未支付', 2: '配送中', 3: '已完成', 4: '已评价',
-  };
-  return statusMap[status] || '未知状态';
 };
 
 const viewOrderDetails = (id: number) => {

@@ -27,9 +27,13 @@
         <span>{{ item.food?.foodName }} x {{ item.quantity }}</span>
         <span>¥{{ (item.food?.foodPrice! * item.quantity!).toFixed(2) }}</span>
       </div>
+      <div class="summary-item">
+        <span>配送费</span>
+        <span>¥{{ cartStore.deliveryPrice.toFixed(2) }}</span>
+      </div>
       <div class="summary-total">
         <strong>总计</strong>
-        <strong>¥{{ cartStore.cartTotal.toFixed(2) }}</strong>
+        <strong>¥{{ cartStore.finalOrderTotal.toFixed(2) }}</strong>
       </div>
     </div>
 
@@ -78,6 +82,12 @@ const submitOrder = async () => {
     ElMessage.error('请选择一个配送地址');
     return;
   }
+
+  if (cartStore.cartTotal < cartStore.startPrice) {
+    ElMessage.error(`订单金额未达到起送价 ¥${cartStore.startPrice.toFixed(2)}`);
+    return;
+  }
+
   isSubmitting.value = true;
   try {
     const businessId = cartStore.items[0]?.business?.id;
@@ -102,7 +112,7 @@ const submitOrder = async () => {
       customer: authStore.user,
       deliveryAddress: selectedAddress.value,
       business: business,
-      orderTotal: cartStore.cartTotal,
+      orderTotal: cartStore.finalOrderTotal,
       orderState: 0, // Assuming 0 is a default state for new orders
     });
 

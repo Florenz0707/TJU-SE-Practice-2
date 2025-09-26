@@ -48,7 +48,7 @@
           <span>地址管理</span>
           <ChevronRight :size="20" color="#999" />
         </router-link>
-        <router-link to="/mobile/profile/apply-merchant" class="menu-item">
+        <router-link v-if="!isMerchant" to="/mobile/profile/apply-merchant" class="menu-item">
           <span>成为商家</span>
           <ChevronRight :size="20" color="#999" />
         </router-link>
@@ -83,10 +83,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../../../store/auth';
-import { getPersonById, updatePerson } from '../../../../api/person';
+import { getUserById, updateUser } from '../../../../api/user';
 import type { Person } from '../../../../api/types';
 import { ElMessage, type FormInstance } from 'element-plus';
 import { ChevronRight } from 'lucide-vue-next';
@@ -102,23 +102,28 @@ const showRoles = ref(false);
 const isMerchant = computed(() => authStore.userRoles.includes('MERCHANT'));
 const isAdmin = computed(() => authStore.userRoles.includes('ADMIN'));
 
-onMounted(async () => {
-  if (authStore.user?.id) {
-    const res = await getPersonById(authStore.user.id);
-    if (res.success) {
-      profileForm.value = res.data;
-    }
+watch(() => authStore.user, (newUser) => {
+  if (newUser?.id) {
+    getUserById(newUser.id).then(res => {
+      if (res.success) {
+        profileForm.value = res.data;
+      }
+    });
   }
-});
+}, { immediate: true, deep: true });
 
 const updateProfile = async () => {
-  if (!formRef.value) return;
+  if (!formRef.value || !authStore.user?.id) {
+    ElMessage.error('用户未登录，无法更新信息。');
+    return;
+  }
   await formRef.value.validate();
   isSubmitting.value = true;
   try {
-    const res = await updatePerson(profileForm.value);
+    const res = await updateUser(authStore.user.id, profileForm.value as Person);
     if (res.success) {
       ElMessage.success('信息更新成功！');
+      authStore.setUser(res.data);
     } else {
       throw new Error(res.message);
     }

@@ -16,7 +16,7 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="餐厅">{{ order.business?.businessName ?? '暂无' }}</el-descriptions-item>
         <el-descriptions-item label="状态">
-          <el-tag>{{ getStatusText(order.orderState) }}</el-tag>
+          <el-tag :type="getOrderStatusInfo(order.orderState as OrderStatus).type">{{ getOrderStatusInfo(order.orderState as OrderStatus).text }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="下单日期">{{ order.orderDate ? new Date(order.orderDate).toLocaleString() : '暂无' }}</el-descriptions-item>
         <el-descriptions-item label="总金额">¥{{ (order.orderTotal ?? 0).toFixed(2) }}</el-descriptions-item>
@@ -53,7 +53,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { getOrderById } from '../../../api/order';
 import { getOrderReview } from '../../../api/review';
 import { getAllFoods } from '../../../api/food';
-import type { Order, Food, Review } from '../../../api/types';
+import type { Order, Food, Review, OrderStatus } from '../../../api/types';
+import { getOrderStatusInfo, OrderStatus as OrderStatusEnum } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 
 const route = useRoute();
@@ -63,14 +64,6 @@ const orderItems = ref<Food[]>([]);
 const review = ref<Review | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
-
-const getStatusText = (status?: number): string => {
-  if (status === undefined) return '未知状态';
-  const statusMap: { [key: number]: string } = {
-    0: '已取消', 1: '未支付', 2: '配送中', 3: '已完成', 4: '已评价',
-  };
-  return statusMap[status] || '未知状态';
-};
 
 const goBack = () => {
   router.back();
@@ -94,7 +87,7 @@ onMounted(async () => {
     if (orderRes.success) {
       order.value = orderRes.data;
       // If order is reviewed, fetch the review
-      if (order.value.orderState === 4) {
+      if (order.value.orderState === OrderStatusEnum.COMMENTED) {
         const reviewRes = await getOrderReview(orderId);
         if (reviewRes.success) {
           review.value = reviewRes.data;

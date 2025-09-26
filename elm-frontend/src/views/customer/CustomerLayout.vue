@@ -37,7 +37,6 @@
           </el-menu>
           <!-- Profile Section Navigation -->
           <el-menu
-            v-if="isProfileSection"
             :default-active="activeProfileRoute"
             mode="horizontal"
             :ellipsis="false"
@@ -56,7 +55,7 @@
               <el-icon><List /></el-icon>
               <span>订单历史</span>
             </el-menu-item>
-            <el-menu-item index="/profile/apply-merchant">
+            <el-menu-item index="/profile/apply-merchant" v-if="!authStore.userRoles.includes('MERCHANT')">
               <el-icon><Shop /></el-icon>
               <span>成为商家</span>
             </el-menu-item>
@@ -68,12 +67,12 @@
           <!-- Logged-in state -->
           <template v-if="authStore.isLoggedIn">
             <div class="user-info">
-              <el-button ref="cartButtonRef" @click="cartVisible = true" type="primary" round class="hide-on-mobile">
+              <el-button v-if="showCartIcon" ref="cartButtonRef" @click="cartVisible = true" type="primary" round class="hide-on-mobile">
                 <el-icon class="el-icon--left"><ShoppingCartIcon /></el-icon>
                 购物车
                 <el-badge :value="cartStore.totalItems" :hidden="cartStore.totalItems === 0" class="cart-badge" />
               </el-button>
-              <el-button ref="cartButtonRef" @click="cartVisible = true" type="primary" circle class="show-on-mobile">
+              <el-button v-if="showCartIcon" ref="cartButtonRef" @click="cartVisible = true" type="primary" circle class="show-on-mobile">
                 <el-icon><ShoppingCartIcon /></el-icon>
               </el-button>
               <el-dropdown>
@@ -120,10 +119,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
-import { useCartStore, type AnimationOrigin } from '../../store/cart';
+import { useCartStore } from '../../store/cart';
 import { formatBase64Image } from '../../utils/image';
 import ShoppingCart from '../../components/ShoppingCart.vue';
 import { ShoppingCart as ShoppingCartIcon, User, Location, List, HomeFilled, Shop, Setting } from '@element-plus/icons-vue';
@@ -134,7 +133,13 @@ const router = useRouter();
 const route = useRoute();
 
 const cartVisible = ref(false);
-const cartButtonRef = ref(null);
+const cartButtonRef = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+  if (cartButtonRef.value) {
+    cartStore.setCartIconElement(cartButtonRef.value);
+  }
+});
 
 import type { Person } from '../../api/types';
 
@@ -143,8 +148,9 @@ const userAvatar = computed(() => {
   return formatBase64Image(user?.photo);
 });
 
-// Check if the current route is within the profile section
-const isProfileSection = computed(() => route.path.startsWith('/profile'));
+const showCartIcon = computed(() => {
+  return ['RestaurantDetail', 'MobileRestaurantDetail'].includes(route.name as string);
+});
 
 // Determine the active route for the profile menu
 const activeProfileRoute = computed(() => {
@@ -172,45 +178,9 @@ const goTo = (path: string) => {
   router.push(path);
 };
 
-const triggerFlyAnimation = (origin: AnimationOrigin) => {
-  if (!origin || !cartButtonRef.value) return;
-
-  const cartButtonEl = (cartButtonRef.value as any).$el;
-  const targetRect = cartButtonEl.getBoundingClientRect();
-  const targetX = targetRect.left + targetRect.width / 2;
-  const targetY = targetRect.top + targetRect.height / 2;
-
-  const flyingEl = document.createElement('img');
-  flyingEl.src = origin.imgSrc;
-  flyingEl.style.position = 'fixed';
-  flyingEl.style.left = `${origin.x}px`;
-  flyingEl.style.top = `${origin.y}px`;
-  flyingEl.style.width = '50px';
-  flyingEl.style.height = '50px';
-  flyingEl.style.borderRadius = '50%';
-  flyingEl.style.objectFit = 'cover';
-  flyingEl.style.zIndex = '9999';
-  flyingEl.style.pointerEvents = 'none';
-  flyingEl.style.transform = 'translate(-50%, -50%)';
-
-  document.body.appendChild(flyingEl);
-
-  flyingEl.animate([
-    { transform: `translate(-50%, -50%) scale(1)`, opacity: 1 },
-    { transform: `translate(${(targetX - origin.x)}px, ${(targetY - origin.y)}px) scale(0.1)`, opacity: 0.5 }
-  ], {
-    duration: 600,
-    easing: 'cubic-bezier(0.5, -0.5, 1, 1)',
-  }).onfinish = () => {
-    document.body.removeChild(flyingEl);
-    // Reset the store state after animation
-    cartStore.animationOrigin = null;
-  };
-};
-
 watch(() => cartStore.animationOrigin, (newOrigin) => {
   if (newOrigin) {
-    triggerFlyAnimation(newOrigin);
+    // This is now handled in App.vue
   }
 });
 </script>

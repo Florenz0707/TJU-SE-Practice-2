@@ -1,31 +1,36 @@
 <template>
-  <div class="business-management">
-    <h1>商家管理</h1>
+  <div class="merchant-application-management">
+    <h1>商家资格申请管理</h1>
 
     <el-row :gutter="20" style="margin-bottom: 20px;">
       <el-col :span="8">
         <el-input
           v-model="searchQuery"
-          placeholder="按店铺名称搜索"
+          placeholder="按申请人用户名搜索"
           clearable
         />
       </el-col>
       <el-col :span="8">
         <el-select v-model="statusFilter" placeholder="按状态筛选" clearable>
-          <el-option label="待处理" value="待处理"></el-option>
-          <el-option label="已批准" value="已批准"></el-option>
-          <el-option label="已拒绝" value="已拒绝"></el-option>
+          <el-option label="待处理" :value="ApplicationState.UNDISPOSED"></el-option>
+          <el-option label="已批准" :value="ApplicationState.APPROVED"></el-option>
+          <el-option label="已拒绝" :value="ApplicationState.REJECTED"></el-option>
         </el-select>
       </el-col>
     </el-row>
 
-    <DataTable :columns="columns" :data="filteredBusinesses">
+    <DataTable :columns="columns" :data="filteredApplications">
+      <template #applicationState="{ row }">
+        <el-tag :type="statusType(row.applicationState)">
+          {{ statusText(row.applicationState) }}
+        </el-tag>
+      </template>
       <template #actions="{ row }">
-        <div v-if="row.status === '待处理'">
-          <el-button size="small" type="success" @click="handleApprove(row as Business)">批准</el-button>
-          <el-button size="small" type="danger" @click="handleReject(row as Business)">拒绝</el-button>
+        <div v-if="row.applicationState === ApplicationState.UNDISPOSED">
+          <el-button size="small" type="success" @click="handleUpdate(row, ApplicationState.APPROVED)">批准</el-button>
+          <el-button size="small" type="danger" @click="handleUpdate(row, ApplicationState.REJECTED)">拒绝</el-button>
         </div>
-        <el-button v-else size="small" @click="handleEdit(row as Business)">查看/编辑</el-button>
+        <span v-else>已处理</span>
       </template>
     </DataTable>
   </div>
@@ -33,110 +38,79 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { ElButton, ElInput, ElSelect, ElOption, ElRow, ElCol, ElMessage } from 'element-plus';
+import { ElButton, ElInput, ElSelect, ElOption, ElRow, ElCol, ElMessage, ElTag } from 'element-plus';
 import DataTable from '@/components/DataTable.vue';
-import { getBusinesses, updateBusiness } from '@/api/business';
-import type { Business } from '@/api/types';
+import { getMerchantApplications, approveMerchantApplication } from '@/api/application';
+import { ApplicationState } from '@/api/applicationService';
+import type { MerchantApplication } from '@/api/types';
 
-const rawBusinesses = ref<Business[]>([]);
+const applications = ref<MerchantApplication[]>([]);
 const searchQuery = ref('');
-const statusFilter = ref('');
+const statusFilter = ref<number | null>(null);
 
 const columns = [
   { prop: 'id', label: 'ID', width: 80 },
-  { prop: 'businessName', label: '店铺名称' },
-  { prop: 'businessOwner.username', label: '所有者' },
-  { prop: 'businessAddress', label: '地址' },
-  { prop: 'status', label: '状态' },
-  { prop: 'createTime', label: '创建时间' },
+  { prop: 'applicant.username', label: '申请人' },
+  { prop: 'applicationExplain', label: '申请说明' },
+  { prop: 'applicationState', label: '状态', slot: 'applicationState' },
+  { prop: 'createTime', label: '申请时间', formatter: (row: any) => new Date(row.createTime).toLocaleString() },
+  { prop: 'actions', label: '操作', slot: 'actions' },
 ];
 
-const getStatus = (business: Business): '待处理' | '已批准' | '已拒绝' => {
-  // Assuming 'pending' status is marked in remarks. This is a fragile contract.
-  if (business.remarks?.includes('pending')) {
-    return '待处理';
-  }
-  if (business.deleted) {
-    return '已拒绝';
-  }
-  return '已批准';
+const statusText = (state: number): string => {
+  const map: { [key: number]: string } = {
+    [ApplicationState.UNDISPOSED]: '待处理',
+    [ApplicationState.APPROVED]: '已批准',
+    [ApplicationState.REJECTED]: '已拒绝',
+  };
+  return map[state] ?? '未知';
 };
 
-const fetchBusinesses = async () => {
+const statusType = (state: number): "warning" | "success" | "danger" | "info" => {
+  const map: { [key: number]: "warning" | "success" | "danger" | "info" } = {
+    [ApplicationState.UNDISPOSED]: 'warning',
+    [ApplicationState.APPROVED]: 'success',
+    [ApplicationState.REJECTED]: 'danger',
+  };
+  return map[state] ?? 'info';
+};
+
+const fetchApplications = async () => {
   try {
-    const res = await getBusinesses();
+    const res = await getMerchantApplications();
     if (res.success) {
-      rawBusinesses.value = (res.data || []).sort((a, b) => {
-        if (a.createTime && b.createTime) {
-          return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
-        }
-        return 0;
-      });
+      applications.value = (res.data || []).sort((a, b) => new Date(b.createTime!).getTime() - new Date(a.createTime!).getTime());
     } else {
-      ElMessage.error(res.message || '获取店铺列表失败。');
+      ElMessage.error(res.message || '获取申请列表失败。');
     }
   } catch (error) {
-    ElMessage.error('获取店铺列表失败。');
-    console.error(error);
+    ElMessage.error('获取申请列表失败。');
   }
 };
 
-onMounted(fetchBusinesses);
+onMounted(fetchApplications);
 
-const displayBusinesses = computed(() => {
-  return rawBusinesses.value.map(b => ({
-    ...b,
-    status: getStatus(b),
-    'businessOwner.username': b.businessOwner?.username || 'N/A',
-  }));
-});
-
-const filteredBusinesses = computed(() => {
-  return displayBusinesses.value.filter(business => {
-    const searchMatch = !searchQuery.value || business.businessName.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const statusMatch = !statusFilter.value || business.status === statusFilter.value;
+const filteredApplications = computed(() => {
+  return applications.value.filter(app => {
+    const searchMatch = !searchQuery.value || app.applicant.username.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const statusMatch = statusFilter.value === null || app.applicationState === statusFilter.value;
     return searchMatch && statusMatch;
   });
 });
 
-const handleApprove = async (business: Business) => {
-  if (business.id === undefined) {
-    ElMessage.error('无法批准没有ID的店铺。');
-    return;
-  }
+const handleUpdate = async (application: MerchantApplication, newState: number) => {
   try {
-    const updateData: Business = { ...business, remarks: 'approved', deleted: false };
-    await updateBusiness(business.id, updateData);
-    ElMessage.success(`店铺 "${business.businessName}" 已批准。`);
-    fetchBusinesses(); // Refresh list
+    await approveMerchantApplication(application.id, { applicationState: newState });
+    ElMessage.success('操作成功。');
+    fetchApplications(); // Refresh list
   } catch (error) {
-    ElMessage.error('批准店铺失败。');
+    ElMessage.error('操作失败。');
   }
-};
-
-const handleReject = async (business: Business) => {
-  if (business.id === undefined) {
-    ElMessage.error('无法拒绝没有ID的店铺。');
-    return;
-  }
-   try {
-    const updateData: Business = { ...business, deleted: true };
-    await updateBusiness(business.id, updateData);
-    ElMessage.warning(`店铺 "${business.businessName}" 已拒绝。`);
-    fetchBusinesses(); // Refresh list
-  } catch (error) {
-    ElMessage.error('拒绝店铺失败。');
-  }
-};
-
-const handleEdit = (business: Business) => {
-  console.log('Editing business:', business);
-  ElMessage.info(`正在编辑店铺 ID: ${business.id}。功能待实现。`);
 };
 </script>
 
 <style scoped>
-.business-management {
+.merchant-application-management {
   padding: 20px;
 }
 </style>

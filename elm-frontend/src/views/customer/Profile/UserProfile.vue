@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useAuthStore } from '../../../store/auth';
-import { updateUser } from '../../../api/user';
+import { updateUser, getUserById } from '../../../api/user';
 import { ElMessage } from 'element-plus';
 import type { Person } from '../../../api/types';
 
@@ -37,8 +37,14 @@ const userForm = ref<Partial<Person>>({});
 watch(
   () => authStore.user,
   (newUser) => {
-    if (newUser) {
-      userForm.value = { ...newUser };
+    if (newUser?.id) {
+      getUserById(newUser.id).then((res) => {
+        if (res.success) {
+          userForm.value = res.data;
+        } else {
+          ElMessage.error('获取用户信息失败: ' + res.message);
+        }
+      });
     }
   },
   { immediate: true }
