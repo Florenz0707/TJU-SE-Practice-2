@@ -15,9 +15,26 @@
     <DataTable :columns="columns" :data="filteredUsers">
       <template #actions="{ row }">
         <el-button size="small" @click="handleEdit(row as User)">编辑</el-button>
+        <el-button size="small" type="warning" @click="handlePasswordChange(row as User)">修改密码</el-button>
         <el-button size="small" type="danger" @click="handleDelete(row as User)">删除</el-button>
       </template>
     </DataTable>
+
+    <!-- Change Password Dialog -->
+    <el-dialog v-model="showPasswordDialog" title="修改密码" @closed="resetPasswordForm">
+      <el-form ref="passwordFormRef" :model="passwordData" :rules="passwordRules" label-position="top">
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="passwordData.newPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="确认新密码" prop="confirmPassword">
+          <el-input v-model="passwordData.confirmPassword" type="password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showPasswordDialog = false">取消</el-button>
+        <el-button type="primary" @click="updatePassword">更新密码</el-button>
+      </template>
+    </el-dialog>
 
     <!-- Create User Dialog -->
     <el-dialog v-model="showCreateDialog" title="创建新用户" @closed="resetForm">
@@ -48,13 +65,38 @@
 import { ref, onMounted, computed, reactive } from 'vue';
 import { ElButton, ElInput, ElMessage, ElMessageBox, ElDialog, ElForm, ElFormItem, ElSelect, ElOption, type FormInstance, type FormRules } from 'element-plus';
 import DataTable from '@/components/DataTable.vue';
-import { getAllUsers, deleteUser, addPerson } from '@/api/user';
+import { getAllUsers, deleteUser, addPerson, updateUserPassword } from '@/api/user';
 import type { User, Authority, Person } from '@/api/types';
 
 const rawUsers = ref<User[]>([]);
 const searchQuery = ref('');
 const showCreateDialog = ref(false);
 const createUserFormRef = ref<FormInstance>();
+
+const showPasswordDialog = ref(false);
+const passwordFormRef = ref<FormInstance>();
+const selectedUser = ref<User | null>(null);
+const passwordData = reactive({
+  newPassword: '',
+  confirmPassword: '',
+});
+
+const passwordRules = {
+  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: any, callback: any) => {
+        if (value !== passwordData.newPassword) {
+          callback(new Error('两次输入的密码不一致'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
+};
 
 const newUser = reactive<{
   username: string;
@@ -79,6 +121,7 @@ const columns = [
   // { prop: 'email', label: 'Email' },
   { prop: 'authorities', label: '角色' },
   { prop: 'createTime', label: '创建时间' },
+  { prop: 'actions', label: '操作', slot: 'actions' },
 ];
 
 const fetchUsers = async () => {
@@ -117,6 +160,42 @@ const filteredUsers = computed(() => {
 const handleEdit = (user: User) => {
   console.log('Editing user:', user);
   ElMessage.info(`正在编辑用户 ID: ${user.id}。功能待实现。`);
+};
+
+const handlePasswordChange = (user: User) => {
+  selectedUser.value = user;
+  showPasswordDialog.value = true;
+};
+
+const updatePassword = async () => {
+  if (!passwordFormRef.value || !selectedUser.value) return;
+
+  await passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        const res = await updateUserPassword({
+          username: selectedUser.value!.username,
+          password: passwordData.newPassword,
+        });
+        if (res.success) {
+          ElMessage.success('密码更新成功');
+          showPasswordDialog.value = false;
+        } else {
+          ElMessage.error(res.message || '密码更新失败');
+        }
+      } catch (error) {
+        ElMessage.error('密码更新失败');
+      }
+    }
+  });
+};
+
+const resetPasswordForm = () => {
+  if (!passwordFormRef.value) return;
+  passwordFormRef.value.resetFields();
+  passwordData.newPassword = '';
+  passwordData.confirmPassword = '';
+  selectedUser.value = null;
 };
 
 const handleDelete = (user: User) => {

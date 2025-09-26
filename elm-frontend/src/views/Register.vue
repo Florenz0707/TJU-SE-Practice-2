@@ -26,6 +26,27 @@
               <el-input v-model="registerForm.username" placeholder="请输入用户名" clearable size="large"></el-input>
             </el-form-item>
 
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form-item label="姓" prop="lastName">
+                  <el-input v-model="registerForm.lastName" placeholder="您的姓氏 (可选)" clearable size="large"></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="名" prop="firstName">
+                  <el-input v-model="registerForm.firstName" placeholder="您的名字 (可选)" clearable size="large"></el-input>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-form-item label="邮箱" prop="email">
+              <el-input v-model="registerForm.email" placeholder="邮箱地址 (可选)" clearable size="large"></el-input>
+            </el-form-item>
+
+            <el-form-item label="电话" prop="phone">
+              <el-input v-model="registerForm.phone" placeholder="手机号码 (可选)" clearable size="large"></el-input>
+            </el-form-item>
+
             <el-form-item label="密码" prop="password">
               <el-input
                 v-model="registerForm.password"
@@ -74,9 +95,11 @@
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
-import { createUser } from '../api/user';
+import { addPerson, updateUserPassword } from '../api/user';
+import { useAuthStore } from '../store/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 const registerFormRef = ref<FormInstance | null>(null);
 const loading = ref(false);
 
@@ -84,6 +107,10 @@ const registerForm = reactive({
   username: '',
   password: '',
   confirmPassword: '',
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
 });
 
 const validatePass = (_rule: any, value: any, callback: any) => {
@@ -113,26 +140,64 @@ const registerRules = reactive<FormRules>({
 const handleRegister = async () => {
   if (!registerFormRef.value) return;
 
-  try {
-    await registerFormRef.value.validate();
+  await registerFormRef.value.validate();
+  loading.value = true;
 
-    loading.value = true;
-    const res = await createUser({
+  try {
+    // Step 1: Create user with addPerson, including optional fields.
+    const personData = {
       username: registerForm.username,
-      password: registerForm.password
+      firstName: registerForm.firstName || undefined,
+      lastName: registerForm.lastName || undefined,
+      email: registerForm.email || undefined,
+      phone: registerForm.phone || undefined,
+    };
+
+    const createRes = await addPerson(personData);
+    if (!createRes.success) {
+      throw new Error(createRes.message || '创建用户失败');
+    }
+    ElMessage.success('用户创建成功，正在为您登录...');
+
+    // Step 2: Log in with the default password to establish the session.
+    await authStore.login({
+      username: registerForm.username,
+      password: 'password', // Use the default password.
     });
 
-    if (res.success) {
-      ElMessage.success('注册成功！将跳转到登录页...');
-      setTimeout(() => {
-        router.push({ name: 'Login' });
-      }, 1500);
-    } else {
-      ElMessage.error(res.message || '注册失败，请稍后重试');
-    }
-  } catch (error) {
-    ElMessage.error('注册失败，请稍后重试');
-    console.error('Registration failed:', error);
+    // Immediately navigate to the homepage for a better user experience.
+    ElMessage.success('登录成功！正在跳转到主页...');
+    router.push('/');
+
+    // Step 3: Silently update the password in the background after a short delay.
+    // This ensures the auth token from the recent login is attached to the request.
+    setTimeout(async () => {
+      try {
+        const passwordUpdateRes = await updateUserPassword({
+          username: registerForm.username,
+          password: registerForm.password,
+        });
+
+        if (passwordUpdateRes.success) {
+          console.log('Password successfully updated in the background.');
+          // To ensure the session token is consistent with the new password,
+          // silently re-authenticate.
+          await authStore.login({
+            username: registerForm.username,
+            password: registerForm.password,
+          });
+          console.log('Token refreshed with new password in the background.');
+        } else {
+          console.error('Background password update failed:', passwordUpdateRes.message);
+        }
+      } catch (error) {
+        console.error('An error occurred during the background password update:', error);
+      }
+    }, 1000); // 1-second delay.
+
+  } catch (error: any) {
+    ElMessage.error(error.message || '注册流程失败，请稍后重试');
+    console.error('Registration process failed:', error);
   } finally {
     loading.value = false;
   }

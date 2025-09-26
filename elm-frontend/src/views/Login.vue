@@ -50,7 +50,7 @@
           </el-form>
 
           <div class="form-footer">
-            <el-link type="info">忘记密码？</el-link>
+            <el-link type="info"></el-link>
             <router-link to="/register">
               <el-link type="primary">还没有账户？去注册</el-link>
             </router-link>
@@ -76,8 +76,8 @@ const loginFormRef = ref<FormInstance | null>(null);
 const loading = ref(false);
 
 const loginForm = reactive({
-  username: 'user',
-  password: 'user',
+  username: '',
+  password: '',
 });
 
 const loginRules = reactive({

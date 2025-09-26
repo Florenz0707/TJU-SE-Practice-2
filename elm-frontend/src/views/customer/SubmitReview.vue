@@ -6,7 +6,7 @@
       <p>商家: {{ order.business?.businessName }}</p>
       <el-form @submit.prevent="submitReview">
         <el-form-item label="评分">
-          <el-rate v-model="rating" :max="5" />
+  <el-rate v-model="rating" :max="5" allow-half />
         </el-form-item>
         <el-form-item label="评价内容">
           <el-input type="textarea" v-model="comment" />
@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getOrderById, updateOrderStatus } from '../../api/order';
+import { getOrderById } from '../../api/order';
 import { addReview } from '../../api/review';
 import type { Order } from '../../api/types';
 import { ElMessage } from 'element-plus';
@@ -51,7 +51,7 @@ const submitReview = async () => {
   if (!order.value || !order.value.id || !order.value.business) return;
 
   const reviewData = {
-    stars: rating.value,
+    stars: rating.value * 2,
     content: comment.value,
     anonymous: isAnonymous.value,
     order: { id: order.value.id },
@@ -61,7 +61,6 @@ const submitReview = async () => {
   try {
     const res = await addReview(order.value.id, reviewData);
     if (res.success) {
-      await updateOrderStatus({ id: order.value.id, orderState: 4 });
       ElMessage.success('评价成功');
       router.push({ name: 'OrderHistory' });
     } else {

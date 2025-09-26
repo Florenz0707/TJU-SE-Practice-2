@@ -44,11 +44,50 @@
             </el-form>
           </div>
         </el-collapse-transition>
+
+        <div class="menu-item" @click="showPassword = !showPassword">
+          <span>修改密码</span>
+          <ChevronRight :size="20" color="#999" />
+        </div>
+        <el-collapse-transition>
+          <div v-show="showPassword" class="info-form">
+            <el-form
+              :model="passwordForm"
+              ref="passwordFormRef"
+              :rules="passwordRules"
+              label-position="top"
+            >
+              <el-form-item label="新密码" prop="newPassword">
+                <el-input
+                  v-model="passwordForm.newPassword"
+                  type="password"
+                  show-password
+                />
+              </el-form-item>
+              <el-form-item label="确认新密码" prop="confirmPassword">
+                <el-input
+                  v-model="passwordForm.confirmPassword"
+                  type="password"
+                  show-password
+                />
+              </el-form-item>
+              <el-form-item>
+                <el-button
+                  type="primary"
+                  @click="handleUpdatePassword"
+                  :loading="isSubmitting"
+                  >更新密码</el-button
+                >
+              </el-form-item>
+            </el-form>
+          </div>
+        </el-collapse-transition>
+
         <router-link to="/mobile/profile/addresses" class="menu-item">
           <span>地址管理</span>
           <ChevronRight :size="20" color="#999" />
         </router-link>
-        <router-link to="/mobile/profile/apply-merchant" class="menu-item">
+        <router-link v-if="!isMerchant" to="/mobile/profile/apply-merchant" class="menu-item">
           <span>成为商家</span>
           <ChevronRight :size="20" color="#999" />
         </router-link>
@@ -83,10 +122,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, watch, computed, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../../../store/auth';
-import { getPersonById, updatePerson } from '../../../../api/person';
+import { getUserById, updateUser, updateUserPassword } from '../../../../api/user';
 import type { Person } from '../../../../api/types';
 import { ElMessage, type FormInstance } from 'element-plus';
 import { ChevronRight } from 'lucide-vue-next';
@@ -98,27 +137,56 @@ const formRef = ref<FormInstance>();
 const isSubmitting = ref(false);
 const showInfo = ref(false);
 const showRoles = ref(false);
+const showPassword = ref(false);
+
+const passwordFormRef = ref<FormInstance>();
+const passwordForm = reactive({
+  newPassword: '',
+  confirmPassword: '',
+});
+
+const passwordRules = {
+  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (_rule: any, value: any, callback: any) => {
+        if (value !== passwordForm.newPassword) {
+          callback(new Error('两次输入的密码不一致'));
+        } else {
+          callback();
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
+};
 
 const isMerchant = computed(() => authStore.userRoles.includes('MERCHANT'));
 const isAdmin = computed(() => authStore.userRoles.includes('ADMIN'));
 
-onMounted(async () => {
-  if (authStore.user?.id) {
-    const res = await getPersonById(authStore.user.id);
-    if (res.success) {
-      profileForm.value = res.data;
-    }
+watch(() => authStore.user, (newUser) => {
+  if (newUser?.id) {
+    getUserById(newUser.id).then(res => {
+      if (res.success) {
+        profileForm.value = res.data;
+      }
+    });
   }
-});
+}, { immediate: true, deep: true });
 
 const updateProfile = async () => {
-  if (!formRef.value) return;
+  if (!formRef.value || !authStore.user?.id) {
+    ElMessage.error('用户未登录，无法更新信息。');
+    return;
+  }
   await formRef.value.validate();
   isSubmitting.value = true;
   try {
-    const res = await updatePerson(profileForm.value);
+    const res = await updateUser(authStore.user.id, profileForm.value as Person);
     if (res.success) {
       ElMessage.success('信息更新成功！');
+      authStore.setUser(res.data);
     } else {
       throw new Error(res.message);
     }
@@ -127,6 +195,35 @@ const updateProfile = async () => {
   } finally {
     isSubmitting.value = false;
   }
+};
+
+const handleUpdatePassword = async () => {
+  if (!passwordFormRef.value || !authStore.user) return;
+
+  await passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      isSubmitting.value = true;
+      try {
+        const res = await updateUserPassword({
+          username: authStore.user!.username,
+          password: passwordForm.newPassword,
+        });
+        if (res.success) {
+          ElMessage.success('密码更新成功');
+          passwordForm.newPassword = '';
+          passwordForm.confirmPassword = '';
+          passwordFormRef.value?.resetFields();
+          showPassword.value = false;
+        } else {
+          ElMessage.error(res.message || '密码更新失败');
+        }
+      } catch (error) {
+        ElMessage.error('密码更新失败');
+      } finally {
+        isSubmitting.value = false;
+      }
+    }
+  });
 };
 
 const logout = () => {

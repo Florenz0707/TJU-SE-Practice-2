@@ -26,8 +26,8 @@
         </div>
         <div class="order-status">
           <p class="order-total">¥{{ (order.orderTotal ?? 0).toFixed(2) }}</p>
-          <el-tag :type="getOrderStatusType(order.orderState)" size="small">
-            {{ getOrderStatusText(order.orderState) }}
+          <el-tag :type="getOrderStatusInfo(order.orderState as OrderStatus).type" size="small">
+            {{ getOrderStatusInfo(order.orderState as OrderStatus).text }}
           </el-tag>
         </div>
       </el-card>
@@ -41,7 +41,8 @@ import { ref, computed, watch } from 'vue';
 import { Search } from 'lucide-vue-next';
 import { getOrdersByBusinessId } from '../../../api/order';
 import { useBusinessStore } from '../../../store/business';
-import type { Order } from '../../../api/types';
+import type { Order, OrderStatus } from '../../../api/types';
+import { getOrderStatusInfo } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 import { storeToRefs } from 'pinia';
 
@@ -92,22 +93,6 @@ const filteredOrders = computed(() => {
 
 const handleSearch = () => {
   // The computed property already handles filtering
-};
-
-const getOrderStatusText = (status?: number): string => {
-  if (status === undefined) return '未知状态';
-  const statusMap: { [key: number]: string } = {
-    0: '已取消', 1: '未支付', 2: '配送中', 3: '已完成', 4: '已评价',
-  };
-  return statusMap[status] || '未知状态';
-};
-
-const getOrderStatusType = (status?: number): string => {
-  if (status === undefined) return 'info';
-  const typeMap: { [key: number]: string } = {
-    0: 'danger', 1: 'warning', 2: 'primary', 3: 'success', 4: 'info',
-  };
-  return typeMap[status] || 'info';
 };
 </script>
 

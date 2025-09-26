@@ -21,7 +21,7 @@
         </div>
       </template>
 
-      <el-table :data="filteredOrders" stripe style="width: 100%">
+      <el-table :data="filteredOrders" stripe style="width: 100%" v-if="!showNoBusinessMessage">
         <el-table-column prop="id" label="订单ID" width="100" />
         <el-table-column prop="orderDate" label="下单时间" width="200">
           <template #default="{ row }">
@@ -36,12 +36,15 @@
         </el-table-column>
         <el-table-column prop="orderState" label="订单状态">
           <template #default="{ row }">
-            <el-tag :type="getOrderStatusType(row.orderState)">
-              {{ getOrderStatusText(row.orderState) }}
+            <el-tag :type="getOrderStatusInfo(row.orderState as OrderStatus).type">
+              {{ getOrderStatusInfo(row.orderState as OrderStatus).text }}
             </el-tag>
           </template>
         </el-table-column>
       </el-table>
+      <el-empty v-if="showNoBusinessMessage" description="您当前未选择任何店铺，或您还未开设店铺。">
+        <el-button type="primary" @click="$router.push({ name: 'MyApplications' })">申请开店</el-button>
+      </el-empty>
     </el-card>
   </div>
 </template>
@@ -50,7 +53,8 @@
 import { ref, computed, watch } from 'vue';
 import { getOrdersByBusinessId } from '../../api/order';
 import { useBusinessStore } from '../../store/business';
-import type { Order } from '../../api/types';
+import type { Order, OrderStatus } from '../../api/types';
+import { getOrderStatusInfo } from '../../api/types';
 import { ElMessage } from 'element-plus';
 import { storeToRefs } from 'pinia';
 
@@ -61,12 +65,13 @@ const searchQuery = ref('');
 const businessStore = useBusinessStore();
 const { selectedBusinessId } = storeToRefs(businessStore);
 
-const fetchOrdersForBusiness = async (businessId: number) => {
+const fetchOrdersForBusiness = async (businessId: number | null) => {
+  loading.value = true;
   if (!businessId) {
     allOrders.value = [];
+    loading.value = false;
     return;
   }
-  loading.value = true;
   try {
     const res = await getOrdersByBusinessId(businessId);
     if (res.success) {
@@ -83,10 +88,10 @@ const fetchOrdersForBusiness = async (businessId: number) => {
 };
 
 watch(selectedBusinessId, (newId) => {
-  if (newId) {
-    fetchOrdersForBusiness(newId);
-  }
+  fetchOrdersForBusiness(newId);
 }, { immediate: true });
+
+const showNoBusinessMessage = computed(() => !selectedBusinessId.value && !loading.value);
 
 const filteredOrders = computed(() => {
   if (!searchQuery.value) {
@@ -101,22 +106,6 @@ const filteredOrders = computed(() => {
 
 const handleSearch = () => {
   // The computed property already handles filtering
-};
-
-const getOrderStatusText = (status?: number): string => {
-  if (status === undefined) return '未知状态';
-  const statusMap: { [key: number]: string } = {
-    0: '已取消', 1: '未支付', 2: '配送中', 3: '已完成', 4: '已评价',
-  };
-  return statusMap[status] || '未知状态';
-};
-
-const getOrderStatusType = (status?: number): string => {
-  if (status === undefined) return 'info';
-  const typeMap: { [key: number]: string } = {
-    0: 'danger', 1: 'warning', 2: 'primary', 3: 'success', 4: 'info',
-  };
-  return typeMap[status] || 'info';
 };
 </script>
 

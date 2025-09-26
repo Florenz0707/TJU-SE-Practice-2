@@ -38,24 +38,21 @@ const cartStore = useCartStore();
 const imageElement = ref<HTMLImageElement | null>(null);
 
 const handleAddToCart = () => {
-  let origin: { x: number; y: number; imgSrc: string } | undefined;
-
-  if (imageElement.value && imageElement.value.src) {
+  if (imageElement.value) {
     const rect = imageElement.value.getBoundingClientRect();
-    origin = {
+    const origin = {
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
       imgSrc: imageElement.value.src,
     };
+    cartStore.addItem(props.food, 1, origin);
+  } else {
+    cartStore.addItem(props.food, 1);
   }
 
-  // The animation is a bonus, but adding to cart should always work.
-  cartStore.addItem(props.food, 1, origin);
-
-  // Show a confirmation message
-  ElMessage({
+  ElMessage.success({
     message: `${props.food.foodName} 已添加到购物车！`,
-    type: 'success',
+    duration: 1500,
   });
 };
 </script>

@@ -99,13 +99,16 @@ const routes: Array<RouteRecordRaw> = [
     path: '/merchant',
     component: MerchantLayout,
     redirect: '/merchant/dashboard',
+    meta: {
+      requiresAuth: true,
+      roles: ['MERCHANT']
+    },
     children: [
-      { path: 'dashboard', name: 'MerchantDashboard', component: MerchantDashboard, meta: { title: '商家仪表盘', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'dashboard', name: 'MerchantDashboard', component: MerchantDashboard, meta: { title: '商家仪表盘' } },
       { path: 'menu', name: 'MenuManagement', component: MenuManagement, meta: { title: '菜单管理' } },
-      { path: 'profile', name: 'BusinessProfile', component: BusinessProfile, meta: { title: '店铺信息', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
-      { path: 'orders', name: 'MerchantOrderHistory', component: OrderHistory, meta: { title: '历史订单', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
-      { path: 'apply', name: 'ApplyForBusiness', component: () => import('../views/merchant/ApplyForBusiness.vue'), meta: { title: '开店申请', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
-      { path: 'applications', name: 'MyApplications', component: () => import('../views/merchant/MyApplications.vue'), meta: { title: '我的申请', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } }
+      { path: 'profile', name: 'BusinessProfile', component: BusinessProfile, meta: { title: '店铺信息' } },
+      { path: 'orders', name: 'MerchantOrderHistory', component: OrderHistory, meta: { title: '历史订单' } },
+      { path: 'applications', name: 'MyApplications', component: () => import('../views/merchant/MyApplications.vue'), meta: { title: '我的申请' } }
     ]
   },
 
@@ -208,12 +211,16 @@ const mobileMerchantRoutes: RouteRecordRaw = {
     path: '/mobile/merchant',
     component: MobileMerchantLayout,
     redirect: '/mobile/merchant/dashboard',
+    meta: {
+      requiresAuth: true,
+      roles: ['MERCHANT']
+    },
     children: [
-      { path: 'dashboard', name: 'MobileMerchantDashboard', component: () => import('../views/mobile/merchant/MerchantDashboard.vue'), meta: { title: '商家仪表盘', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
+      { path: 'dashboard', name: 'MobileMerchantDashboard', component: () => import('../views/mobile/merchant/MerchantDashboard.vue'), meta: { title: '商家仪表盘' } },
       { path: 'menu', name: 'MobileMenuManagement', component: () => import('../views/mobile/merchant/MerchantMenuManagement.vue'), meta: { title: '菜单管理' } },
-      { path: 'profile', name: 'MobileBusinessProfile', component: () => import('../views/mobile/merchant/BusinessInfoManagement.vue'), meta: { title: '商家信息管理', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
-      { path: 'orders', name: 'MobileMerchantOrderHistory', component: () => import('../views/mobile/merchant/MerchantOrderHistory.vue'), meta: { title: '历史订单', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } },
-      { path: 'apply', name: 'MobileApplyForBusiness', component: () => import('../views/mobile/merchant/ApplyForBusiness.vue'), meta: { title: '开店申请', requiresAuth: true, roles: ['MERCHANT', 'ADMIN'] } }
+      { path: 'profile', name: 'MobileBusinessProfile', component: () => import('../views/mobile/merchant/BusinessInfoManagement.vue'), meta: { title: '商家信息管理' } },
+      { path: 'orders', name: 'MobileMerchantOrderHistory', component: () => import('../views/mobile/merchant/MerchantOrderHistory.vue'), meta: { title: '历史订单' } },
+      { path: 'applications', name: 'MobileMyApplications', component: () => import('../views/mobile/merchant/MyApplications.vue'), meta: { title: '我的申请' } }
     ]
 };
 

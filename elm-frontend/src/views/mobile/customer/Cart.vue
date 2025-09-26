@@ -3,9 +3,9 @@
     <div v-if="cartStore.loading" class="loading">加载中...</div>
     <div v-if="cartStore.error" class="error">{{ cartStore.error }}</div>
 
-    <div v-if="cartStore.items.length > 0" class="cart-content">
+    <div v-if="cartStore.itemsForCurrentBusiness.length > 0" class="cart-content">
       <div class="cart-items">
-        <div v-for="item in cartStore.items" :key="item.id" class="cart-item">
+        <div v-for="item in cartStore.itemsForCurrentBusiness" :key="item.id" class="cart-item">
           <div class="item-info">
             <h3 class="item-name">{{ item.food?.foodName }}</h3>
             <p class="item-price">¥{{ item.food?.foodPrice }}</p>
