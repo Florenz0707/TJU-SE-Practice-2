@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  springboot:
+    build: ./elm-v2.0          # 你的后端项目目录
+    container_name: springboot
+    ports:
+      - "8080:8080"           # 如果仅被前端容器访问，可不映射
+    environment:
+      - JAVA_OPTS=-Xmx512m
+    restart: always
+
+  nginx:
+    build: ./elm-frontend         # 你的前端项目目录
+    container_name: nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - springboot
+    restart: always
