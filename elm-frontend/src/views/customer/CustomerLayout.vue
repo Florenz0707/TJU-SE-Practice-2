@@ -43,7 +43,7 @@
             router
             class="header-menu profile-nav-menu"
           >
-            <el-menu-item index="/profile/details">
+            <el-menu-item index="/profile/user-profile">
               <el-icon><User /></el-icon>
               <span>我的资料</span>
             </el-menu-item>
@@ -81,7 +81,7 @@
                 </el-avatar>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <router-link to="/profile/details" class="dropdown-link">
+                    <router-link to="/profile/user-profile" class="dropdown-link">
                       <el-dropdown-item>个人资料</el-dropdown-item>
                     </router-link>
                     <router-link to="/profile/orders" class="dropdown-link">

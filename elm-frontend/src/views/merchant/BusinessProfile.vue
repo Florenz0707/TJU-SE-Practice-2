@@ -36,67 +36,21 @@
     </el-card>
     <el-empty v-else-if="!loading" description="未能加载店铺信息"></el-empty>
 
-    <h2 style="margin-top: 2rem;">修改密码</h2>
-    <el-card>
-      <el-form
-        :model="passwordForm"
-        :rules="passwordRules"
-        ref="passwordFormRef"
-        label-width="120px"
-        style="max-width: 600px"
-      >
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="passwordForm.newPassword" type="password" show-password />
-        </el-form-item>
-        <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleUpdatePassword">更新密码</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue';
+import { ref, computed } from 'vue';
 import { useBusinessStore } from '../../store/business';
-import { useAuthStore } from '../../store/auth';
 import { storeToRefs } from 'pinia';
 import { updateBusiness } from '../../api/business';
-import { updateUserPassword } from '../../api/user';
-import { ElMessage, type UploadProps, type FormInstance } from 'element-plus';
+import { ElMessage, type UploadProps } from 'element-plus';
 import { Plus } from '@element-plus/icons-vue';
 import { formatBase64Image } from '../../utils/image';
 
 const loading = ref(false);
 const businessStore = useBusinessStore();
-const authStore = useAuthStore();
 const { selectedBusinessId, businesses } = storeToRefs(businessStore);
-
-const passwordFormRef = ref<FormInstance>();
-const passwordForm = reactive({
-  newPassword: '',
-  confirmPassword: '',
-});
-
-const passwordRules = reactive({
-  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
-  confirmPassword: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
-    {
-      validator: (_rule: any, value: any, callback: any) => {
-        if (value !== passwordForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'));
-        } else {
-          callback();
-        }
-      },
-      trigger: 'blur',
-    },
-  ],
-});
 
 const business = computed({
   get: () => businesses.value.find(b => b.id === selectedBusinessId.value) || null,
@@ -146,34 +100,6 @@ const handleSave = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-const handleUpdatePassword = async () => {
-  if (!passwordFormRef.value || !authStore.user) return;
-
-  await passwordFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true;
-      try {
-        const res = await updateUserPassword({
-          username: authStore.user!.username,
-          password: passwordForm.newPassword,
-        });
-        if (res.success) {
-          ElMessage.success('密码更新成功');
-          passwordForm.newPassword = '';
-          passwordForm.confirmPassword = '';
-          passwordFormRef.value?.resetFields();
-        } else {
-          ElMessage.error(res.message || '密码更新失败');
-        }
-      } catch (error) {
-        ElMessage.error('密码更新失败');
-      } finally {
-        loading.value = false;
-      }
-    }
-  });
 };
 </script>
 
