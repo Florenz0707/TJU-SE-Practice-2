@@ -128,14 +128,12 @@ public class FoodController {
         if (food.getBusiness() == null || food.getBusiness().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
 
-        Business business = businessService.getBusinessById(food.getBusiness().getId());
-        if (business == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        Business business = businessService.getBusinessById(oldFood.getBusiness().getId());
 
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
-
         if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner()))) {
+            food.setId(null);
             Utils.substituteEntity(oldFood, food, me);
             foodService.updateFood(oldFood);
             foodService.updateFood(food);

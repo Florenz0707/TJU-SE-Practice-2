@@ -9,7 +9,6 @@ import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -92,6 +91,7 @@ public class BusinessController {
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(oldOwner))) {
+            business.setId(null);
             Utils.substituteEntity(oldBusiness, business, me);
             business.setBusinessOwner(oldOwner);
             businessService.updateBusiness(oldBusiness);
@@ -139,6 +139,7 @@ public class BusinessController {
             if (business.getDeliveryPrice() == null)
                 business.setDeliveryPrice(oldBusiness.getDeliveryPrice());
 
+            business.setId(null);
             Utils.substituteEntity(oldBusiness, business, me);
             businessService.updateBusiness(oldBusiness);
             businessService.updateBusiness(business);

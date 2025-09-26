@@ -81,6 +81,7 @@ public class AddressController {
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(oldCustomer)) {
             newAddress.setCustomer(oldCustomer);
+            newAddress.setId(null);
             Utils.substituteEntity(address, newAddress, me);
             addressService.updateAddress(address);
             addressService.updateAddress(newAddress);
