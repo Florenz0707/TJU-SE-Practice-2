@@ -161,7 +161,9 @@ public class OrderController {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
 
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        if (isAdmin || me.equals(newOrder.getCustomer())) {
+        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        if (isAdmin || (isBusiness && me.equals(order.getBusiness().getBusinessOwner()))
+                || me.equals(newOrder.getCustomer())) {
             newOrder.setOrderState(orderState);
             LocalDateTime now = LocalDateTime.now();
             newOrder.setUpdateTime(now);
