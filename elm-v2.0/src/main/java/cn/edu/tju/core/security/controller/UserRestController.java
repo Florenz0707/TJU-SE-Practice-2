@@ -93,11 +93,9 @@ public class UserRestController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person CANT BE NULL");
         if (person.getUsername() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person.Username CANT BE NULL");
-        if (person.getPassword() == null)
-            person.setPassword("password");
 
         person.setAuthorities(Utils.getAuthoritySet("USER"));
-        person.setPassword(SecurityUtils.BCryptPasswordEncode(person.getPassword()));
+        person.setPassword(SecurityUtils.BCryptPasswordEncode("password"));
         person.setActivated(true);
 
         LocalDateTime now = LocalDateTime.now();
