@@ -78,7 +78,7 @@ public class OrderController {
 
             Utils.setNewEntity(order, me);
             order.setOrderTotal(totalPrice);
-            order.setOrderState(OrderState.UNPAID);
+            order.setOrderState(OrderState.COMPLETE);
             order.setOrderDate(order.getCreateTime());
             order.setBusiness(business);
             order.setCustomer(me);
