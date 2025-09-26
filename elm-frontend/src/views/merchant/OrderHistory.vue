@@ -41,6 +41,34 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="220">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.orderState === 1"
+              type="primary"
+              size="small"
+              @click="handleUpdateStatus(row, 2)"
+            >
+              接单
+            </el-button>
+            <el-button
+              v-if="row.orderState === 2"
+              type="warning"
+              size="small"
+              @click="handleUpdateStatus(row, 3)"
+            >
+              开始配送
+            </el-button>
+            <el-button
+              v-if="row.orderState === 3"
+              type="success"
+              size="small"
+              @click="handleUpdateStatus(row, 4)"
+            >
+              完成订单
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <el-empty v-if="showNoBusinessMessage" description="您当前未选择任何店铺，或您还未开设店铺。">
         <el-button type="primary" @click="$router.push({ name: 'MyApplications' })">申请开店</el-button>
@@ -51,7 +79,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { getOrdersByBusinessId } from '../../api/order';
+import { getOrdersByBusinessId, updateOrderStatus } from '../../api/order';
 import { useBusinessStore } from '../../store/business';
 import type { Order, OrderStatus } from '../../api/types';
 import { getOrderStatusInfo } from '../../api/types';
@@ -106,6 +134,29 @@ const filteredOrders = computed(() => {
 
 const handleSearch = () => {
   // The computed property already handles filtering
+};
+
+const handleUpdateStatus = async (order: Order, newStatus: OrderStatus) => {
+  const orderId = order.id;
+  if (!orderId) {
+    ElMessage.error('无法更新没有ID的订单');
+    return;
+  }
+  loading.value = true;
+  try {
+    const response = await updateOrderStatus({ id: orderId, orderState: newStatus });
+    if (response.success) {
+      ElMessage.success('订单状态更新成功！');
+      await fetchOrdersForBusiness(selectedBusinessId.value); // Re-fetch orders
+    } else {
+      ElMessage.error(response.message || '更新订单状态失败');
+    }
+  } catch (error) {
+    console.error('Failed to update order status:', error);
+    ElMessage.error('更新订单状态失败');
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 

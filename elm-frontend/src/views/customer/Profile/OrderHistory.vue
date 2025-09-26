@@ -22,6 +22,7 @@
       <el-table-column label="操作">
         <template #default="{ row }">
           <el-button size="small" @click="viewOrderDetails(row.id)">查看详情</el-button>
+          <el-button v-if="row.orderState === OrderStatusEnum.PAID" size="small" type="danger" @click="handleCancelOrder(row)">取消订单</el-button>
           <el-button v-if="row.orderState === OrderStatusEnum.COMPLETE" size="small" type="primary" @click="goToReview(row.id)">评价</el-button>
         </template>
       </el-table-column>
@@ -32,7 +33,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getMyOrdersCustomer } from '../../../api/order';
+import { getMyOrdersCustomer, updateOrderStatus } from '../../../api/order';
 import type { Order, OrderStatus } from '../../../api/types';
 import { getOrderStatusInfo, OrderStatus as OrderStatusEnum } from '../../../api/types';
 import { ElMessage } from 'element-plus';
@@ -68,6 +69,29 @@ const viewOrderDetails = (id: number) => {
 
 const goToReview = (id: number) => {
   router.push({ name: 'SubmitReview', params: { orderId: id } });
+};
+
+const handleCancelOrder = async (order: Order) => {
+  const orderId = order.id;
+  if (!orderId) {
+    ElMessage.error('无法取消没有ID的订单');
+    return;
+  }
+  loading.value = true;
+  try {
+    const response = await updateOrderStatus({ id: orderId, orderState: OrderStatusEnum.CANCELED });
+    if (response.success) {
+      ElMessage.success('订单已成功取消');
+      await fetchOrders(); // Re-fetch orders to ensure data consistency
+    } else {
+      ElMessage.error(response.message || '取消订单失败');
+    }
+  } catch (error) {
+    console.error('Failed to cancel order:', error);
+    ElMessage.error('取消订单失败，请稍后重试');
+  } finally {
+    loading.value = false;
+  }
 };
 
 onMounted(fetchOrders);

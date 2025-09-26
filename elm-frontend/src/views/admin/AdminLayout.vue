@@ -58,7 +58,8 @@
               <el-avatar>{{ authStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+                  <el-dropdown-item @click="$router.push('/admin/user-profile')">我的资料</el-dropdown-item>
+                  <el-dropdown-item @click="handleLogout" divided>退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -94,6 +95,10 @@
         <el-menu-item index="/admin/applications">
           <el-icon><i-ep-document-checked /></el-icon>
           <span>店铺管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/user-profile">
+          <el-icon><i-ep-user /></el-icon>
+          <span>我的资料</span>
         </el-menu-item>
       </el-menu>
     </el-drawer>

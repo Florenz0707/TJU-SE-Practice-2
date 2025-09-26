@@ -137,6 +137,34 @@ const registerRules = reactive<FormRules>({
   ],
 });
 
+async function retryUpdatePassword(
+  params: { username: string; password: string },
+  maxAttempts = 3,        // 最大重试次数
+  delay = 2000            // 初始延迟(ms)
+) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await updateUserPassword(params);
+      if (res.success) {
+        console.log('Password successfully updated.');
+        await authStore.login(params);
+        console.log('Token refreshed with new password.');
+        return;
+      } else {
+        throw new Error(res.message || '密码更新失败');
+      }
+    } catch (err) {
+      console.error(`第 ${attempt} 次修改密码失败:`, err);
+      if (attempt < maxAttempts) {
+        await new Promise(r => setTimeout(r, delay));
+        delay *= 2;
+      } else {
+        ElMessage.error('后台密码修改失败，请稍后手动修改密码');
+      }
+    }
+  }
+}
+
 const handleRegister = async () => {
   if (!registerFormRef.value) return;
 
@@ -162,7 +190,7 @@ const handleRegister = async () => {
     // Step 2: Log in with the default password to establish the session.
     await authStore.login({
       username: registerForm.username,
-      password: 'password', // Use the default password.
+      password: 'password',
     });
 
     // Immediately navigate to the homepage for a better user experience.
@@ -171,29 +199,12 @@ const handleRegister = async () => {
 
     // Step 3: Silently update the password in the background after a short delay.
     // This ensures the auth token from the recent login is attached to the request.
-    setTimeout(async () => {
-      try {
-        const passwordUpdateRes = await updateUserPassword({
-          username: registerForm.username,
-          password: registerForm.password,
-        });
-
-        if (passwordUpdateRes.success) {
-          console.log('Password successfully updated in the background.');
-          // To ensure the session token is consistent with the new password,
-          // silently re-authenticate.
-          await authStore.login({
-            username: registerForm.username,
-            password: registerForm.password,
-          });
-          console.log('Token refreshed with new password in the background.');
-        } else {
-          console.error('Background password update failed:', passwordUpdateRes.message);
-        }
-      } catch (error) {
-        console.error('An error occurred during the background password update:', error);
-      }
-    }, 1000); // 1-second delay.
+    setTimeout(() => {
+      retryUpdatePassword({
+        username: registerForm.username,
+        password: registerForm.password,
+      }, 3, 2000);
+    }, 2000);
 
   } catch (error: any) {
     ElMessage.error(error.message || '注册流程失败，请稍后重试');

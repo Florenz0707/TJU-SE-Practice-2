@@ -48,7 +48,7 @@ const routes: Array<RouteRecordRaw> = [
         redirect: { name: 'UserProfile' },
         children: [
           {
-            path: 'details',
+            path: 'user-profile',
             name: 'UserProfile',
             component: () => import('../views/customer/Profile/UserProfile.vue'),
             meta: { title: '我的信息' },
@@ -108,7 +108,8 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'menu', name: 'MenuManagement', component: MenuManagement, meta: { title: '菜单管理' } },
       { path: 'profile', name: 'BusinessProfile', component: BusinessProfile, meta: { title: '店铺信息' } },
       { path: 'orders', name: 'MerchantOrderHistory', component: OrderHistory, meta: { title: '历史订单' } },
-      { path: 'applications', name: 'MyApplications', component: () => import('../views/merchant/MyApplications.vue'), meta: { title: '我的申请' } }
+      { path: 'applications', name: 'MyApplications', component: () => import('../views/merchant/MyApplications.vue'), meta: { title: '我的申请' } },
+      { path: 'user-profile', name: 'MerchantUserProfile', component: () => import('../views/merchant/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
   },
 
@@ -125,7 +126,8 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'dashboard', name: 'AdminDashboard', component: AdminDashboard, meta: { title: '平台总览' } },
       { path: 'users', name: 'UserManagement', component: () => import('../views/admin/UserManagement.vue'), meta: { title: '用户管理' } },
       { path: 'businesses', name: 'MerchantManagement', component: () => import('../views/admin/MerchantManagement.vue'), meta: { title: '商家管理' } },
-      { path: 'applications', name: 'ShopManagement', component: () => import('../views/admin/ShopManagement.vue'), meta: { title: '店铺管理' } }
+      { path: 'applications', name: 'ShopManagement', component: () => import('../views/admin/ShopManagement.vue'), meta: { title: '店铺管理' } },
+      { path: 'user-profile', name: 'AdminUserProfile', component: () => import('../views/admin/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
   },
 
@@ -220,7 +222,8 @@ const mobileMerchantRoutes: RouteRecordRaw = {
       { path: 'menu', name: 'MobileMenuManagement', component: () => import('../views/mobile/merchant/MerchantMenuManagement.vue'), meta: { title: '菜单管理' } },
       { path: 'profile', name: 'MobileBusinessProfile', component: () => import('../views/mobile/merchant/BusinessInfoManagement.vue'), meta: { title: '商家信息管理' } },
       { path: 'orders', name: 'MobileMerchantOrderHistory', component: () => import('../views/mobile/merchant/MerchantOrderHistory.vue'), meta: { title: '历史订单' } },
-      { path: 'applications', name: 'MobileMyApplications', component: () => import('../views/mobile/merchant/MyApplications.vue'), meta: { title: '我的申请' } }
+      { path: 'applications', name: 'MobileMyApplications', component: () => import('../views/mobile/merchant/MyApplications.vue'), meta: { title: '我的申请' } },
+      { path: 'user-profile', name: 'MobileMerchantUserProfile', component: () => import('../views/mobile/merchant/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
 };
 
@@ -238,7 +241,7 @@ const mobileAdminRoutes: RouteRecordRaw = {
       { path: 'users', name: 'MobileUserManagement', component: () => import('../views/mobile/admin/UserManagement.vue'), meta: { title: '用户管理' } },
       { path: 'businesses', name: 'MobileMerchantManagement', component: () => import('../views/mobile/admin/MerchantManagement.vue'), meta: { title: '商家管理' } },
       { path: 'shops', name: 'MobileShopManagement', component: () => import('../views/mobile/admin/ShopManagement.vue'), meta: { title: '店铺管理' } },
-      { path: 'profile', name: 'MobileAdminProfile', component: () => import('../views/mobile/admin/Profile.vue'), meta: { title: '我的' } }
+      { path: 'user-profile', name: 'MobileAdminProfile', component: () => import('../views/mobile/admin/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
 };
 
