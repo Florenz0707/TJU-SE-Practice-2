@@ -77,7 +77,9 @@
                 <el-icon><ShoppingCartIcon /></el-icon>
               </el-button>
               <el-dropdown>
-                <el-avatar>{{ authStore.user?.username?.charAt(0).toUpperCase() }}</el-avatar>
+                <el-avatar :src="userAvatar" :alt="authStore.user?.username">
+                  {{ authStore.user?.username?.charAt(0).toUpperCase() }}
+                </el-avatar>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <router-link to="/profile/details" class="dropdown-link">
@@ -122,6 +124,7 @@ import { ref, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
 import { useCartStore, type AnimationOrigin } from '../../store/cart';
+import { formatBase64Image } from '../../utils/image';
 import ShoppingCart from '../../components/ShoppingCart.vue';
 import { ShoppingCart as ShoppingCartIcon, User, Location, List, HomeFilled, Shop, Setting } from '@element-plus/icons-vue';
 
@@ -132,6 +135,13 @@ const route = useRoute();
 
 const cartVisible = ref(false);
 const cartButtonRef = ref(null);
+
+import type { Person } from '../../api/types';
+
+const userAvatar = computed(() => {
+  const user = authStore.user as Person | null;
+  return formatBase64Image(user?.photo);
+});
 
 // Check if the current route is within the profile section
 const isProfileSection = computed(() => route.path.startsWith('/profile'));

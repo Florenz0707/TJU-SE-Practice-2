@@ -9,7 +9,7 @@
       <!-- Cart Items -->
       <div class="cart-items-list">
         <div v-for="item in cartStore.items" :key="item.id" class="cart-item">
-          <img :src="item.food?.foodImg || 'https://placehold.co/80x80/f8f9fa/ccc?text=商品'" alt="商品图片" class="item-image"/>
+          <img :src="formatBase64Image(item.food?.foodImg) || 'https://placehold.co/80x80/f8f9fa/ccc?text=商品'" alt="商品图片" class="item-image"/>
           <div class="item-details">
             <span class="item-name">{{ item.food?.foodName ?? '未知商品' }}</span>
             <span class="item-price">¥{{ (item.food?.foodPrice ?? 0).toFixed(2) }}</span>
@@ -59,6 +59,7 @@ import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '../store/cart';
 import { Delete } from '@element-plus/icons-vue';
+import { formatBase64Image } from '../utils/image';
 
 const props = defineProps<{
   visible: boolean;

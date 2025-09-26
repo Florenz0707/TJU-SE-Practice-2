@@ -40,39 +40,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { getAllFoods, deleteFood, addFood, updateFood, type FoodCreationDto } from '../../api/food';
-import { getCurrentUserBusinesses } from '../../api/business';
-import type { Food, Business, HttpResultListBusiness, HttpResultListFood } from '../../api/types';
+import { ref, onMounted, computed, watch } from 'vue';
+import { getAllFoods, deleteFood, addFood, updateFood, type FoodCreationDto } from '../../../api/food';
+import { useBusinessStore } from '../../../store/business';
+import { storeToRefs } from 'pinia';
+import type { Food, HttpResultListFood } from '../../../api/types';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import FoodEditor from './MerchantFoodEditor.vue';
 
 const loading = ref(true);
 const foods = ref<Food[]>([]);
-const business = ref<Business | null>(null);
 const dialogVisible = ref(false);
 const selectedFood = ref<Food | null>(null);
 const foodEditorRef = ref<{ getFormData: () => Promise<Partial<Food> | null> } | null>(null);
 
+const businessStore = useBusinessStore();
+const { selectedBusinessId } = storeToRefs(businessStore);
+
 const isEditMode = computed(() => !!selectedFood.value);
 
-const fetchBusinessAndFoods = async () => {
+const fetchFoods = async () => {
+  if (!selectedBusinessId.value) {
+    foods.value = [];
+    return;
+  }
   loading.value = true;
   try {
-    const businessResponse: HttpResultListBusiness = await getCurrentUserBusinesses();
-    if (businessResponse.success && businessResponse.data && businessResponse.data.length > 0) {
-      const currentBusiness = businessResponse.data[0];
-      if (currentBusiness) {
-        business.value = currentBusiness;
-        if (currentBusiness.id) {
-          const foodsResponse: HttpResultListFood = await getAllFoods({ business: currentBusiness.id });
-          if (foodsResponse.success) {
-            foods.value = foodsResponse.data || [];
-          }
-        }
-      }
+    const foodsResponse: HttpResultListFood = await getAllFoods({ business: selectedBusinessId.value });
+    if (foodsResponse.success) {
+      foods.value = foodsResponse.data || [];
     } else {
-      ElMessage.warning('当前用户没有关联的店铺');
+      foods.value = [];
+      ElMessage.warning(foodsResponse.message || '加载菜单信息失败');
     }
   } catch (error) {
     ElMessage.error('加载菜单信息失败');
@@ -82,7 +81,9 @@ const fetchBusinessAndFoods = async () => {
   }
 };
 
-onMounted(fetchBusinessAndFoods);
+onMounted(fetchFoods);
+
+watch(selectedBusinessId, fetchFoods);
 
 const handleOpenEditor = (food: Food | null = null) => {
   selectedFood.value = food;
@@ -105,7 +106,7 @@ const handleSave = async () => {
       await updateFood(selectedFood.value.id, payload);
       ElMessage.success('更新成功！');
     } else {
-      if (!business.value?.id) {
+      if (!selectedBusinessId.value) {
         ElMessage.error('无法确定当前店铺，无法添加菜品');
         loading.value = false;
         return;
@@ -115,14 +116,14 @@ const handleSave = async () => {
         foodPrice: formData.foodPrice || 0,
         foodExplain: formData.foodExplain,
         foodImg: formData.foodImg,
-        business: { id: business.value.id },
+        business: { id: selectedBusinessId.value },
         remarks: formData.remarks,
       };
       await addFood(payload);
       ElMessage.success('添加成功！');
     }
     dialogVisible.value = false;
-    await fetchBusinessAndFoods();
+    await fetchFoods();
   } catch (error) {
     ElMessage.error('保存失败');
     console.error(error);
@@ -142,7 +143,7 @@ const handleDelete = async (id: number) => {
     loading.value = true;
     await deleteFood(id);
     ElMessage.success('菜品删除成功！');
-    await fetchBusinessAndFoods();
+    await fetchFoods();
 
   } catch (error) {
     if (error !== 'cancel') {

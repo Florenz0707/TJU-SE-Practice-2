@@ -50,9 +50,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getOrderById } from '../../api/order';
-import { getOrderReview } from '../../api/review';
-import type { Order, Review } from '../../api/types';
+import { getOrderById } from '../../../api/order';
+import { getOrderReview } from '../../../api/review';
+import type { Order, Review } from '../../../api/types';
 
 const route = useRoute();
 const router = useRouter();

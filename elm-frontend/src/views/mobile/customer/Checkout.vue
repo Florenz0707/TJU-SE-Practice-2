@@ -42,13 +42,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useCartStore } from '../../store/cart';
-import { useAuthStore } from '../../store/auth';
-import { getCurrentUserAddresses } from '../../api/address';
-import { addOrder } from '../../api/order';
-import type { DeliveryAddress } from '../../api/types';
+import { useCartStore } from '../../../store/cart';
+import { useAuthStore } from '../../../store/auth';
+import { getCurrentUserAddresses } from '../../../api/address';
+import { addOrder } from '../../../api/order';
+import type { DeliveryAddress } from '../../../api/types';
 import { ElMessage } from 'element-plus';
-import AddressCard from '../../components/mobile/AddressCard.vue';
+import AddressCard from '../../../components/mobile/AddressCard.vue';
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();

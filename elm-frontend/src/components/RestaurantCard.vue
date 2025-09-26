@@ -1,7 +1,7 @@
 <template>
   <div class="restaurant-card" @click="goToRestaurant">
     <div class="card-image-wrapper">
-      <img v-if="business.businessImg" :src="business.businessImg" alt="餐厅图片" class="restaurant-image" />
+      <img v-if="business.businessImg" :src="formatBase64Image(business.businessImg)" alt="餐厅图片" class="restaurant-image" />
       <div v-else class="placeholder-image">
         <span class="placeholder-text">{{ business.businessName }}</span>
       </div>
@@ -26,6 +26,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import type { Business } from '../api/types';
+import { formatBase64Image } from '../utils/image';
 
 const props = defineProps<{
   business: Business;

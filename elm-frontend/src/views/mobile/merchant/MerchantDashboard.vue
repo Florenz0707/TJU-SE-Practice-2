@@ -50,47 +50,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { useWebSocket } from '../../utils/useWebSocket';
-import { listOrders, updateOrderStatus } from '../../api/order';
-import { getCurrentUserBusinesses } from '../../api/business';
-import type { Order, Business, HttpResultListBusiness } from '../../api/types';
+import { ref, onMounted, watch, computed } from 'vue';
+import { useWebSocket } from '../../../utils/useWebSocket';
+import { listOrders, updateOrderStatus } from '../../../api/order';
+import { useBusinessStore } from '../../../store/business';
+import { storeToRefs } from 'pinia';
+import type { Order } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 
 const WEBSOCKET_URL = 'ws://localhost:8080/api/ws/orders';
 
 const loading = ref(true);
-const business = ref<Business | null>(null);
 const newOrders = ref<Order[]>([]);
 const inProgressOrders = ref<Order[]>([]);
 const activeTab = ref('new');
 
+const businessStore = useBusinessStore();
+const { selectedBusinessId, businesses } = storeToRefs(businessStore);
+
+const selectedBusiness = computed(() => {
+  return businesses.value.find(b => b.id === selectedBusinessId.value);
+});
+
 const { isConnected, message } = useWebSocket(WEBSOCKET_URL);
 
 const fetchInitialData = async () => {
+  if (!selectedBusiness.value) {
+    newOrders.value = [];
+    inProgressOrders.value = [];
+    return;
+  }
   loading.value = true;
   try {
-    const businessResponse: HttpResultListBusiness = await getCurrentUserBusinesses();
-    if (businessResponse.success && businessResponse.data && businessResponse.data.length > 0) {
-      const currentBusiness = businessResponse.data[0];
-      if (!currentBusiness) {
-        ElMessage.warning('当前用户没有关联的店铺');
-        return;
+    const ownerId = selectedBusiness.value.businessOwner?.id;
+    if (ownerId) {
+      const allFetchedOrdersResponse = await listOrders(ownerId);
+      if (allFetchedOrdersResponse.success) {
+        const allFetchedOrders = allFetchedOrdersResponse.data;
+        newOrders.value = allFetchedOrders.filter((o:Order) => o.orderState === 1 && o.business?.id === selectedBusinessId.value); // unpaid
+        inProgressOrders.value = allFetchedOrders.filter((o:Order) => o.orderState === 2 && o.business?.id === selectedBusinessId.value); // delivery
+      } else {
+        ElMessage.error(allFetchedOrdersResponse.message || '获取订单列表失败');
       }
-      business.value = currentBusiness;
-      const ownerId = currentBusiness.businessOwner?.id;
-      if (ownerId) {
-        const allFetchedOrdersResponse = await listOrders(ownerId);
-        if (allFetchedOrdersResponse.success) {
-          const allFetchedOrders = allFetchedOrdersResponse.data;
-          newOrders.value = allFetchedOrders.filter((o:Order) => o.orderState === 1); // unpaid
-          inProgressOrders.value = allFetchedOrders.filter((o:Order) => o.orderState === 2); // delivery
-        } else {
-          ElMessage.error(allFetchedOrdersResponse.message || '获取订单列表失败');
-        }
-      }
-    } else {
-       ElMessage.warning(businessResponse.message || '当前用户没有关联的店铺');
     }
   } catch (error) {
     ElMessage.error('加载初始订单数据失败');
@@ -102,10 +103,12 @@ const fetchInitialData = async () => {
 
 onMounted(fetchInitialData);
 
+watch(selectedBusinessId, fetchInitialData);
+
 watch(message, (newMessage) => {
   if (newMessage && typeof newMessage === 'object' && 'type' in newMessage && newMessage.type === 'NEW_ORDER') {
     const order = newMessage.payload as Order;
-    if (order.business?.id === business.value?.id && !newOrders.value.some(o => o.id === order.id)) {
+    if (order.business?.id === selectedBusinessId.value && !newOrders.value.some(o => o.id === order.id)) {
       newOrders.value.unshift(order);
       ElMessage.success(`收到新订单 #${order.id}`);
     }

@@ -52,14 +52,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '../../../store/auth';
+import { useAuthStore } from '../../../../store/auth';
 import {
   getCurrentUserAddresses,
   addDeliveryAddress,
   updateDeliveryAddress,
   deleteDeliveryAddress,
-} from '../../../api/address';
-import type { DeliveryAddress } from '../../../api/types';
+} from '../../../../api/address';
+import type { DeliveryAddress } from '../../../../api/types';
 import { ElMessage, type FormInstance } from 'element-plus';
 
 const authStore = useAuthStore();

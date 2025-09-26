@@ -179,32 +179,20 @@ public class ReviewController {
 
     @GetMapping("/business/{businessId}")
     public HttpResult<List<Review>> getReviewsByBusinessId(@PathVariable Long businessId) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
         Business business = businessService.getBusinessById(businessId);
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
-
-        if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner()))) {
-            List<Review> reviewList = reviewService.getReviewsByBusinessId(businessId);
-            // 作匿名处理
-            for (Review review : reviewList) {
-                if (review.getAnonymous()) {
-                    review.setCustomer(null);
-                    review.setOrder(null);
-                    review.setCreator(null);
-                    review.setUpdater(null);
-                }
+        List<Review> reviewList = reviewService.getReviewsByBusinessId(businessId);
+        // 作匿名处理
+        for (Review review : reviewList) {
+            if (review.getAnonymous()) {
+                review.setCustomer(null);
+                review.setOrder(null);
+                review.setCreator(null);
+                review.setUpdater(null);
             }
-            return HttpResult.success(reviewList);
         }
-
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+        return HttpResult.success(reviewList);
     }
 }

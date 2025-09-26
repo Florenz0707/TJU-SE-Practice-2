@@ -13,13 +13,18 @@ interface AuthState {
 
 const AUTH_TOKEN_KEY = 'authToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
+const USER_KEY = 'user';
 
 export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({
-    token: localStorage.getItem(AUTH_TOKEN_KEY),
-    refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY),
-    user: null,
-  }),
+  state: (): AuthState => {
+    // Retrieve the user from localStorage and parse it
+    const storedUser = localStorage.getItem(USER_KEY);
+    return {
+      token: localStorage.getItem(AUTH_TOKEN_KEY),
+      refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY),
+      user: storedUser ? JSON.parse(storedUser) : null,
+    };
+  },
 
   getters: {
     isLoggedIn: (state): boolean => !!state.token,
@@ -63,13 +68,11 @@ export const useAuthStore = defineStore('auth', {
     async fetchUserInfo(): Promise<void> {
       if (!this.token) return;
       try {
-        // The /api/user endpoint returns HttpResult<User>.
         const userInfo = await getActualUser();
-        this.user = userInfo.data;
+        this.setUser(userInfo.data); // Use the setUser action to ensure data is saved
       } catch (error) {
         console.error('Failed to fetch user info:', error);
         this.logout();
-        // Re-throw the error so the calling component knows the login failed.
         throw new Error('Failed to fetch user info');
       }
     },
@@ -84,8 +87,8 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
-      setRequestToken(null); // Clear token for axios
-      // Here you might also want to clear other stores, e.g., cart
+      localStorage.removeItem(USER_KEY); // Clear the user from storage
+      setRequestToken(null);
     },
 
     /**
@@ -106,6 +109,8 @@ export const useAuthStore = defineStore('auth', {
      */
     setUser(newUser: User) {
       this.user = newUser;
+      // Also save the user to localStorage
+      localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     },
   },
 });

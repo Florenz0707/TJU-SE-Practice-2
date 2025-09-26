@@ -4,7 +4,6 @@
       <el-input
         v-model="searchQuery"
         placeholder="搜索餐厅、菜系或菜品..."
-        @keyup.enter="fetchBusinesses"
         clearable
         size="large"
         class="main-search-input"
@@ -18,8 +17,8 @@
     <div v-if="loading" class="loading">加载中...</div>
     <div v-if="error" class="error">{{ error }}</div>
 
-    <div v-if="businesses.length" class="restaurant-grid">
-      <RestaurantCard v-for="business in businesses" :key="business.id" :business="business" />
+    <div v-if="filteredBusinesses.length" class="restaurant-grid">
+      <RestaurantCard v-for="business in filteredBusinesses" :key="business.id" :business="business" />
     </div>
     <div v-else-if="!loading" class="no-results">
       没有找到符合条件的餐厅。
@@ -28,13 +27,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Search } from 'lucide-vue-next';
 import { getBusinesses } from '../../api/business';
 import type { Business } from '../../api/types';
 import RestaurantCard from '../../components/RestaurantCard.vue';
 
-const businesses = ref<Business[]>([]);
+const allBusinesses = ref<Business[]>([]);
 const searchQuery = ref('');
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -43,11 +42,9 @@ const fetchBusinesses = async () => {
   loading.value = true;
   error.value = null;
   try {
-    // In a real app, you'd pass search/filter params here
-    const params = searchQuery.value ? { name: searchQuery.value } : {};
-    const response = await getBusinesses(params);
+    const response = await getBusinesses();
     if (response.success) {
-      businesses.value = response.data;
+      allBusinesses.value = response.data;
     } else {
       throw new Error(response.message || '获取商家列表失败');
     }
@@ -57,6 +54,18 @@ const fetchBusinesses = async () => {
     loading.value = false;
   }
 };
+
+const filteredBusinesses = computed(() => {
+  if (!searchQuery.value) {
+    return allBusinesses.value;
+  }
+  const lowerCaseQuery = searchQuery.value.toLowerCase();
+  return allBusinesses.value.filter(business =>
+    business.businessName.toLowerCase().includes(lowerCaseQuery) ||
+    business.businessAddress?.toLowerCase().includes(lowerCaseQuery) ||
+    business.businessExplain?.toLowerCase().includes(lowerCaseQuery)
+  );
+});
 
 onMounted(() => {
   fetchBusinesses();
