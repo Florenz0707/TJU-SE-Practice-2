@@ -162,7 +162,7 @@ public class OrderController {
 
         boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
         boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
-        if (isAdmin || (isBusiness && me.equals(order.getBusiness().getBusinessOwner()))
+        if (isAdmin || (isBusiness && me.equals(newOrder.getBusiness().getBusinessOwner()))
                 || me.equals(newOrder.getCustomer())) {
             newOrder.setOrderState(orderState);
             LocalDateTime now = LocalDateTime.now();
