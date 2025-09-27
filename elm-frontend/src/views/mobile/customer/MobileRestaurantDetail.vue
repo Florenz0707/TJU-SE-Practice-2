@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { Search } from 'lucide-vue-next';
 import { getBusinessById } from '../../../api/business';
@@ -147,10 +147,6 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
-});
-
-onUnmounted(() => {
-  cartStore.setCurrentBusinessId(null);
 });
 </script>
 
