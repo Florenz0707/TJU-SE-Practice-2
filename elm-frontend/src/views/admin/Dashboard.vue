@@ -14,10 +14,6 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ElCard } from 'element-plus';
-</script>
-
 <style scoped>
 .admin-dashboard {
   padding: 20px;

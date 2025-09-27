@@ -34,7 +34,12 @@
     </el-timeline>
 
     <!-- 申请对话框 -->
-    <el-dialog v-model="dialogVisible" title="申请开店" width="600px" :before-close="handleClose">
+    <el-dialog
+      v-model="dialogVisible"
+      title="申请开店"
+      width="600px"
+      :before-close="handleClose"
+    >
       <el-form :model="applicationData" ref="applicationFormRef" label-width="120px">
         <el-form-item
           label="店铺名称"
@@ -84,15 +89,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive, nextTick } from 'vue';
-import { ElMessage, ElButton, ElCard, ElTimeline, ElTimelineItem, ElTag, ElDialog, ElForm, ElFormItem, ElInput, ElInputNumber } from 'element-plus';
-import type { FormInstance } from 'element-plus';
-import { getMyBusinessApplications, submitBusinessApplication, ApplicationState } from '../../api/applicationService';
-import type { BusinessApplication, Business } from '../../api/types';
+import { ref, onMounted, computed, reactive, nextTick } from 'vue'
+import {
+  ElMessage,
+  type FormInstance
+} from 'element-plus'
+import {
+  getMyBusinessApplications,
+  submitBusinessApplication,
+  ApplicationState
+} from '../../api/applicationService'
+import type { BusinessApplication, Business } from '../../api/types'
 
-const applications = ref<BusinessApplication[]>([]);
-const dialogVisible = ref(false);
-const applicationFormRef = ref<FormInstance>();
+const loading = ref(false)
+
+const applications = ref<BusinessApplication[]>([])
+const dialogVisible = ref(false)
+const applicationFormRef = ref<FormInstance>()
 
 const applicationData = reactive({
   business: {
@@ -100,27 +113,32 @@ const applicationData = reactive({
     businessAddress: '',
     businessExplain: '',
     startPrice: 0,
-    deliveryPrice: 0,
+    deliveryPrice: 0
   } as Business,
   applicationExplain: ''
-});
+})
 
-const sortedApplications = computed(() => {
-  return [...applications.value].sort((a, b) =>
-    new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime()
-  );
-});
+const sortedApplications = computed(() =>
+  [...applications.value].sort(
+    (a, b) =>
+      new Date(b.createTime || 0).getTime() -
+      new Date(a.createTime || 0).getTime()
+  )
+)
 
 const fetchApplications = async () => {
+  loading.value = true
   try {
-    applications.value = await getMyBusinessApplications();
+    applications.value = await getMyBusinessApplications()
   } catch (error) {
-    console.error('获取申请列表失败:', error);
-    ElMessage.error('获取申请列表失败');
+    console.error('获取申请列表失败:', error)
+    ElMessage.error('获取申请列表失败')
+  } finally {
+    loading.value = false
   }
-};
+}
 
-onMounted(fetchApplications);
+onMounted(fetchApplications)
 
 const openApplicationDialog = () => {
   // Reset form
@@ -130,62 +148,72 @@ const openApplicationDialog = () => {
       businessAddress: '',
       businessExplain: '',
       startPrice: 0,
-      deliveryPrice: 0,
+      deliveryPrice: 0
     },
     applicationExplain: ''
-  });
+  })
   nextTick(() => {
-    applicationFormRef.value?.clearValidate();
-  });
-  dialogVisible.value = true;
-};
+    applicationFormRef.value?.clearValidate()
+  })
+  dialogVisible.value = true
+}
 
 const handleClose = (done: () => void) => {
-  dialogVisible.value = false;
-  done();
-};
+  dialogVisible.value = false
+  done()
+}
 
 const submitApplication = async () => {
-  if (!applicationFormRef.value) return;
-
+  if (!applicationFormRef.value) return
   await applicationFormRef.value.validate(async (valid) => {
     if (valid) {
+      loading.value = true
       try {
-        await submitBusinessApplication(applicationData);
-        ElMessage.success('申请已提交');
-        dialogVisible.value = false;
-        fetchApplications(); // Refresh the list
+        await submitBusinessApplication(applicationData)
+        ElMessage.success('申请已提交')
+        dialogVisible.value = false
+        await fetchApplications()
       } catch (error) {
-        ElMessage.error('申请提交失败');
-        console.error('Failed to submit application:', error);
+        ElMessage.error('申请提交失败')
+        console.error('Failed to submit application:', error)
+      } finally {
+        loading.value = false
       }
     }
-  });
-};
+  })
+}
 
 const statusText = (state?: number) => {
   switch (state) {
-    case ApplicationState.UNDISPOSED: return '待处理';
-    case ApplicationState.APPROVED: return '已批准';
-    case ApplicationState.REJECTED: return '已拒绝';
-    default: return '未知';
+    case ApplicationState.UNDISPOSED:
+      return '待处理'
+    case ApplicationState.APPROVED:
+      return '已批准'
+    case ApplicationState.REJECTED:
+      return '已拒绝'
+    default:
+      return '未知'
   }
-};
+}
 
 const statusType = (state?: number) => {
   switch (state) {
-    case ApplicationState.UNDISPOSED: return 'warning';
-    case ApplicationState.APPROVED: return 'success';
-    case ApplicationState.REJECTED: return 'danger';
-    default: return 'info';
+    case ApplicationState.UNDISPOSED:
+      return 'warning'
+    case ApplicationState.APPROVED:
+      return 'success'
+    case ApplicationState.REJECTED:
+      return 'danger'
+    default:
+      return 'info'
   }
-};
+}
 </script>
 
 <style scoped>
 .my-application-container {
   padding: 2rem;
-  background-color: transparent; /* 去掉默认白色方框 */
+  background-color: transparent;
 }
 
 .header {
@@ -208,7 +236,7 @@ const statusType = (state?: number) => {
   padding: 16px 20px;
   border: 1px solid #ebeef5;
   border-radius: 8px;
-  background-color: #f9fafb; /* 轻灰背景，区分时间线 */
+  background-color: #f9fafb;
 }
 
 .item-title {

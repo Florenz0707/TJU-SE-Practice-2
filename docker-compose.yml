@@ -1,19 +1,96 @@
-version: "3.8"
 services:
-  springboot:
-    build: ./elm-v2.0          # 你的后端项目目录
+  # --- Profile: 'local' (default) ---
+  # 使用本地预构建的构件运行两个服务 (前后端都不在Docker中编译)
+  # 命令: docker-compose up --build
+  springboot_local_mode:
+    profiles: ["local"]
+    build:
+      context: ./elm-v2.0
+      dockerfile: Dockerfile.local
     container_name: springboot
-    ports:
-      - "8080:8080"           # 如果仅被前端容器访问，可不映射
-    environment:
-      - JAVA_OPTS=-Xmx512m
+    ports: ["8080:8080"]
+    environment: ["JAVA_OPTS=-Xmx512m"]
     restart: always
 
-  nginx:
-    build: ./elm-frontend         # 你的前端项目目录
+  nginx_local_mode:
+    profiles: ["local"]
+    build:
+      context: ./elm-frontend
+      dockerfile: Dockerfile.local
     container_name: nginx
-    ports:
-      - "80:80"
+    ports: ["80:80"]
     depends_on:
-      - springboot
+      - springboot_local_mode
+    restart: always
+
+  # --- Profile: 'build' ---
+  # 在 Docker 中从源码构建所有服务 (前后端都在Docker中编译)
+  # 命令: docker-compose --profile build up --build
+  springboot_build_mode:
+    profiles: ["build", "default"]
+    build:
+      context: ./elm-v2.0
+      dockerfile: Dockerfile
+    container_name: springboot
+    ports: ["8080:8080"]
+    environment: ["JAVA_OPTS=-Xmx512m"]
+    restart: always
+
+  nginx_build_mode:
+    profiles: ["build", "default"]
+    build:
+      context: ./elm-frontend
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports: ["80:80"]
+    depends_on:
+      - springboot_build_mode
+    restart: always
+
+  # --- Profile: 'build-backend' (混合模式) ---
+  # 只在 Docker 中构建后端。前端使用本地预构建的构件。
+  # 命令: docker-compose --profile build-backend up --build
+  springboot_build_backend_only:
+    profiles: ["build-backend"]
+    build:
+      context: ./elm-v2.0
+      dockerfile: Dockerfile
+    container_name: springboot
+    ports: ["8080:8080"]
+    environment: ["JAVA_OPTS=-Xmx512m"]
+    restart: always
+
+  nginx_local_for_backend_build:
+    profiles: ["build-backend"]
+    build:
+      context: ./elm-frontend
+      dockerfile: Dockerfile.local
+    container_name: nginx
+    ports: ["80:80"]
+    depends_on:
+      - springboot_build_backend_only
+    restart: always
+
+  # --- Profile: 'build-frontend' (混合模式) ---
+  # 只在 Docker 中构建前端。后端使用本地预构建的构件。
+  # 命令: docker-compose --profile build-frontend up --build
+  springboot_local_for_frontend_build:
+    profiles: ["build-frontend"]
+    build:
+      context: ./elm-v2.0
+      dockerfile: Dockerfile.local
+    container_name: springboot
+    ports: ["8080:8080"]
+    environment: ["JAVA_OPTS=-Xmx512m"]
+    restart: always
+
+  nginx_build_for_frontend_build:
+    profiles: ["build-frontend"]
+    build:
+      context: ./elm-frontend
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports: ["80:80"]
+    depends_on:
+      - springboot_local_for_frontend_build
     restart: always
