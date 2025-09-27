@@ -46,6 +46,7 @@
             <el-menu-item index="/admin/users">用户管理</el-menu-item>
             <el-menu-item index="/admin/businesses">商家管理</el-menu-item>
             <el-menu-item index="/admin/applications">店铺管理</el-menu-item>
+            <el-menu-item index="/admin/user-profile">我的资料</el-menu-item>
           </el-menu>
         </div>
 

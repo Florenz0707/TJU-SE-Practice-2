@@ -16,6 +16,9 @@
             <el-input type="textarea" v-model="reviewForm.content" rows="4" />
           </el-form-item>
           <el-form-item>
+            <el-checkbox v-model="reviewForm.anonymous">匿名评价</el-checkbox>
+          </el-form-item>
+          <el-form-item>
             <el-button type="primary" @click="submitReview" :loading="isSubmitting">提交评价</el-button>
           </el-form-item>
         </el-form>
@@ -44,6 +47,7 @@ const formRef = ref<FormInstance>();
 const reviewForm = ref({
   stars: 0,
   content: '',
+  anonymous: false,
 });
 
 onMounted(async () => {
@@ -85,6 +89,7 @@ const submitReview = async () => {
       business: order.value.business,
       stars: reviewForm.value.stars,
       content: reviewForm.value.content,
+      anonymous: reviewForm.value.anonymous,
     };
     const res = await addReview(order.value.id!, reviewData);
     if (res.success) {

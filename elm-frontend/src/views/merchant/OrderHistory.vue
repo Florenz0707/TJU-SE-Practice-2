@@ -1,27 +1,25 @@
 <template>
   <div class="order-history-container" v-loading="loading">
-    <el-card>
-      <template #header>
-        <div class="header">
-          <h2>历史订单查询</h2>
-          <div class="actions">
-            <el-input
-              v-model="searchQuery"
-              placeholder="搜索订单ID或顾客信息"
-              class="search-input"
-              @keyup.enter="handleSearch"
-              clearable
-              @clear="handleSearch"
-            >
-              <template #append>
-                <el-button @click="handleSearch">搜索</el-button>
-              </template>
-            </el-input>
-          </div>
-        </div>
-      </template>
+    <div class="header">
+      <h2>历史订单查询</h2>
+      <div class="actions">
+        <el-input
+          v-model="searchQuery"
+          placeholder="搜索订单ID或顾客信息"
+          class="search-input"
+          @keyup.enter="handleSearch"
+          clearable
+          @clear="handleSearch"
+        >
+          <template #append>
+            <el-button @click="handleSearch">搜索</el-button>
+          </template>
+        </el-input>
+      </div>
+    </div>
 
-      <el-table :data="filteredOrders" stripe style="width: 100%" v-if="!showNoBusinessMessage">
+    <div v-if="!showNoBusinessMessage">
+      <el-table :data="filteredOrders" stripe style="width: 100%">
         <el-table-column prop="id" label="订单ID" width="100" />
         <el-table-column prop="orderDate" label="下单时间" width="200">
           <template #default="{ row }">
@@ -70,10 +68,11 @@
           </template>
         </el-table-column>
       </el-table>
-      <el-empty v-if="showNoBusinessMessage" description="您当前未选择任何店铺，或您还未开设店铺。">
-        <el-button type="primary" @click="$router.push({ name: 'MyApplications' })">申请开店</el-button>
-      </el-empty>
-    </el-card>
+    </div>
+
+    <el-empty v-if="showNoBusinessMessage" description="您当前未选择任何店铺，或您还未开设店铺。">
+      <el-button type="primary" @click="$router.push({ name: 'MyApplications' })">申请开店</el-button>
+    </el-empty>
   </div>
 </template>
 
@@ -163,12 +162,12 @@ const handleUpdateStatus = async (order: Order, newStatus: OrderStatus) => {
 <style scoped>
 .order-history-container {
   padding: 20px;
-  background-color: #f5f7fa;
 }
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 .actions {
   display: flex;
