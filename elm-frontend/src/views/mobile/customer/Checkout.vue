@@ -23,7 +23,7 @@
 
     <div class="summary-section">
       <h3>订单概要</h3>
-      <div v-for="item in cartStore.items" :key="item.id" class="summary-item">
+      <div v-for="item in cartStore.itemsForCurrentBusiness" :key="item.id" class="summary-item">
         <span>{{ item.food?.foodName }} x {{ item.quantity }}</span>
         <span>¥{{ (item.food?.foodPrice! * item.quantity!).toFixed(2) }}</span>
       </div>
@@ -90,19 +90,13 @@ const submitOrder = async () => {
 
   isSubmitting.value = true;
   try {
-    const businessId = cartStore.items[0]?.business?.id;
-    if (!businessId) {
-      ElMessage.error('无法确定商家信息，无法下单');
+    const currentCartItems = cartStore.itemsForCurrentBusiness;
+    if (currentCartItems.length === 0) {
+      ElMessage.error('购物车为空，无法下单。');
       return;
     }
 
-    const allFromSameBusiness = cartStore.items.every(item => item.business?.id === businessId);
-    if (!allFromSameBusiness) {
-      ElMessage.error('购物车中包含多家餐厅的商品，请分别下单。');
-      return;
-    }
-
-    const business = cartStore.items[0]?.business;
+    const business = currentCartItems[0]?.business;
     if (!business) {
       ElMessage.error('无法确定商家信息，无法下单');
       return;

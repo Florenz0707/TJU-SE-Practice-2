@@ -43,7 +43,7 @@ export const useCartStore = defineStore('cart', () => {
     return cartTotal.value + deliveryPrice.value;
   });
 
-  const setCurrentBusinessId = (id: number) => {
+  const setCurrentBusinessId = (id: number | null) => {
     currentBusinessId.value = id;
   };
 
