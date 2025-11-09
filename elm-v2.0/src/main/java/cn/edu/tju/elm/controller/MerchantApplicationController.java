@@ -6,7 +6,6 @@ import cn.edu.tju.elm.model.MerchantApplication;
 import cn.edu.tju.elm.service.MerchantApplicationService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,12 +17,13 @@ import java.util.Optional;
 @RequestMapping("/api/applications/merchant")
 @Tag(name = "管理成为商家申请", description = "对用户提出的成为商家申请进行增删改查")
 public class MerchantApplicationController {
+    private final UserService userService;
+    private final MerchantApplicationService merchantApplicationService;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private MerchantApplicationService merchantApplicationService;
+    public  MerchantApplicationController(UserService userService, MerchantApplicationService merchantApplicationService) {
+        this.userService = userService;
+        this.merchantApplicationService = merchantApplicationService;
+    }
 
     @PostMapping("")
     public HttpResult<MerchantApplication> addMerchantApplication(
@@ -81,7 +81,7 @@ public class MerchantApplicationController {
             @PathVariable Long id,
             @RequestBody MerchantApplication newMerchantApplication) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORYTY NOT FOUND");
+        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         MerchantApplication merchantApplication = merchantApplicationService.getMerchantApplicationById(id);

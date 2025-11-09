@@ -16,19 +16,19 @@ public class HttpRestController {
 
     @Operation(summary = "通用返回成功（没有返回结果）", method = "GET")
     @GetMapping("/success")
-    public HttpResult success() {
+    public HttpResult<Object> success() {
         return HttpResult.success();
     }
 
     @Operation(summary = "返回成功（有返回结果）", method = "GET")
     @GetMapping("/successWithData")
-    public HttpResult successWithData() {
+    public HttpResult<String> successWithData() {
         return HttpResult.success("风尘博客");
     }
 
     @Operation(summary = "通用返回失败", method = "GET")
     @GetMapping("/failure")
-    public HttpResult failure() {
+    public HttpResult<Object> failure() {
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
     }
 

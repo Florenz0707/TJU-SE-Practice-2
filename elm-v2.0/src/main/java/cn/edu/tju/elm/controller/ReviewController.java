@@ -12,7 +12,6 @@ import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.OrderService;
 import cn.edu.tju.elm.service.ReviewService;
 import cn.edu.tju.elm.utils.Utils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -22,18 +21,17 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
+    private final ReviewService reviewService;
+    private final BusinessService businessService;
+    private final OrderService orderService;
+    private final UserService userService;
 
-    @Autowired
-    private ReviewService reviewService;
-
-    @Autowired
-    private BusinessService businessService;
-
-    @Autowired
-    private OrderService orderService;
-
-    @Autowired
-    private UserService userService;
+    public ReviewController(ReviewService reviewService, BusinessService businessService, OrderService orderService, UserService userService) {
+        this.reviewService = reviewService;
+        this.businessService = businessService;
+        this.orderService = orderService;
+        this.userService = userService;
+    }
 
     @PostMapping("/order/{orderId}")
     public HttpResult<Review> addReview(@PathVariable Long orderId, @RequestBody Review review) {

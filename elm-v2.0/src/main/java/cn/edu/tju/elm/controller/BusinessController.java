@@ -8,8 +8,6 @@ import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,11 +17,13 @@ import java.util.Optional;
 @RequestMapping("/api/businesses")
 @Tag(name = "管理店铺", description = "提供对店铺的增删改查功能")
 public class BusinessController {
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final BusinessService businessService;
 
-    @Autowired
-    BusinessService businessService;
+    public BusinessController(UserService userService, BusinessService businessService) {
+        this.userService = userService;
+        this.businessService = businessService;
+    }
 
     @GetMapping("/{id}")
     public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
