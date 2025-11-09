@@ -61,26 +61,25 @@ public class HttpResult<T> implements Serializable {
      * 通用返回成功（没有返回结果）
      */
     public static <T> HttpResult<T> success() {
-        return new HttpResult();
+        return new HttpResult<>();
     }
 
     /**
      * 返回成功（有返回结果）
-
      */
     public static <T> HttpResult<T> success(T data) {
-        return new HttpResult<T>(data);
+        return new HttpResult<>(data);
     }
 
     /**
      * 通用返回失败
      */
     public static <T> HttpResult<T> failure(ResultCodeEnum resultCode) {
-        return new HttpResult<T>(resultCode);
+        return new HttpResult<>(resultCode);
     }
 
     public static <T> HttpResult<T> failure(ResultCodeEnum resultCode, String message) {
-        return new HttpResult<T>(resultCode, message);
+        return new HttpResult<>(resultCode, message);
     }
 
     public Boolean getSuccess() {

@@ -5,14 +5,12 @@ import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.Business;
 import cn.edu.tju.elm.model.Cart;
 import cn.edu.tju.elm.model.Food;
-import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.CartItemService;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.service.FoodService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -23,15 +21,15 @@ import java.util.Optional;
 @RequestMapping("/api")
 @Tag(name = "管理购物车", description = "对购物车内的商品增删改查")
 public class CartController {
+    private final UserService userService;
+    private final CartItemService cartItemService;
+    private final FoodService foodService;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private CartItemService cartItemService;
-
-    @Autowired
-    private FoodService foodService;
+    public CartController(UserService userService, CartItemService cartItemService, FoodService foodService) {
+        this.userService = userService;
+        this.cartItemService = cartItemService;
+        this.foodService = foodService;
+    }
 
     @PostMapping("/carts")
     public HttpResult<Cart> addCartItem(@RequestBody Cart cart) {

@@ -8,7 +8,6 @@ import cn.edu.tju.elm.service.BusinessApplicationService;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,18 +19,19 @@ import java.util.Optional;
 @RequestMapping("/api/applications/business")
 @Tag(name = "管理开店申请", description = "对商家提出的开店申请进行增删改查")
 public class BusinessApplicationController {
+    private final UserService userService;
+    private final BusinessService businessService;
+    private final BusinessApplicationService businessApplicationService;
 
-    @Autowired
-    private UserService userService;
+    public  BusinessApplicationController(UserService userService, BusinessService businessService, BusinessApplicationService businessApplicationService) {
+        this.userService = userService;
+        this.businessService = businessService;
+        this.businessApplicationService = businessApplicationService;
+    }
 
-    @Autowired
-    private BusinessService businessService;
 
-    @Autowired
-    private BusinessApplicationService businessApplicationService;
 
     @PostMapping("")
-//    @PreAuthorize("hasAuthority('BUSINESS')")
     public HttpResult<BusinessApplication> addBusinessApplication(
             @RequestBody BusinessApplication businessApplication) {
         Optional<User> meOptional = userService.getUserWithAuthorities();

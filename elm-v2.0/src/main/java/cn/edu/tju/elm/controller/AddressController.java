@@ -8,7 +8,6 @@ import cn.edu.tju.elm.model.DeliveryAddress;
 import cn.edu.tju.elm.service.AddressService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,13 +17,13 @@ import java.util.Optional;
 @RequestMapping("/api")
 @Tag(name = "管理地址", description = "对配送地址的增删改查")
 public class AddressController {
+    private final AddressService addressService;
+    private final UserService userService;
 
-    // 准备需要的接口
-    @Autowired
-    private AddressService addressService;
-
-    @Autowired
-    private UserService userService;
+    public AddressController(AddressService addressService, UserService userService) {
+        this.addressService = addressService;
+        this.userService = userService;
+    }
 
     @PostMapping("/addresses")
     public HttpResult<DeliveryAddress> addDeliveryAddress(@RequestBody DeliveryAddress address) {

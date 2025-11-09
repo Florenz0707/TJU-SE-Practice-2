@@ -8,7 +8,6 @@ import cn.edu.tju.elm.service.*;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -21,23 +20,22 @@ import java.util.Optional;
 @RequestMapping("/api/orders")
 @Tag(name = "管理订单", description = "对订单进行增删改查")
 public class OrderController {
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final OrderService orderService;
+    private final BusinessService businessService;
+    private final AddressService addressService;
+    private final CartItemService cartItemService;
+    private final OrderDetailetService orderDetailetService;
 
-    @Autowired
-    private OrderService orderService;
-
-    @Autowired
-    private BusinessService businessService;
-
-    @Autowired
-    private AddressService addressService;
-
-    @Autowired
-    private CartItemService cartItemService;
-
-    @Autowired
-    private OrderDetailetService orderDetailetService;
+    public OrderController(UserService userService, OrderService orderService, BusinessService businessService,
+                           AddressService addressService, CartItemService cartItemService, OrderDetailetService orderDetailetService) {
+        this.userService = userService;
+        this.orderService = orderService;
+        this.businessService = businessService;
+        this.addressService = addressService;
+        this.cartItemService = cartItemService;
+        this.orderDetailetService = orderDetailetService;
+    }
 
     @PostMapping(value = "")
     public HttpResult<Order> addOrders(@RequestBody Order order) {

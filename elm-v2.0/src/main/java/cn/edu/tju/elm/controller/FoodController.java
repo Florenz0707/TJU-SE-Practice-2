@@ -14,7 +14,6 @@ import cn.edu.tju.elm.service.OrderDetailetService;
 import cn.edu.tju.elm.service.OrderService;
 import cn.edu.tju.elm.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -25,21 +24,19 @@ import java.util.Optional;
 @RequestMapping("/api/foods")
 @Tag(name = "管理商品")
 public class FoodController {
+    private final  UserService userService;
+    private final FoodService foodService;
+    private final BusinessService businessService;
+    private final OrderService orderService;
+    private final OrderDetailetService orderDetailetService;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private FoodService foodService;
-
-    @Autowired
-    private BusinessService businessService;
-
-    @Autowired
-    private OrderService orderService;
-
-    @Autowired
-    private OrderDetailetService orderDetailetService;
+    public FoodController(UserService userService, FoodService foodService, BusinessService businessService, OrderService orderService, OrderDetailetService orderDetailetService) {
+        this.userService = userService;
+        this.foodService = foodService;
+        this.businessService = businessService;
+        this.orderService = orderService;
+        this.orderDetailetService = orderDetailetService;
+    }
 
     @GetMapping("/{id}")
     public HttpResult<Food> getFoodById(@PathVariable Long id) {
