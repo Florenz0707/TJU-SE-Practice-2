@@ -3,10 +3,12 @@ package cn.edu.tju.elm.controller;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.elm.model.*;
-import cn.edu.tju.elm.service.*;
 import cn.edu.tju.core.security.service.UserService;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.constant.OrderState;
+import cn.edu.tju.elm.model.BO.*;
+import cn.edu.tju.elm.service.*;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -74,7 +76,7 @@ public class OrderController {
                     totalPrice.compareTo(business.getStartPrice()) < 0)
                 return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order.TotalPrice IS LESS THAN BUSINESS START PRICE");
 
-            Utils.setNewEntity(order, me);
+            EntityUtils.setNewEntity(order, me);
             order.setOrderTotal(totalPrice);
             order.setOrderState(OrderState.PAID);
             order.setOrderDate(order.getCreateTime());
@@ -87,7 +89,7 @@ public class OrderController {
                 cartItemService.deleteCart(cart);
 
                 OrderDetailet orderDetailet = new OrderDetailet();
-                Utils.setNewEntity(orderDetailet, me);
+                EntityUtils.setNewEntity(orderDetailet, me);
                 orderDetailet.setOrder(order);
                 orderDetailet.setFood(cart.getFood());
                 orderDetailet.setQuantity(cart.getQuantity());
@@ -110,7 +112,7 @@ public class OrderController {
         if (order == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(order.getCustomer()))
             return HttpResult.success(order);
 
@@ -128,7 +130,7 @@ public class OrderController {
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(user))
             return HttpResult.success(orderService.getOrdersByCustomerId(userId));
 
@@ -159,8 +161,8 @@ public class OrderController {
                 !OrderState.isValidOrderState(orderState))
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(newOrder.getBusiness().getBusinessOwner()))
                 || me.equals(newOrder.getCustomer())) {
             newOrder.setOrderState(orderState);
@@ -195,7 +197,7 @@ public class OrderController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (!isBusiness)
             return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
@@ -221,8 +223,8 @@ public class OrderController {
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner())))
             return HttpResult.success(orderService.getOrdersByBusinessId(business.getId()));
 

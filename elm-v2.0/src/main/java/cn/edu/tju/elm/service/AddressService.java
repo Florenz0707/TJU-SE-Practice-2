@@ -1,10 +1,10 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.elm.model.DeliveryAddress;
+import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.repository.AddressRepository;
-import cn.edu.tju.elm.utils.Utils;
-import org.springframework.transaction.annotation.Transactional;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,10 +28,10 @@ public class AddressService {
 
     public DeliveryAddress getAddressById(Long id) {
         Optional<DeliveryAddress> addressOptional = addressRepository.findById(id);
-        return addressOptional.map(Utils::filterEntity).orElse(null);
+        return addressOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public List<DeliveryAddress> getAddressesByCustomerId(Long customerId) {
-        return Utils.filterEntityList(addressRepository.findByCustomerId(customerId));
+        return EntityUtils.filterEntityList(addressRepository.findByCustomerId(customerId));
     }
 }

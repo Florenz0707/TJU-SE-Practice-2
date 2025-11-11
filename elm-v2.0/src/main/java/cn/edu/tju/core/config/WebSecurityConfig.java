@@ -1,5 +1,7 @@
 package cn.edu.tju.core.config;
 
+import cn.edu.tju.core.security.jwt.JWTFilter;
+import cn.edu.tju.core.security.jwt.TokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -16,8 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import cn.edu.tju.core.security.jwt.JWTFilter;
-import cn.edu.tju.core.security.jwt.TokenProvider;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,7 +35,8 @@ public class WebSecurityConfig {
      * 跨域配置
      * This bean is picked up by .cors(Customizer.withDefaults())
      */
-    @Bean // <-- IMPORTANT: Expose this as a Bean
+    @Bean
+    // <-- IMPORTANT: Expose this as a Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 

@@ -1,6 +1,8 @@
 package cn.edu.tju.core.security;
 
 
+import cn.edu.tju.core.model.User;
+import cn.edu.tju.core.security.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
@@ -10,8 +12,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import cn.edu.tju.core.model.User;
-import cn.edu.tju.core.security.repository.UserRepository;
 
 import java.util.List;
 import java.util.Locale;

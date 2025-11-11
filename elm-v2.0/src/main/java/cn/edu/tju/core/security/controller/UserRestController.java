@@ -1,15 +1,19 @@
 package cn.edu.tju.core.security.controller;
 
-import cn.edu.tju.core.model.*;
+import cn.edu.tju.core.model.HttpResult;
+import cn.edu.tju.core.model.Person;
+import cn.edu.tju.core.model.ResultCodeEnum;
+import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.SecurityUtils;
 import cn.edu.tju.core.security.controller.dto.LoginDto;
 import cn.edu.tju.core.security.service.PersonService;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import cn.edu.tju.core.security.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,8 +49,8 @@ public class UserRestController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User.Password CANT BE NULL");
 
         if (user.getAuthorities() == null)
-            user.setAuthorities(Utils.getAuthoritySet("USER"));
-        Utils.setNewEntity(user, me);
+            user.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+        EntityUtils.setNewEntity(user, me);
         user.setPassword(SecurityUtils.BCryptPasswordEncode(user.getPassword()));
         user.setActivated(true);
 
@@ -72,7 +76,7 @@ public class UserRestController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
 
         User user = userService.getUserWithAuthoritiesByUsername(loginDto.getUsername());
         if (user == null)
@@ -94,7 +98,7 @@ public class UserRestController {
         if (person.getUsername() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person.Username CANT BE NULL");
 
-        person.setAuthorities(Utils.getAuthoritySet("USER"));
+        person.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
         person.setPassword(SecurityUtils.BCryptPasswordEncode("password"));
         person.setActivated(true);
 
@@ -120,7 +124,7 @@ public class UserRestController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meoptional.get();
 
-        if (Utils.hasAuthority(me, "ADMIN")) {
+        if (AuthorityUtils.hasAuthority(me, "ADMIN")) {
             List<User> userList = userService.getUsers();
             return HttpResult.success(userList);
         }
@@ -138,7 +142,7 @@ public class UserRestController {
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(user))
             return HttpResult.success(user);
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -155,9 +159,9 @@ public class UserRestController {
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(user)) {
-            Utils.deleteEntity(user, me);
+            EntityUtils.deleteEntity(user, me);
             userService.updateUser(user);
             return HttpResult.success();
         }

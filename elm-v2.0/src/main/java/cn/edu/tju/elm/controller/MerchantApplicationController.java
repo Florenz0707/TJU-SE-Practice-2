@@ -1,10 +1,14 @@
 package cn.edu.tju.elm.controller;
 
-import cn.edu.tju.core.model.*;
+import cn.edu.tju.core.model.ApplicationState;
+import cn.edu.tju.core.model.HttpResult;
+import cn.edu.tju.core.model.ResultCodeEnum;
+import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
-import cn.edu.tju.elm.model.MerchantApplication;
+import cn.edu.tju.elm.model.BO.MerchantApplication;
 import cn.edu.tju.elm.service.MerchantApplicationService;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +24,7 @@ public class MerchantApplicationController {
     private final UserService userService;
     private final MerchantApplicationService merchantApplicationService;
 
-    public  MerchantApplicationController(UserService userService, MerchantApplicationService merchantApplicationService) {
+    public MerchantApplicationController(UserService userService, MerchantApplicationService merchantApplicationService) {
         this.userService = userService;
         this.merchantApplicationService = merchantApplicationService;
     }
@@ -33,14 +37,14 @@ public class MerchantApplicationController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isBusiness)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ALREADY MERCHANT");
 
         if (merchantApplication == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "MerchantApplication CANT BE NULL");
 
-        Utils.setNewEntity(merchantApplication, me);
+        EntityUtils.setNewEntity(merchantApplication, me);
         merchantApplication.setApplicationState(ApplicationState.UNDISPOSED);
         merchantApplication.setApplicant(me);
         User admin = userService.getUserWithUsername("admin");
@@ -62,8 +66,8 @@ public class MerchantApplicationController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "USER NOT FOUND");
         User me = meOptional.get();
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
         MerchantApplication merchantApplication = merchantApplicationService.getMerchantApplicationById(id);
         if (merchantApplication == null)
@@ -99,7 +103,7 @@ public class MerchantApplicationController {
 
         if (merchantApplication.getApplicationState().equals(ApplicationState.APPROVED)) {
             User applicant = merchantApplication.getApplicant();
-            applicant.setAuthorities(Utils.getAuthoritySet("USER BUSINESS"));
+            applicant.setAuthorities(AuthorityUtils.getAuthoritySet("USER BUSINESS"));
             applicant.setUpdater(me.getId());
             applicant.setUpdateTime(LocalDateTime.now());
             userService.updateUser(applicant);

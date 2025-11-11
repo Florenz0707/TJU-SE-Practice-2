@@ -1,4 +1,4 @@
-package cn.edu.tju.elm.model;
+package cn.edu.tju.elm.constant;
 
 public class OrderState {
     public static final Integer CANCELED = 0;

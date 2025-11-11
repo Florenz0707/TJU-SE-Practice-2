@@ -4,9 +4,10 @@ import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
-import cn.edu.tju.elm.model.DeliveryAddress;
+import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.service.AddressService;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,7 +44,7 @@ public class AddressController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
         address.setCustomer(me);
-        Utils.setNewEntity(address, me);
+        EntityUtils.setNewEntity(address, me);
         addressService.addAddress(address);
 
         return HttpResult.success(address);
@@ -77,11 +78,11 @@ public class AddressController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
         User oldCustomer = address.getCustomer();
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(oldCustomer)) {
             newAddress.setCustomer(oldCustomer);
             newAddress.setId(null);
-            Utils.substituteEntity(address, newAddress, me);
+            EntityUtils.substituteEntity(address, newAddress, me);
             addressService.updateAddress(address);
             addressService.updateAddress(newAddress);
             return HttpResult.success(newAddress);
@@ -101,9 +102,9 @@ public class AddressController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
         User customer = address.getCustomer();
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || (me.equals(customer))) {
-            Utils.deleteEntity(address, me);
+            EntityUtils.deleteEntity(address, me);
             addressService.updateAddress(address);
             return HttpResult.success("Delete address successfully.");
         }

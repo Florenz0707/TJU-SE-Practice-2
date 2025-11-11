@@ -1,4 +1,4 @@
-package cn.edu.tju.elm.model;
+package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
 import jakarta.persistence.Entity;

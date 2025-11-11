@@ -1,8 +1,8 @@
 package cn.edu.tju.core.security.repository;
 
+import cn.edu.tju.core.model.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
-import cn.edu.tju.core.model.User;
 
 import java.util.Optional;
 

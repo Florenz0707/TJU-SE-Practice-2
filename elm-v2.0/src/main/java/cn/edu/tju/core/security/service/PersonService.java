@@ -2,7 +2,7 @@ package cn.edu.tju.core.security.service;
 
 import cn.edu.tju.core.model.Person;
 import cn.edu.tju.core.security.repository.PersonRepository;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +27,11 @@ public class PersonService {
 
     public Person getPersonById(Long id) {
         Optional<Person> personOptional = personRepository.getPersonById(id);
-        return personOptional.map(Utils::filterEntity).orElse(null);
+        return personOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public Person getPersonByUserName(String username) {
         Optional<Person> personOptional = personRepository.getPersonByUsername(username);
-        return personOptional.map(Utils::filterEntity).orElse(null);
+        return personOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 }

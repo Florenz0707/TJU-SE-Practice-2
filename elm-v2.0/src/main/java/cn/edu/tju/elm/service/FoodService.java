@@ -1,8 +1,8 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.elm.model.Food;
+import cn.edu.tju.elm.model.BO.Food;
 import cn.edu.tju.elm.repository.FoodRepository;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +23,12 @@ public class FoodService {
     }
 
     public List<Food> getFoodsByBusinessId(Long businessId) {
-        return Utils.filterEntityList(foodRepository.findAllByBusinessId(businessId));
+        return EntityUtils.filterEntityList(foodRepository.findAllByBusinessId(businessId));
     }
 
     public Food getFoodById(Long id) {
         Optional<Food> foodOptional = foodRepository.findById(id);
-        return foodOptional.map(Utils::filterEntity).orElse(null);
+        return foodOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public void updateFood(Food food) {

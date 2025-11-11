@@ -4,14 +4,15 @@ import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
-import cn.edu.tju.elm.model.Business;
-import cn.edu.tju.elm.model.Order;
-import cn.edu.tju.elm.model.OrderState;
-import cn.edu.tju.elm.model.Review;
+import cn.edu.tju.elm.constant.OrderState;
+import cn.edu.tju.elm.model.BO.Business;
+import cn.edu.tju.elm.model.BO.Order;
+import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.OrderService;
 import cn.edu.tju.elm.service.ReviewService;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -60,7 +61,7 @@ public class ReviewController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review.Anonymous CANT BE NULL");
 
         if (me.equals(customer)) {
-            Utils.setNewEntity(review, me);
+            EntityUtils.setNewEntity(review, me);
             review.setOrder(order);
             review.setBusiness(business);
             review.setCustomer(customer);
@@ -120,9 +121,9 @@ public class ReviewController {
         if (review == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(review.getCustomer())) {
-            Utils.deleteEntity(review, me);
+            EntityUtils.deleteEntity(review, me);
             reviewService.updateReview(review);
 
             Order order = review.getOrder();
@@ -165,7 +166,7 @@ public class ReviewController {
             return HttpResult.success(review);
 
         // 如果是商家想看订单评价，鉴权之后，如果用户设置了匿名评价就不展示，否则返回评价
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isBusiness && me.equals(review.getBusiness().getBusinessOwner())) {
             if (review.getAnonymous())
                 return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");

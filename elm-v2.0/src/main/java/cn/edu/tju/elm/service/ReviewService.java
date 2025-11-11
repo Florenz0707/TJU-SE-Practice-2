@@ -1,8 +1,8 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.elm.model.Review;
+import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.repository.ReviewRepository;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,19 +28,19 @@ public class ReviewService {
 
     public Review getReviewById(Long id) {
         Optional<Review> reviewOptional = reviewRepository.findById(id);
-        return reviewOptional.map(Utils::filterEntity).orElse(null);
+        return reviewOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public Review getReviewByOrderId(Long orderId) {
         Optional<Review> reviewOptional = reviewRepository.findByOrderId(orderId);
-        return reviewOptional.map(Utils::filterEntity).orElse(null);
+        return reviewOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public List<Review> getReviewsByBusinessId(Long businessId) {
-        return Utils.filterEntityList(reviewRepository.findAllByBusinessId(businessId));
+        return EntityUtils.filterEntityList(reviewRepository.findAllByBusinessId(businessId));
     }
 
     public List<Review> getReviewsByUserId(Long userId) {
-        return Utils.filterEntityList(reviewRepository.findAllByCustomerId(userId));
+        return EntityUtils.filterEntityList(reviewRepository.findAllByCustomerId(userId));
     }
 }

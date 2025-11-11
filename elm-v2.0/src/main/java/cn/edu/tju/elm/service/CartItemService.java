@@ -1,8 +1,8 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.elm.model.Cart;
+import cn.edu.tju.elm.model.BO.Cart;
 import cn.edu.tju.elm.repository.CartItemRepository;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,16 +24,16 @@ public class CartItemService {
     }
 
     public List<Cart> getCart(Long businessId, Long customerId) {
-        return Utils.filterEntityList(cartItemRepository.findAllByBusinessIdAndCustomerId(businessId, customerId));
+        return EntityUtils.filterEntityList(cartItemRepository.findAllByBusinessIdAndCustomerId(businessId, customerId));
     }
 
     public List<Cart> getUserCarts(Long customerId) {
-        return Utils.filterEntityList(cartItemRepository.findAllByCustomerId(customerId));
+        return EntityUtils.filterEntityList(cartItemRepository.findAllByCustomerId(customerId));
     }
 
     public Cart getCartById(Long cartId) {
         Optional<Cart> cartOptional = cartItemRepository.findById(cartId);
-        return cartOptional.map(Utils::filterEntity).orElse(null);
+        return cartOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public void updateCart(Cart cart) {

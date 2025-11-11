@@ -1,6 +1,6 @@
 package cn.edu.tju.elm.repository;
 
-import cn.edu.tju.elm.model.Order;
+import cn.edu.tju.elm.model.BO.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

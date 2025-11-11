@@ -1,10 +1,10 @@
 package cn.edu.tju.core.model;
 
 
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
-
-import jakarta.persistence.*;
 
 @MappedSuperclass
 public class BaseEntity implements Serializable {

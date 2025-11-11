@@ -1,18 +1,19 @@
 package cn.edu.tju.elm.controller;
 
+import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.elm.model.Business;
-import cn.edu.tju.elm.model.Food;
-import cn.edu.tju.core.model.HttpResult;
-import cn.edu.tju.elm.model.Order;
-import cn.edu.tju.elm.model.OrderDetailet;
+import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.model.BO.Business;
+import cn.edu.tju.elm.model.BO.Food;
+import cn.edu.tju.elm.model.BO.Order;
+import cn.edu.tju.elm.model.BO.OrderDetailet;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.FoodService;
-import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.service.OrderDetailetService;
 import cn.edu.tju.elm.service.OrderService;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,7 @@ import java.util.Optional;
 @RequestMapping("/api/foods")
 @Tag(name = "管理商品")
 public class FoodController {
-    private final  UserService userService;
+    private final UserService userService;
     private final FoodService foodService;
     private final BusinessService businessService;
     private final OrderService orderService;
@@ -57,8 +58,7 @@ public class FoodController {
             Business business = businessService.getBusinessById(businessId);
             if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
             return HttpResult.success(foodService.getFoodsByBusinessId(businessId));
-        }
-        else {
+        } else {
             Order order = orderService.getOrderById(orderId);
             if (order == null)
                 return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
@@ -85,8 +85,8 @@ public class FoodController {
         if (food.getBusiness() == null || food.getBusiness().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
         Business business = businessService.getBusinessById(food.getBusiness().getId());
         if (business == null)
@@ -94,7 +94,7 @@ public class FoodController {
         User owner = business.getBusinessOwner();
 
         if (isAdmin || (isBusiness && me.equals(owner))) {
-            Utils.setNewEntity(food, me);
+            EntityUtils.setNewEntity(food, me);
             food.setBusiness(business);
             foodService.addFood(food);
             return HttpResult.success(food);
@@ -127,11 +127,11 @@ public class FoodController {
 
         Business business = businessService.getBusinessById(oldFood.getBusiness().getId());
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner()))) {
             food.setId(null);
-            Utils.substituteEntity(oldFood, food, me);
+            EntityUtils.substituteEntity(oldFood, food, me);
             foodService.updateFood(oldFood);
             foodService.updateFood(food);
             return HttpResult.success(food);
@@ -155,8 +155,8 @@ public class FoodController {
         if (newFood == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food CANT BE NULL");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
         if (isAdmin || (isBusiness && me.equals(food.getBusiness().getBusinessOwner()))) {
             if (newFood.getFoodName() == null)
@@ -169,7 +169,7 @@ public class FoodController {
                 newFood.setFoodImg(food.getFoodImg());
             if (newFood.getRemarks() == null)
                 newFood.setRemarks(food.getRemarks());
-            Utils.substituteEntity(food, newFood, me);
+            EntityUtils.substituteEntity(food, newFood, me);
             foodService.updateFood(food);
             foodService.updateFood(newFood);
             return HttpResult.success(newFood);
@@ -188,11 +188,11 @@ public class FoodController {
         if (food == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
 
-        boolean isAdmin = Utils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = Utils.hasAuthority(me, "BUSINESS");
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
         if (isAdmin || (isBusiness && me.equals(food.getBusiness().getBusinessOwner()))) {
-            Utils.deleteEntity(food, me);
+            EntityUtils.deleteEntity(food, me);
             foodService.updateFood(food);
             return HttpResult.success("Delete food successfully.");
         }
