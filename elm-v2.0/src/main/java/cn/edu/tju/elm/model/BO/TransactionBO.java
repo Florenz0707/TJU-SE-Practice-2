@@ -17,11 +17,11 @@ public class TransactionBO extends BaseEntity {
     private Integer type;
 
     @ManyToOne
-    @JoinColumn(name = "wallet_id", nullable = true)
+    @JoinColumn(name = "wallet_id")
     private WalletBO enterWallet;
 
     @ManyToOne
-    @JoinColumn(name = "wallet_id", nullable = true)
+    @JoinColumn(name = "wallet_id")
     private WalletBO outWallet;
 
     @Column(nullable = false)
@@ -43,7 +43,7 @@ public class TransactionBO extends BaseEntity {
         return outWallet;
     }
 
-    public Boolean getIsFinished() {
+    public Boolean isFinished() {
         return isFinished;
     }
 
@@ -57,7 +57,7 @@ public class TransactionBO extends BaseEntity {
         return transaction;
     }
 
-    public void setIsFinished(Boolean isFinished) {
-        this.isFinished = isFinished;
+    public void finish() {
+        isFinished = true;
     }
 }

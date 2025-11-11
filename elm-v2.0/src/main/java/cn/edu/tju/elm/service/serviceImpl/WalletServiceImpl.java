@@ -16,34 +16,39 @@ public class WalletServiceImpl implements WalletService {
     private final WalletRepository walletRepository;
 
     private final UserService userService;
+    private final WalletService walletService;
 
-    public WalletServiceImpl(WalletRepository walletRepository, UserService userService) {
+    public WalletServiceImpl(WalletRepository walletRepository, UserService userService, WalletService walletService) {
         this.walletRepository = walletRepository;
         this.userService = userService;
+        this.walletService = walletService;
     }
 
-    public WalletVO createWallet(User user) {
-        WalletBO walletBO = WalletBO.getNewWallet(user);
+    public WalletVO createWallet(User owner) {
+        if (getWalletByOwner(owner) != null) return null;
+        WalletBO walletBO = WalletBO.getNewWallet(owner);
         walletRepository.save(walletBO);
         return new WalletVO(walletBO);
     }
 
-    public WalletVO getWalletById(Long id) {
-        WalletBO walletBO = walletRepository.findById(id).orElse(null);
-        return walletBO == null ? null : new WalletVO(walletBO);
-    }
-
-    public WalletVO getWalletByOwnerId(Long ownerId) {
-        WalletBO walletBO = walletRepository.findByOwnerId(ownerId).orElse(null);
-        return walletBO == null ? null : new WalletVO(walletBO);
-    }
-
-    public WalletVO addVoucher(Long walletId, BigDecimal amount, User operator) {
-        WalletBO walletBO = walletRepository.findByOwnerId(walletId).orElse(null);
+    public WalletVO addVoucher(BigDecimal amount, User owner) {
+        WalletBO walletBO = walletRepository.findByOwner(owner).orElse(null);
         if (walletBO == null) return null;
         if (!walletBO.addVoucher(amount)) return null;
-        EntityUtils.updateEntity(walletBO, operator);
+        EntityUtils.updateEntity(walletBO, owner);
         walletRepository.save(walletBO);
-        return null;
+        return new WalletVO(walletBO);
+    }
+
+    public User getWalletOwnerById(Long id) {
+        WalletBO walletBO = walletRepository.findById(id).orElse(null);
+        if (walletBO == null) return null;
+        return walletBO.getOwner();
+    }
+
+    public WalletVO getWalletByOwner(User owner) {
+        WalletBO walletBO = walletRepository.findByOwner(owner).orElse(null);
+        if (walletBO == null) return null;
+        return new WalletVO(walletBO);
     }
 }

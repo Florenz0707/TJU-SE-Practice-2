@@ -8,13 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 public interface TransactionService {
-    TransactionVO getTransactionById(Long id);
-
     @Transactional
     TransactionVO createTransaction(BigDecimal amount, Integer type, Long enterWalletId, Long outWalletId, User operator);
 
     @Transactional
-    TransactionVO updateTransactionStatus(Long id, Boolean isFinished, User operator);
+    TransactionVO finishTransaction(Long id, User operator);
 
     TransactionsRecord getTransactionsByWalletId(Long walletId);
+
+    TransactionVO getTransactionById(Long id);
 }

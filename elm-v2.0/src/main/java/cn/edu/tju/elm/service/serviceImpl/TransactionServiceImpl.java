@@ -65,10 +65,10 @@ public class TransactionServiceImpl implements TransactionService {
         return new TransactionVO(transactionBO);
     }
 
-    public TransactionVO updateTransactionStatus(Long id, Boolean isFinished, User operator) {
+    public TransactionVO finishTransaction(Long id, User operator) {
         TransactionBO transactionBO = transactionRepository.findById(id).orElse(null);
         if (transactionBO == null) return null;
-        if (transactionBO.getIsFinished() != false || isFinished != true) return null;
+        if (transactionBO.isFinished()) return null;
 
         if (transactionBO.getType().equals(TransactionType.PAYMENT)) {
             WalletBO outWalletBO = transactionBO.getOutWallet();
@@ -77,7 +77,7 @@ public class TransactionServiceImpl implements TransactionService {
             walletRepository.save(outWalletBO);
         }
 
-        transactionBO.setIsFinished(true);
+        transactionBO.finish();
         EntityUtils.updateEntity(transactionBO, operator);
         transactionRepository.save(transactionBO);
         return new TransactionVO(transactionBO);

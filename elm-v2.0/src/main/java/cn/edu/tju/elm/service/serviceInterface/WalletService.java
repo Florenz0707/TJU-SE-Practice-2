@@ -8,12 +8,12 @@ import java.math.BigDecimal;
 
 public interface WalletService {
     @Transactional
-    WalletVO createWallet(User user);
-
-    WalletVO getWalletById(Long id);
-
-    WalletVO getWalletByOwnerId(Long ownerId);
+    WalletVO createWallet(User owner);
 
     @Transactional
-    WalletVO addVoucher(Long walletId, BigDecimal amount, User operator);
+    WalletVO addVoucher(BigDecimal amount, User owner);
+
+    User getWalletOwnerById(Long id);
+
+    WalletVO getWalletByOwner(User owner);
 }
