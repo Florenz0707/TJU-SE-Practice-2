@@ -1,28 +1,25 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 
 @Entity
-public class TransactionBO extends BaseEntity {
+public class Transaction extends BaseEntity {
     @Column(nullable = false)
     private BigDecimal amount;
 
     @Column(nullable = false)
     private Integer type;
 
-    @ManyToOne
-    @JoinColumn(name = "wallet_id")
-    private WalletBO enterWallet;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "in_wallet_id")
+    private Wallet inWallet;
 
-    @ManyToOne
-    @JoinColumn(name = "wallet_id")
-    private WalletBO outWallet;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "out_wallet_id")
+    private Wallet outWallet;
 
     @Column(nullable = false)
     private Boolean isFinished;
@@ -35,11 +32,11 @@ public class TransactionBO extends BaseEntity {
         return type;
     }
 
-    public WalletBO getEnterWallet() {
-        return enterWallet;
+    public Wallet getInWallet() {
+        return inWallet;
     }
 
-    public WalletBO getOutWallet() {
+    public Wallet getOutWallet() {
         return outWallet;
     }
 
@@ -47,11 +44,11 @@ public class TransactionBO extends BaseEntity {
         return isFinished;
     }
 
-    public static TransactionBO createNewTransaction(BigDecimal amount, Integer type, WalletBO enterWallet, WalletBO outWallet) {
-        TransactionBO transaction = new TransactionBO();
+    public static Transaction createNewTransaction(BigDecimal amount, Integer type, Wallet enterWallet, Wallet outWallet) {
+        Transaction transaction = new Transaction();
         transaction.amount = amount;
         transaction.type = type;
-        transaction.enterWallet = enterWallet;
+        transaction.inWallet = enterWallet;
         transaction.outWallet = outWallet;
         transaction.isFinished = false;
         return transaction;

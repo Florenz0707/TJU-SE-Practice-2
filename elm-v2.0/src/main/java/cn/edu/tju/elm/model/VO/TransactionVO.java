@@ -1,6 +1,6 @@
 package cn.edu.tju.elm.model.VO;
 
-import cn.edu.tju.elm.model.BO.TransactionBO;
+import cn.edu.tju.elm.model.BO.Transaction;
 
 import java.math.BigDecimal;
 
@@ -11,12 +11,12 @@ public class TransactionVO {
     private final Long enterWalletId;
     private final Long outWalletId;
 
-    public TransactionVO(TransactionBO transactionBO) {
-        this.id = transactionBO.getId();
-        this.amount = transactionBO.getAmount();
-        this.type = transactionBO.getType();
-        this.enterWalletId = transactionBO.getEnterWallet().getId();
-        this.outWalletId = transactionBO.getOutWallet().getId();
+    public TransactionVO(Transaction transaction) {
+        this.id = transaction.getId();
+        this.amount = transaction.getAmount();
+        this.type = transaction.getType();
+        this.enterWalletId = transaction.getInWallet().getId();
+        this.outWalletId = transaction.getOutWallet().getId();
     }
 
     public Long getId() {
