@@ -13,7 +13,7 @@ public class PublicVoucher extends BaseEntity {
     private BigDecimal threshold;
 
     @Column(nullable = false)
-    private BigDecimal value;
+    private BigDecimal faceValue;
 
     // 是否可领取
     @Column(nullable = false)
@@ -25,7 +25,7 @@ public class PublicVoucher extends BaseEntity {
     public static PublicVoucher createVoucher(BigDecimal threshold, BigDecimal value, Boolean claimable, Integer valid_days) {
         PublicVoucher publicVoucher = new PublicVoucher();
         publicVoucher.threshold = threshold;
-        publicVoucher.value = value;
+        publicVoucher.faceValue = value;
         publicVoucher.claimable = claimable;
         publicVoucher.validDays = valid_days;
         EntityUtils.setNewEntity(publicVoucher);
@@ -36,8 +36,8 @@ public class PublicVoucher extends BaseEntity {
         return threshold;
     }
 
-    public BigDecimal getValue() {
-        return value;
+    public BigDecimal getFaceValue() {
+        return faceValue;
     }
 
     public Boolean getClaimable() {

@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface PrivateVoucherService {
     @Transactional
-    boolean createPrivateVoucher(User user, PublicVoucherVO publicVoucherVO) throws PrivateVoucherException;
+    boolean createPrivateVoucher(Long walletId, PublicVoucherVO publicVoucherVO) throws PrivateVoucherException;
 
     @Transactional
     boolean redeemPrivateVoucher(Long id) throws PrivateVoucherException;

@@ -20,7 +20,7 @@ public class PublicVoucherVO implements Serializable {
     public PublicVoucherVO(PublicVoucher publicVoucher) {
         id = publicVoucher.getId();
         threshold = publicVoucher.getThreshold();
-        value = publicVoucher.getValue();
+        value = publicVoucher.getFaceValue();
         claimable = publicVoucher.getClaimable();
         validDays = publicVoucher.getValidDays();
     }

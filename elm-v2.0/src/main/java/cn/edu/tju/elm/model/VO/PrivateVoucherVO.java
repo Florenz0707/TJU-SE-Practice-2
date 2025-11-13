@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 public class PrivateVoucherVO {
     private Long id;
-    private Long ownerId;
+    private Long walletId;
     private BigDecimal value;
     private LocalDateTime expiryDate;
 
@@ -16,8 +16,8 @@ public class PrivateVoucherVO {
 
     public PrivateVoucherVO(PrivateVoucher privateVoucher) {
         id = privateVoucher.getId();
-        ownerId = privateVoucher.getOwner().getId();
-        value = privateVoucher.getValue();
+        walletId = privateVoucher.getWallet().getId();
+        value = privateVoucher.getFaceValue();
         expiryDate = privateVoucher.getExpiryDate();
     }
 
@@ -25,8 +25,8 @@ public class PrivateVoucherVO {
         return id;
     }
 
-    public Long getOwnerId() {
-        return ownerId;
+    public Long getWalletId() {
+        return walletId;
     }
 
     public BigDecimal getValue() {
@@ -41,7 +41,7 @@ public class PrivateVoucherVO {
     public String toString() {
         return "PrivateVoucherVO{" +
                 "id=" + id +
-                ", ownerId=" + ownerId +
+                ", walletId=" + walletId +
                 ", value=" + value +
                 ", expiryDate=" + expiryDate +
                 '}';

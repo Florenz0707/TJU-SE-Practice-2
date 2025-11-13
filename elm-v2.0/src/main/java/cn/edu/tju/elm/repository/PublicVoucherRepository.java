@@ -9,8 +9,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface PublicVoucherRepository extends JpaRepository<PublicVoucher, Long> {
-    List<PublicVoucher> findAllPublicVouchers();
-
-    @Query("select v from PublicVoucher v where v.threshold >= :amount order by v.value desc")
+    @Query("select v from PublicVoucher v where v.threshold >= :amount order by v.faceValue desc")
     List<PublicVoucher> findQualifiedPublicVoucher(@Param("amount") BigDecimal amount);
 }

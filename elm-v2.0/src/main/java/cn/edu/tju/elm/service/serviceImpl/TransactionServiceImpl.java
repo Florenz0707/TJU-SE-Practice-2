@@ -6,11 +6,15 @@ import cn.edu.tju.elm.exception.TransactionException;
 import cn.edu.tju.elm.model.BO.Transaction;
 import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.model.RECORD.TransactionsRecord;
+import cn.edu.tju.elm.model.VO.PublicVoucherVO;
 import cn.edu.tju.elm.model.VO.TransactionVO;
 import cn.edu.tju.elm.repository.TransactionRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
+import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
+import cn.edu.tju.elm.service.serviceInterface.PublicVoucherService;
 import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.TOPUPPublicVoucherSelectorImpl;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,9 +26,18 @@ public class TransactionServiceImpl implements TransactionService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
 
-    public TransactionServiceImpl(WalletRepository walletRepository, TransactionRepository transactionRepository) {
+    private final PublicVoucherService publicVoucherService;
+    private final PrivateVoucherService privateVoucherService;
+
+    public TransactionServiceImpl(
+            WalletRepository walletRepository,
+            TransactionRepository transactionRepository,
+            PublicVoucherService publicVoucherService,
+            PrivateVoucherService privateVoucherService) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.publicVoucherService = publicVoucherService;
+        this.privateVoucherService = privateVoucherService;
     }
 
     public TransactionVO getTransactionById(Long id) throws TransactionException {
@@ -69,6 +82,11 @@ public class TransactionServiceImpl implements TransactionService {
 
         Transaction transaction = Transaction.createNewTransaction(amount, type, inWallet, outWallet);
         EntityUtils.setNewEntity(transaction);
+        if (type.equals(TransactionType.TOP_UP)) {
+            PublicVoucherVO publicVoucherVO = publicVoucherService.chooseBestPublicVoucherForTransaction(new TransactionVO(transaction), new TOPUPPublicVoucherSelectorImpl());
+            if (publicVoucherVO != null)
+                privateVoucherService.createPrivateVoucher(inWalletId, publicVoucherVO);
+        }
         transactionRepository.save(transaction);
         return new TransactionVO(transaction);
     }
