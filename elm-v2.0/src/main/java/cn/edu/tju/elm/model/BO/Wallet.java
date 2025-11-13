@@ -19,7 +19,7 @@ public class Wallet extends BaseEntity {
     private BigDecimal voucher;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
     public BigDecimal getBalance() {
@@ -39,7 +39,7 @@ public class Wallet extends BaseEntity {
         wallet.owner = owner;
         wallet.balance = BigDecimal.ZERO;
         wallet.voucher = BigDecimal.ZERO;
-        EntityUtils.setNewEntity(wallet, owner);
+        EntityUtils.setNewEntity(wallet);
         return wallet;
     }
 
@@ -65,7 +65,7 @@ public class Wallet extends BaseEntity {
     public boolean decVoucher(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
         if (amount.compareTo(voucher) > 0) return false;
-        voucher = voucher.add(amount);
+        voucher = voucher.subtract(amount);
         return true;
     }
 }

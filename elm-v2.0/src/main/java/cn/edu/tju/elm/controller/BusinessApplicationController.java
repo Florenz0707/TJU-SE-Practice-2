@@ -1,6 +1,6 @@
 package cn.edu.tju.elm.controller;
 
-import cn.edu.tju.core.model.ApplicationState;
+import cn.edu.tju.elm.constant.ApplicationState;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
@@ -52,12 +52,12 @@ public class BusinessApplicationController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.BusinessName NOT FOUND");
 
         Business business = businessApplication.getBusiness();
-        EntityUtils.setNewEntity(business, me);
+        EntityUtils.setNewEntity(business);
         business.setDeleted(true);
         business.setBusinessOwner(me);
         businessService.addBusiness(business);
 
-        EntityUtils.setNewEntity(businessApplication, me);
+        EntityUtils.setNewEntity(businessApplication);
         businessApplication.setBusiness(business);
         businessApplication.setApplicationState(ApplicationState.UNDISPOSED);
         User admin = userService.getUserWithUsername("admin");
@@ -114,16 +114,17 @@ public class BusinessApplicationController {
         if (businessApplication == null || businessApplication.getApplicationState() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ApplicationState CANT BE NULL");
 
+        if (!ApplicationState.isValidApplicationState(oldApplication.getApplicationState()))
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ApplicationState NOT VALID");
+
         if (me.equals(oldApplication.getHandler())) {
             oldApplication.setApplicationState(businessApplication.getApplicationState());
-            oldApplication.setUpdateTime(LocalDateTime.now());
-            oldApplication.setUpdater(me.getId());
+            EntityUtils.updateEntity(oldApplication);
             businessApplicationService.updateBusinessApplication(oldApplication);
 
             if (oldApplication.getApplicationState().equals(ApplicationState.APPROVED)) {
                 Business business = oldApplication.getBusiness();
                 business.setDeleted(false);
-                business.setUpdater(me.getId());
                 business.setUpdateTime(LocalDateTime.now());
                 businessService.updateBusiness(business);
             }

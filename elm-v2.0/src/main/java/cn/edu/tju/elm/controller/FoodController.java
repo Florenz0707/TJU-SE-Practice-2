@@ -94,7 +94,7 @@ public class FoodController {
         User owner = business.getBusinessOwner();
 
         if (isAdmin || (isBusiness && me.equals(owner))) {
-            EntityUtils.setNewEntity(food, me);
+            EntityUtils.setNewEntity(food);
             food.setBusiness(business);
             foodService.addFood(food);
             return HttpResult.success(food);
@@ -131,7 +131,7 @@ public class FoodController {
         boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner()))) {
             food.setId(null);
-            EntityUtils.substituteEntity(oldFood, food, me);
+            EntityUtils.substituteEntity(oldFood, food);
             foodService.updateFood(oldFood);
             foodService.updateFood(food);
             return HttpResult.success(food);
@@ -169,7 +169,7 @@ public class FoodController {
                 newFood.setFoodImg(food.getFoodImg());
             if (newFood.getRemarks() == null)
                 newFood.setRemarks(food.getRemarks());
-            EntityUtils.substituteEntity(food, newFood, me);
+            EntityUtils.substituteEntity(food, newFood);
             foodService.updateFood(food);
             foodService.updateFood(newFood);
             return HttpResult.success(newFood);
@@ -192,7 +192,7 @@ public class FoodController {
         boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
         if (isAdmin || (isBusiness && me.equals(food.getBusiness().getBusinessOwner()))) {
-            EntityUtils.deleteEntity(food, me);
+            EntityUtils.deleteEntity(food);
             foodService.updateFood(food);
             return HttpResult.success("Delete food successfully.");
         }

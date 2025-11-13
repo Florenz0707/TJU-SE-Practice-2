@@ -2,9 +2,10 @@ package cn.edu.tju.elm.model.VO;
 
 import cn.edu.tju.elm.model.BO.Wallet;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class WalletVO {
+public class WalletVO implements Serializable {
     private final Long id;
     private final BigDecimal balance;
     private final BigDecimal voucher;

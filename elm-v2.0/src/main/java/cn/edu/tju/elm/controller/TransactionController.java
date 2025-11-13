@@ -41,10 +41,12 @@ public class TransactionController {
         if (id == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ID CANT BE NULL");
 
-        TransactionVO transactionVO = transactionService.getTransactionById(id);
-        if (transactionVO == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Transaction NOT FOUND");
-        return HttpResult.success(transactionVO);
+        try {
+            TransactionVO transactionVO = transactionService.getTransactionById(id);
+            return HttpResult.success(transactionVO);
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
     }
 
     @GetMapping("/list/{walletId}")
@@ -64,32 +66,51 @@ public class TransactionController {
         if (!me.equals(owner))
             return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
-        TransactionsRecord transactionsRecord = transactionService.getTransactionsByWalletId(walletId);
-        return HttpResult.success(transactionsRecord);
+        try {
+            TransactionsRecord transactionsRecord = transactionService.getTransactionsByWalletId(walletId);
+            return HttpResult.success(transactionsRecord);
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
     }
 
     @PostMapping("")
     public HttpResult<TransactionVO> createTransaction(
-            @RequestBody BigDecimal amount,
-            @RequestBody Integer type,
-            @RequestBody Long enterWalletId,
-            @RequestBody Long outWalletId) {
+            @RequestBody TransactionVO transactionVO) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
 
-        if (amount == null)
+        if (transactionVO == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "TransactionVO CANT BE NULL");
+        if (transactionVO.getAmount() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Amount CANT BE NULL");
-        if (type == null)
+        if (transactionVO.getType() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Type CANT BE NULL");
-        if (!TransactionType.isValidTransactionType(type))
+        if (!TransactionType.isValidTransactionType(transactionVO.getType()))
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Type NOT VALID");
 
-        TransactionVO transactionVO = transactionService.createTransaction(amount, type, enterWalletId, outWalletId, me);
-        if (transactionVO == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "SOMETHING IS WRONG");
-        return HttpResult.success(transactionVO);
+        if (transactionVO.getAmount().compareTo(BigDecimal.ZERO) <= 0)
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Amount NOT VALID");
+        if (transactionVO.getType().equals(TransactionType.PAYMENT)) {
+            if (transactionVO.getInWalletId() == null)
+                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "InWalletId CANT BE NULL");
+            if (transactionVO.getOutWalletId() == null)
+                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OutWalletId CANT BE NULL");
+        } else if (transactionVO.getType().equals(TransactionType.TOP_UP) && transactionVO.getInWalletId() == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "InWalletId CANT BE NULL");
+        } else if (transactionVO.getType().equals(TransactionType.WITHDRAW) && transactionVO.getOutWalletId() == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OutWalletId CANT BE NULL");
+        }
+
+        try {
+            TransactionVO retTransactionVO = transactionService.createTransaction(
+                    transactionVO.getAmount(), transactionVO.getType(),
+                    transactionVO.getInWalletId(), transactionVO.getOutWalletId());
+            return HttpResult.success(retTransactionVO);
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
     }
 
     @PatchMapping("/finished")
@@ -103,9 +124,11 @@ public class TransactionController {
         if (id == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ID CANT BE NULL");
 
-        TransactionVO transactionVO = transactionService.finishTransaction(id, me);
-        if (transactionVO == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "SOMETHING IS WRONG");
-        return HttpResult.success(transactionVO);
+        try {
+            TransactionVO transactionVO = transactionService.finishTransaction(id, me);
+            return HttpResult.success(transactionVO);
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
     }
 }

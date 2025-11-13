@@ -50,7 +50,7 @@ public class UserRestController {
 
         if (user.getAuthorities() == null)
             user.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
-        EntityUtils.setNewEntity(user, me);
+        EntityUtils.setNewEntity(user);
         user.setPassword(SecurityUtils.BCryptPasswordEncode(user.getPassword()));
         user.setActivated(true);
 
@@ -105,8 +105,6 @@ public class UserRestController {
         LocalDateTime now = LocalDateTime.now();
         person.setCreateTime(now);
         person.setUpdateTime(now);
-        person.setCreator(0L);
-        person.setUpdater(0L);
         person.setDeleted(false);
 
         if (userService.getUserWithUsername(person.getUsername()) != null)
@@ -161,7 +159,7 @@ public class UserRestController {
 
         boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(user)) {
-            EntityUtils.deleteEntity(user, me);
+            EntityUtils.deleteEntity(user);
             userService.updateUser(user);
             return HttpResult.success();
         }

@@ -52,7 +52,7 @@ public class CartController {
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
-        EntityUtils.setNewEntity(cart, me);
+        EntityUtils.setNewEntity(cart);
         cart.setFood(food);
         cart.setBusiness(business);
         cart.setCustomer(me);
@@ -88,11 +88,7 @@ public class CartController {
         boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(owner)) {
             cart.setQuantity(newCart.getQuantity());
-
-            LocalDateTime now = LocalDateTime.now();
-            cart.setUpdateTime(now);
-            cart.setUpdater(me.getId());
-
+            EntityUtils.updateEntity(cart);
             cartItemService.updateCart(cart);
             return HttpResult.success(cart);
         }

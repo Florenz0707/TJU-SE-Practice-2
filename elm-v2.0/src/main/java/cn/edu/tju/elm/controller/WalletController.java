@@ -35,38 +35,67 @@ public class WalletController {
         if (id == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "WalletId CANT BE NULL");
 
-        return HttpResult.success(walletService.getWalletOwnerById(id));
+        try {
+            User owner = walletService.getWalletOwnerById(id);
+            return HttpResult.success(owner);
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
     }
 
-    @PostMapping("/voucher")
-    public HttpResult<String> addVoucher(@RequestBody BigDecimal amount) {
+    @GetMapping("{id}")
+    public HttpResult<WalletVO> getWalletById(
+            @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
+
+        if (id == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "WalletId CANT BE NULL");
+
+        try {
+            WalletVO walletVO = walletService.getWalletById(id, me);
+            return HttpResult.success(walletVO);
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @PostMapping("/voucher")
+    public HttpResult<String> addVoucher(
+            @RequestBody Long walletId,
+            @RequestBody BigDecimal amount) {
+        Optional<User> meOptional = userService.getUserWithAuthorities();
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
 
         if (amount == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Amount CANT BE NULL");
         if (amount.compareTo(BigDecimal.ZERO) < 0)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Amount CANT BE NEGATIVE");
 
-        WalletVO walletVO = walletService.addVoucher(amount, me);
-        if (walletVO == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Something IS WRONG");
-        return HttpResult.success("Add voucher successfully");
+        try {
+            walletService.addVoucher(walletId, amount);
+            return HttpResult.success("Add voucher successfully");
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
     }
 
-    @GetMapping("")
+    @GetMapping("/my")
     public HttpResult<WalletVO> getWalletByAuthorization() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        WalletVO walletVO = walletService.getWalletByOwner(me);
-        if (walletVO == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Wallet NOT FOUND");
-        return HttpResult.success(walletVO);
+        try {
+            WalletVO walletVO = walletService.getWalletByOwner(me);
+            return HttpResult.success(walletVO);
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
     }
 
     @PostMapping("")
@@ -76,9 +105,11 @@ public class WalletController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        WalletVO walletVO = walletService.createWallet(me);
-        if (walletVO == null)
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "YOU ALREADY HAVE A WALLET");
-        return HttpResult.success(walletVO);
+        try {
+            WalletVO walletVO = walletService.createWallet(me);
+            return HttpResult.success(walletVO);
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
     }
 }

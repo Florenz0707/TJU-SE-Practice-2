@@ -61,15 +61,14 @@ public class ReviewController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review.Anonymous CANT BE NULL");
 
         if (me.equals(customer)) {
-            EntityUtils.setNewEntity(review, me);
+            EntityUtils.setNewEntity(review);
             review.setOrder(order);
             review.setBusiness(business);
             review.setCustomer(customer);
             reviewService.addReview(review);
 
             order.setOrderState(OrderState.COMMENTED);
-            order.setUpdater(me.getId());
-            order.setUpdateTime(review.getUpdateTime());
+            EntityUtils.updateEntity(order);
             orderService.updateOrder(order);
             return HttpResult.success(review);
         }
@@ -100,11 +99,9 @@ public class ReviewController {
             if (review.getAnonymous() != null)
                 oldReview.setAnonymous(review.getAnonymous());
 
-            LocalDateTime now = LocalDateTime.now();
-            review.setUpdateTime(now);
-            review.setUpdater(me.getId());
-            reviewService.updateReview(review);
-            return HttpResult.success(review);
+            EntityUtils.updateEntity(oldReview);
+            reviewService.updateReview(oldReview);
+            return HttpResult.success(oldReview);
         }
 
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -123,13 +120,12 @@ public class ReviewController {
 
         boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(review.getCustomer())) {
-            EntityUtils.deleteEntity(review, me);
+            EntityUtils.deleteEntity(review);
             reviewService.updateReview(review);
 
             Order order = review.getOrder();
             order.setOrderState(OrderState.COMPLETE);
-            order.setUpdateTime(review.getUpdateTime());
-            order.setUpdater(me.getId());
+            EntityUtils.updateEntity(order);
             orderService.updateOrder(order);
             return HttpResult.success("Delete review successfully.");
         }
@@ -188,8 +184,6 @@ public class ReviewController {
             if (review.getAnonymous()) {
                 review.setCustomer(null);
                 review.setOrder(null);
-                review.setCreator(null);
-                review.setUpdater(null);
             }
         }
         return HttpResult.success(reviewList);
