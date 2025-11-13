@@ -1,8 +1,6 @@
 <template>
   <div class="profile-layout">
-    <el-card class="profile-content-card">
-      <router-view />
-    </el-card>
+    <router-view />
   </div>
 </template>
 
@@ -14,9 +12,5 @@
 .profile-layout {
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.profile-content-card {
-  min-height: 600px;
 }
 </style>

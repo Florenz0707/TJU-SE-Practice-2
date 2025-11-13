@@ -1,5 +1,8 @@
 package cn.edu.tju.core.security.controller;
 
+import cn.edu.tju.core.security.controller.dto.LoginDto;
+import cn.edu.tju.core.security.jwt.JWTFilter;
+import cn.edu.tju.core.security.jwt.TokenProvider;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,9 +18,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import cn.edu.tju.core.security.jwt.JWTFilter;
-import cn.edu.tju.core.security.jwt.TokenProvider;
-import cn.edu.tju.core.security.controller.dto.LoginDto;
 
 /**
  * Controller to authenticate users.

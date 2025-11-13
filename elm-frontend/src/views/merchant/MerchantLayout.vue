@@ -24,7 +24,7 @@
             </template>
             <template v-if="authStore.userRoles.includes('MERCHANT')">
               <el-menu-item index="/merchant/dashboard">
-                <el-icon><Shop /></el-icon>
+                <el-icon><OfficeBuilding /></el-icon>
                 <span>商家中心</span>
               </el-menu-item>
             </template>
@@ -46,10 +46,27 @@
             <el-menu-item index="/merchant/orders">历史订单</el-menu-item>
             <el-menu-item index="/merchant/menu">菜单管理</el-menu-item>
             <el-menu-item index="/merchant/profile">店铺信息</el-menu-item>
+            <el-menu-item index="/merchant/user-profile">我的资料</el-menu-item>
+            <el-menu-item index="/merchant/applications">我的申请</el-menu-item>
           </el-menu>
         </div>
 
         <div class="header-right">
+          <el-select
+            v-if="businesses.length > 0"
+            v-model="selectedBusinessId"
+            placeholder="选择店铺"
+            @change="handleBusinessChange"
+            filterable
+            class="business-selector"
+          >
+            <el-option
+              v-for="business in businesses"
+              :key="business.id"
+              :label="business.businessName"
+              :value="business.id"
+            />
+          </el-select>
           <el-button class="mobile-menu-button" @click="drawerVisible = true" text>
             <el-icon><Menu /></el-icon>
           </el-button>
@@ -68,7 +85,7 @@
 
       <!-- Main Content -->
       <el-main class="app-main">
-        <router-view />
+        <router-view :key="selectedBusinessId || 0" />
       </el-main>
     </el-container>
 
@@ -95,22 +112,39 @@
           <el-icon><i-ep-menu /></el-icon>
           <span>店铺信息</span>
         </el-menu-item>
+        <el-menu-item index="/merchant/user-profile">
+          <el-icon><i-ep-user /></el-icon>
+          <span>我的资料</span>
+        </el-menu-item>
+        <el-menu-item index="/merchant/applications">
+          <el-icon><i-ep-list /></el-icon>
+          <span>我的申请</span>
+        </el-menu-item>
       </el-menu>
     </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
+import { useBusinessStore } from '../../store/business';
 import { Menu } from 'lucide-vue-next';
-import { HomeFilled, Shop, Setting } from '@element-plus/icons-vue';
+import { HomeFilled, OfficeBuilding, Setting } from '@element-plus/icons-vue';
+import { storeToRefs } from 'pinia';
 
 const authStore = useAuthStore();
+const businessStore = useBusinessStore();
+const { businesses, selectedBusinessId } = storeToRefs(businessStore);
+
 const router = useRouter();
 const route = useRoute();
 const drawerVisible = ref(false);
+
+onMounted(() => {
+  businessStore.fetchBusinesses();
+});
 
 const activePath = computed(() => {
   if (route.path.startsWith('/admin')) {
@@ -124,5 +158,9 @@ const activePath = computed(() => {
 const handleLogout = async () => {
   await authStore.logout();
   router.push({ name: 'Login' });
+};
+
+const handleBusinessChange = (businessId: number) => {
+  businessStore.selectBusiness(businessId);
 };
 </script>

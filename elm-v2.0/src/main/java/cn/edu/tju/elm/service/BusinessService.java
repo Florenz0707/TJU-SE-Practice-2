@@ -1,9 +1,9 @@
 package cn.edu.tju.elm.service;
 
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.elm.model.Business;
+import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.repository.BusinessRepository;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,26 +21,21 @@ public class BusinessService {
     }
 
     public List<Business> getBusinesses() {
-        return Utils.removeDeleted(businessRepository.findAll());
+        return EntityUtils.filterEntityList(businessRepository.findAll());
     }
 
     public Business getBusinessById(Long businessId) {
-        Optional<Business> businessOptional = businessRepository.findOneById(businessId);
-        if (businessOptional.isEmpty() || businessOptional.get().getDeleted()) return null;
-        return businessOptional.get();
-    }
-
-    public Business getById(Long id) {
-        return businessRepository.findById(id).orElse(null);
+        Optional<Business> businessOptional = businessRepository.findById(businessId);
+        return businessOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public List<Business> getBusinessByOwner(User owner) {
         List<Business> businessList = businessRepository.findAllByBusinessOwner(owner);
-        return Utils.removeDeleted(businessList);
+        return EntityUtils.filterEntityList(businessList);
     }
 
-    public Business addBusiness(Business business) {
-        return businessRepository.save(business);
+    public void addBusiness(Business business) {
+        businessRepository.save(business);
     }
 
     public void updateBusiness(Business business) {

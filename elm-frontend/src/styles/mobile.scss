@@ -1,0 +1,51 @@
+/* Mobile-specific global styles */
+
+body {
+  // Use a more touch-friendly font size as the base
+  font-size: 16px;
+}
+
+// Override Element Plus default styles for mobile if needed
+// For example, make dialogs full-width on small screens
+.el-dialog {
+  @media (max-width: 768px) {
+    width: 90% !important;
+    margin: 5vh auto !important;
+  }
+}
+
+// Override Element Plus primary color to match the theme
+:root {
+  --el-color-primary: #f97316;
+  --el-color-primary-light-3: #fb923c;
+  --el-color-primary-light-5: #fdba74;
+  --el-color-primary-light-7: #fed7aa;
+  --el-color-primary-light-8: #ffedd5;
+  --el-color-primary-light-9: #fff7ed;
+  --el-color-primary-dark-2: #ea580c;
+}
+
+// Ensure all buttons and interactive elements use the theme color.
+.el-button--primary {
+  --el-button-bg-color: var(--el-color-primary);
+  --el-button-border-color: var(--el-color-primary);
+  --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+  --el-button-hover-border-color: var(--el-color-primary-dark-2);
+}
+
+// Add any other mobile-first global styles here
+// For example, adjusting default padding or margins for smaller screens
+.container {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+// Set theme color for all pages
+.mobile-layout {
+  --theme-color: var(--el-color-primary);
+}
+
+// Ensure all links and active router links use the theme color
+a, .router-link-active {
+  color: var(--el-color-primary);
+}

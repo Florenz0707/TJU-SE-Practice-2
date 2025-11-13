@@ -1,18 +1,17 @@
 package cn.edu.tju.elm.controller;
 
-import cn.edu.tju.core.model.Authority;
+import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.elm.model.Business;
-import cn.edu.tju.elm.model.Cart;
-import cn.edu.tju.elm.model.Food;
-import cn.edu.tju.elm.service.BusinessService;
-import cn.edu.tju.elm.service.CartItemService;
-import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.model.BO.Business;
+import cn.edu.tju.elm.model.BO.Cart;
+import cn.edu.tju.elm.model.BO.Food;
+import cn.edu.tju.elm.service.CartItemService;
 import cn.edu.tju.elm.service.FoodService;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -23,18 +22,15 @@ import java.util.Optional;
 @RequestMapping("/api")
 @Tag(name = "管理购物车", description = "对购物车内的商品增删改查")
 public class CartController {
+    private final UserService userService;
+    private final CartItemService cartItemService;
+    private final FoodService foodService;
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private CartItemService cartItemService;
-
-    @Autowired
-    private FoodService foodService;
-
-    @Autowired
-    private BusinessService businessService;
+    public CartController(UserService userService, CartItemService cartItemService, FoodService foodService) {
+        this.userService = userService;
+        this.cartItemService = cartItemService;
+        this.foodService = foodService;
+    }
 
     @PostMapping("/carts")
     public HttpResult<Cart> addCartItem(@RequestBody Cart cart) {
@@ -44,44 +40,24 @@ public class CartController {
 
         if (cart == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart CANT BE NULL");
-
         if (cart.getFood() == null || cart.getFood().getId() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
-        if (cart.getBusiness() == null || cart.getBusiness().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
-        if (cart.getCustomer() == null || cart.getCustomer().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
         if (cart.getQuantity() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Quantity CANT BE NULL");
 
         Food food = foodService.getFoodById(cart.getFood().getId());
         if (food == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
-        Business business = businessService.getBusinessById(cart.getBusiness().getId());
+        Business business = food.getBusiness();
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-        if (!food.getBusiness().equals(business))
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND IN THE Business");
-        User user = userService.getUserById(cart.getCustomer().getId());
-        if (user == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        if (user.equals(me)) {
-            cart.setFood(food);
-            cart.setBusiness(business);
-            cart.setCustomer(user);
-
-            LocalDateTime now = LocalDateTime.now();
-            cart.setCreateTime(now);
-            cart.setUpdateTime(now);
-            cart.setCreator(me.getId());
-            cart.setUpdater(me.getId());
-            cart.setDeleted(false);
-            cartItemService.addCart(cart);
-            return HttpResult.success(cart);
-        }
-
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+        EntityUtils.setNewEntity(cart, me);
+        cart.setFood(food);
+        cart.setBusiness(business);
+        cart.setCustomer(me);
+        cartItemService.addCart(cart);
+        return HttpResult.success(cart);
     }
 
     @GetMapping("/carts")
@@ -109,13 +85,7 @@ public class CartController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
         User owner = cart.getCustomer();
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(owner)) {
             cart.setQuantity(newCart.getQuantity());
 
@@ -130,7 +100,7 @@ public class CartController {
     }
 
     @DeleteMapping("/carts/{id}")
-    public HttpResult<Cart> deleteCartItem(@PathVariable("id") Long id) {
+    public HttpResult<String> deleteCartItem(@PathVariable("id") Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Authority NOT FOUND");
@@ -140,22 +110,10 @@ public class CartController {
         if (cart == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
-
-        if (isAdmin || cart.getCustomer().equals(me)) {
-            cart.setDeleted(true);
-
-            LocalDateTime now = LocalDateTime.now();
-            cart.setUpdateTime(now);
-            cart.setUpdater(me.getId());
-            cartItemService.updateCart(cart);
-            return HttpResult.success(cart);
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        if (isAdmin || me.equals(cart.getCustomer())) {
+            cartItemService.deleteCart(cart);
+            return HttpResult.success("Delete cart successfully.");
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }

@@ -1,10 +1,10 @@
 package cn.edu.tju.core.model;
 
 
+import jakarta.persistence.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
-
-import jakarta.persistence.*;
 
 @MappedSuperclass
 public class BaseEntity implements Serializable {
@@ -23,9 +23,6 @@ public class BaseEntity implements Serializable {
 
     @Column(name = "is_deleted")
     private Boolean deleted;
-
-    @Column(name = "is_referred")
-    private Boolean referred;
 
     public LocalDateTime getCreateTime() {
         return createTime;
@@ -73,14 +70,6 @@ public class BaseEntity implements Serializable {
 
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
-    }
-
-    public Boolean getReferred() {
-        return referred;
-    }
-
-    public void setReferred(Boolean referred) {
-        this.referred = referred;
     }
 
     @Override

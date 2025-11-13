@@ -16,7 +16,7 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="餐厅">{{ order.business?.businessName ?? '暂无' }}</el-descriptions-item>
         <el-descriptions-item label="状态">
-          <el-tag>{{ getStatusText(order.orderState) }}</el-tag>
+          <el-tag :type="getOrderStatusInfo(order.orderState as OrderStatus).type">{{ getOrderStatusInfo(order.orderState as OrderStatus).text }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="下单日期">{{ order.orderDate ? new Date(order.orderDate).toLocaleString() : '暂无' }}</el-descriptions-item>
         <el-descriptions-item label="总金额">¥{{ (order.orderTotal ?? 0).toFixed(2) }}</el-descriptions-item>
@@ -36,6 +36,14 @@
         <!-- Quantity is not available on the Food object, so we can't display it yet -->
       </el-table>
     </el-card>
+
+    <el-card v-if="review" class="review-card">
+      <template #header>
+        <h4>我的评价</h4>
+      </template>
+      <el-rate :model-value="review.stars" disabled />
+      <p>{{ review.content }}</p>
+    </el-card>
   </div>
 </template>
 
@@ -43,22 +51,19 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getOrderById } from '../../../api/order';
+import { getOrderReview } from '../../../api/review';
 import { getAllFoods } from '../../../api/food';
-import type { Order, Food } from '../../../api/types';
+import type { Order, Food, Review, OrderStatus } from '../../../api/types';
+import { getOrderStatusInfo, OrderStatus as OrderStatusEnum } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 
 const route = useRoute();
 const router = useRouter();
 const order = ref<Order | null>(null);
 const orderItems = ref<Food[]>([]);
+const review = ref<Review | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
-
-const getStatusText = (state?: number) => {
-  if (state === undefined || state === null) return '未知';
-  const statuses: { [key: number]: string } = { 1: '已下单', 2: '准备中', 3: '配送中', 4: '已送达', 5: '已取消' };
-  return statuses[state] || '未知';
-};
 
 const goBack = () => {
   router.back();
@@ -81,6 +86,15 @@ onMounted(async () => {
 
     if (orderRes.success) {
       order.value = orderRes.data;
+      // If order is reviewed, fetch the review
+      if (order.value.orderState === OrderStatusEnum.COMMENTED) {
+        const reviewRes = await getOrderReview(orderId);
+        if (reviewRes.success) {
+          review.value = reviewRes.data;
+        } else {
+          console.error('获取评价失败:', reviewRes.message);
+        }
+      }
     } else {
       throw new Error(orderRes.message || '获取订单详情失败');
     }
@@ -101,7 +115,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.order-summary-card, .order-items-card {
+.order-summary-card, .order-items-card, .review-card {
   margin-top: 20px;
 }
 </style>

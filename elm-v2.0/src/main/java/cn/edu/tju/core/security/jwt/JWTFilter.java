@@ -2,9 +2,9 @@ package cn.edu.tju.core.security.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -13,7 +13,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
 import java.io.IOException;
-import jakarta.servlet.ServletRequest;
 
 /**
  * Filters incoming requests and installs a Spring Security principal if a header corresponding to a valid user is

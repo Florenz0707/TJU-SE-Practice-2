@@ -1,19 +1,16 @@
 package cn.edu.tju.elm.controller;
 
-import cn.edu.tju.core.model.Authority;
+import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.core.security.repository.UserRepository;
-import cn.edu.tju.elm.model.Business;
-import cn.edu.tju.core.model.HttpResult;
-import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.model.BO.Business;
+import cn.edu.tju.elm.service.BusinessService;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,11 +18,13 @@ import java.util.Optional;
 @RequestMapping("/api/businesses")
 @Tag(name = "管理店铺", description = "提供对店铺的增删改查功能")
 public class BusinessController {
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final BusinessService businessService;
 
-    @Autowired
-    BusinessService businessService;
+    public BusinessController(UserService userService, BusinessService businessService) {
+        this.userService = userService;
+        this.businessService = businessService;
+    }
 
     @GetMapping("/{id}")
     public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
@@ -43,7 +42,8 @@ public class BusinessController {
     @PostMapping("")
     public HttpResult<Business> addBusiness(@RequestBody Business business) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         if (business == null)
@@ -58,26 +58,16 @@ public class BusinessController {
         if (owner == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner NOT FOUND");
 
-        boolean isAdmin = false;
-        boolean isBusiness = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) isAdmin = true;
-            if (authority.getName().equals("BUSINESS")) isBusiness = true;
-        }
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
         if (isAdmin || (isBusiness && me.equals(owner))) {
             business.setBusinessOwner(owner);
-
-            LocalDateTime now = LocalDateTime.now();
-            business.setCreateTime(now);
-            business.setUpdateTime(now);
-            business.setCreator(me.getId());
-            business.setUpdater(me.getId());
-            business.setDeleted(false);
+            EntityUtils.setNewEntity(business, me);
             businessService.addBusiness(business);
+
             return HttpResult.success(business);
         }
-
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "AUTHORITY LACKED");
     }
 
@@ -97,34 +87,20 @@ public class BusinessController {
 
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business CANT BE NULL");
-
         if (business.getBusinessName() == null)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "BusinessName CANT BE NULL");
-        if (business.getBusinessOwner() == null || business.getBusinessOwner().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner.Id CANT BE NULL");
-        User newOwner = userService.getUserById(business.getBusinessOwner().getId());
-        if (newOwner == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner NOT FOUND");
 
-        boolean isAdmin = false;
-        boolean isBusiness = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) isAdmin = true;
-            if (authority.getName().equals("BUSINESS")) isBusiness = true;
-        }
-        if (isAdmin || (isBusiness && me.equals(oldOwner) && oldOwner.equals(newOwner))) {
-            business.setBusinessOwner(newOwner);
-            LocalDateTime now = LocalDateTime.now();
-            business.setId(oldBusiness.getId());
-            business.setCreateTime(oldBusiness.getCreateTime());
-            business.setUpdateTime(now);
-            business.setCreator(oldBusiness.getCreator());
-            business.setUpdater(me.getId());
-            business.setDeleted(false);
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+        if (isAdmin || (isBusiness && me.equals(oldOwner))) {
+            business.setId(null);
+            EntityUtils.substituteEntity(oldBusiness, business, me);
+            business.setBusinessOwner(oldOwner);
+            businessService.updateBusiness(oldBusiness);
             businessService.updateBusiness(business);
+
             return HttpResult.success(business);
         }
-
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
@@ -144,37 +120,30 @@ public class BusinessController {
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business CANT BE NULL");
 
-        boolean isAdmin = false;
-        boolean isBusiness = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) isAdmin = true;
-            if (authority.getName().equals("BUSINESS")) isBusiness = true;
-        }
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(oldOwner))) {
-            business.setId(oldBusiness.getId());
+            business.setBusinessOwner(oldOwner);
+            if (business.getBusinessName() == null)
+                business.setBusinessName(oldBusiness.getBusinessName());
+            if (business.getBusinessAddress() == null)
+                business.setBusinessAddress(oldBusiness.getBusinessAddress());
+            if (business.getBusinessExplain() == null)
+                business.setBusinessExplain(oldBusiness.getBusinessExplain());
+            if (business.getBusinessImg() == null)
+                business.setBusinessImg(oldBusiness.getBusinessImg());
+            if (business.getRemarks() == null)
+                business.setRemarks(oldBusiness.getRemarks());
+            if (business.getOrderTypeId() == null)
+                business.setOrderTypeId(oldBusiness.getOrderTypeId());
+            if (business.getStartPrice() == null)
+                business.setStartPrice(oldBusiness.getStartPrice());
+            if (business.getDeliveryPrice() == null)
+                business.setDeliveryPrice(oldBusiness.getDeliveryPrice());
 
-            if (business.getBusinessOwner() == null) business.setBusinessOwner(oldOwner);
-            else if (isBusiness) {
-                if (business.getBusinessOwner().getId() == null)
-                    return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "IF BusinessOwner NOT NULL THEN BusinessOwner.Id MUST BE NOT NULL");
-                if (!oldOwner.getId().equals(business.getBusinessOwner().getId()))
-                    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-            }
-            if (business.getBusinessAddress() == null) business.setBusinessAddress(oldBusiness.getBusinessAddress());
-            if (business.getBusinessExplain() == null) business.setBusinessExplain(oldBusiness.getBusinessExplain());
-            if (business.getBusinessImg() == null) business.setBusinessImg(oldBusiness.getBusinessImg());
-            if (business.getRemarks() == null) business.setRemarks(oldBusiness.getRemarks());
-            if (business.getOrderTypeId() == null) business.setOrderTypeId(oldBusiness.getOrderTypeId());
-            if (business.getStartPrice() == null) business.setStartPrice(oldBusiness.getStartPrice());
-            if (business.getDeliveryPrice() == null) business.setDeliveryPrice(oldBusiness.getDeliveryPrice());
-
-            LocalDateTime now = LocalDateTime.now();
-            business.setCreateTime(oldBusiness.getCreateTime());
-            business.setUpdateTime(now);
-            business.setCreator(oldBusiness.getCreator());
-            business.setUpdater(me.getId());
-            business.setDeleted(false);
-
+            business.setId(null);
+            EntityUtils.substituteEntity(oldBusiness, business, me);
+            businessService.updateBusiness(oldBusiness);
             businessService.updateBusiness(business);
             return HttpResult.success(business);
         }
@@ -183,41 +152,36 @@ public class BusinessController {
     }
 
     @DeleteMapping("/{id}")
-    public HttpResult<Business> deleteBusiness(@PathVariable("id") Long id) {
+    public HttpResult<String> deleteBusiness(@PathVariable("id") Long id) {
         Business business = businessService.getBusinessById(id);
-        if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+        if (business == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        boolean isAdmin = false;
-        boolean isBusiness = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) isAdmin = true;
-            if (authority.getName().equals("BUSINESS")) isBusiness = true;
-        }
-
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && business.getBusinessOwner().equals(me))) {
-            LocalDateTime now = LocalDateTime.now();
-            business.setUpdateTime(now);
-            business.setUpdater(me.getId());
-            business.setDeleted(true);
+            EntityUtils.deleteEntity(business, me);
             businessService.updateBusiness(business);
-            return HttpResult.success(business);
+            return HttpResult.success("Delete business successfully.");
         }
 
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN);
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasAuthority('BUSINESS')")
     public HttpResult<List<Business>> getMyBusinesses() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        return HttpResult.success(businessService.getBusinessByOwner(me));
+        if (AuthorityUtils.hasAuthority(me, "BUSINESS"))
+            return HttpResult.success(businessService.getBusinessByOwner(me));
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 }

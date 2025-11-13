@@ -1,10 +1,10 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.elm.model.DeliveryAddress;
+import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.repository.AddressRepository;
-import cn.edu.tju.elm.utils.Utils;
-import org.springframework.transaction.annotation.Transactional;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,19 +18,20 @@ public class AddressService {
         this.addressRepository = addressRepository;
     }
 
-    public DeliveryAddress addAddress(DeliveryAddress address) {
-        return addressRepository.save(address);
+    public void addAddress(DeliveryAddress address) {
+        addressRepository.save(address);
+    }
+
+    public void updateAddress(DeliveryAddress address) {
+        addressRepository.save(address);
     }
 
     public DeliveryAddress getAddressById(Long id) {
         Optional<DeliveryAddress> addressOptional = addressRepository.findById(id);
-        return addressOptional.orElse(null);
+        return addressOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public List<DeliveryAddress> getAddressesByCustomerId(Long customerId) {
-        return Utils.removeDeleted(addressRepository.findByCustomerId(customerId));
-    }
-    public void updateAddress(DeliveryAddress address) {
-        addressRepository.save(address);
+        return EntityUtils.filterEntityList(addressRepository.findByCustomerId(customerId));
     }
 }

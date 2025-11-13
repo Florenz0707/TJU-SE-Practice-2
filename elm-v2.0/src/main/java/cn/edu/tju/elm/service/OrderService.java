@@ -1,8 +1,8 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.elm.model.Order;
+import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.repository.OrderRepository;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,21 +19,24 @@ public class OrderService {
         this.orderRepository = orderRepository;
     }
 
-    public Order addOrder(Order order) {
-        return orderRepository.save(order);
+    public void addOrder(Order order) {
+        orderRepository.save(order);
     }
 
     public Order getOrderById(Long id) {
         Optional<Order> orderOptional = orderRepository.findById(id);
-        if (orderOptional.isEmpty() || orderOptional.get().getDeleted()) return null;
-        return orderOptional.get();
+        return orderOptional.map(EntityUtils::filterEntity).orElse(null);
     }
 
     public List<Order> getOrdersByCustomerId(Long id) {
-        return Utils.removeDeleted(orderRepository.findAllByCustomerId(id));
+        return EntityUtils.filterEntityList(orderRepository.findAllByCustomerId(id));
     }
 
     public void updateOrder(Order order) {
         orderRepository.save(order);
+    }
+
+    public List<Order> getOrdersByBusinessId(Long businessId) {
+        return EntityUtils.filterEntityList(orderRepository.findAllByBusinessId(businessId));
     }
 }

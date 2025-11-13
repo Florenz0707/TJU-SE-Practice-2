@@ -15,9 +15,20 @@ export const useCartStore = defineStore('cart', () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const animationOrigin = ref<AnimationOrigin | null>(null);
+  const currentBusinessId = ref<number | null>(null);
+  const cartIconElement = ref<HTMLElement | null>(null);
+  const deliveryPrice = ref<number>(0);
+  const startPrice = ref<number>(0);
+
+  const itemsForCurrentBusiness = computed(() => {
+    if (!currentBusinessId.value) {
+      return [];
+    }
+    return items.value.filter(item => item.business?.id === currentBusinessId.value);
+  });
 
   const cartTotal = computed(() => {
-    return items.value.reduce((total, item) => {
+    return itemsForCurrentBusiness.value.reduce((total, item) => {
       const price = item.food?.foodPrice ?? 0;
       const quantity = item.quantity ?? 0;
       return total + price * quantity;
@@ -25,8 +36,25 @@ export const useCartStore = defineStore('cart', () => {
   });
 
   const totalItems = computed(() => {
-    return items.value.reduce((total, item) => total + (item.quantity ?? 0), 0);
+    return itemsForCurrentBusiness.value.reduce((total, item) => total + (item.quantity ?? 0), 0);
   });
+
+  const finalOrderTotal = computed(() => {
+    return cartTotal.value + deliveryPrice.value;
+  });
+
+  const setCurrentBusinessId = (id: number | null) => {
+    currentBusinessId.value = id;
+  };
+
+  const setCartIconElement = (el: HTMLElement) => {
+    cartIconElement.value = el;
+  };
+
+  const setBusinessFees = (delivery: number, start: number) => {
+    deliveryPrice.value = delivery;
+    startPrice.value = start;
+  };
 
   const fetchCart = async () => {
     loading.value = true;
@@ -48,7 +76,7 @@ export const useCartStore = defineStore('cart', () => {
   const addItem = async (food: Food, quantity: number, origin?: AnimationOrigin) => {
     // Trigger the animation
     if (origin) {
-      animationOrigin.value = origin;
+      // animationOrigin.value = origin; // Animation disabled due to reported issues
     }
 
     const existingItem = items.value.find(item => item.food?.id === food.id);
@@ -136,5 +164,14 @@ export const useCartStore = defineStore('cart', () => {
     updateItemQuantity,
     removeItem,
     animationOrigin,
+    itemsForCurrentBusiness,
+    setCurrentBusinessId,
+    currentBusinessId,
+    cartIconElement,
+    setCartIconElement,
+    deliveryPrice,
+    startPrice,
+    setBusinessFees,
+    finalOrderTotal,
   };
 });

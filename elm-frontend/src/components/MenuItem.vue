@@ -4,7 +4,7 @@
       <img
         v-if="food.foodImg"
         ref="imageElement"
-        :src="food.foodImg"
+        :src="formatBase64Image(food.foodImg)"
         alt="食物图片"
         class="food-image"
       />
@@ -28,6 +28,7 @@ import { ref } from 'vue';
 import type { Food } from '../api/types';
 import { useCartStore } from '../store/cart';
 import { ElMessage } from 'element-plus';
+import { formatBase64Image } from '../utils/image';
 
 const props = defineProps<{
   food: Food;
@@ -37,24 +38,21 @@ const cartStore = useCartStore();
 const imageElement = ref<HTMLImageElement | null>(null);
 
 const handleAddToCart = () => {
-  let origin: { x: number; y: number; imgSrc: string } | undefined;
-
-  if (imageElement.value && imageElement.value.src) {
+  if (imageElement.value) {
     const rect = imageElement.value.getBoundingClientRect();
-    origin = {
+    const origin = {
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
       imgSrc: imageElement.value.src,
     };
+    cartStore.addItem(props.food, 1, origin);
+  } else {
+    cartStore.addItem(props.food, 1);
   }
 
-  // The animation is a bonus, but adding to cart should always work.
-  cartStore.addItem(props.food, 1, origin);
-
-  // Show a confirmation message
-  ElMessage({
+  ElMessage.success({
     message: `${props.food.foodName} 已添加到购物车！`,
-    type: 'success',
+    duration: 1500,
   });
 };
 </script>
@@ -104,12 +102,15 @@ const handleAddToCart = () => {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
+  text-align: left;
+  gap: 8px;
 }
 .food-name {
   font-family: "Poppins", sans-serif;
   font-weight: 600;
   font-size: 18px;
   margin: 0 0 8px 0;
+  text-align: left;
 }
 .food-explain {
   font-family: "Inter", sans-serif;
@@ -117,6 +118,7 @@ const handleAddToCart = () => {
   font-size: 14px;
   flex-grow: 1;
   margin-bottom: 10px;
+  text-align: left;
 }
 .food-actions {
   display: flex;

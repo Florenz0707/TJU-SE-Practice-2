@@ -1,16 +1,19 @@
 package cn.edu.tju.core.security.controller;
 
-import cn.edu.tju.core.model.*;
+import cn.edu.tju.core.model.HttpResult;
+import cn.edu.tju.core.model.Person;
+import cn.edu.tju.core.model.ResultCodeEnum;
+import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.SecurityUtils;
-import cn.edu.tju.core.security.UserModelDetailsService;
 import cn.edu.tju.core.security.controller.dto.LoginDto;
 import cn.edu.tju.core.security.service.PersonService;
-import cn.edu.tju.elm.utils.Utils;
+import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import cn.edu.tju.core.security.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,35 +26,10 @@ public class UserRestController {
 
     private final UserService userService;
     private final PersonService personService;
-    private final UserModelDetailsService userModelDetailsService;
 
-    private final User system;
-
-    public UserRestController(UserService userService, UserModelDetailsService userModelDetailsService, PersonService personService) {
+    public UserRestController(UserService userService, PersonService personService) {
         this.userService = userService;
-        this.userModelDetailsService = userModelDetailsService;
         this.personService = personService;
-
-        User system_tmp;
-        system_tmp = this.userService.getUserWithUsername("system");
-        if (system_tmp == null) {
-            User user = new User();
-            user.setUsername("system");
-            user.setPassword(SecurityUtils.BCryptPasswordEncode("52012138"));
-            user.setActivated(true);
-            user.setDeleted(false);
-            user.setReferred(true);
-            user.setAuthorities(Utils.getAuthoritySet("ADMIN"));
-
-            LocalDateTime now = LocalDateTime.now();
-            user.setCreateTime(now);
-            user.setUpdateTime(now);
-            user.setCreator(0L);
-            user.setUpdater(0L);
-            userService.addUser(user);
-        }
-        system_tmp = this.userService.getUserWithUsername("system");
-        system = system_tmp;
     }
 
     @PostMapping("/users")
@@ -65,24 +43,21 @@ public class UserRestController {
 
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User CANT BE NULL");
-
         if (user.getUsername() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User.Username CANT BE NULL");
         if (user.getPassword() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User.Password CANT BE NULL");
 
+        if (user.getAuthorities() == null)
+            user.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+        EntityUtils.setNewEntity(user, me);
         user.setPassword(SecurityUtils.BCryptPasswordEncode(user.getPassword()));
-        LocalDateTime now = LocalDateTime.now();
-        user.setCreator(me.getId());
-        user.setCreateTime(now);
-        user.setUpdater(me.getId());
-        user.setUpdateTime(now);
-        user.setDeleted(false);
         user.setActivated(true);
 
-        if (userService.addUser(user) == null)
+        if (userService.getUserWithUsername(user.getUsername()) != null)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Username ALREADY EXISTS");
-        return HttpResult.success(userService.addUser(user));
+        userService.addUser(user);
+        return HttpResult.success(user);
     }
 
     @GetMapping("/user")
@@ -101,15 +76,9 @@ public class UserRestController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
 
-        User user = userService.getOneWithAuthoritiesByUsername(loginDto.getUsername());
+        User user = userService.getUserWithAuthoritiesByUsername(loginDto.getUsername());
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
@@ -129,21 +98,23 @@ public class UserRestController {
         if (person.getUsername() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person.Username CANT BE NULL");
 
+        person.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
         person.setPassword(SecurityUtils.BCryptPasswordEncode("password"));
-        person.setDeleted(false);
         person.setActivated(true);
-        person.setReferred(false);
-        person.setAuthorities(Utils.getAuthoritySet("USER"));
 
         LocalDateTime now = LocalDateTime.now();
-        person.setCreator(system.getId());
         person.setCreateTime(now);
-        person.setUpdater(system.getId());
         person.setUpdateTime(now);
+        person.setCreator(0L);
+        person.setUpdater(0L);
+        person.setDeleted(false);
 
-        if (userService.addUser(person) == null)
+        if (userService.getUserWithUsername(person.getUsername()) != null)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Username ALREADY EXISTS");
-        return HttpResult.success(personService.addPerson(person));
+
+        userService.addUser(person);
+        personService.addPerson(person);
+        return HttpResult.success(person);
     }
 
     @GetMapping("/users")
@@ -153,10 +124,9 @@ public class UserRestController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meoptional.get();
 
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                return HttpResult.success(userService.getUsers());
-            }
+        if (AuthorityUtils.hasAuthority(me, "ADMIN")) {
+            List<User> userList = userService.getUsers();
+            return HttpResult.success(userList);
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
@@ -164,61 +134,17 @@ public class UserRestController {
     @GetMapping("/users/{id}")
     public HttpResult<User> getUser(@PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        if (meOptional.isEmpty())
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
 
         User user = userService.getUserById(id);
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
-
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(user))
             return HttpResult.success(user);
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
-
-    @PutMapping("/users/{id}")
-    public HttpResult<User> updateUser(@PathVariable Long id, @RequestBody User user) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        User oldUser = userService.getUserById(id);
-        if (oldUser == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
-
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
-        if (isAdmin || me.equals(oldUser)) {
-            user.setId(oldUser.getId());
-            user.setUsername(oldUser.getUsername());
-            user.setPassword(oldUser.getPassword());
-            user.setActivated(oldUser.isActivated());
-            user.setAuthorities(oldUser.getAuthorities());
-
-            LocalDateTime now = LocalDateTime.now();
-            user.setCreateTime(oldUser.getCreateTime());
-            user.setUpdateTime(now);
-            user.setCreator(oldUser.getCreator());
-            user.setUpdater(me.getId());
-            user.setDeleted(false);
-
-            userService.updateUser(user);
-            return HttpResult.success(user);
-        }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
@@ -233,25 +159,12 @@ public class UserRestController {
         if (user == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
+        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || me.equals(user)) {
-            LocalDateTime now = LocalDateTime.now();
-            user.setUpdateTime(now);
-            user.setUpdater(me.getId());
-            user.setDeleted(true);
+            EntityUtils.deleteEntity(user, me);
             userService.updateUser(user);
-            return HttpResult.success(user);
+            return HttpResult.success();
         }
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
-
-    public UserModelDetailsService getUserModelDetailsService() {
-        return userModelDetailsService;
     }
 }

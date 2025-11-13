@@ -1,13 +1,39 @@
 import request from '../utils/request';
-import type { Order, HttpResultOrder, HttpResultListOrder, HttpResult } from './types';
+import type { Order, Review, HttpResultOrder, HttpResultListOrder, HttpResult } from './types';
 
 /**
- * @description Retrieves a list of orders for a specific user.
- * @param {number} userId - The ID of the user whose orders to retrieve.
- * @returns {Promise<HttpResultListOrder>}
- * @see {@link openapi.json} - operationId: "listOrdersByUserId"
+ * @description Retrieves a list of orders for the current customer.
+ * @returns {Promise<HttpResultListOrder>} A promise that resolves to the list of orders.
  */
-export const listOrdersByUserId = (userId: number): Promise<HttpResultListOrder> => {
+export const getMyOrdersCustomer = (): Promise<HttpResultListOrder> => {
+  return request.get('/orders/user/my');
+};
+
+/**
+ * @description Retrieves a list of orders for the current merchant.
+ * @returns {Promise<HttpResultListOrder>} A promise that resolves to the list of orders.
+ */
+export const getMyOrdersMerchant = (): Promise<HttpResultListOrder> => {
+  return request.get('/orders/merchant/my');
+};
+
+/**
+ * @description Retrieves a list of orders for a specific business.
+ * @param {number} businessId - The ID of the business.
+ * @returns {Promise<HttpResultListOrder>} A promise that resolves to the list of orders.
+ */
+export const getOrdersByBusinessId = (businessId: number): Promise<HttpResultListOrder> => {
+  return request.get(`/orders/business/${businessId}`);
+};
+
+/**
+ * @description Retrieves a list of orders, optionally filtered by user ID.
+ * @param {number} [userId] - The ID of the user whose orders to retrieve.
+ * @returns {Promise<HttpResultListOrder>}
+ * @deprecated Use getMyOrdersCustomer, getMyOrdersMerchant, or getOrdersByBusinessId instead.
+ * @see {@link openapi.json} - operationId: "listOrders"
+ */
+export const listOrders = (userId?: number): Promise<HttpResultListOrder> => {
   return request.get('/orders', { params: { userId } });
 };
 
@@ -22,15 +48,6 @@ export const addOrder = (data: Order): Promise<HttpResultOrder> => {
 };
 
 /**
- * @description Fetches the current user's order history.
- * @returns {Promise<HttpResultListOrder>}
- * @see {@link openapi.json} - operationId: "getCurrentUserOrders"
- */
-export const getCurrentUserOrders = (): Promise<HttpResultListOrder> => {
-  return request.get('/orders/my');
-};
-
-/**
  * @description Fetches a single order by its ID.
  * @param {number} id - The ID of the order to fetch.
  * @returns {Promise<HttpResult<Order>>}
@@ -42,11 +59,19 @@ export const getOrderById = (id: number): Promise<HttpResult<Order>> => {
 
 /**
  * @description Updates the status of an order.
- * @param {number} id - The ID of the order to update.
- * @param {number} orderState - The new state of the order.
+ * @param {Partial<Order>} data - The order data with the updated status.
  * @returns {Promise<HttpResultOrder>}
  * @see {@link openapi.json} - operationId: "updateOrderStatus"
  */
-export const updateOrderStatus = (id: number, orderState: number): Promise<HttpResultOrder> => {
-  return request.patch(`/orders/${id}`, { orderState });
+export const updateOrderStatus = (data: Partial<Order>): Promise<HttpResultOrder> => {
+  return request.patch('/orders', data);
+};
+
+/**
+ * @description Adds a review for an order.
+ * @param {Partial<Review>} data - The review data.
+ * @returns {Promise<HttpResult<Review>>}
+ */
+export const addReview = (data: Partial<Review>): Promise<HttpResult<Review>> => {
+  return request.post('/reviews', data);
 };
