@@ -1,5 +1,7 @@
 package cn.edu.tju.elm.model.VO;
 
+import cn.edu.tju.core.model.HttpResult;
+import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.elm.model.BO.PublicVoucher;
 
 import java.io.Serializable;
@@ -10,7 +12,7 @@ public class PublicVoucherVO implements Serializable {
     private BigDecimal threshold;
     private BigDecimal value;
     private Boolean claimable;
-    private Integer valid_days;
+    private Integer validDays;
 
     public PublicVoucherVO() {
     }
@@ -20,7 +22,27 @@ public class PublicVoucherVO implements Serializable {
         threshold = publicVoucher.getThreshold();
         value = publicVoucher.getValue();
         claimable = publicVoucher.getClaimable();
-        valid_days = publicVoucher.getValid_days();
+        validDays = publicVoucher.getValidDays();
+    }
+
+    public static HttpResult<String> isValidPublicVoucherVO(PublicVoucherVO publicVoucherVO) {
+        if (publicVoucherVO == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "PublicVoucher CANT BE NULL");
+        if (publicVoucherVO.getThreshold() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Threshold CANT BE NULL");
+        if (publicVoucherVO.getValue() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Value CANT BE NULL");
+        if (publicVoucherVO.getClaimable() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Claimable CANT BE NULL");
+        if (publicVoucherVO.getValidDays() == null)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ValidDays CANT BE NULL");
+        if (publicVoucherVO.getThreshold().compareTo(BigDecimal.ZERO) < 0)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Threshold CANT BE NEGATIVE");
+        if (publicVoucherVO.getValue().compareTo(BigDecimal.ZERO) <= 0)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Value CANT BE NEGATIVE");
+        if (publicVoucherVO.getValidDays().compareTo(0) <= 0)
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ValidDays CANT BE NEGATIVE");
+        return null;
     }
 
     public Long getId() {
@@ -39,8 +61,8 @@ public class PublicVoucherVO implements Serializable {
         return claimable;
     }
 
-    public Integer getValid_days() {
-        return valid_days;
+    public Integer getValidDays() {
+        return validDays;
     }
 
     @Override
@@ -50,6 +72,6 @@ public class PublicVoucherVO implements Serializable {
                 ", threshold=" + threshold +
                 ", value=" + value +
                 ", claimable=" + claimable +
-                ", valid_days=" + valid_days;
+                ", valid_days=" + validDays;
     }
 }

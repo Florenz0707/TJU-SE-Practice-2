@@ -20,14 +20,14 @@ public class PublicVoucher extends BaseEntity {
     private Boolean claimable;
 
     @Column(nullable = false)
-    private Integer valid_days;
+    private Integer validDays;
 
     public static PublicVoucher createVoucher(BigDecimal threshold, BigDecimal value, Boolean claimable, Integer valid_days) {
         PublicVoucher publicVoucher = new PublicVoucher();
         publicVoucher.threshold = threshold;
         publicVoucher.value = value;
         publicVoucher.claimable = claimable;
-        publicVoucher.valid_days = valid_days;
+        publicVoucher.validDays = valid_days;
         EntityUtils.setNewEntity(publicVoucher);
         return publicVoucher;
     }
@@ -44,7 +44,7 @@ public class PublicVoucher extends BaseEntity {
         return claimable;
     }
 
-    public Integer getValid_days() {
-        return valid_days;
+    public Integer getValidDays() {
+        return validDays;
     }
 }
