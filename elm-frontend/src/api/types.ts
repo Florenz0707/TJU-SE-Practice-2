@@ -228,3 +228,27 @@ export interface MerchantApplication {
   applicationState?: number;
   handler?: User;
 }
+
+export interface Wallet {
+  id: number;
+  owner: number;
+  balance: number;
+  voucher: number;
+}
+
+export interface Transaction {
+  id?: number;
+  amount: number;
+  type: number;
+  inWalletId?: number;
+  outWalletId?: number;
+  finished: boolean;
+}
+
+export interface PublicVoucher {
+  id: number;
+  threshold: number;
+  value: number;
+  claimable: boolean;
+  validDays: number;
+}

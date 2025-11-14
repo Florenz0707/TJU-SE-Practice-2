@@ -23,6 +23,10 @@
         <Building :size="24" />
         <span>店铺管理</span>
       </router-link>
+      <router-link to="/mobile/admin/vouchers" class="nav-item">
+        <Ticket :size="24" />
+        <span>优惠券</span>
+      </router-link>
       <router-link to="/mobile/admin/user-profile" class="nav-item">
         <User :size="24" />
         <span>我的</span>
@@ -32,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { LayoutDashboard, Users, Store, User, Building } from 'lucide-vue-next';
+import { LayoutDashboard, Users, Store, User, Building, Ticket } from 'lucide-vue-next';
 </script>
 
 <style scoped>

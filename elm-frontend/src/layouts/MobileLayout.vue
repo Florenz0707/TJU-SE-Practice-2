@@ -19,6 +19,10 @@
         <ScrollText :size="24" />
         <span>订单</span>
       </router-link>
+      <router-link to="/mobile/profile/wallet" class="nav-item">
+        <Wallet :size="24" />
+        <span>钱包</span>
+      </router-link>
       <router-link to="/mobile/profile" class="nav-item">
         <User :size="24" />
         <span>我的</span>
@@ -28,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { Home, ScrollText, User, ShoppingCart } from 'lucide-vue-next';
+import { Home, ScrollText, User, ShoppingCart, Wallet } from 'lucide-vue-next';
 import { useCartStore } from '../store/cart';
 import { useRoute } from 'vue-router';
 
