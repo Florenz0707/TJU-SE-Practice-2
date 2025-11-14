@@ -55,6 +55,10 @@
               <el-icon><List /></el-icon>
               <span>订单历史</span>
             </el-menu-item>
+            <el-menu-item index="/profile/wallet">
+              <el-icon><CreditCard /></el-icon>
+              <span>我的钱包</span>
+            </el-menu-item>
             <el-menu-item index="/profile/apply-merchant" v-if="!authStore.userRoles.includes('MERCHANT')">
               <el-icon><Shop /></el-icon>
               <span>成为商家</span>
@@ -125,7 +129,7 @@ import { useAuthStore } from '../../store/auth';
 import { useCartStore } from '../../store/cart';
 import { formatBase64Image } from '../../utils/image';
 import ShoppingCart from '../../components/ShoppingCart.vue';
-import { ShoppingCart as ShoppingCartIcon, User, Location, List, HomeFilled, Shop, Setting } from '@element-plus/icons-vue';
+import { ShoppingCart as ShoppingCartIcon, User, Location, List, HomeFilled, Shop, Setting, CreditCard } from '@element-plus/icons-vue';
 
 const authStore = useAuthStore();
 const cartStore = useCartStore();

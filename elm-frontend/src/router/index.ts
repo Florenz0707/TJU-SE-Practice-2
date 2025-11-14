@@ -83,6 +83,12 @@ const routes: Array<RouteRecordRaw> = [
             component: () => import('../views/customer/Profile/ApplyAsMerchant.vue'),
             meta: { title: '成为商家' },
           },
+          {
+            path: 'wallet',
+            name: 'Wallet',
+            component: () => import('../views/customer/Profile/Wallet.vue'),
+            meta: { title: '我的钱包' },
+          },
         ],
       },
       {
@@ -127,6 +133,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'users', name: 'UserManagement', component: () => import('../views/admin/UserManagement.vue'), meta: { title: '用户管理' } },
       { path: 'businesses', name: 'MerchantManagement', component: () => import('../views/admin/MerchantManagement.vue'), meta: { title: '商家管理' } },
       { path: 'applications', name: 'ShopManagement', component: () => import('../views/admin/ShopManagement.vue'), meta: { title: '店铺管理' } },
+      { path: 'vouchers', name: 'VoucherManagement', component: () => import('../views/admin/VoucherManagement.vue'), meta: { title: '优惠券管理' } },
       { path: 'user-profile', name: 'AdminUserProfile', component: () => import('../views/admin/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
   },
@@ -204,6 +211,12 @@ const mobileRoutes: RouteRecordRaw = {
       name: 'MobileSubmitReview',
       component: () => import('../views/mobile/customer/SubmitReview.vue'),
       meta: { title: '评价订单', requiresAuth: true, roles: ['CUSTOMER'] }
+    },
+    {
+      path: 'profile/wallet',
+      name: 'MobileWallet',
+      component: () => import('../views/mobile/customer/Wallet.vue'),
+      meta: { title: '我的钱包', requiresAuth: true, roles: ['CUSTOMER'] }
     }
   ]
 };
@@ -241,6 +254,7 @@ const mobileAdminRoutes: RouteRecordRaw = {
       { path: 'users', name: 'MobileUserManagement', component: () => import('../views/mobile/admin/UserManagement.vue'), meta: { title: '用户管理' } },
       { path: 'businesses', name: 'MobileMerchantManagement', component: () => import('../views/mobile/admin/MerchantManagement.vue'), meta: { title: '商家管理' } },
       { path: 'shops', name: 'MobileShopManagement', component: () => import('../views/mobile/admin/ShopManagement.vue'), meta: { title: '店铺管理' } },
+      { path: 'vouchers', name: 'MobileVoucherManagement', component: () => import('../views/mobile/admin/VoucherManagement.vue'), meta: { title: '优惠券管理' } },
       { path: 'user-profile', name: 'MobileAdminProfile', component: () => import('../components/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
 };
