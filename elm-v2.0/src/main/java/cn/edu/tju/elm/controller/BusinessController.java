@@ -63,7 +63,7 @@ public class BusinessController {
 
         if (isAdmin || (isBusiness && me.equals(owner))) {
             business.setBusinessOwner(owner);
-            EntityUtils.setNewEntity(business, me);
+            EntityUtils.setNewEntity(business);
             businessService.addBusiness(business);
 
             return HttpResult.success(business);
@@ -94,7 +94,7 @@ public class BusinessController {
         boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(oldOwner))) {
             business.setId(null);
-            EntityUtils.substituteEntity(oldBusiness, business, me);
+            EntityUtils.substituteEntity(oldBusiness, business);
             business.setBusinessOwner(oldOwner);
             businessService.updateBusiness(oldBusiness);
             businessService.updateBusiness(business);
@@ -142,7 +142,7 @@ public class BusinessController {
                 business.setDeliveryPrice(oldBusiness.getDeliveryPrice());
 
             business.setId(null);
-            EntityUtils.substituteEntity(oldBusiness, business, me);
+            EntityUtils.substituteEntity(oldBusiness, business);
             businessService.updateBusiness(oldBusiness);
             businessService.updateBusiness(business);
             return HttpResult.success(business);
@@ -165,7 +165,7 @@ public class BusinessController {
         boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && business.getBusinessOwner().equals(me))) {
-            EntityUtils.deleteEntity(business, me);
+            EntityUtils.deleteEntity(business);
             businessService.updateBusiness(business);
             return HttpResult.success("Delete business successfully.");
         }

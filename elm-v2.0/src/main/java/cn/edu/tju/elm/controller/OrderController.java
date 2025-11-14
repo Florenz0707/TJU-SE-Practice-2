@@ -76,7 +76,7 @@ public class OrderController {
                     totalPrice.compareTo(business.getStartPrice()) < 0)
                 return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order.TotalPrice IS LESS THAN BUSINESS START PRICE");
 
-            EntityUtils.setNewEntity(order, me);
+            EntityUtils.setNewEntity(order);
             order.setOrderTotal(totalPrice);
             order.setOrderState(OrderState.PAID);
             order.setOrderDate(order.getCreateTime());
@@ -89,7 +89,7 @@ public class OrderController {
                 cartItemService.deleteCart(cart);
 
                 OrderDetailet orderDetailet = new OrderDetailet();
-                EntityUtils.setNewEntity(orderDetailet, me);
+                EntityUtils.setNewEntity(orderDetailet);
                 orderDetailet.setOrder(order);
                 orderDetailet.setFood(cart.getFood());
                 orderDetailet.setQuantity(cart.getQuantity());
@@ -166,9 +166,7 @@ public class OrderController {
         if (isAdmin || (isBusiness && me.equals(newOrder.getBusiness().getBusinessOwner()))
                 || me.equals(newOrder.getCustomer())) {
             newOrder.setOrderState(orderState);
-            LocalDateTime now = LocalDateTime.now();
-            newOrder.setUpdateTime(now);
-            newOrder.setUpdater(me.getId());
+            EntityUtils.updateEntity(newOrder);
             orderService.updateOrder(newOrder);
             return HttpResult.success(newOrder);
         }

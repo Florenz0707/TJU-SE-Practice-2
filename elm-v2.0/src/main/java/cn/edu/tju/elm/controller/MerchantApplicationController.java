@@ -1,6 +1,6 @@
 package cn.edu.tju.elm.controller;
 
-import cn.edu.tju.core.model.ApplicationState;
+import cn.edu.tju.elm.constant.ApplicationState;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
@@ -44,7 +44,7 @@ public class MerchantApplicationController {
         if (merchantApplication == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "MerchantApplication CANT BE NULL");
 
-        EntityUtils.setNewEntity(merchantApplication, me);
+        EntityUtils.setNewEntity(merchantApplication);
         merchantApplication.setApplicationState(ApplicationState.UNDISPOSED);
         merchantApplication.setApplicant(me);
         User admin = userService.getUserWithUsername("admin");
@@ -97,15 +97,13 @@ public class MerchantApplicationController {
         if (newMerchantApplication.getApplicationState() == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ApplicationState CANT BE NULL");
         merchantApplication.setApplicationState(newMerchantApplication.getApplicationState());
-        merchantApplication.setUpdater(me.getId());
-        merchantApplication.setUpdateTime(LocalDateTime.now());
+        EntityUtils.updateEntity(merchantApplication);
         merchantApplicationService.updateMerchantApplication(merchantApplication);
 
         if (merchantApplication.getApplicationState().equals(ApplicationState.APPROVED)) {
             User applicant = merchantApplication.getApplicant();
             applicant.setAuthorities(AuthorityUtils.getAuthoritySet("USER BUSINESS"));
-            applicant.setUpdater(me.getId());
-            applicant.setUpdateTime(LocalDateTime.now());
+            EntityUtils.updateEntity(applicant);
             userService.updateUser(applicant);
         }
         return HttpResult.success(merchantApplication);

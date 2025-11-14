@@ -1,22 +1,28 @@
 package cn.edu.tju.elm.model.VO;
 
-import cn.edu.tju.elm.model.BO.TransactionBO;
+import cn.edu.tju.elm.model.BO.Transaction;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class TransactionVO {
-    private final Long id;
-    private final BigDecimal amount;
-    private final Integer type;
-    private final Long enterWalletId;
-    private final Long outWalletId;
+public class TransactionVO implements Serializable {
+    private Long id;
+    private BigDecimal amount;
+    private Integer type;
+    private Long inWalletId;
+    private Long outWalletId;
+    private Boolean finished;
 
-    public TransactionVO(TransactionBO transactionBO) {
-        this.id = transactionBO.getId();
-        this.amount = transactionBO.getAmount();
-        this.type = transactionBO.getType();
-        this.enterWalletId = transactionBO.getEnterWallet().getId();
-        this.outWalletId = transactionBO.getOutWallet().getId();
+    public TransactionVO() {
+    }
+
+    public TransactionVO(Transaction transaction) {
+        this.id = transaction.getId();
+        this.amount = transaction.getAmount();
+        this.type = transaction.getType();
+        this.inWalletId = transaction.getInWallet() == null ? null : transaction.getInWallet().getId();
+        this.outWalletId = transaction.getOutWallet() == null ? null : transaction.getOutWallet().getId();
+        this.finished = transaction.isFinished();
     }
 
     public Long getId() {
@@ -31,16 +37,20 @@ public class TransactionVO {
         return type;
     }
 
-    public Long getEnterWalletId() {
-        return enterWalletId;
+    public Long getInWalletId() {
+        return inWalletId;
     }
 
     public Long getOutWalletId() {
         return outWalletId;
     }
 
+    public Boolean getFinished() {
+        return finished;
+    }
+
     @Override
     public String toString() {
-        return "TransactionVO: id=" + id + ", amount=" + amount + ", type=" + type;
+        return "TransactionVO: id=" + id + ", amount=" + amount + ", type=" + type + ", inWalletId=" + inWalletId + ", outWalletId=" + outWalletId + ", finished=" + finished;
     }
 }

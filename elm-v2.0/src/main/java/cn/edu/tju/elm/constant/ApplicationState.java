@@ -1,4 +1,4 @@
-package cn.edu.tju.core.model;
+package cn.edu.tju.elm.constant;
 
 public class ApplicationState {
     public static final Integer UNDISPOSED = 0;

@@ -11,7 +11,7 @@ import jakarta.persistence.OneToOne;
 import java.math.BigDecimal;
 
 @Entity
-public class WalletBO extends BaseEntity {
+public class Wallet extends BaseEntity {
     @Column(nullable = false)
     private BigDecimal balance;
 
@@ -19,7 +19,7 @@ public class WalletBO extends BaseEntity {
     private BigDecimal voucher;
 
     @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
     public BigDecimal getBalance() {
@@ -34,12 +34,12 @@ public class WalletBO extends BaseEntity {
         return owner;
     }
 
-    public static WalletBO getNewWallet(User owner) {
-        WalletBO wallet = new WalletBO();
+    public static Wallet getNewWallet(User owner) {
+        Wallet wallet = new Wallet();
         wallet.owner = owner;
         wallet.balance = BigDecimal.ZERO;
         wallet.voucher = BigDecimal.ZERO;
-        EntityUtils.setNewEntity(wallet, owner);
+        EntityUtils.setNewEntity(wallet);
         return wallet;
     }
 
@@ -65,7 +65,7 @@ public class WalletBO extends BaseEntity {
     public boolean decVoucher(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
         if (amount.compareTo(voucher) > 0) return false;
-        voucher = voucher.add(amount);
+        voucher = voucher.subtract(amount);
         return true;
     }
 }

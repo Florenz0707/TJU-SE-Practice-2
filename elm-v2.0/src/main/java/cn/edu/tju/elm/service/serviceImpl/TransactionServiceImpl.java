@@ -2,14 +2,19 @@ package cn.edu.tju.elm.service.serviceImpl;
 
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.constant.TransactionType;
-import cn.edu.tju.elm.model.BO.TransactionBO;
-import cn.edu.tju.elm.model.BO.WalletBO;
+import cn.edu.tju.elm.exception.TransactionException;
+import cn.edu.tju.elm.model.BO.Transaction;
+import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.model.RECORD.TransactionsRecord;
+import cn.edu.tju.elm.model.VO.PublicVoucherVO;
 import cn.edu.tju.elm.model.VO.TransactionVO;
 import cn.edu.tju.elm.repository.TransactionRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
+import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
+import cn.edu.tju.elm.service.serviceInterface.PublicVoucherService;
 import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.TOPUPPublicVoucherSelectorImpl;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,77 +26,101 @@ public class TransactionServiceImpl implements TransactionService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
 
-    public TransactionServiceImpl(WalletRepository walletRepository, TransactionRepository transactionRepository) {
+    private final PublicVoucherService publicVoucherService;
+    private final PrivateVoucherService privateVoucherService;
+
+    public TransactionServiceImpl(
+            WalletRepository walletRepository,
+            TransactionRepository transactionRepository,
+            PublicVoucherService publicVoucherService,
+            PrivateVoucherService privateVoucherService) {
         this.walletRepository = walletRepository;
         this.transactionRepository = transactionRepository;
+        this.publicVoucherService = publicVoucherService;
+        this.privateVoucherService = privateVoucherService;
     }
 
-    public TransactionVO getTransactionById(Long id) {
-        TransactionBO transactionBO = transactionRepository.findById(id).orElse(null);
-        return transactionBO == null ? null : new TransactionVO(transactionBO);
+    public TransactionVO getTransactionById(Long id) throws TransactionException {
+        Transaction transaction = transactionRepository.findById(id).orElse(null);
+        if (transaction == null)
+            throw new TransactionException(TransactionException.NOT_FOUND);
+        return new TransactionVO(transaction);
     }
 
-    public TransactionVO createTransaction(BigDecimal amount, Integer type, Long enterWalletId, Long outWalletId, User operator) {
-        WalletBO enterWalletBO = null;
-        WalletBO outWalletBO = null;
+    public TransactionVO createTransaction(BigDecimal amount, Integer type, Long inWalletId, Long outWalletId) throws TransactionException {
+        Wallet inWallet = null;
+        Wallet outWallet = null;
         if (type.equals(TransactionType.TOP_UP)) {
-            if (enterWalletId == null) return null;
-            enterWalletBO = walletRepository.findById(enterWalletId).orElse(null);
-            if (enterWalletBO == null) return null;
-            if (!enterWalletBO.addBalance(amount)) return null;
-            EntityUtils.updateEntity(enterWalletBO, operator);
-            walletRepository.save(enterWalletBO);
+            inWallet = walletRepository.findById(inWalletId).orElse(null);
+            if (inWallet == null)
+                throw new TransactionException(TransactionException.IN_WALLET_NOT_FOUND);
+            if (!inWallet.addBalance(amount))
+                throw new TransactionException(TransactionException.UNKNOWN_EXCEPTION);
+            EntityUtils.updateEntity(inWallet);
+            walletRepository.save(inWallet);
         } else if (type.equals(TransactionType.PAYMENT)) {
-            if (enterWalletId == null || outWalletId == null) return null;
-            enterWalletBO = walletRepository.findById(enterWalletId).orElse(null);
-            outWalletBO = walletRepository.findById(outWalletId).orElse(null);
-            if (enterWalletBO == null || outWalletBO == null) return null;
-            if (!outWalletBO.decBalance(amount)) return null;
-            EntityUtils.updateEntity(outWalletBO, operator);
-            walletRepository.save(outWalletBO);
+            inWallet = walletRepository.findById(inWalletId).orElse(null);
+            outWallet = walletRepository.findById(outWalletId).orElse(null);
+            if (inWallet == null)
+                throw new TransactionException(TransactionException.IN_WALLET_NOT_FOUND);
+            if (outWallet == null)
+                throw new TransactionException(TransactionException.OUT_WALLET_NOT_FOUND);
+            if (!outWallet.decBalance(amount))
+                throw new TransactionException(TransactionException.BALANCE_NOT_ENOUGH);
+            EntityUtils.updateEntity(outWallet);
+            walletRepository.save(outWallet);
             // 暂时冻结，不入账
         } else if (type.equals(TransactionType.WITHDRAW)) {
-            if (outWalletId == null) return null;
-            outWalletBO = walletRepository.findById(outWalletId).orElse(null);
-            if (outWalletBO == null) return null;
-            if (!outWalletBO.decBalance(amount)) return null;
-            EntityUtils.updateEntity(outWalletBO, operator);
-            walletRepository.save(outWalletBO);
+            outWallet = walletRepository.findById(outWalletId).orElse(null);
+            if (outWallet == null)
+                throw new TransactionException(TransactionException.OUT_WALLET_NOT_FOUND);
+            if (!outWallet.decBalance(amount))
+                throw new TransactionException(TransactionException.BALANCE_NOT_ENOUGH);
+            EntityUtils.updateEntity(outWallet);
+            walletRepository.save(outWallet);
         }
 
-        TransactionBO transactionBO = TransactionBO.createNewTransaction(amount, type, enterWalletBO, outWalletBO);
-        EntityUtils.setNewEntity(transactionBO, operator);
-        transactionRepository.save(transactionBO);
-        return new TransactionVO(transactionBO);
+        Transaction transaction = Transaction.createNewTransaction(amount, type, inWallet, outWallet);
+        EntityUtils.setNewEntity(transaction);
+        if (type.equals(TransactionType.TOP_UP)) {
+            PublicVoucherVO publicVoucherVO = publicVoucherService.chooseBestPublicVoucherForTransaction(new TransactionVO(transaction), new TOPUPPublicVoucherSelectorImpl());
+            if (publicVoucherVO != null)
+                privateVoucherService.createPrivateVoucher(inWalletId, publicVoucherVO);
+        }
+        transactionRepository.save(transaction);
+        return new TransactionVO(transaction);
     }
 
-    public TransactionVO updateTransactionStatus(Long id, Boolean isFinished, User operator) {
-        TransactionBO transactionBO = transactionRepository.findById(id).orElse(null);
-        if (transactionBO == null) return null;
-        if (transactionBO.getIsFinished() != false || isFinished != true) return null;
+    public TransactionVO finishTransaction(Long id, User operator) throws TransactionException {
+        Transaction transaction = transactionRepository.findById(id).orElse(null);
+        if (transaction == null)
+            throw new TransactionException(TransactionException.NOT_FOUND);
+        if (transaction.isFinished())
+            throw new TransactionException(TransactionException.ALREADY_FINISHED);
 
-        if (transactionBO.getType().equals(TransactionType.PAYMENT)) {
-            WalletBO outWalletBO = transactionBO.getOutWallet();
-            outWalletBO.addBalance(transactionBO.getAmount());
-            EntityUtils.updateEntity(transactionBO, operator);
-            walletRepository.save(outWalletBO);
+        if (transaction.getType().equals(TransactionType.PAYMENT)) {
+            Wallet outWallet = transaction.getOutWallet();
+            outWallet.addBalance(transaction.getAmount());
+            EntityUtils.updateEntity(transaction);
+            walletRepository.save(outWallet);
         }
 
-        transactionBO.setIsFinished(true);
-        EntityUtils.updateEntity(transactionBO, operator);
-        transactionRepository.save(transactionBO);
-        return new TransactionVO(transactionBO);
+        transaction.finish();
+        EntityUtils.updateEntity(transaction);
+        transactionRepository.save(transaction);
+        return new TransactionVO(transaction);
     }
 
     public TransactionsRecord getTransactionsByWalletId(Long walletId) {
-        List<TransactionVO> enterWalletList = new ArrayList<>();
-        for (TransactionBO transactionBO : transactionRepository.findAllByEnterWalletId(walletId)) {
-            enterWalletList.add(new TransactionVO(transactionBO));
-        }
+        List<TransactionVO> inWalletList = new ArrayList<>();
         List<TransactionVO> outWalletList = new ArrayList<>();
-        for (TransactionBO transactionBO : transactionRepository.findAllByOutWalletId(walletId)) {
-            outWalletList.add(new TransactionVO(transactionBO));
+
+        for (Transaction transaction : transactionRepository.findAllByInWalletId(walletId)) {
+            inWalletList.add(new TransactionVO(transaction));
         }
-        return new TransactionsRecord(enterWalletList, outWalletList);
+        for (Transaction transaction : transactionRepository.findAllByOutWalletId(walletId)) {
+            outWalletList.add(new TransactionVO(transaction));
+        }
+        return new TransactionsRecord(inWalletList, outWalletList);
     }
 }

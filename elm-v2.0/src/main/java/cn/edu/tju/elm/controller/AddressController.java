@@ -44,7 +44,7 @@ public class AddressController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
         address.setCustomer(me);
-        EntityUtils.setNewEntity(address, me);
+        EntityUtils.setNewEntity(address);
         addressService.addAddress(address);
 
         return HttpResult.success(address);
@@ -82,7 +82,7 @@ public class AddressController {
         if (isAdmin || me.equals(oldCustomer)) {
             newAddress.setCustomer(oldCustomer);
             newAddress.setId(null);
-            EntityUtils.substituteEntity(address, newAddress, me);
+            EntityUtils.substituteEntity(address, newAddress);
             addressService.updateAddress(address);
             addressService.updateAddress(newAddress);
             return HttpResult.success(newAddress);
@@ -104,7 +104,7 @@ public class AddressController {
 
         boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
         if (isAdmin || (me.equals(customer))) {
-            EntityUtils.deleteEntity(address, me);
+            EntityUtils.deleteEntity(address);
             addressService.updateAddress(address);
             return HttpResult.success("Delete address successfully.");
         }

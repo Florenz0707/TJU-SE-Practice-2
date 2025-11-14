@@ -1,20 +1,21 @@
 package cn.edu.tju.elm.model.VO;
 
-import cn.edu.tju.elm.model.BO.WalletBO;
+import cn.edu.tju.elm.model.BO.Wallet;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class WalletVO {
+public class WalletVO implements Serializable {
     private final Long id;
     private final BigDecimal balance;
     private final BigDecimal voucher;
     private final Long ownerId;
 
-    public WalletVO(WalletBO walletBO) {
-        id = walletBO.getId();
-        balance = walletBO.getBalance();
-        voucher = walletBO.getVoucher();
-        ownerId = walletBO.getOwner().getId();
+    public WalletVO(Wallet wallet) {
+        id = wallet.getId();
+        balance = wallet.getBalance();
+        voucher = wallet.getVoucher();
+        ownerId = wallet.getOwner().getId();
     }
 
     public Long getId() {
