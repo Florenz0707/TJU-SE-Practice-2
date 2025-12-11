@@ -9,34 +9,34 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 public final class LogInUtils {
 
-   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-   private LogInUtils() {
-   }
+    private LogInUtils() {
+    }
 
-   public static String getTokenForLogin(String username, String password, MockMvc mockMvc) throws Exception {
-      String content = mockMvc.perform(post("/api/authenticate")
-         .contentType(MediaType.APPLICATION_JSON)
-         .content("{\"password\": \"" + password + "\", \"username\": \"" + username + "\"}"))
-         .andReturn()
-         .getResponse()
-         .getContentAsString();
-      AuthenticationResponse authResponse = OBJECT_MAPPER.readValue(content, AuthenticationResponse.class);
+    public static String getTokenForLogin(String username, String password, MockMvc mockMvc) throws Exception {
+        String content = mockMvc.perform(post("/api/authenticate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"password\": \"" + password + "\", \"username\": \"" + username + "\"}"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        AuthenticationResponse authResponse = OBJECT_MAPPER.readValue(content, AuthenticationResponse.class);
 
-      return authResponse.getIdToken();
-   }
+        return authResponse.getIdToken();
+    }
 
-   private static class AuthenticationResponse {
+    private static class AuthenticationResponse {
 
-      @JsonAlias("id_token")
-      private String idToken;
+        @JsonAlias("id_token")
+        private String idToken;
 
-      public void setIdToken(String idToken) {
-         this.idToken = idToken;
-      }
+        public void setIdToken(String idToken) {
+            this.idToken = idToken;
+        }
 
-      public String getIdToken() {
-         return idToken;
-      }
-   }
+        public String getIdToken() {
+            return idToken;
+        }
+    }
 }
