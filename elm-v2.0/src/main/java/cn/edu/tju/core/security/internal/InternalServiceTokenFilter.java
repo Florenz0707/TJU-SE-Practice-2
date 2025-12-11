@@ -40,14 +40,14 @@ public class InternalServiceTokenFilter extends GenericFilterBean {
             throws IOException, ServletException {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
-        String requestURI = httpServletRequest.getRequestURI();
+        String servletPath = httpServletRequest.getServletPath();
 
         // 只处理内部接口路径
-        if (requestURI.startsWith("/api/inner/")) {
+        if (servletPath != null && servletPath.startsWith("/api/inner/")) {
             String token = httpServletRequest.getHeader(INTERNAL_SERVICE_TOKEN_HEADER);
 
             if (!StringUtils.hasText(token) || !token.equals(internalServiceToken)) {
-                LOG.warn("Invalid or missing internal service token for URI: {}", requestURI);
+                LOG.warn("Invalid or missing internal service token for URI: {}", servletPath);
                 httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 httpServletResponse.setContentType("application/json;charset=UTF-8");
                 httpServletResponse.getWriter().write("{\"success\":false,\"code\":\"UNAUTHORIZED\",\"message\":\"Invalid or missing internal service token\"}");
@@ -61,7 +61,7 @@ public class InternalServiceTokenFilter extends GenericFilterBean {
                     Collections.singletonList(new SimpleGrantedAuthority(INTERNAL_SERVICE_ROLE))
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            LOG.debug("Internal service token validated for URI: {}", requestURI);
+            LOG.debug("Internal service token validated for URI: {}", servletPath);
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
