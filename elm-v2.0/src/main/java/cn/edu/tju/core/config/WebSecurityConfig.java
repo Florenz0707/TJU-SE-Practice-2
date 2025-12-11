@@ -1,7 +1,9 @@
 package cn.edu.tju.core.config;
 
+import cn.edu.tju.core.security.internal.InternalServiceTokenFilter;
 import cn.edu.tju.core.security.jwt.JWTFilter;
 import cn.edu.tju.core.security.jwt.TokenProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -61,10 +63,14 @@ public class WebSecurityConfig {
             "/**.html"
     };
 
+    @Value("${internal.service.token}")
+    private String internalServiceToken;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         String token = "ZmQ0ZGI5NjQ0MDQwY2I4MjMxY2Y3ZmI3MjdhN2ZmMjNhODViOTg1ZGE0NTBjMGM4NDA5NzYxMjdjOWMwYWRmZTBlZjlhNGY3ZTg4Y2U3YTE1ODVkZDU5Y2Y3OGYwZWE1NzUzNWQ2YjFjZDc0NGMxZWU2MmQ3MjY1NzJmNTE0MzI=";
         var jwtTokenFilter = new JWTFilter(new TokenProvider(token, 86400L, 108000L));
+        var internalServiceTokenFilter = new InternalServiceTokenFilter(internalServiceToken);
 
         httpSecurity.removeConfigurers(DefaultLoginPageConfigurer.class);
 
@@ -76,6 +82,8 @@ public class WebSecurityConfig {
                 // Authorize HTTP requests
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers(permitUrlArr).permitAll()
+                        // 内部接口需要内部服务Token或JWT认证
+                        .requestMatchers("/api/inner/**").hasAnyAuthority("INTERNAL_SERVICE", "ROLE_USER", "ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
                 // Set session management to stateless
@@ -84,6 +92,8 @@ public class WebSecurityConfig {
                 // Disable unnecessary headers
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                // Add internal service token filter before JWT filter
+                .addFilterBefore(internalServiceTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 // Add your custom JWT filter
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 // Disable default login mechanisms
