@@ -1,0 +1,10 @@
+[project]
+name = "Elm-Test"
+version = "1.0.0"
+description = "Test elm api with python scripts"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pytest>=9.0.2",
+    "requests>=2.32.5",
+]

@@ -10,6 +10,7 @@ import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.PublicVoucherSelector;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,6 +68,20 @@ public class PublicVoucherServiceImpl implements PublicVoucherService {
     }
 
     public PublicVoucherVO chooseBestPublicVoucherForTransaction(TransactionVO transactionVO, PublicVoucherSelector selector) throws PublicVoucherException {
-        return selector.getBestPublicVoucher(getPublicVouchers(), transactionVO);
+        BigDecimal amount = transactionVO == null ? null : transactionVO.getAmount();
+        List<PublicVoucher> publicVouchers;
+        if (amount != null) {
+            // use repository query to pre-filter by threshold and sort by faceValue desc
+            publicVouchers = publicVoucherRepository.findQualifiedPublicVoucher(amount);
+        } else {
+            publicVouchers = publicVoucherRepository.findAll();
+        }
+
+        List<PublicVoucherVO> publicVoucherVOS = new ArrayList<>();
+        for (PublicVoucher publicVoucher : publicVouchers) {
+            if (publicVoucher == null || publicVoucher.getDeleted()) continue;
+            publicVoucherVOS.add(new PublicVoucherVO(publicVoucher));
+        }
+        return selector.getBestPublicVoucher(publicVoucherVOS, transactionVO);
     }
 }

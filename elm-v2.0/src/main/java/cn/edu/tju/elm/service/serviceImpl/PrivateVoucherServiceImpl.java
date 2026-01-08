@@ -31,15 +31,26 @@ public class PrivateVoucherServiceImpl implements PrivateVoucherService {
             throw new PrivateVoucherException("Wallet Not Found");
         PrivateVoucher privateVoucher = PrivateVoucher.createPrivateVoucher(wallet, publicVoucherVO);
         privateVoucherRepository.save(privateVoucher);
-        return false;
+        return true;
     }
 
     public boolean redeemPrivateVoucher(Long id) throws PrivateVoucherException {
-        return false;
+        PrivateVoucher pv = privateVoucherRepository.findById(id).orElse(null);
+        if (pv == null || pv.getDeleted() != null && pv.getDeleted())
+            throw new PrivateVoucherException("PrivateVoucher NOT FOUND");
+        boolean ok = pv.redeem();
+        privateVoucherRepository.save(pv);
+        return ok;
     }
 
     public List<PrivateVoucherVO> getPrivateVouchers(User user) throws PrivateVoucherException {
-        return List.of();
+        if (user == null) throw new PrivateVoucherException("User CANT BE NULL");
+        List<PrivateVoucher> pvList = privateVoucherRepository.findByWalletOwnerId(user.getId());
+        java.util.List<PrivateVoucherVO> ret = new java.util.ArrayList<>();
+        for (PrivateVoucher pv : pvList) {
+            ret.add(new PrivateVoucherVO(pv));
+        }
+        return ret;
     }
 
     public void clearExpiredPrivateVouchers(User user) throws PrivateVoucherException {
