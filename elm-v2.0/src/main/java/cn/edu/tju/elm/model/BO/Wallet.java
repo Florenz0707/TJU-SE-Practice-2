@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 public class Wallet extends BaseEntity {
@@ -21,6 +22,12 @@ public class Wallet extends BaseEntity {
     @OneToOne
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
+
+    @Column(name = "credit_limit", nullable = false)
+    private BigDecimal creditLimit = BigDecimal.ZERO;
+
+    @Column(name = "last_withdrawal_at")
+    private LocalDateTime lastWithdrawalAt;
 
     public BigDecimal getBalance() {
         return balance;
@@ -66,6 +73,33 @@ public class Wallet extends BaseEntity {
         if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
         if (amount.compareTo(voucher) > 0) return false;
         voucher = voucher.subtract(amount);
+        return true;
+    }
+
+    public BigDecimal getCreditLimit() {
+        return creditLimit;
+    }
+
+    public void setCreditLimit(BigDecimal creditLimit) {
+        this.creditLimit = creditLimit == null ? BigDecimal.ZERO : creditLimit;
+    }
+
+    public LocalDateTime getLastWithdrawalAt() {
+        return lastWithdrawalAt;
+    }
+
+    public void setLastWithdrawalAt(LocalDateTime lastWithdrawalAt) {
+        this.lastWithdrawalAt = lastWithdrawalAt;
+    }
+
+    /**
+     * 支持透支扣减：允许余额变为负值，但不超过 creditLimit
+     */
+    public boolean decBalanceWithCredit(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
+        BigDecimal allowed = balance.add(creditLimit);
+        if (allowed.compareTo(amount) < 0) return false;
+        balance = balance.subtract(amount);
         return true;
     }
 }

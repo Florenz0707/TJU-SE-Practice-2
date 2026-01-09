@@ -6,6 +6,8 @@ public class TransactionException extends RuntimeException {
     public static final String BALANCE_NOT_ENOUGH = "Balance NOT ENOUGH";
     public static final String IN_WALLET_NOT_FOUND = "InWallet NOT FOUND";
     public static final String OUT_WALLET_NOT_FOUND = "OutWallet NOT FOUND";
+    public static final String WITHDRAWAL_COOLDOWN = "Withdrawal cooldown not met";
+    public static final String WITHDRAWAL_MINIMUM = "Withdrawal amount below minimum";
     public static final String UNKNOWN_EXCEPTION = "Unknown Exception";
 
     public TransactionException(String message) {
