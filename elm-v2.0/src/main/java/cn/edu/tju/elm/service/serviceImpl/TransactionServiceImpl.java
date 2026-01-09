@@ -16,10 +16,11 @@ import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.TOPUPPublicVoucherSelectorImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,6 +54,7 @@ public class TransactionServiceImpl implements TransactionService {
         return new TransactionVO(transaction);
     }
 
+    @Transactional
     public TransactionVO createTransaction(BigDecimal amount, Integer type, Long inWalletId, Long outWalletId) throws TransactionException {
         Wallet inWallet = null;
         Wallet outWallet = null;
@@ -115,6 +117,7 @@ public class TransactionServiceImpl implements TransactionService {
         return new TransactionVO(transaction);
     }
 
+    @Transactional
     public TransactionVO finishTransaction(Long id, User operator) throws TransactionException {
         Transaction transaction = transactionRepository.findById(id).orElse(null);
         if (transaction == null)
