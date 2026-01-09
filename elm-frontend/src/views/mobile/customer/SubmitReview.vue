@@ -32,6 +32,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getOrderById } from '../../../api/order';
 import { addReview } from '../../../api/review';
+import { notifyReviewSuccess } from '../../../api/points';
 import type { Order, Review } from '../../../api/types';
 import { ElMessage, type FormInstance } from 'element-plus';
 import { useAuthStore } from '../../../store/auth';
@@ -92,8 +93,31 @@ const submitReview = async () => {
       anonymous: reviewForm.value.anonymous,
     };
     const res = await addReview(order.value.id!, reviewData);
-    if (res.success) {
-      ElMessage.success('评价成功！');
+    if (res.success && res.data?.id) {
+      // Notify points system about review completion
+      if (authStore.user?.id) {
+        try {
+          const hasImage = false; // TODO: Add image upload support
+          const wordCount = reviewForm.value.content.length;
+          await notifyReviewSuccess({
+            userId: authStore.user.id,
+            bizId: `REV_${res.data.id}`,
+            amount: 0, // Review points don't depend on amount
+            eventTime: new Date().toISOString(),
+            extraInfo: JSON.stringify({
+              hasImage,
+              wordCount,
+              rating: reviewForm.value.stars,
+              orderId: order.value.id
+            })
+          });
+        } catch (error: any) {
+          console.error('Failed to notify points system:', error);
+          // Don't block the review submission flow
+        }
+      }
+      
+      ElMessage.success('评价成功！积分已发放');
       router.push('/mobile/orders');
     } else {
       throw new Error(res.message);

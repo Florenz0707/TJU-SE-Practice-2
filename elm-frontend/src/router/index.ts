@@ -89,6 +89,18 @@ const routes: Array<RouteRecordRaw> = [
             component: () => import('../views/customer/Profile/Wallet.vue'),
             meta: { title: '我的钱包' },
           },
+          {
+            path: 'points',
+            name: 'Points',
+            component: () => import('../views/customer/Profile/Points.vue'),
+            meta: { title: '我的积分' },
+          },
+          {
+            path: 'vouchers',
+            name: 'MyVouchers',
+            component: () => import('../views/customer/Profile/MyVouchers.vue'),
+            meta: { title: '我的优惠券' },
+          },
         ],
       },
       {
@@ -114,6 +126,8 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'menu', name: 'MenuManagement', component: MenuManagement, meta: { title: '菜单管理' } },
       { path: 'profile', name: 'BusinessProfile', component: BusinessProfile, meta: { title: '店铺信息' } },
       { path: 'orders', name: 'MerchantOrderHistory', component: OrderHistory, meta: { title: '历史订单' } },
+      { path: 'wallet', name: 'MerchantWallet', component: () => import('../views/merchant/Wallet.vue'), meta: { title: '我的钱包' } },
+      { path: 'points', name: 'MerchantPoints', component: () => import('../views/merchant/Points.vue'), meta: { title: '我的积分' } },
       { path: 'applications', name: 'MyApplications', component: () => import('../views/merchant/MyApplications.vue'), meta: { title: '我的申请' } },
       { path: 'user-profile', name: 'MerchantUserProfile', component: () => import('../views/merchant/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
@@ -134,6 +148,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'businesses', name: 'MerchantManagement', component: () => import('../views/admin/MerchantManagement.vue'), meta: { title: '商家管理' } },
       { path: 'applications', name: 'ShopManagement', component: () => import('../views/admin/ShopManagement.vue'), meta: { title: '店铺管理' } },
       { path: 'vouchers', name: 'VoucherManagement', component: () => import('../views/admin/VoucherManagement.vue'), meta: { title: '优惠券管理' } },
+      { path: 'points', name: 'PointsManagement', component: () => import('../views/admin/PointsManagement.vue'), meta: { title: '积分规则' } },
       { path: 'user-profile', name: 'AdminUserProfile', component: () => import('../views/admin/UserProfile.vue'), meta: { title: '我的资料' } }
     ]
   },

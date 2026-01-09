@@ -47,6 +47,7 @@
             <el-menu-item index="/admin/businesses">商家管理</el-menu-item>
             <el-menu-item index="/admin/applications">店铺管理</el-menu-item>
             <el-menu-item index="/admin/vouchers">优惠券管理</el-menu-item>
+            <el-menu-item index="/admin/points">积分规则</el-menu-item>
             <el-menu-item index="/admin/user-profile">我的资料</el-menu-item>
           </el-menu>
         </div>
@@ -101,6 +102,10 @@
         <el-menu-item index="/admin/vouchers">
           <el-icon><i-ep-ticket /></el-icon>
           <span>优惠券管理</span>
+        </el-menu-item>
+        <el-menu-item index="/admin/points">
+          <el-icon><i-ep-coin /></el-icon>
+          <span>积分规则</span>
         </el-menu-item>
         <el-menu-item index="/admin/user-profile">
           <el-icon><i-ep-user /></el-icon>

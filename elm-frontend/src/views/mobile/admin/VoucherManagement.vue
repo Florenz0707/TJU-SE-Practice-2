@@ -92,7 +92,7 @@ function openVoucherDialog(voucher?: PublicVoucher) {
 async function saveVoucher() {
   try {
     if (isEdit.value) {
-      await updatePublicVoucher(voucherForm.value.id.toString(), voucherForm.value);
+      await updatePublicVoucher(voucherForm.value);
       ElMessage.success('优惠券更新成功。');
     } else {
       await addPublicVoucher(voucherForm.value);

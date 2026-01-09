@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineProps, defineExpose } from 'vue';
+import { ref, watch } from 'vue';
 import { ElMessage, type FormInstance, type FormRules, type UploadProps } from 'element-plus';
 import type { Food } from '../../../api/types';
 import { Plus } from '@element-plus/icons-vue';

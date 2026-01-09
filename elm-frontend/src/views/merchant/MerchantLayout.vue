@@ -46,6 +46,8 @@
             <el-menu-item index="/merchant/orders">历史订单</el-menu-item>
             <el-menu-item index="/merchant/menu">菜单管理</el-menu-item>
             <el-menu-item index="/merchant/profile">店铺信息</el-menu-item>
+            <el-menu-item index="/merchant/wallet">我的钱包</el-menu-item>
+            <el-menu-item index="/merchant/points">我的积分</el-menu-item>
             <el-menu-item index="/merchant/user-profile">我的资料</el-menu-item>
             <el-menu-item index="/merchant/applications">我的申请</el-menu-item>
           </el-menu>

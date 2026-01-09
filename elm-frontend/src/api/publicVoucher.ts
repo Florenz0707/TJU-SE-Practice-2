@@ -10,8 +10,9 @@ export function addPublicVoucher(voucher: PublicVoucher): Promise<HttpResult<any
   return request.post('/publicVoucher', voucher);
 }
 
-export function updatePublicVoucher(id: string, voucher: PublicVoucher): Promise<HttpResult<any>> {
-  return request.put(`/publicVoucher/${id}`, voucher);
+// Updated based on prompt: PUT /api/publicVoucher removed path parameter id
+export function updatePublicVoucher(voucher: PublicVoucher): Promise<HttpResult<any>> {
+  return request.put(`/publicVoucher`, voucher);
 }
 
 export function getPublicVoucherById(id: string): Promise<HttpResult<PublicVoucher>> {

@@ -9,9 +9,11 @@
       </template>
 
       <el-table :data="vouchers" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="180" />
+        <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="threshold" label="门槛" />
         <el-table-column prop="value" label="价值" />
+        <el-table-column prop="totalQuantity" label="总数量" />
+        <el-table-column prop="perUserLimit" label="每人限领" />
         <el-table-column prop="claimable" label="可领取">
           <template #default="scope">
             <el-tag :type="scope.row.claimable ? 'success' : 'danger'">
@@ -20,7 +22,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="validDays" label="有效期（天）" />
-        <el-table-column label="操作">
+        <el-table-column label="操作" width="180">
           <template #default="scope">
             <el-button size="small" @click="openVoucherDialog(scope.row)">编辑</el-button>
             <el-button size="small" type="danger" @click="deleteVoucher(scope.row.id)">删除</el-button>
@@ -36,6 +38,12 @@
         </el-form-item>
         <el-form-item label="价值">
           <el-input-number v-model="voucherForm.value" :min="0" />
+        </el-form-item>
+         <el-form-item label="总数量 (0为不限)">
+          <el-input-number v-model="voucherForm.totalQuantity" :min="0" />
+        </el-form-item>
+         <el-form-item label="每人限领 (0为不限)">
+          <el-input-number v-model="voucherForm.perUserLimit" :min="0" />
         </el-form-item>
         <el-form-item label="可领取">
           <el-switch v-model="voucherForm.claimable" />
@@ -67,6 +75,8 @@ const voucherForm = ref<PublicVoucher>({
   value: 0,
   claimable: true,
   validDays: 30,
+  totalQuantity: 0,
+  perUserLimit: 0
 });
 
 async function fetchVouchers() {
@@ -90,6 +100,8 @@ function openVoucherDialog(voucher?: PublicVoucher) {
       value: 0,
       claimable: true,
       validDays: 30,
+      totalQuantity: 0,
+      perUserLimit: 0
     };
   }
   dialogVisible.value = true;
@@ -98,7 +110,7 @@ function openVoucherDialog(voucher?: PublicVoucher) {
 async function saveVoucher() {
   try {
     if (isEdit.value) {
-      await updatePublicVoucher(voucherForm.value.id.toString(), voucherForm.value);
+      await updatePublicVoucher(voucherForm.value);
       ElMessage.success('优惠券更新成功。');
     } else {
       await addPublicVoucher(voucherForm.value);
@@ -130,3 +142,11 @@ onMounted(() => {
   fetchVouchers();
 });
 </script>
+
+<style scoped>
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+</style>

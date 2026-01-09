@@ -234,6 +234,8 @@ export interface Wallet {
   owner: number;
   balance: number;
   voucher: number;
+  creditLimit?: number;
+  lastWithdrawalAt?: string;
 }
 
 export interface Transaction {
@@ -243,6 +245,7 @@ export interface Transaction {
   inWalletId?: number;
   outWalletId?: number;
   finished: boolean;
+  createTime?: string;
 }
 
 export interface PublicVoucher {
@@ -251,4 +254,62 @@ export interface PublicVoucher {
   value: number;
   claimable: boolean;
   validDays: number;
+  totalQuantity?: number;
+  perUserLimit?: number;
+}
+
+export interface PrivateVoucher {
+    id: number;
+    walletId: number;
+    publicVoucherId: number;
+    value: number;
+    threshold: number;
+    expiryDate: string;
+    used: boolean;
+    publicVoucher: PublicVoucher;
+}
+
+// Points System Types
+
+export interface PointsAccount {
+    id: number;
+    userId: number;
+    totalPoints: number;
+    frozenPoints: number;
+    availablePoints: number;
+}
+
+export const PointsRecordType = {
+    EARN: 0,
+    CONSUME: 1,
+    EXPIRE: 2,
+    FREEZE: 3,
+    UNFREEZE: 4
+} as const;
+export type PointsRecordType = typeof PointsRecordType[keyof typeof PointsRecordType];
+
+export interface PointsRecord {
+    id: number;
+    userId: number;
+    type: PointsRecordType;
+    amount: number;
+    reason: string;
+    createTime: string;
+}
+
+export const PointsRuleType = {
+    ORDER: 'ORDER',
+    COMMENT: 'COMMENT',
+    LOGIN: 'LOGIN',
+    REGISTER: 'REGISTER'
+} as const;
+export type PointsRuleType = typeof PointsRuleType[keyof typeof PointsRuleType];
+
+export interface PointsRule {
+    id?: number;
+    channelType: PointsRuleType;
+    ratio: number;
+    expireDays: number;
+    description: string;
+    isEnabled: boolean;
 }
