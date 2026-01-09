@@ -52,15 +52,19 @@ public class Wallet extends BaseEntity {
 
     public boolean addBalance(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
-        balance = balance.add(amount);
+        synchronized (this) {
+            balance = balance.add(amount);
+        }
         return true;
     }
 
     public boolean decBalance(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
-        if (amount.compareTo(balance) > 0) return false;
-        balance = balance.subtract(amount);
-        return true;
+        synchronized (this) {
+            if (amount.compareTo(balance) > 0) return false;
+            balance = balance.subtract(amount);
+            return true;
+        }
     }
 
     public boolean addVoucher(BigDecimal amount) {
@@ -97,9 +101,11 @@ public class Wallet extends BaseEntity {
      */
     public boolean decBalanceWithCredit(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
-        BigDecimal allowed = balance.add(creditLimit);
-        if (allowed.compareTo(amount) < 0) return false;
-        balance = balance.subtract(amount);
-        return true;
+        synchronized (this) {
+            BigDecimal allowed = balance.add(creditLimit);
+            if (allowed.compareTo(amount) < 0) return false;
+            balance = balance.subtract(amount);
+            return true;
+        }
     }
 }
