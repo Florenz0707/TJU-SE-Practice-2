@@ -60,3 +60,32 @@
 - 过期处理：`PrivateVoucher.expiryDate` 存在，但当前没有批处理任务定期清理或生成过期流水，需在后续增加定期任务。
 - 库存与限领：当前模型无库存或每用户限领机制（若需活动控制或防刷，需要扩展 `PublicVoucher` 字段如 `totalQuantity`、`perUserLimit`，并在领取逻辑中做原子检查/更新）。
 - 并发安全：领取与核销在高并发场景下需要加锁或使用乐观锁/数据库约束以避免超发或重复核销。
+
+## 补充（最近变更与建议）
+
+- 近期改动（代码/Schema/测试）说明：
+  - 已修复交易入账逻辑：`TransactionServiceImpl.finishTransaction` 在 PAYMENT 场景中应将金额入账给收款方（`inWallet`），已修正（参见 `TransactionServiceImpl.java`）。
+  - 支持钱包透支与提现控制：`Wallet` 添加了 `creditLimit` 与 `lastWithdrawalAt` 字段，并实现 `decBalanceWithCredit()`；`TransactionServiceImpl` 在提现路径加入了最小提现金额与提现冷却期校验（参见 `Wallet.java` 与 `TransactionServiceImpl.java`）。
+  - 更新了数据库模式：在 `schema.sql` 中新增 `wallet` 表列 `credit_limit` 与 `last_withdrawal_at`（参见 `src/main/resources/schema.sql`）。
+  - 添加了静态单元测试（Python）：`tests/test_wallet_changes.py`，用于静态验证 schema 与 Java 源码中新增字段/方法与常量是否存在，便于 CI 做快速检查。
+
+- 对优惠券系统的进一步建议（优先级高到低）：
+  1. 库存与限领支持：为 `PublicVoucher` 增加 `totalQuantity`、`perUserLimit` 字段，并在领取逻辑使用数据库原子更新（行锁或 UPDATE ... WHERE remaining>0 返回行数）以避免超发。
+  2. 领取幂等与防刷：在 `PrivateVoucher` 表记录 `claim_trace_id` 或使用唯一索引（user_id + public_voucher_id + biz_id），并在高频领取点使用令牌桶/速率限制。
+  3. 定期任务：实现定时任务（Quartz / Spring Scheduled）清理过期私有券并产生过期统计/通知。
+  4. 领取并发控制：Controller->Service 中对关键路径引入乐观锁（version）或悲观锁（SELECT FOR UPDATE），并在失败时重试短次。
+  5. API 合约与错误码：补充 API 文档，明确错误码（例如 4001: 优惠券已过期，4002: 不满足门槛，4003: 超出领取限制），便于前端处理。
+  6. 集成测试：为关键流程（TOP_UP->发券、领取、核销）编写端到端集成测试，覆盖并发场景与事务回滚。
+
+- 推荐的短示例 API（已实现/建议）:
+  - 领取公共券（基于已实现的私有券创建）
+    - POST /api/privateVoucher/claim/{publicVoucherId}
+    - 入参：无（从 Token 获取用户），返回：201 + `PrivateVoucherVO` 或 4xx 错误码与消息
+  - 列出我的券
+    - GET /api/privateVoucher/my
+    - 返回：200 + `List<PrivateVoucherVO>`
+  - 核销券
+    - POST /api/privateVoucher/redeem/{id}
+    - 返回：200 + 布尔成功标志或具体失败原因
+
+总结：本次补充将项目中与优惠券强相关的改动（钱包透支、提现控制、交易入账修复、schema 更新）整理到文档中，同时给出若干高价值改进点与短期实现建议（库存/限领、幂等、过期任务、并发控制、错误码与测试）。建议按优先级先实现库存与限领、领取幂等与 API 错误码规范，再补充集成测试与定时过期清理。

@@ -18,6 +18,8 @@ import cn.edu.tju.elm.utils.TOPUPPublicVoucherSelectorImpl;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +27,10 @@ import java.util.List;
 public class TransactionServiceImpl implements TransactionService {
     private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
+
+    // 提现最小金额（单位：元），以及提现冷却期（秒）
+    private static final BigDecimal MIN_WITHDRAWAL = new BigDecimal("10");
+    private static final long WITHDRAWAL_COOLDOWN_SECONDS = 24 * 3600; // 24 小时
 
     private final PublicVoucherService publicVoucherService;
     private final PrivateVoucherService privateVoucherService;
@@ -74,8 +80,26 @@ public class TransactionServiceImpl implements TransactionService {
             outWallet = walletRepository.findById(outWalletId).orElse(null);
             if (outWallet == null)
                 throw new TransactionException(TransactionException.OUT_WALLET_NOT_FOUND);
-            if (!outWallet.decBalance(amount))
+            // 最小提现金额校验
+            if (amount.compareTo(MIN_WITHDRAWAL) < 0) {
+                throw new TransactionException(TransactionException.WITHDRAWAL_MINIMUM);
+            }
+
+            // 冷却期检查
+            LocalDateTime last = outWallet.getLastWithdrawalAt();
+            if (last != null) {
+                long since = Duration.between(last, LocalDateTime.now()).getSeconds();
+                if (since < WITHDRAWAL_COOLDOWN_SECONDS) {
+                    throw new TransactionException(TransactionException.WITHDRAWAL_COOLDOWN);
+                }
+            }
+
+            // 支持透支：尝试使用带信用额度的扣减方法
+            if (!outWallet.decBalanceWithCredit(amount))
                 throw new TransactionException(TransactionException.BALANCE_NOT_ENOUGH);
+
+            // 记录提现时间
+            outWallet.setLastWithdrawalAt(LocalDateTime.now());
             EntityUtils.updateEntity(outWallet);
             walletRepository.save(outWallet);
         }
@@ -99,10 +123,13 @@ public class TransactionServiceImpl implements TransactionService {
             throw new TransactionException(TransactionException.ALREADY_FINISHED);
 
         if (transaction.getType().equals(TransactionType.PAYMENT)) {
-            Wallet outWallet = transaction.getOutWallet();
-            outWallet.addBalance(transaction.getAmount());
-            EntityUtils.updateEntity(transaction);
-            walletRepository.save(outWallet);
+            // PAYMENT 完成时，将金额入账给收款方（inWallet）
+            Wallet inWallet = transaction.getInWallet();
+            if (inWallet == null)
+                throw new TransactionException(TransactionException.IN_WALLET_NOT_FOUND);
+            inWallet.addBalance(transaction.getAmount());
+            EntityUtils.updateEntity(inWallet);
+            walletRepository.save(inWallet);
         }
 
         transaction.finish();
