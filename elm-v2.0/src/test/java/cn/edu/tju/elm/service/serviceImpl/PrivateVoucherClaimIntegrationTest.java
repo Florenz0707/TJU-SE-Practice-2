@@ -54,19 +54,21 @@ public class PrivateVoucherClaimIntegrationTest {
         pv = publicVoucherRepository.save(pv);
 
         PublicVoucherVO vo = new PublicVoucherVO(pv);
+        final Long walletId = wallet.getId();
+        final Long pvId = pv.getId();
 
         // first claim should succeed
-        boolean first = privateVoucherService.createPrivateVoucher(wallet.getId(), vo);
+        boolean first = privateVoucherService.createPrivateVoucher(walletId, vo);
         Assertions.assertTrue(first, "first claim should succeed");
 
         // second claim should be prevented
-        boolean second = privateVoucherService.createPrivateVoucher(wallet.getId(), vo);
+        boolean second = privateVoucherService.createPrivateVoucher(walletId, vo);
         Assertions.assertFalse(second, "second claim should be prevented by uniqueness check");
 
         // DB should contain only one private voucher for this wallet-publicVoucher pair
         long count = privateVoucherRepository.findAll().stream()
-                .filter(p -> p.getWallet().getId().equals(wallet.getId()) && p.getPublicVoucher() != null && p.getPublicVoucher().getId().equals(pv.getId()))
-                .count();
+            .filter(p -> p.getWallet().getId().equals(walletId) && p.getPublicVoucher() != null && p.getPublicVoucher().getId().equals(pvId))
+            .count();
         Assertions.assertEquals(1L, count, "only one private voucher record expected");
     }
 }
