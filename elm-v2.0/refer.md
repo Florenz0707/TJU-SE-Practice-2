@@ -1,167 +1,138 @@
-# 积分 / 钱包 / 优惠券 — 验收要点与设计建议
+# 项目代码阅读生成的需求与设计说明
 
-以下为根据代码实现与改进工作的整理（便于验收与实现决策）。
+*说明：以下内容全部来源于代码实现（未阅读项目现有文档）。引用的源码位置以链接给出，便于复核。*
 
-## 验收要点
+## 一、需求部分
 
-1. 需求部分：
+(1) 钱包模块：如何鼓励充值但避免反复充值-提现薅羊毛？
 
-- (1) 钱包模块：如何鼓励充值但又要避免利用反复充值-提现来薅羊毛？
-  - 充值激励策略：用分层激励（例如首充奖励、累计消费返利、节假日活动）提高用户留存。
-  - 防止套利措施：设置提现冷却期（如 24 小时）、最小提现限额、提现手续费或对奖励类金额分期解锁（例如奖励 X 天后可提现）。
-  - 风控与限制：对短期高频充值/提现行为触发风控（风控阈值、临时冻结、人工审核、KYC），对异常账户降低奖励比率或禁止提现。
-  - 透明规则与提示：在前端展示奖励可提现时间与规则，避免用户误解。
+- 设计要点：充值时触发发放“私有优惠券（PrivateVoucher）”。代码在创建 TOP_UP
+  类型交易时会调用公券选择器并为用户创建私券：见 [TransactionServiceImpl](src/main/java/cn/edu/tju/elm/service/serviceImpl/TransactionServiceImpl.java)。
+-
+公券属性：门槛（threshold）、面值（faceValue）、是否可领取（claimable）、有效天数（validDays），见 [PublicVoucher](src/main/java/cn/edu/tju/elm/model/BO/PublicVoucher.java)
+与 [PublicVoucherVO](src/main/java/cn/edu/tju/elm/model/VO/PublicVoucherVO.java)。
+- 私券行为：领取后记录到 `PrivateVoucher`，含到期时间（expiryDate），使用时通过 `redeem()`
+  标记删除并判断是否过期，见 [PrivateVoucher](src/main/java/cn/edu/tju/elm/model/BO/PrivateVoucher.java)
+  与私券服务实现 [PrivateVoucherServiceImpl](src/main/java/cn/edu/tju/elm/service/serviceImpl/PrivateVoucherServiceImpl.java)。
+- 防滥用措施（代码中已有）：最低提现金额与提现冷却期（24
+  小时），以及记录最后提现时间：见 [TransactionServiceImpl](src/main/java/cn/edu/tju/elm/service/serviceImpl/TransactionServiceImpl.java)
+  中的 `MIN_WITHDRAWAL`、`WITHDRAWAL_COOLDOWN_SECONDS` 与 `lastWithdrawalAt` 字段。
+- 结论：通过“充值发券 + 提现门槛与冷却”来鼓励充值同时抑制频繁充值提现套利。
 
-- (2) 钱包模块：如何设计透支功能？
-  - 信用额度模型：为用户维护 `creditLimit`，根据风控/等级/历史行为分配额度。
-  - 明确成本：规定透支利息或手续费、还款规则、逾期惩罚与黑名单策略。
-  - 可配置化授信规则：支持按等级/风控分数自动调整额度与审批流程。
-  - 会计与流水：透支应产生专门的负债流水，并与余额变更原子化写入（便于审计）。
-  - 风险控制：对透支交易限制场景（如提现不可使用透支资金），并提供催收/回收机制。
+(2) 钱包模块：如何设计透支功能？
 
-- (3) 积分模块：积分获取与使用规则
-  - 获取规则：使用 `PointsRule` 配置渠道（ORDER、COMMENT 等）、比例（ratio）与过期天数（expireDays），按渠道发放积分（例如金额 * ratio）。
-  - 使用规则：支持冻结（下单时锁定批次积分）、扣减（支付成功后真正扣减）、回滚（支付失败或取消时解冻）。
-  - 兑换与抵扣比率：明确积分与金额换算（示例代码中 100 积分 = 1 元），并将该规则对外公布。可支持白名单活动或阶梯抵扣上限。
-  - 幂等与防滥用：积分发放与抵扣接口需幂等（通过 bizId / tempOrderId），防止重复发放或重复扣减。
+- 代码实现：`Wallet` 有 `creditLimit` 字段，提供 `decBalanceWithCredit(BigDecimal)` 方法，允许扣减使余额变为负但不超过
+  `creditLimit`，见 [Wallet](src/main/java/cn/edu/tju/elm/model/BO/Wallet.java)。
+- 结论：采用每个钱包可配置的信用额度，在扣款时检查 `balance + creditLimit >= amount`，满足则允许透支。
 
-- (4) 积分模块：积分有效期规则
-  - 批次管理：每次发放生成 `PointsBatch`，记录 `expireTime`；支持无到期（expireDays=0）与有到期的批次。
-  - 过期处理：定期任务清理过期批次并减少账户 `total_points`，并在用户侧展示即将过期的积分提醒。
+(3) 积分模块：积分获取和使用规则
 
-- (5) 其他特色需求（主动介绍）
-  - 优先消耗快过期积分（FIFO）：冻结/扣减逻辑按 `PointsBatch.expireTime` 升序选择批次。
-  - 内部服务调用适配：提供 `InternalServiceClient`，订单/支付服务可调用 `freeze/deduct/rollback` 接口完成积分联动。
-  - 选券策略插件化：`PublicVoucherSelector` 接口允许为不同场景注入选券策略（例如 TOPUP 使用 `TOPUPPublicVoucherSelectorImpl`）。
+- 获取：由可配置的 `PointsRule` 控制（按渠道 channelType），`notifyOrderSuccess` / `notifyReviewSuccess` 按规则计算并发放积分（创建
+  `PointsRecord` 与 `PointsBatch`），见 [PointsService](src/main/java/cn/edu/tju/elm/service/PointsService.java)
+  与 [PointsRule](src/main/java/cn/edu/tju/elm/model/BO/PointsRule.java)。
+- 使用：积分抵扣采取“先锁定（freeze）- 支付成功后扣除（deduct）/ 回滚（rollback）”的流程。锁定按可用批次（按过期时间优先）分配，使用临时订单号
+  `tempOrderId`
+  关联锁定批次，见 [PointsService.freezePoints]/[PointsInnerController](src/main/java/cn/edu/tju/elm/controller/PointsInnerController.java)
+  与批次模型 [PointsBatch](src/main/java/cn/edu/tju/elm/model/BO/PointsBatch.java)。
+- 积分与货币换算：代码示例中前端返回示例 `moneySaved = points / 100`（即默认 100 积分 = 1
+  元，非强制规则，仅用于返回说明），见 [PointsService.freezePoints](src/main/java/cn/edu/tju/elm/service/PointsService.java)。
 
-1. 设计部分：
+(4) 积分模块：积分有效期规则
 
-- (1) 钱包模块：充血模型怎么体现？
-  - 实体封装行为：`Wallet` 为充血模型示例，包含 `addBalance`/`decBalance`/`decBalanceWithCredit` 等方法，业务层调用实体方法而非直接操作字段，保证领域行为聚合在实体内。
-  - 服务分层：`WalletService`、`TransactionService` 负责更高层事务协调（发券、写交易记录、调用外部服务）。
+- 规则存储：`PointsRule.expireDays`；发放时若 `expireDays>0` 则创建 `PointsBatch` 时设置 `expireTime = now + expireDays`
+  ，见 [PointsService.notifyOrderSuccess](src/main/java/cn/edu/tju/elm/service/PointsService.java)
+  与 [PointsBatch](src/main/java/cn/edu/tju/elm/model/BO/PointsBatch.java)。
+- 锁定/使用选择策略：按 `expireTime` 升序（`NULL` 放后）选择可用批次（实现了按过期时间优先
+  FIFO），见 [PointsBatchRepository.findAvailableBatchesByUserIdOrderByExpireTime](src/main/java/cn/edu/tju/elm/repository/PointsBatchRepository.java)。
 
-- (2) 钱包模块：如何保证支付转账的原子性？
-  - 本地事务：关键写入（余额/交易/流水）使用数据库事务（Spring 的 `@Transactional`）。
-  - 行级锁：对热点账户使用悲观锁（`SELECT ... FOR UPDATE` 或 JPA `@Lock(PESSIMISTIC_WRITE)`）或乐观锁（`version` 字段）以防并发超额支出。
-  - 跨服务一致性：对涉及积分冻结/支付/订单等跨服务流程采用 Saga（可靠消息或补偿事务）或异步补偿机制，并保证接口幂等。
+(5) 其他特色需求（代码中主动体现）
 
-- (3) 积分模块：积分模块与其他模块的关系和交互方式
-  - 解耦接口：积分通过内部 REST 接口（`/api/inner/points/*`）与订单/支付通信，调用方使用 `InternalServiceClient`。
-  - 典型流程：订单完成 -> `notifyOrderSuccess`（发放积分）；下单结算 -> `freezePoints`；支付成功 -> `deductPoints`；支付失败 -> `rollbackPoints`。
-  - 权限与安全：内部接口需鉴权（内部 token），避免被外部滥用。
+- 公券选择器：`TOPUPPublicVoucherSelectorImpl`
+  为充值场景提供“最佳券选择”策略（可扩展不同场景选择器），见 [TOPUPPublicVoucherSelectorImpl](src/main/java/cn/edu/tju/elm/utils/TOPUPPublicVoucherSelectorImpl.java)。
+- 交易模型支持“异步完成”：`Transaction` 有 `isFinished` 标记，`createTransaction` 仅做初步变更（如对付款方冻结或提现立即修改），
+  `finishTransaction` 将把 PAYMENT
+  的金额入账给收款方，见 [Transaction](src/main/java/cn/edu/tju/elm/model/BO/Transaction.java)
+  与 [TransactionServiceImpl](src/main/java/cn/edu/tju/elm/service/serviceImpl/TransactionServiceImpl.java)。
+- 内部接口模式：积分对外通过内部 REST 接口（`/api/inner/points/...`
+  ）对订单/评价系统集成，见 [PointsInnerController](src/main/java/cn/edu/tju/elm/controller/PointsInnerController.java)
+  与内部调用客户端 `InternalServiceClient`。
 
-- (4) 积分模块：如何灵活调整积分获取和使用规则？
-  - 配置化规则表：`PointsRule` 存储 channelType、ratio、expireDays、isEnabled，支持增删改查供管理员在线调整。
-  - 扩展条件：支持按用户等级、活动 ID、时间窗口等维度扩展规则字段或规则引擎接入。
-  - 规则版本与灰度：支持规则版本化与灰度发布（小范围用户/活动验证后全量开启）。
+## （二）设计部分
 
-- (5) 积分模块：如何实现积分有效期的管理，帮助用户优先使用快过期的积分？
-  - 批次优先消费：实现按 `PointsBatch.expireTime` 升序的冻结/扣减（代码中已有 `findAvailableBatchesByUserIdOrderByExpireTime`）。
-  - 定时过期处理：定期任务将到期批次标记为已过期、更新账户总额并发通知用户。
-  - 用户视图友好化：在用户积分界面列出各批次到期时间与可用量，提供即将到期提醒与一键优先使用策略。
+(1) 钱包模块：充血模型体现
 
-- (6) 前后端接口是否规范
-  - 目前控制器遵循 REST 风格并统一返回 `HttpResult`，接口使用 Swagger 注解，整体规范。
-  - 建议补充：详细契约文档（请求/响应示例）、统一错误码表（便于前端处理）、并对内部接口做更严格鉴权与限流。
+- 体现位置：`Wallet` 实体里包含余额、代金券、信用额度、以及余额/代金券的增删（`addBalance`/`decBalance`/`addVoucher`/
+  `decVoucher`/`decBalanceWithCredit`
+  ）等业务方法，表明域对象自身承担业务逻辑（充血模型），见 [Wallet](src/main/java/cn/edu/tju/elm/model/BO/Wallet.java)。
 
-- (7) 数据库设计中如何保证数据一致性
-  - 约束与外键：使用外键（如 wallet.owner、points_batch.record_id）与唯一约束（如 points_account.user_id）保证基本一致性。
-  - 事务与锁：在余额/积分调整处使用事务与行级锁；对高并发热点采用悲观锁或乐观锁策略并结合重试。
-  - 幂等与补偿：跨服务流程采用幂等设计（使用唯一业务标识 bizId/tempOrderId）并结合补偿事务（Saga）处理失败场景。
+(2) 钱包模块：如何保证支付转账的原子性？
 
----
+- 当前实现状况：`TransactionServiceImpl` 在一个业务方法里按步骤修改多张表（wallet save、transaction save 等），但类上没有标注
+  `@Transactional`
+  （见 [TransactionServiceImpl](src/main/java/cn/edu/tju/elm/service/serviceImpl/TransactionServiceImpl.java)
+  ），因此事务边界在当前代码里不是明确的单一数据库事务。实体内部对余额操作使用 `synchronized(this)`（`Wallet.addBalance`/
+  `decBalance`），这只在单实例 JVM 中有效，无法保证分布式或多进程并发安全，且无法替代数据库事务。
+- 建议（从代码可行改进点）：
+    - 为重要方法加 `@Transactional`（例如 `createTransaction`、`finishTransaction`）保证单个数据库事务原子性；
+    - 为并发安全：推荐在 DB 层使用乐观锁（给 `BaseEntity` 增加 `@Version` 字段）或在关键更新时使用悲观锁（
+      `SELECT ... FOR UPDATE` / JPA 的 `@Lock(PESSIMISTIC_WRITE)`）；
+    - 避免仅依赖 `synchronized`，因为无法跨进程/多个实例生效。
 
-## 附：本仓库已实现与改进说明（便于验收确认）
+(3) 积分模块：积分模块与其他模块的关系和交互方式
 
-- PAYMENT 流程修复：`TransactionServiceImpl.finishTransaction` 已将 PAYMENT 的入账目标修正为收款方 `inWallet`，避免回流到付款方。
-- 钱包透支与提现控制：`Wallet` 增加 `creditLimit` 与 `lastWithdrawalAt`，并实现 `decBalanceWithCredit`；提现路径添加最小提现额与冷却期检查。
-- 并发安全改进：`Wallet` 的余额变更方法改为线程安全（synchronized），并在测试中添加并发调用示例；建议在真实部署时以数据库行级锁替代对象级同步以获得正确的分布式一致性。
-- Schema 与测试：已在 `schema.sql` 增加 `credit_limit` 与 `last_withdrawal_at` 列，添加 Python 静态检查与 JUnit 单元测试以验证行为。
+- 积分为独立服务（`PointsService`），对外暴露两类接口：用户自助查询/查看接口（`/api/points`
+  ，见 [PointsController](src/main/java/cn/edu/tju/elm/controller/PointsController.java)）以及内部系统调用接口（
+  `/api/inner/points`
+  ，见 [PointsInnerController](src/main/java/cn/edu/tju/elm/controller/PointsInnerController.java)）。
+- 典型交互：订单系统在订单完成时调用积分的 `notify/order-success`；在支付确认时调用 `freeze`/`deduct`/`rollback`
+  三步完成积分抵扣流程，见 [InternalServiceClient](src/main/java/cn/edu/tju/elm/utils/InternalServiceClient.java)
+  与 [PointsInnerController](src/main/java/cn/edu/tju/elm/controller/PointsInnerController.java)。
 
-请告诉我是否需要我：
+(4) 积分模块：如何灵活调整积分获取和使用规则？
 
-- 把 `refer.md` 同步为仓库文档（commit + push），或
-- 基于上述建议继续实现库存/限领、规则引擎或集成测试示例。
+- 代码支持点：`PointsRule` 为数据库可配置实体（channelType、ratio、expireDays、isEnabled），且有管理员接口
+  `PointsAdminController` 提供增删改查，见 [PointsRule](src/main/java/cn/edu/tju/elm/model/BO/PointsRule.java)
+  与 [PointsAdminController](src/main/java/cn/edu/tju/elm/controller/PointsAdminController.java)。
+- 建议：若要更灵活，可引入规则优先级/版本号或支持多条规则叠加策略（目前实现取
+  `findByChannelTypeAndIsEnabled(...).getFirst()`），并在 `PointsService` 中支持策略插件化。
 
-### 代码位置与示例（便于验收）
+(5) 积分模块：如何实现有效期管理并优先使用快过期积分？
 
-- 钱包（Wallet）
-  - 代码位置：`src/main/java/cn/edu/tju/elm/model/BO/Wallet.java`
-  - 关键字段/方法示例：
+- 代码实现：发放时创建 `PointsBatch`（带 expireTime）；锁定/使用时通过仓库方法
+  `findAvailableBatchesByUserIdOrderByExpireTime` 按 `expireTime ASC`（将 NULL
+  放到最后）取得可用批次，从而实现“快过期优先”使用；见 [PointsBatch](src/main/java/cn/edu/tju/elm/model/BO/PointsBatch.java)
+  与 [PointsBatchRepository](src/main/java/cn/edu/tju/elm/repository/PointsBatchRepository.java)。
+- 建议补充：增加定时任务清理过期批次并把过期积分从账户中扣减（代码中
+  `PrivateVoucherServiceImpl.clearExpiredPrivateVouchers` 为空，类似的清理逻辑应实现于积分模块）。
 
-```java
-// 减余额并允许使用透支额度（示例）
-public synchronized void decBalanceWithCredit(BigDecimal amount) {
-    BigDecimal available = balance.add(creditLimit);
-    if (available.compareTo(amount) < 0) {
-        throw new InsufficientBalanceException();
-    }
-    balance = balance.subtract(amount);
-}
-```
+(6) 前后端接口是否规范
 
-- 交易服务（TransactionServiceImpl）
-  - 代码位置：`src/main/java/cn/edu/tju/elm/service/serviceImpl/TransactionServiceImpl.java`
-  - PAYMENT 完成时入账修复示例：
+- 优点：整体采用 REST 风格，统一返回结构 `HttpResult`，路径语义清晰（如 `/api/wallet`, `/api/transaction`, `/api/points`
+  ），并在内部 DTO/VO 层封装输入输出。
+- 问题/不规范点：
+    - 在 `WalletController.addVoucher` 中使用了两个 `@RequestBody` 参数（
+      `@RequestBody Long walletId, @RequestBody BigDecimal amount`），Spring MVC 不允许在同一方法上有多个 `@RequestBody`
+      ，这是一个明显的错误，需要改为单一 DTO（或 path/param + body
+      的组合），见 [WalletController](src/main/java/cn/edu/tju/elm/controller/WalletController.java)。
+    - `PrivateVoucherService.createPrivateVoucher` 接口上标注了 `@Transactional`
+      （接口层），而实现类没有在类上统一标注，可能会受到代理类型的影响（接口式代理能工作，但在复杂配置下建议在实现类或方法上显式标注）。
 
-```java
-if (TransactionType.PAYMENT.equals(tx.getType())) {
-    // 正确地把钱记入收款方钱包（inWallet）
-    Wallet in = walletRepository.findById(tx.getInWalletId()).orElseThrow();
-    in.addBalance(tx.getAmount());
-    walletRepository.save(in);
-}
-```
+(7) 数据库设计中如何保证数据一致性
 
-- 数据库模式（schema.sql）
-  - 代码位置：`src/main/resources/schema.sql`
-  - 新增列示例：
+- 已有保障：JPA 仓库与实体映射，`PointsService` 使用 `@Transactional`
+  （类级别），并把积分相关的批次/账户更新包装在事务里以保证一致性，见 [PointsService](src/main/java/cn/edu/tju/elm/service/PointsService.java)。
+- 改进建议：
+    - 为跨表（wallet、transaction、voucher）更新加事务（为 `TransactionServiceImpl` 加 `@Transactional`）；
+    - 对高并发的余额更新使用 DB 级锁或乐观锁（增加 `@Version` 字段实现乐观锁）或在查询时使用悲观锁；
+    - 对积分批次的冻结/扣减在事务内完成（当前实现已在 `PointsService` 中），并通过唯一索引/约束防止重复扣减；
+    - 对于分布式场景，建议引入幂等/去重机制（通过 tempOrderId/finalOrderId）和分布式事务或可靠消息补偿方案。
 
-```sql
-ALTER TABLE wallet
-ADD COLUMN credit_limit DECIMAL(19,2) DEFAULT 0 NOT NULL,
-ADD COLUMN last_withdrawal_at TIMESTAMP NULL;
-```
+附：关键源码参考（便于复核）
 
-- 积分批次（PointsBatch）与优先消费
-  - 代码位置：`src/main/java/cn/edu/tju/elm/model/RECORD/PointsBatch.java`
-  - 优先消费查询示例（按到期时间升序）：
-
-```java
-List<PointsBatch> batches = pointsBatchRepository
-    .findAvailableBatchesByUserIdOrderByExpireTime(userId);
-// 逐批扣减（FIFO）
-for (PointsBatch b : batches) {
-    int use = Math.min(need, b.getAvailable());
-    b.decrease(use);
-    need -= use;
-    if (need <= 0) break;
-}
-```
-
-- 内部服务客户端（积分冻结/扣减/回滚）
-  - 代码位置：`src/main/java/cn/edu/tju/elm/utils/InternalServiceClient.java`
-  - 调用示例：
-
-```java
-internalServiceClient.freezePoints(userId, orderId, pointsToFreeze);
-// 支付成功后
-internalServiceClient.deductPoints(userId, orderId);
-// 支付失败时
-internalServiceClient.rollbackPoints(userId, orderId);
-```
-
-- 选券策略（示例：TOPUPPublicVoucherSelectorImpl）
-  - 代码位置示例：`src/main/java/cn/edu/tju/elm/service/voucher/TOPUPPublicVoucherSelectorImpl.java`
-  - 选择逻辑示例片段：
-
-```java
-// 简化的选券逻辑：按门槛与价值排序，返回首个满足条件的券
-Optional<Voucher> pick = vouchers.stream()
-    .filter(v -> v.getMinTopUp().compareTo(amount) <= 0)
-    .sorted(Comparator.comparing(Voucher::getPriority).reversed()
-            .thenComparing(Voucher::getAmount).reversed())
-    .findFirst();
-```
-
-以上示例为关键路径的最小可读片段；验收时请定位到对应文件并检查具体实现细节与单元测试覆盖。
+- 钱包模型：[src/main/java/cn/edu/tju/elm/model/BO/Wallet.java](src/main/java/cn/edu/tju/elm/model/BO/Wallet.java)
+- 交易与发券逻辑：[src/main/java/cn/edu/tju/elm/service/serviceImpl/TransactionServiceImpl.java](src/main/java/cn/edu/tju/elm/service/serviceImpl/TransactionServiceImpl.java)
+- 公券/私券：[src/main/java/cn/edu/tju/elm/model/BO/PublicVoucher.java](src/main/java/cn/edu/tju/elm/model/BO/PublicVoucher.java)
+- 私券服务：[src/main/java/cn/edu/tju/elm/service/serviceImpl/PrivateVoucherServiceImpl.java](src/main/java/cn/edu/tju/elm/service/serviceImpl/PrivateVoucherServiceImpl.java)
+- 积分核心：[src/main/java/cn/edu/tju/elm/service/PointsService.java](src/main/java/cn/edu/tju/elm/service/PointsService.java)
+- 积分批次与仓库：[src/main/java/cn/edu/tju/elm/model/BO/PointsBatch.java](src/main/java/cn/edu/tju/elm/model/BO/PointsBatch.java)
+- 前端接口示例：钱包/交易/积分控制器分别见 [WalletController](src/main/java/cn/edu/tju/elm/controller/WalletController.java)

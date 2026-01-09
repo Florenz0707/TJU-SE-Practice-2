@@ -5,8 +5,14 @@ import cn.edu.tju.core.security.repository.UserRepository;
 import cn.edu.tju.elm.constant.ChannelType;
 import cn.edu.tju.elm.constant.PointsRecordType;
 import cn.edu.tju.elm.exception.PointsException;
-import cn.edu.tju.elm.model.BO.*;
-import cn.edu.tju.elm.repository.*;
+import cn.edu.tju.elm.model.BO.PointsAccount;
+import cn.edu.tju.elm.model.BO.PointsBatch;
+import cn.edu.tju.elm.model.BO.PointsRecord;
+import cn.edu.tju.elm.model.BO.PointsRule;
+import cn.edu.tju.elm.repository.PointsAccountRepository;
+import cn.edu.tju.elm.repository.PointsBatchRepository;
+import cn.edu.tju.elm.repository.PointsRecordRepository;
+import cn.edu.tju.elm.repository.PointsRuleRepository;
 import cn.edu.tju.elm.utils.EntityUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -279,8 +285,8 @@ public class PointsService {
             return 0; // 没有规则，不发放积分
         }
 
-        // 使用第一个启用的规则（可以后续扩展为选择最佳规则）
-        PointsRule rule = rules.get(0);
+        // 使用第一个启用的规则
+        PointsRule rule = rules.getFirst();
 
         // 计算积分：金额 * 比例
         int points = (int) Math.round(amount * rule.getRatio());
@@ -335,7 +341,7 @@ public class PointsService {
         }
 
         // 使用第一个启用的规则
-        PointsRule rule = rules.get(0);
+        PointsRule rule = rules.getFirst();
 
         // 评价积分通常固定，但如果规则有比例，也可以计算
         int points = amount != null && amount > 0 ? amount : (int) Math.round(rule.getRatio());

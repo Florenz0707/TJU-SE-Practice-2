@@ -4,10 +4,10 @@ import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
-import cn.edu.tju.elm.exception.PublicVoucherException;
 import cn.edu.tju.elm.exception.PrivateVoucherException;
-import cn.edu.tju.elm.model.VO.PublicVoucherVO;
 import cn.edu.tju.elm.model.VO.PrivateVoucherVO;
+import cn.edu.tju.elm.model.VO.PublicVoucherVO;
+import cn.edu.tju.elm.model.VO.WalletVO;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
 import cn.edu.tju.elm.service.serviceInterface.PublicVoucherService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
@@ -42,13 +42,11 @@ public class PrivateVoucherController {
         try {
             PublicVoucherVO publicVoucherVO = publicVoucherService.getPublicVoucherById(publicVoucherId);
             if (publicVoucherVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "PublicVoucher NOT FOUND");
-            var walletVO = walletService.getWalletByOwner(me);
+            WalletVO walletVO = walletService.getWalletByOwner(me);
             if (walletVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Wallet NOT FOUND");
             boolean ok = privateVoucherService.createPrivateVoucher(walletVO.getId(), publicVoucherVO);
             if (ok) return HttpResult.success("Claimed");
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Claim Failed");
-        } catch (PublicVoucherException | PrivateVoucherException e) {
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
         } catch (Exception e) {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
         }
