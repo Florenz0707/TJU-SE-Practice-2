@@ -1,0 +1,95 @@
+Points System - 测试步骤（用户1 完整流程 + 用户2 冻结回滚）
+
+说明：
+- 将在 APIfox 中使用以下环境变量占位：
+  - {{adminAuthorization}}  管理员 JWT
+  - {{User1Authorization}} 用户1 JWT
+  - {{User2Authorization}} 用户2 JWT
+   - {{internal_service_token}} = internal-service-secret-token-2024
+   - {{baseUrl}} = http://localhost:8080/elm
+  - {{user1_id}} = 4
+  - {{user2_id}} = 5
+  - {{tempOrder1}}、{{tempOrder2}}、{{finalOrder1}} 使用带 timestamp 的唯一值
+
+顺序说明（按步执行）：
+
+1) （可选）管理员创建积分规则
+   - POST /api/points/admin/rules
+   - Header: Authorization: Bearer {{adminAuthorization}}
+   - Body: {"channelType":"ORDER","ratio":0.1,"expireDays":365,"description":"示例 10%","isEnabled":true}
+
+2) 给用户1 发放积分（模拟订单完成）
+   - POST {{baseUrl}}/api/inner/points/notify/order-success
+   - Header: X-Internal-Service-Token: {{internal_service_token}}
+   - Body: {"userId":{{user1_id}},"bizId":"order-<timestamp>-u1","amount":100.0,"eventTime":"<isoNow>","extraInfo":""}
+
+3) 用户1 查询积分账户
+   - GET /api/points/account/my
+   - Header: Authorization: Bearer {{User1Authorization}}
+
+4) 用户1 冻结积分（选择抵扣）
+   - POST {{baseUrl}}/api/inner/points/trade/freeze
+   - Header: X-Internal-Service-Token: {{internal_service_token}}
+   - Body: {"userId":{{user1_id}},"points":10,"tempOrderId":"{{tempOrder1}}"}
+
+5) 支付成功，系统扣除积分（用户1）
+   - POST {{baseUrl}}/api/inner/points/trade/deduct
+   - Header: X-Internal-Service-Token: {{internal_service_token}}
+   - Body: {"userId":{{user1_id}},"tempOrderId":"{{tempOrder1}}","finalOrderId":"{{finalOrder1}}"}
+
+6) 用户1 查询积分明细（消费记录）
+   - GET {{baseUrl}}/api/points/record/my?page=1&size=10&type=CONSUME
+   - Header: Authorization: Bearer {{User1Authorization}}
+
+--
+
+7) 给用户2 发放积分（可选）
+   - POST {{baseUrl}}/api/inner/points/notify/order-success
+   - Header: X-Internal-Service-Token: {{internal_service_token}}
+   - Body: {"userId":{{user2_id}},"bizId":"order-<timestamp>-u2","amount":50.0,"eventTime":"<isoNow>","extraInfo":""}
+
+8) 用户2 冻结积分
+   - POST {{baseUrl}}/api/inner/points/trade/freeze
+   - Header: X-Internal-Service-Token: {{internal_service_token}}
+   - Body: {"userId":{{user2_id}},"points":5,"tempOrderId":"{{tempOrder2}}"}
+
+9) 回滚冻结（用户2）
+   - POST {{baseUrl}}/api/inner/points/trade/rollback
+   - Header: X-Internal-Service-Token: {{internal_service_token}}
+   - Body: {"userId":{{user2_id}},"tempOrderId":"{{tempOrder2}}","reason":"测试回滚：支付失败"}
+
+10) 用户2 查询积分账户确认
+   - GET {{baseUrl}}/api/points/account/my
+   - Header: Authorization: Bearer {{User2Authorization}}
+
+备注：
+- internal token 已置为 {{internal_service_token}}（application.properties 中为 internal-service-secret-token-2024），建议在 APIfox 环境中将该变量设为该值或替换为你的运行环境 token。
+- 请求示例中使用了 {{baseUrl}}（默认 http://localhost:8080/elm），若你项目启动时未使用 context-path `/elm`，请将 {{baseUrl}} 调整为实际服务基础地址（例如 http://localhost:8080）。
+
+Curl 示例（参考文档）：
+
+订单完成通知（curl）
+curl -X POST {{baseUrl}}/api/inner/points/notify/order-success \
+   -H "Content-Type: application/json" \
+   -H "X-Internal-Service-Token: {{internal_service_token}}" \
+   -d '{
+      "userId": 1,
+      "bizId": "ORD_TEST_001",
+      "amount": 100.0,
+      "eventTime": "2024-01-01T10:00:00Z",
+      "extraInfo": "{}"
+   }'
+
+评价完成通知（curl）
+curl -X POST {{baseUrl}}/api/inner/points/notify/review-success \
+   -H "Content-Type: application/json" \
+   -H "X-Internal-Service-Token: {{internal_service_token}}" \
+   -d '{
+      "userId": 1,
+      "bizId": "REV_TEST_001",
+      "amount": 0,
+      "eventTime": "2024-01-01T10:00:00Z",
+      "extraInfo": "{}"
+   }'
+
+结束。

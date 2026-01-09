@@ -1,0 +1,154 @@
+{
+  "info": {
+    "name": "Points System - APIfox Export (generated)",
+    "version": "1.0",
+    "generatedBy": "assistant"
+  },
+  "env": {
+    "adminAuthorization": "",
+    "User1Authorization": "",
+    "User2Authorization": "",
+    "internal_service_token": "internal-service-secret-token-2024",
+    "baseUrl": "http://localhost:8080/elm",
+    "user1_id": "1001",
+    "user2_id": "1002",
+    "tempOrder1": "temp-order-{{timestamp}}-u1",
+    "tempOrder2": "temp-order-{{timestamp}}-u2",
+    "finalOrder1": "final-order-{{timestamp}}-u1",
+    "biz1": "order-{{timestamp}}-u1",
+    "biz2": "order-{{timestamp}}-u2"
+  },
+  "requests": [
+    {
+      "name": "Admin - Create Points Rule",
+      "method": "POST",
+      "url": "/api/points/admin/rules",
+      "headers": {
+        "Authorization": "Bearer {{adminAuthorization}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "channelType": "ORDER",
+        "ratio": 0.1,
+        "expireDays": 365,
+        "description": "订单发放规则（示例 10%）",
+        "isEnabled": true
+      }
+    },
+    {
+      "name": "Internal - Notify Order Success (user1)",
+      "method": "POST",
+      "url": "/api/inner/points/notify/order-success",
+      "headers": {
+        "X-Internal-Service-Token": "{{internal_service_token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "userId": 1001,
+        "bizId": "{{biz1}}",
+        "amount": 100.0,
+        "eventTime": "{{isoNow}}",
+        "extraInfo": ""
+      }
+    },
+    {
+      "name": "User1 - Get My Points Account",
+      "method": "GET",
+      "url": "/api/points/account/my",
+      "headers": {
+        "Authorization": "Bearer {{User1Authorization}}",
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "name": "Internal - Freeze Points (user1)",
+      "method": "POST",
+      "url": "/api/inner/points/trade/freeze",
+      "headers": {
+        "X-Internal-Service-Token": "{{internal_service_token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "userId": 1001,
+        "points": 10,
+        "tempOrderId": "{{tempOrder1}}"
+      }
+    },
+    {
+      "name": "Internal - Deduct Points (user1)",
+      "method": "POST",
+      "url": "/api/inner/points/trade/deduct",
+      "headers": {
+        "X-Internal-Service-Token": "{{internal_service_token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "userId": 1001,
+        "tempOrderId": "{{tempOrder1}}",
+        "finalOrderId": "{{finalOrder1}}"
+      }
+    },
+    {
+      "name": "User1 - Get Points Records (consume)",
+      "method": "GET",
+      "url": "/api/points/record/my?page=1&size=10&type=CONSUME",
+      "headers": {
+        "Authorization": "Bearer {{User1Authorization}}",
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "name": "Internal - Notify Order Success (user2)",
+      "method": "POST",
+      "url": "/api/inner/points/notify/order-success",
+      "headers": {
+        "X-Internal-Service-Token": "{{internal_service_token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "userId": 1002,
+        "bizId": "{{biz2}}",
+        "amount": 50.0,
+        "eventTime": "{{isoNow}}",
+        "extraInfo": ""
+      }
+    },
+    {
+      "name": "Internal - Freeze Points (user2)",
+      "method": "POST",
+      "url": "/api/inner/points/trade/freeze",
+      "headers": {
+        "X-Internal-Service-Token": "{{internal_service_token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "userId": 1002,
+        "points": 5,
+        "tempOrderId": "{{tempOrder2}}"
+      }
+    },
+    {
+      "name": "Internal - Rollback Points (user2)",
+      "method": "POST",
+      "url": "/api/inner/points/trade/rollback",
+      "headers": {
+        "X-Internal-Service-Token": "{{internal_service_token}}",
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "userId": 1002,
+        "tempOrderId": "{{tempOrder2}}",
+        "reason": "测试回滚：支付失败"
+      }
+    },
+    {
+      "name": "User2 - Get My Points Account",
+      "method": "GET",
+      "url": "/api/points/account/my",
+      "headers": {
+        "Authorization": "Bearer {{User2Authorization}}",
+        "Content-Type": "application/json"
+      }
+    }
+  ]
+}
