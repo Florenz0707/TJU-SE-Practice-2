@@ -48,7 +48,6 @@
 4) 选择器逻辑
    - `TOPUPPublicVoucherSelectorImpl` 实现：筛选 `claimable==true`、满足 `threshold <= amount` 的券，并选择 `faceValue` 最大的券（已修正阈值比较与空金额保护）。
 
-
 ## 与其他业务的关联点
 
 - 交易系统（Transaction）：在 `TOP_UP` 情况下会触发公共券的选择与私有券发放（`TransactionServiceImpl.createTransaction`）。
