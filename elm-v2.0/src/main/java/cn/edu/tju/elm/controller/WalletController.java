@@ -62,9 +62,9 @@ public class WalletController {
         }
     }
 
-    @PostMapping("/voucher")
+    @PostMapping("/voucher/{walletId}")
     public HttpResult<String> addVoucher(
-            @RequestBody Long walletId,
+            @PathVariable Long walletId,
             @RequestBody BigDecimal amount) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
