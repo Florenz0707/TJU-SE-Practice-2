@@ -12,6 +12,7 @@ import cn.edu.tju.elm.repository.PublicVoucherRepository;
 import cn.edu.tju.elm.model.BO.PublicVoucher;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class PrivateVoucherServiceImpl implements PrivateVoucherService {
         this.publicVoucherRepository = publicVoucherRepository;
     }
 
+    @Transactional
     public boolean createPrivateVoucher(Long walletId, PublicVoucherVO publicVoucherVO) throws PrivateVoucherException {
         Wallet wallet = walletRepository.findById(walletId).orElse(null);
         if (wallet == null)
@@ -51,6 +53,7 @@ public class PrivateVoucherServiceImpl implements PrivateVoucherService {
         return true;
     }
 
+    @Transactional
     public boolean redeemPrivateVoucher(Long id) throws PrivateVoucherException {
         PrivateVoucher pv = privateVoucherRepository.findById(id).orElse(null);
         if (pv == null || pv.getDeleted() != null && pv.getDeleted())
