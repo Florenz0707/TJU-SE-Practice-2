@@ -92,15 +92,24 @@ public class TransactionController {
 
         if (transactionVO.getAmount().compareTo(BigDecimal.ZERO) <= 0)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Amount NOT VALID");
+        
+        // Validate wallet IDs based on transaction type
         if (transactionVO.getType().equals(TransactionType.PAYMENT)) {
+            // Payment requires both wallets
             if (transactionVO.getInWalletId() == null)
                 return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "InWalletId CANT BE NULL");
             if (transactionVO.getOutWalletId() == null)
                 return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OutWalletId CANT BE NULL");
-        } else if (transactionVO.getType().equals(TransactionType.TOP_UP) && transactionVO.getInWalletId() == null) {
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "InWalletId CANT BE NULL");
-        } else if (transactionVO.getType().equals(TransactionType.WITHDRAW) && transactionVO.getOutWalletId() == null) {
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OutWalletId CANT BE NULL");
+        } else if (transactionVO.getType().equals(TransactionType.TOP_UP)) {
+            // Top-up only requires inWalletId (money comes from external source)
+            if (transactionVO.getInWalletId() == null)
+                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "InWalletId CANT BE NULL");
+            // outWalletId is not required for top-up (external payment source)
+        } else if (transactionVO.getType().equals(TransactionType.WITHDRAW)) {
+            // Withdraw only requires outWalletId (money goes to external account)
+            if (transactionVO.getOutWalletId() == null)
+                return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OutWalletId CANT BE NULL");
+            // inWalletId is not required for withdrawal (external payment destination)
         }
 
         try {

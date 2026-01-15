@@ -29,6 +29,19 @@ public class Order extends BaseEntity {
     private DeliveryAddress deliveryAddress;
     private Integer orderState;
 
+    @ManyToOne
+    @JoinColumn(name = "voucher_id")
+    private PrivateVoucher usedVoucher;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal voucherDiscount;
+
+    @Column(precision = 10, scale = 0)
+    private Integer pointsUsed;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal pointsDiscount;
+
     public User getCustomer() {
         return customer;
     }
@@ -75,6 +88,38 @@ public class Order extends BaseEntity {
 
     public void setOrderState(Integer orderState) {
         this.orderState = orderState;
+    }
+
+    public PrivateVoucher getUsedVoucher() {
+        return usedVoucher;
+    }
+
+    public void setUsedVoucher(PrivateVoucher usedVoucher) {
+        this.usedVoucher = usedVoucher;
+    }
+
+    public BigDecimal getVoucherDiscount() {
+        return voucherDiscount;
+    }
+
+    public void setVoucherDiscount(BigDecimal voucherDiscount) {
+        this.voucherDiscount = voucherDiscount;
+    }
+
+    public Integer getPointsUsed() {
+        return pointsUsed;
+    }
+
+    public void setPointsUsed(Integer pointsUsed) {
+        this.pointsUsed = pointsUsed;
+    }
+
+    public BigDecimal getPointsDiscount() {
+        return pointsDiscount;
+    }
+
+    public void setPointsDiscount(BigDecimal pointsDiscount) {
+        this.pointsDiscount = pointsDiscount;
     }
 
 }

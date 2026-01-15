@@ -111,6 +111,10 @@ export interface Order {
   deliveryAddress?: DeliveryAddress;
   orderState?: number;
   orderDetails?: OrderDetail[];
+  usedVoucher?: PrivateVoucher | { id: number };
+  voucherDiscount?: number;
+  pointsUsed?: number;
+  pointsDiscount?: number;
 }
 
 export interface OrderDetail {

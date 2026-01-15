@@ -130,22 +130,18 @@ const withdrawDialogVisible = ref(false);
 const rechargeForm = ref({ amount: 100 });
 const withdrawForm = ref({ amount: 100 });
 
-// Transaction Types Mappings
+// Transaction Types Mappings (must match backend TransactionType.java)
 const TransactionType = {
-    TRANSFER: 0,
-    TOP_UP: 1, // Recharge
-    WITHDRAW: 2,
-    PAYMENT: 3,
-    REFUND: 4
+    TOP_UP: 0,      // Recharge
+    WITHDRAW: 1,    // Withdraw
+    PAYMENT: 2      // Payment
 };
 
 function formatTransactionType(type: number) {
     switch(type) {
-        case TransactionType.TRANSFER: return '转账';
         case TransactionType.TOP_UP: return '充值';
         case TransactionType.WITHDRAW: return '提现';
         case TransactionType.PAYMENT: return '支付';
-        case TransactionType.REFUND: return '退款';
         default: return '未知';
     }
 }
@@ -188,6 +184,9 @@ const confirmRecharge = async () => {
         });
         ElMessage.success('充值成功');
         rechargeDialogVisible.value = false;
+        // Refresh wallet balance and transactions
+        await walletStore.fetchMyWallet();
+        await walletStore.fetchTransactions();
     } catch (e) {
         ElMessage.error('充值失败');
     }
@@ -204,6 +203,9 @@ const confirmWithdraw = async () => {
         });
         ElMessage.success('提现申请已提交');
         withdrawDialogVisible.value = false;
+        // Refresh wallet balance and transactions
+        await walletStore.fetchMyWallet();
+        await walletStore.fetchTransactions();
     } catch (e) {
         ElMessage.error('提现失败');
     }
@@ -237,3 +239,4 @@ const confirmWithdraw = async () => {
     margin-top: 10px;
 }
 </style>
+    margin-top: 10px;

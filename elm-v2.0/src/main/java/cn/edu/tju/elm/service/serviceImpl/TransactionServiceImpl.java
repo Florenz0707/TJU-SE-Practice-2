@@ -108,6 +108,12 @@ public class TransactionServiceImpl implements TransactionService {
 
         Transaction transaction = Transaction.createNewTransaction(amount, type, inWallet, outWallet);
         EntityUtils.setNewEntity(transaction);
+        
+        // For TOP_UP and WITHDRAW, mark as finished immediately since there's no external payment platform
+        if (type.equals(TransactionType.TOP_UP) || type.equals(TransactionType.WITHDRAW)) {
+            transaction.finish();
+        }
+        
         if (type.equals(TransactionType.TOP_UP)) {
             PublicVoucherVO publicVoucherVO = publicVoucherService.chooseBestPublicVoucherForTransaction(new TransactionVO(transaction), new TOPUPPublicVoucherSelectorImpl());
             if (publicVoucherVO != null)

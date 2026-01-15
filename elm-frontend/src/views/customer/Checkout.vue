@@ -342,13 +342,17 @@ const placeOrder = async () => {
     }
 
     // Create the order with discount information
-    // The backend will handle points freezing, deduction, and notifications automatically
+    // Send voucher and points information to backend
     const orderPayload: Order = {
       customer: firstItem.customer,
       business: firstItem.business,
       orderTotal: finalPrice.value, // Use the final price after discounts
       deliveryAddress: selectedAddress.value,
       orderState: 1, // 1: Paid (assuming payment is successful)
+      usedVoucher: selectedVoucherId.value ? { id: selectedVoucherId.value } as any : undefined,
+      voucherDiscount: voucherDiscount.value,
+      pointsUsed: usePoints.value ? pointsToUse.value : 0,
+      pointsDiscount: pointsDiscount.value,
     };
     
     const res = await addOrder(orderPayload);

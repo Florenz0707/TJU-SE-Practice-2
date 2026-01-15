@@ -49,6 +49,30 @@ public class TransactionVO implements Serializable {
         return finished;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
+    }
+
+    public void setInWalletId(Long inWalletId) {
+        this.inWalletId = inWalletId;
+    }
+
+    public void setOutWalletId(Long outWalletId) {
+        this.outWalletId = outWalletId;
+    }
+
+    public void setFinished(Boolean finished) {
+        this.finished = finished;
+    }
+
     @Override
     public String toString() {
         return "TransactionVO: id=" + id + ", amount=" + amount + ", type=" + type + ", inWalletId=" + inWalletId + ", outWalletId=" + outWalletId + ", finished=" + finished;
