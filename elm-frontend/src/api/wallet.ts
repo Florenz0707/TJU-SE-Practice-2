@@ -17,3 +17,7 @@ export function getMyWallet(): Promise<HttpResult<Wallet>> {
 export function createWallet(): Promise<HttpResult<Wallet>> {
   return request.post('/wallet');
 }
+
+export function addVoucher(walletId: number, amount: number): Promise<HttpResult<string>> {
+  return request.post(`/wallet/voucher/${walletId}`, amount);
+}

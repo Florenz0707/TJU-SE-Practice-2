@@ -32,66 +32,12 @@ export function getAllPointsRules(): Promise<HttpResult<PointsRule[]>> {
   return request.get('/points/admin/rules');
 }
 
-// Points Trade (Internal API)
-export interface FreezePointsRequest {
-  userId: number;
-  points: number;
-  tempOrderId: string;
-}
+// NOTE: The following functions were removed because they were calling internal APIs
+// that should only be used by backend services, not by the frontend.
+// Points freezing, deduction, and rollback should be handled automatically by the backend
+// during order processing. Points notifications for orders and reviews should also be
+// handled by the backend.
 
-export interface FreezePointsResponse {
-  success: boolean;
-  pointsUsed: number;
-  moneySaved: number;
-  balanceSnap: number;
-  message: string;
-}
-
-export function freezePoints(data: FreezePointsRequest): Promise<HttpResult<FreezePointsResponse>> {
-  return request.post('/inner/points/trade/freeze', data);
-}
-
-export interface DeductPointsRequest {
-  userId: number;
-  tempOrderId: string;
-  finalOrderId: string;
-}
-
-export function deductPoints(data: DeductPointsRequest): Promise<HttpResult<boolean>> {
-  return request.post('/inner/points/trade/deduct', data);
-}
-
-export interface RollbackPointsRequest {
-  userId: number;
-  tempOrderId: string;
-  reason: string;
-}
-
-export function rollbackPoints(data: RollbackPointsRequest): Promise<HttpResult<boolean>> {
-  return request.post('/inner/points/trade/rollback', data);
-}
-
-// Points Notification (Internal API)
-export interface OrderSuccessNotifyRequest {
-  userId: number;
-  bizId: string;
-  amount: number;
-  eventTime: string;
-  extraInfo: string;
-}
-
-export interface ReviewSuccessNotifyRequest {
-  userId: number;
-  bizId: string;
-  amount: number;
-  eventTime: string;
-  extraInfo: string;
-}
-
-export function notifyOrderSuccess(data: OrderSuccessNotifyRequest): Promise<HttpResult<number>> {
-  return request.post('/inner/points/notify/order-success', data);
-}
-
-export function notifyReviewSuccess(data: ReviewSuccessNotifyRequest): Promise<HttpResult<number>> {
-  return request.post('/inner/points/notify/review-success', data);
-}
+// The following interfaces and functions have been removed:
+// - freezePoints, deductPoints, rollbackPoints (Points Trade)
+// - notifyOrderSuccess, notifyReviewSuccess (Points Notification)

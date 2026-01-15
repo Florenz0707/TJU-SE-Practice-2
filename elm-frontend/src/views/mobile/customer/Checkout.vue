@@ -104,7 +104,7 @@ import { useAuthStore } from '../../../store/auth';
 import { getCurrentUserAddresses } from '../../../api/address';
 import { addOrder } from '../../../api/order';
 import { getMyVouchers } from '../../../api/privateVoucher';
-import { getMyPointsAccount, freezePoints, deductPoints, rollbackPoints, notifyOrderSuccess } from '../../../api/points';
+import { getMyPointsAccount } from '../../../api/points';
 import type { DeliveryAddress, PrivateVoucher, PointsAccount } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 import AddressCard from '../../../components/mobile/AddressCard.vue';
@@ -214,7 +214,6 @@ const submitOrder = async () => {
   }
 
   isSubmitting.value = true;
-  tempOrderId.value = `TEMP_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   
   try {
     const currentCartItems = cartStore.itemsForCurrentBusiness;
@@ -229,27 +228,8 @@ const submitOrder = async () => {
       return;
     }
 
-    // Freeze points if using
-    if (usePoints.value && pointsToUse.value > 0 && authStore.user?.id) {
-      try {
-        const freezeRes = await freezePoints({
-          userId: authStore.user.id,
-          points: pointsToUse.value,
-          tempOrderId: tempOrderId.value
-        });
-        if (!freezeRes.success) {
-          ElMessage.error('积分冻结失败：' + (freezeRes.message || '未知错误'));
-          isSubmitting.value = false;
-          return;
-        }
-      } catch (error: any) {
-        ElMessage.error('积分冻结失败：' + (error.message || '未知错误'));
-        isSubmitting.value = false;
-        return;
-      }
-    }
-
-    // Create order
+    // Create order with discount information
+    // The backend will handle points freezing, deduction, and notifications automatically
     const res = await addOrder({
       customer: authStore.user,
       deliveryAddress: selectedAddress.value,
@@ -259,50 +239,7 @@ const submitOrder = async () => {
     });
 
     if (!res.success || !res.data?.id) {
-      // Rollback points on failure
-      if (usePoints.value && pointsToUse.value > 0 && authStore.user?.id) {
-        await rollbackPoints({
-          userId: authStore.user.id,
-          tempOrderId: tempOrderId.value,
-          reason: 'ORDER_FAILED'
-        });
-      }
       throw new Error(res.message || '创建订单失败');
-    }
-
-    const orderId = res.data.id;
-
-    // Deduct points if used
-    if (usePoints.value && pointsToUse.value > 0 && authStore.user?.id) {
-      try {
-        await deductPoints({
-          userId: authStore.user.id,
-          tempOrderId: tempOrderId.value,
-          finalOrderId: `ORD_${orderId}`
-        });
-      } catch (error: any) {
-        console.error('Points deduction failed:', error);
-      }
-    }
-
-    // Notify points system about order success
-    if (authStore.user?.id) {
-      try {
-        await notifyOrderSuccess({
-          userId: authStore.user.id,
-          bizId: `ORD_${orderId}`,
-          amount: cartStore.finalOrderTotal, // Original order total before discounts
-          eventTime: new Date().toISOString(),
-          extraInfo: JSON.stringify({
-            finalPrice: finalPrice.value,
-            voucherDiscount: voucherDiscount.value,
-            pointsDiscount: pointsDiscount.value
-          })
-        });
-      } catch (error: any) {
-        console.error('Failed to notify points system:', error);
-        // Don't block the order completion flow
-      }
     }
 
     ElMessage.success('下单成功！');
@@ -310,18 +247,6 @@ const submitOrder = async () => {
     router.push('/mobile/orders');
     
   } catch (error: any) {
-    // Rollback points on error
-    if (usePoints.value && pointsToUse.value > 0 && authStore.user?.id && tempOrderId.value) {
-      try {
-        await rollbackPoints({
-          userId: authStore.user.id,
-          tempOrderId: tempOrderId.value,
-          reason: 'ORDER_FAILED'
-        });
-      } catch (rollbackError) {
-        console.error('Failed to rollback points:', rollbackError);
-      }
-    }
     ElMessage.error(error.message);
   } finally {
     isSubmitting.value = false;

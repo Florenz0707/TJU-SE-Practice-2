@@ -26,7 +26,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
 import { getOrderById } from '../../api/order';
 import { addReview } from '../../api/review';
-import { notifyReviewSuccess } from '../../api/points';
 import type { Order } from '../../api/types';
 import { ElMessage } from 'element-plus';
 
@@ -64,29 +63,7 @@ const submitReview = async () => {
   try {
     const res = await addReview(order.value.id, reviewData);
     if (res.success && res.data?.id) {
-      // Notify points system about review completion
-      if (authStore.user?.id) {
-        try {
-          const hasImage = false; // TODO: Add image upload support
-          const wordCount = comment.value.length;
-          await notifyReviewSuccess({
-            userId: authStore.user.id,
-            bizId: `REV_${res.data.id}`,
-            amount: 0, // Review points don't depend on amount
-            eventTime: new Date().toISOString(),
-            extraInfo: JSON.stringify({
-              hasImage,
-              wordCount,
-              rating: rating.value,
-              orderId: order.value.id
-            })
-          });
-        } catch (error: any) {
-          console.error('Failed to notify points system:', error);
-          // Don't block the review submission flow
-        }
-      }
-      
+      // Points will be awarded automatically by the backend
       ElMessage.success('评价成功！积分已发放');
       router.push({ name: 'OrderHistory' });
     } else {
