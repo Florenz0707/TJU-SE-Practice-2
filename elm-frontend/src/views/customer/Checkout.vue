@@ -198,7 +198,7 @@ import { useAuthStore } from '../../store/auth';
 import { getCurrentUserAddresses, addDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress } from '../../api/address';
 import { addOrder } from '../../api/order';
 import { getMyVouchers } from '../../api/privateVoucher';
-import { getMyPointsAccount, freezePoints, deductPoints, rollbackPoints, notifyOrderSuccess } from '../../api/points';
+import { getMyPointsAccount, freezePoints, deductPoints, rollbackPoints } from '../../api/points';
 import type { DeliveryAddress, Order, PrivateVoucher, PointsAccount } from '../../api/types';
 import { ElMessage, ElMessageBox } from 'element-plus';
 
@@ -401,24 +401,24 @@ const placeOrder = async () => {
     }
 
     // Step 4: Notify points system about order success
-    if (authStore.user?.id) {
-      try {
-        await notifyOrderSuccess({
-          userId: authStore.user.id,
-          bizId: `ORD_${orderId}`,
-          amount: cartStore.finalOrderTotal, // Original order total before discounts
-          eventTime: new Date().toISOString(),
-          extraInfo: JSON.stringify({
-            finalPrice: finalPrice.value,
-            voucherDiscount: voucherDiscount.value,
-            pointsDiscount: pointsDiscount.value
-          })
-        });
-      } catch (error: any) {
-        console.error('Failed to notify points system:', error);
-        // Don't block the order completion flow
-      }
-    }
+    // if (authStore.user?.id) {
+    //   try {
+    //     await notifyOrderSuccess({
+    //       userId: authStore.user.id,
+    //       bizId: `ORD_${orderId}`,
+    //       amount: cartStore.finalOrderTotal, // Original order total before discounts
+    //       eventTime: new Date().toISOString(),
+    //       extraInfo: JSON.stringify({
+    //         finalPrice: finalPrice.value,
+    //         voucherDiscount: voucherDiscount.value,
+    //         pointsDiscount: pointsDiscount.value
+    //       })
+    //     });
+    //   } catch (error: any) {
+    //     console.error('Failed to notify points system:', error);
+    //     // Don't block the order completion flow
+    //   }
+    // }
 
     ElMessage.success('下单成功！');
     await cartStore.fetchCart(); // Refetch cart

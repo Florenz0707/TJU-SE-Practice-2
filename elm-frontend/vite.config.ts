@@ -47,7 +47,7 @@ export default defineConfig({
       // '/api': 'http://localhost:8080',
       // 选项写法
       '/api': {
-        target: 'http://localhost:9000/elm', // 目标后端服务地址
+        target: 'http://localhost:8080/elm', // 目标后端服务地址
         changeOrigin: true, // 需要虚拟主机站点
       }
     }

@@ -85,7 +85,7 @@ async function fetchData() {
         account.value = accRes.data;
 
         // Ensure page index is valid (at least 1 for UI, 0 for backend)
-        const pageIndex = Math.max(0, currentPage.value - 1);
+        const pageIndex = Math.max(1, currentPage.value - 1);
         const recRes = await getMyPointsRecords(pageIndex, pageSize.value);
         records.value = recRes.data.records;
         total.value = recRes.data.total;
