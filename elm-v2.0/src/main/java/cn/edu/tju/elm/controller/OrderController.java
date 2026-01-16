@@ -183,14 +183,17 @@ public class OrderController {
                 }
             }
 
-            // Calculate final price
+            // Calculate final price (amount to be paid after wallet deduction)
             BigDecimal finalPrice = totalPrice.subtract(voucherDiscount).subtract(pointsDiscount).subtract(walletPaid);
             if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
                 finalPrice = BigDecimal.ZERO;
             }
 
             EntityUtils.setNewEntity(order);
-            order.setOrderTotal(finalPrice);
+            // orderTotal should store the original order total (items + delivery)
+            // NOT the final price after wallet payment
+            // Wallet payment is tracked separately in walletPaid field
+            order.setOrderTotal(totalPrice);
             order.setOrderState(OrderState.PAID);
             order.setOrderDate(order.getCreateTime());
             order.setBusiness(business);
@@ -334,8 +337,20 @@ public class OrderController {
             // 订单完成时发放积分
             if (orderState.equals(OrderState.COMPLETE) && !oldOrderState.equals(OrderState.COMPLETE)) {
                 try {
-                    // 计算订单实际支付金额（扣除优惠券和积分抵扣后的金额）
-                    Double orderAmount = newOrder.getOrderTotal() != null ? newOrder.getOrderTotal().doubleValue() : 0.0;
+                    // 计算积分基数：订单总金额 - 优惠券折扣 - 积分抵扣
+                    // 不扣除钱包支付，因为钱包里的钱也是用户的钱
+                    BigDecimal pointsBase = newOrder.getOrderTotal() != null ? newOrder.getOrderTotal() : BigDecimal.ZERO;
+                    if (newOrder.getVoucherDiscount() != null) {
+                        pointsBase = pointsBase.subtract(newOrder.getVoucherDiscount());
+                    }
+                    if (newOrder.getPointsDiscount() != null) {
+                        pointsBase = pointsBase.subtract(newOrder.getPointsDiscount());
+                    }
+                    if (pointsBase.compareTo(BigDecimal.ZERO) < 0) {
+                        pointsBase = BigDecimal.ZERO;
+                    }
+                    
+                    Double orderAmount = pointsBase.doubleValue();
                     internalServiceClient.notifyOrderSuccess(
                         newOrder.getCustomer().getId(),
                         newOrder.getId().toString(),

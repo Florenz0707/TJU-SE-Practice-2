@@ -19,8 +19,20 @@
           <el-tag :type="getOrderStatusInfo(order.orderState as OrderStatus).type">{{ getOrderStatusInfo(order.orderState as OrderStatus).text }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="下单日期">{{ order.orderDate ? new Date(order.orderDate).toLocaleString() : '暂无' }}</el-descriptions-item>
-        <el-descriptions-item label="总金额">¥{{ (order.orderTotal ?? 0).toFixed(2) }}</el-descriptions-item>
-        <el-descriptions-item label="配送地址">{{ order.deliveryAddress?.address ?? '暂无' }}</el-descriptions-item>
+        <el-descriptions-item label="配送地址" :span="2">{{ order.deliveryAddress?.address ?? '暂无' }}</el-descriptions-item>
+        <el-descriptions-item label="订单金额" :span="2">¥{{ (order.orderTotal ?? 0).toFixed(2) }}</el-descriptions-item>
+        <el-descriptions-item v-if="order.voucherDiscount && order.voucherDiscount > 0" label="优惠券折扣" :span="2">
+          -¥{{ order.voucherDiscount.toFixed(2) }}
+        </el-descriptions-item>
+        <el-descriptions-item v-if="order.pointsUsed && order.pointsUsed > 0" label="积分抵扣" :span="2">
+          {{ order.pointsUsed }}积分 (-¥{{ (order.pointsDiscount ?? 0).toFixed(2) }})
+        </el-descriptions-item>
+        <el-descriptions-item v-if="order.walletPaid && order.walletPaid > 0" label="钱包支付" :span="2">
+          -¥{{ order.walletPaid.toFixed(2) }}
+        </el-descriptions-item>
+        <el-descriptions-item v-if="hasDiscounts" label="实际支付" :span="2">
+          <strong>¥{{ finalPayment.toFixed(2) }}</strong>
+        </el-descriptions-item>
       </el-descriptions>
     </el-card>
 
@@ -48,7 +60,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getOrderById } from '../../../api/order';
 import { getOrderReview } from '../../../api/review';
@@ -68,6 +80,26 @@ const error = ref<string | null>(null);
 const goBack = () => {
   router.back();
 };
+
+// Check if order has any discounts or wallet payment
+const hasDiscounts = computed(() => {
+  if (!order.value) return false;
+  return (
+    (order.value.voucherDiscount && order.value.voucherDiscount > 0) ||
+    (order.value.pointsUsed && order.value.pointsUsed > 0) ||
+    (order.value.walletPaid && order.value.walletPaid > 0)
+  );
+});
+
+// Calculate final payment amount
+const finalPayment = computed(() => {
+  if (!order.value) return 0;
+  let total = order.value.orderTotal ?? 0;
+  if (order.value.voucherDiscount) total -= order.value.voucherDiscount;
+  if (order.value.pointsDiscount) total -= order.value.pointsDiscount;
+  if (order.value.walletPaid) total -= order.value.walletPaid;
+  return Math.max(0, total);
+});
 
 onMounted(async () => {
   loading.value = true;

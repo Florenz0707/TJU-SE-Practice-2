@@ -286,11 +286,11 @@ export interface PointsAccount {
 }
 
 export const PointsRecordType = {
-    EARN: 0,
-    CONSUME: 1,
-    EXPIRE: 2,
-    FREEZE: 3,
-    UNFREEZE: 4
+    EARN: 'EARN',
+    CONSUME: 'CONSUME',
+    EXPIRE: 'EXPIRE',
+    FREEZE: 'FREEZE',
+    UNFREEZE: 'UNFREEZE'
 } as const;
 export type PointsRecordType = typeof PointsRecordType[keyof typeof PointsRecordType];
 
@@ -298,9 +298,11 @@ export interface PointsRecord {
     id: number;
     userId: number;
     type: PointsRecordType;
-    amount: number;
-    reason: string;
-    createTime: string;
+    points: number;
+    bizId?: string;
+    channelType?: string;
+    description: string;
+    recordTime: string;
 }
 
 export const PointsRuleType = {

@@ -46,8 +46,8 @@
             </el-table-column>
              <el-table-column prop="points" label="变动数量">
                  <template #default="scope">
-                    <span :class="scope.row.type === PointsRecordType.EARN ? 'plus' : 'minus'">
-                        {{ scope.row.type === PointsRecordType.EARN ? '+' : '-' }}{{ scope.row.points }}
+                    <span :class="isPositiveChange(scope.row.type) ? 'plus' : 'minus'">
+                        {{ isPositiveChange(scope.row.type) ? '+' : '-' }}{{ scope.row.points }}
                     </span>
                  </template>
             </el-table-column>
@@ -102,20 +102,40 @@ function handlePageChange(page: number) {
     fetchData();
 }
 
-function getRecordTypeLabel(type: any) {
-    if (type === PointsRecordType.EARN) return '获取';
-    if (type === PointsRecordType.CONSUME) return '消费';
-    if (type === PointsRecordType.EXPIRE) return '过期';
-    if (type === PointsRecordType.FREEZE) return '冻结';
-    if (type === PointsRecordType.UNFREEZE) return '解冻';
-    return '未知';
+function getRecordTypeLabel(type: string) {
+    switch(type) {
+        case PointsRecordType.EARN:
+            return '获取';
+        case PointsRecordType.CONSUME:
+            return '消费';
+        case PointsRecordType.EXPIRE:
+            return '过期';
+        case PointsRecordType.FREEZE:
+            return '冻结';
+        case PointsRecordType.UNFREEZE:
+            return '解冻';
+        default:
+            return '未知';
+    }
 }
 
-function getRecordTypeTag(type: any) {
-     if (type === PointsRecordType.EARN) return 'success';
-    if (type === PointsRecordType.CONSUME) return 'warning';
-    if (type === PointsRecordType.EXPIRE) return 'danger';
-    return 'info';
+function getRecordTypeTag(type: string) {
+    switch(type) {
+        case PointsRecordType.EARN:
+        case PointsRecordType.UNFREEZE:
+            return 'success';
+        case PointsRecordType.CONSUME:
+        case PointsRecordType.FREEZE:
+            return 'warning';
+        case PointsRecordType.EXPIRE:
+            return 'danger';
+        default:
+            return 'info';
+    }
+}
+
+function isPositiveChange(type: string) {
+    return type === PointsRecordType.EARN || type === PointsRecordType.UNFREEZE;
 }
 
 onMounted(() => {
