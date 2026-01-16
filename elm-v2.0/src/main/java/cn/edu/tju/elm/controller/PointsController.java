@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -57,7 +59,7 @@ public class PointsController {
 
     @GetMapping("/record/my")
     @Operation(summary = "分页查询积分明细", description = "分页展示积分获取和消费的记录")
-    public HttpResult<List<PointsRecordVO>> getMyPointsRecords(
+    public HttpResult<Map<String, Object>> getMyPointsRecords(
             @RequestParam("page") Integer page,
             @RequestParam("size") Integer size,
             @RequestParam(value = "type", required = false) String type) {
@@ -72,7 +74,12 @@ public class PointsController {
             List<PointsRecordVO> recordVOs = records.getContent().stream()
                     .map(PointsRecordVO::new)
                     .collect(Collectors.toList());
-            return HttpResult.success(recordVOs);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("records", recordVOs);
+            result.put("total", records.getTotalElements());
+            
+            return HttpResult.success(result);
         } catch (Exception e) {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
         }

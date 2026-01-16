@@ -8,6 +8,7 @@ import cn.edu.tju.core.security.SecurityUtils;
 import cn.edu.tju.core.security.controller.dto.LoginDto;
 import cn.edu.tju.core.security.service.PersonService;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.service.serviceInterface.WalletService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,10 +27,12 @@ public class UserRestController {
 
     private final UserService userService;
     private final PersonService personService;
+    private final WalletService walletService;
 
-    public UserRestController(UserService userService, PersonService personService) {
+    public UserRestController(UserService userService, PersonService personService, WalletService walletService) {
         this.userService = userService;
         this.personService = personService;
+        this.walletService = walletService;
     }
 
     @PostMapping("/users")
@@ -57,6 +60,15 @@ public class UserRestController {
         if (userService.getUserWithUsername(user.getUsername()) != null)
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Username ALREADY EXISTS");
         userService.addUser(user);
+        
+        // Auto create wallet for new user
+        try {
+            walletService.createWallet(user);
+        } catch (Exception e) {
+            // Log error but don't fail user creation
+            System.err.println("Failed to create wallet for user: " + e.getMessage());
+        }
+        
         return HttpResult.success(user);
     }
 
@@ -112,6 +124,15 @@ public class UserRestController {
 
         userService.addUser(person);
         personService.addPerson(person);
+        
+        // Auto create wallet for new user
+        try {
+            walletService.createWallet(person);
+        } catch (Exception e) {
+            // Log error but don't fail user creation
+            System.err.println("Failed to create wallet for person: " + e.getMessage());
+        }
+        
         return HttpResult.success(person);
     }
 

@@ -8,10 +8,14 @@ import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.exception.PointsException;
 import cn.edu.tju.elm.model.BO.*;
 import cn.edu.tju.elm.repository.PrivateVoucherRepository;
+import cn.edu.tju.elm.model.BO.Wallet;
+import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.*;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
+import cn.edu.tju.elm.service.serviceInterface.WalletService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalServiceClient;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,11 +40,15 @@ public class OrderController {
     private final PointsService pointsService;
     private final PrivateVoucherRepository privateVoucherRepository;
     private final PrivateVoucherService privateVoucherService;
+    private final InternalServiceClient internalServiceClient;
+    private final WalletRepository walletRepository;
+    private final WalletService walletService;
 
     public OrderController(UserService userService, OrderService orderService, BusinessService businessService,
                            AddressService addressService, CartItemService cartItemService, OrderDetailetService orderDetailetService,
                            PointsService pointsService, PrivateVoucherRepository privateVoucherRepository, 
-                           PrivateVoucherService privateVoucherService) {
+                           PrivateVoucherService privateVoucherService, InternalServiceClient internalServiceClient,
+                           WalletRepository walletRepository, WalletService walletService) {
         this.userService = userService;
         this.orderService = orderService;
         this.businessService = businessService;
@@ -50,6 +58,9 @@ public class OrderController {
         this.pointsService = pointsService;
         this.privateVoucherRepository = privateVoucherRepository;
         this.privateVoucherService = privateVoucherService;
+        this.internalServiceClient = internalServiceClient;
+        this.walletRepository = walletRepository;
+        this.walletService = walletService;
     }
 
     @PostMapping(value = "")
@@ -134,8 +145,42 @@ public class OrderController {
                 }
             }
 
+            // Handle wallet payment
+            BigDecimal walletPaid = BigDecimal.ZERO;
+            Wallet userWallet = null;
+            if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
+                walletPaid = order.getWalletPaid();
+                
+                // Get or create user's wallet
+                Optional<Wallet> walletOpt = walletRepository.findByOwnerId(me.getId());
+                if (walletOpt.isEmpty()) {
+                    try {
+                        walletService.createWallet(me);
+                        walletOpt = walletRepository.findByOwnerId(me.getId());
+                        if (walletOpt.isEmpty()) {
+                            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create wallet");
+                        }
+                    } catch (Exception e) {
+                        log.error("Failed to create wallet: {}", e.getMessage());
+                        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create wallet: " + e.getMessage());
+                    }
+                }
+                userWallet = walletOpt.get();
+                
+                // Validate wallet paid amount
+                BigDecimal maxWalletPaid = totalPrice.subtract(voucherDiscount).subtract(pointsDiscount);
+                if (walletPaid.compareTo(maxWalletPaid) > 0) {
+                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Wallet payment exceeds remaining order total");
+                }
+                
+                // Check wallet balance
+                if (userWallet.getBalance().compareTo(walletPaid) < 0) {
+                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Insufficient wallet balance. Current balance: " + userWallet.getBalance() + ", Required: " + walletPaid);
+                }
+            }
+
             // Calculate final price
-            BigDecimal finalPrice = totalPrice.subtract(voucherDiscount).subtract(pointsDiscount);
+            BigDecimal finalPrice = totalPrice.subtract(voucherDiscount).subtract(pointsDiscount).subtract(walletPaid);
             if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
                 finalPrice = BigDecimal.ZERO;
             }
@@ -151,6 +196,7 @@ public class OrderController {
             order.setVoucherDiscount(voucherDiscount);
             order.setPointsUsed(pointsUsed);
             order.setPointsDiscount(pointsDiscount);
+            order.setWalletPaid(walletPaid);
             
             // Redeem voucher if used
             if (usedVoucher != null) {
@@ -162,6 +208,15 @@ public class OrderController {
                 }
             }
 
+            // Deduct wallet balance if used
+            if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
+                if (!userWallet.decBalance(walletPaid)) {
+                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to deduct wallet balance");
+                }
+                EntityUtils.updateEntity(userWallet);
+                walletRepository.save(userWallet);
+            }
+
             // Deduct points if used
             if (pointsUsed > 0) {
                 try {
@@ -171,6 +226,12 @@ public class OrderController {
                     pointsService.deductPoints(me.getId(), tempOrderId, order.getId().toString());
                 } catch (PointsException e) {
                     log.error("Failed to deduct points: {}", e.getMessage());
+                    // Rollback wallet deduction if points deduction failed
+                    if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
+                        userWallet.addBalance(walletPaid);
+                        EntityUtils.updateEntity(userWallet);
+                        walletRepository.save(userWallet);
+                    }
                     return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to deduct points: " + e.getMessage());
                 }
             } else {
@@ -257,9 +318,29 @@ public class OrderController {
         boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
         if (isAdmin || (isBusiness && me.equals(newOrder.getBusiness().getBusinessOwner()))
                 || me.equals(newOrder.getCustomer())) {
+            Integer oldOrderState = newOrder.getOrderState();
             newOrder.setOrderState(orderState);
             EntityUtils.updateEntity(newOrder);
             orderService.updateOrder(newOrder);
+            
+            // 订单完成时发放积分
+            if (orderState.equals(OrderState.COMPLETE) && !oldOrderState.equals(OrderState.COMPLETE)) {
+                try {
+                    // 计算订单实际支付金额（扣除优惠券和积分抵扣后的金额）
+                    Double orderAmount = newOrder.getOrderTotal() != null ? newOrder.getOrderTotal().doubleValue() : 0.0;
+                    internalServiceClient.notifyOrderSuccess(
+                        newOrder.getCustomer().getId(),
+                        newOrder.getId().toString(),
+                        orderAmount,
+                        newOrder.getOrderDate() != null ? newOrder.getOrderDate().toString() : null,
+                        "订单完成"
+                    );
+                } catch (Exception e) {
+                    log.error("Failed to notify order success for points: {}", e.getMessage());
+                    // 不影响订单状态更新
+                }
+            }
+            
             return HttpResult.success(newOrder);
         }
 

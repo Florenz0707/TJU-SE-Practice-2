@@ -49,7 +49,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getMyVouchers, claimVoucher } from '../../../api/privateVoucher';
-import { getAllPublicVouchers } from '../../../api/publicVoucher';
+import { getAvailablePublicVouchers } from '../../../api/publicVoucher';
 import type { PrivateVoucher, PublicVoucher } from '../../../api/types';
 import { ElMessage } from 'element-plus';
 
@@ -67,9 +67,9 @@ async function fetchMyVouchers() {
 
 async function fetchPublicVouchers() {
     try {
-        const res = await getAllPublicVouchers();
-        // Filter only claimable ones
-        publicVouchers.value = res.data.filter(v => v.claimable);
+        const res = await getAvailablePublicVouchers();
+        // Only show vouchers that haven't been claimed by current user
+        publicVouchers.value = res.data;
     } catch(e) {
         console.error(e);
     }
@@ -80,6 +80,7 @@ async function handleClaim(id: number) {
         await claimVoucher(id);
         ElMessage.success('领取成功');
         await fetchMyVouchers(); // Refresh my list
+        await fetchPublicVouchers(); // Refresh available list
     } catch(e) {
         ElMessage.error('领取失败');
     }

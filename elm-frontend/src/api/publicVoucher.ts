@@ -22,3 +22,8 @@ export function getPublicVoucherById(id: string): Promise<HttpResult<PublicVouch
 export function deletePublicVoucher(id: string): Promise<HttpResult<any>> {
   return request.delete(`/publicVoucher/${id}`);
 }
+
+// Get available public vouchers for current user (not claimed yet)
+export function getAvailablePublicVouchers(): Promise<HttpResult<PublicVoucher[]>> {
+  return request.get('/publicVoucher/available');
+}

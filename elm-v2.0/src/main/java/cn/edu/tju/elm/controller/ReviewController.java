@@ -13,6 +13,9 @@ import cn.edu.tju.elm.service.OrderService;
 import cn.edu.tju.elm.service.ReviewService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalServiceClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,16 +24,19 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
+    private static final Logger log = LoggerFactory.getLogger(ReviewController.class);
     private final ReviewService reviewService;
     private final BusinessService businessService;
     private final OrderService orderService;
     private final UserService userService;
+    private final InternalServiceClient internalServiceClient;
 
-    public ReviewController(ReviewService reviewService, BusinessService businessService, OrderService orderService, UserService userService) {
+    public ReviewController(ReviewService reviewService, BusinessService businessService, OrderService orderService, UserService userService, InternalServiceClient internalServiceClient) {
         this.reviewService = reviewService;
         this.businessService = businessService;
         this.orderService = orderService;
         this.userService = userService;
+        this.internalServiceClient = internalServiceClient;
     }
 
     @PostMapping("/order/{orderId}")
@@ -69,6 +75,21 @@ public class ReviewController {
             order.setOrderState(OrderState.COMMENTED);
             EntityUtils.updateEntity(order);
             orderService.updateOrder(order);
+            
+            // 发放评价积分
+            try {
+                internalServiceClient.notifyReviewSuccess(
+                    customer.getId(),
+                    review.getId().toString(),
+                    null, // amount为null时，使用规则中的默认值
+                    review.getCreateTime() != null ? review.getCreateTime().toString() : null,
+                    "用户发表评价"
+                );
+            } catch (Exception e) {
+                log.error("Failed to notify review success for points: {}", e.getMessage());
+                // 不影响评价创建
+            }
+            
             return HttpResult.success(review);
         }
 

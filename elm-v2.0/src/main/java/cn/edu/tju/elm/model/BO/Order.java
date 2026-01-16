@@ -42,6 +42,9 @@ public class Order extends BaseEntity {
     @Column(precision = 10, scale = 2)
     private BigDecimal pointsDiscount;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal walletPaid;
+
     public User getCustomer() {
         return customer;
     }
@@ -120,6 +123,14 @@ public class Order extends BaseEntity {
 
     public void setPointsDiscount(BigDecimal pointsDiscount) {
         this.pointsDiscount = pointsDiscount;
+    }
+
+    public BigDecimal getWalletPaid() {
+        return walletPaid;
+    }
+
+    public void setWalletPaid(BigDecimal walletPaid) {
+        this.walletPaid = walletPaid;
     }
 
 }

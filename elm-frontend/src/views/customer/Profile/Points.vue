@@ -32,9 +32,9 @@
             </div>
         </template>
          <el-table :data="records" style="width: 100%">
-            <el-table-column prop="createTime" label="时间" width="180">
+            <el-table-column prop="recordTime" label="时间" width="180">
                  <template #default="scope">
-                    {{ new Date(scope.row.createTime).toLocaleString() }}
+                    {{ new Date(scope.row.recordTime).toLocaleString() }}
                  </template>
             </el-table-column>
             <el-table-column prop="type" label="类型" width="100">
@@ -44,14 +44,14 @@
                      </el-tag>
                 </template>
             </el-table-column>
-             <el-table-column prop="amount" label="变动数量">
+             <el-table-column prop="points" label="变动数量">
                  <template #default="scope">
-                    <span :class="scope.row.amount >= 0 ? 'plus' : 'minus'">
-                        {{ scope.row.amount > 0 ? '+' : '' }}{{ scope.row.amount }}
+                    <span :class="scope.row.type === 'EARN' ? 'plus' : 'minus'">
+                        {{ scope.row.type === 'EARN' ? '+' : '-' }}{{ scope.row.points }}
                     </span>
                  </template>
             </el-table-column>
-            <el-table-column prop="reason" label="原因" />
+            <el-table-column prop="description" label="原因" />
          </el-table>
          <el-pagination
             v-if="total > 0"
