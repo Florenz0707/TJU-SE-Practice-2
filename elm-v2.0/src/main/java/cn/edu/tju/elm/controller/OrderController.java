@@ -12,7 +12,9 @@ import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.*;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
+import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
+import cn.edu.tju.elm.constant.TransactionType;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalServiceClient;
@@ -43,12 +45,13 @@ public class OrderController {
     private final InternalServiceClient internalServiceClient;
     private final WalletRepository walletRepository;
     private final WalletService walletService;
+    private final TransactionService transactionService;
 
     public OrderController(UserService userService, OrderService orderService, BusinessService businessService,
                            AddressService addressService, CartItemService cartItemService, OrderDetailetService orderDetailetService,
                            PointsService pointsService, PrivateVoucherRepository privateVoucherRepository, 
                            PrivateVoucherService privateVoucherService, InternalServiceClient internalServiceClient,
-                           WalletRepository walletRepository, WalletService walletService) {
+                           WalletRepository walletRepository, WalletService walletService, TransactionService transactionService) {
         this.userService = userService;
         this.orderService = orderService;
         this.businessService = businessService;
@@ -61,6 +64,7 @@ public class OrderController {
         this.internalServiceClient = internalServiceClient;
         this.walletRepository = walletRepository;
         this.walletService = walletService;
+        this.transactionService = transactionService;
     }
 
     @PostMapping(value = "")
@@ -209,6 +213,10 @@ public class OrderController {
             }
 
             // Deduct wallet balance if used
+            // Note: We don't create a Transaction record here because:
+            // 1. Transaction system is for wallet operations (top-up, withdraw, wallet-to-wallet)
+            // 2. Order payments are tracked in Order.walletPaid field
+            // 3. Creating a transaction would cause double deduction
             if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
                 if (!userWallet.decBalance(walletPaid)) {
                     return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to deduct wallet balance");
@@ -402,3 +410,4 @@ public class OrderController {
         return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 }
+

@@ -47,6 +47,7 @@ public class TransactionServiceImpl implements TransactionService {
         this.privateVoucherService = privateVoucherService;
     }
 
+    @Transactional(readOnly = true)
     public TransactionVO getTransactionById(Long id) throws TransactionException {
         Transaction transaction = transactionRepository.findById(id).orElse(null);
         if (transaction == null)
@@ -147,6 +148,7 @@ public class TransactionServiceImpl implements TransactionService {
         return new TransactionVO(transaction);
     }
 
+    @Transactional(readOnly = true)
     public TransactionsRecord getTransactionsByWalletId(Long walletId) {
         List<TransactionVO> inWalletList = new ArrayList<>();
         List<TransactionVO> outWalletList = new ArrayList<>();

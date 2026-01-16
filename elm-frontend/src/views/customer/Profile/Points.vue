@@ -46,8 +46,8 @@
             </el-table-column>
              <el-table-column prop="points" label="变动数量">
                  <template #default="scope">
-                    <span :class="scope.row.type === 'EARN' ? 'plus' : 'minus'">
-                        {{ scope.row.type === 'EARN' ? '+' : '-' }}{{ scope.row.points }}
+                    <span :class="scope.row.type === PointsRecordType.EARN ? 'plus' : 'minus'">
+                        {{ scope.row.type === PointsRecordType.EARN ? '+' : '-' }}{{ scope.row.points }}
                     </span>
                  </template>
             </el-table-column>

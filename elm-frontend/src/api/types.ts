@@ -115,6 +115,8 @@ export interface Order {
   voucherDiscount?: number;
   pointsUsed?: number;
   pointsDiscount?: number;
+  walletPaid?: number;
+  paymentMethod?: 'external' | 'wallet' | 'mixed';
 }
 
 export interface OrderDetail {

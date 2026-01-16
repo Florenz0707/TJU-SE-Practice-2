@@ -97,6 +97,39 @@
         </div>
       </div>
 
+      <!-- Payment Method Selection -->
+      <div class="discount-section">
+        <h4>支付方式</h4>
+        <div class="payment-info">
+          <p>钱包余额: <strong>¥{{ walletStore.walletBalance?.toFixed(2) || '0.00' }}</strong></p>
+          <el-radio-group v-model="paymentMethod" @change="onPaymentMethodChange">
+            <el-radio label="external">外部支付（立即完成）</el-radio>
+            <el-radio label="wallet" :disabled="walletStore.walletBalance < finalPrice">钱包余额支付</el-radio>
+            <el-radio label="mixed" :disabled="walletStore.walletBalance === 0">混合支付（钱包+外部）</el-radio>
+          </el-radio-group>
+        </div>
+        <div v-if="paymentMethod === 'mixed'" class="wallet-input">
+          <p class="wallet-tip">使用钱包支付部分订单金额，剩余部分使用外部支付</p>
+          <el-input-number 
+            v-model="walletPayAmount" 
+            :min="0" 
+            :max="maxWalletCanPay"
+            :precision="2"
+            :step="1"
+            placeholder="输入钱包支付金额"
+            style="width: 100%;"
+          />
+          <p class="wallet-tip">最多可用钱包支付: ¥{{ maxWalletCanPay.toFixed(2) }}</p>
+          <div v-if="walletPayAmount > 0" class="discount-info">
+            <el-tag type="warning">钱包支付: ¥{{ walletPayAmount.toFixed(2) }}</el-tag>
+            <el-tag type="info" style="margin-left: 10px;">外部支付: ¥{{ externalPayAmount.toFixed(2) }}</el-tag>
+          </div>
+        </div>
+        <div v-if="paymentMethod === 'wallet'" class="discount-info">
+          <el-tag type="success">将使用钱包余额支付 ¥{{ finalPrice.toFixed(2) }}</el-tag>
+        </div>
+      </div>
+
       <!-- Price Summary -->
       <div class="price-summary">
         <el-divider />
@@ -195,6 +228,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useCartStore } from '../../store/cart';
 import { useAuthStore } from '../../store/auth';
+import { useWalletStore } from '../../store/wallet';
 import { getCurrentUserAddresses, addDeliveryAddress, updateDeliveryAddress, deleteDeliveryAddress } from '../../api/address';
 import { addOrder } from '../../api/order';
 import { getMyVouchers } from '../../api/privateVoucher';
@@ -205,6 +239,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
+const walletStore = useWalletStore();
 const activeStep = ref(0);
 const addresses = ref<DeliveryAddress[]>([]);
 const selectedAddressId = ref<number | null>(null);
@@ -219,7 +254,10 @@ const selectedVoucherId = ref<number | null>(null);
 const pointsAccount = ref<PointsAccount | null>(null);
 const usePoints = ref(false);
 const pointsToUse = ref(0);
-const tempOrderId = ref<string>('');
+
+// Wallet payment state
+const paymentMethod = ref<'external' | 'wallet' | 'mixed'>('external');
+const walletPayAmount = ref(0);
 
 const selectedAddress = computed(() => addresses.value.find(a => a.id === selectedAddressId.value));
 const selectedVoucher = computed(() => availableVouchers.value.find(v => v.id === selectedVoucherId.value));
@@ -246,6 +284,25 @@ const maxPointsCanUse = computed(() => {
 const finalPrice = computed(() => {
   let price = cartStore.finalOrderTotal - voucherDiscount.value - pointsDiscount.value;
   return Math.max(price, 0); // Ensure price is not negative
+});
+
+// Wallet payment calculations
+const maxWalletCanPay = computed(() => {
+  const walletBalance = walletStore.walletBalance || 0;
+  return Math.min(walletBalance, finalPrice.value);
+});
+
+const externalPayAmount = computed(() => {
+  if (paymentMethod.value === 'external') return finalPrice.value;
+  if (paymentMethod.value === 'wallet') return 0;
+  if (paymentMethod.value === 'mixed') return Math.max(finalPrice.value - walletPayAmount.value, 0);
+  return finalPrice.value;
+});
+
+const actualWalletPayAmount = computed(() => {
+  if (paymentMethod.value === 'wallet') return finalPrice.value;
+  if (paymentMethod.value === 'mixed') return walletPayAmount.value;
+  return 0;
 });
 
 const isNextDisabled = computed(() => {
@@ -313,6 +370,18 @@ const fetchPointsAccount = async () => {
   }
 };
 
+const onPaymentMethodChange = () => {
+  // Reset wallet pay amount when payment method changes
+  if (paymentMethod.value === 'wallet') {
+    walletPayAmount.value = finalPrice.value;
+  } else if (paymentMethod.value === 'external') {
+    walletPayAmount.value = 0;
+  } else if (paymentMethod.value === 'mixed') {
+    // Default to max wallet can pay
+    walletPayAmount.value = maxWalletCanPay.value;
+  }
+};
+
 const nextStep = () => {
   if (activeStep.value++ > 2) activeStep.value = 0;
 };
@@ -331,6 +400,14 @@ const placeOrder = async () => {
     return;
   }
 
+  // Validate wallet payment if using wallet
+  if (paymentMethod.value === 'wallet' || paymentMethod.value === 'mixed') {
+    if (actualWalletPayAmount.value > (walletStore.walletBalance || 0)) {
+      ElMessage.error('钱包余额不足。');
+      return;
+    }
+  }
+
   isPlacingOrder.value = true;
   
   try {
@@ -341,8 +418,7 @@ const placeOrder = async () => {
         return;
     }
 
-    // Create the order with discount information
-    // Send voucher and points information to backend
+    // Create the order with discount and wallet payment information
     const orderPayload: Order = {
       customer: firstItem.customer,
       business: firstItem.business,
@@ -353,6 +429,8 @@ const placeOrder = async () => {
       voucherDiscount: voucherDiscount.value,
       pointsUsed: usePoints.value ? pointsToUse.value : 0,
       pointsDiscount: pointsDiscount.value,
+      walletPaid: actualWalletPayAmount.value, // Add wallet payment amount
+      paymentMethod: paymentMethod.value,
     };
     
     const res = await addOrder(orderPayload);
@@ -362,6 +440,7 @@ const placeOrder = async () => {
 
     ElMessage.success('下单成功！');
     await cartStore.fetchCart(); // Refetch cart
+    await walletStore.fetchMyWallet(); // Refresh wallet balance
     router.push({ name: 'OrderHistory' }); // Redirect to order history
     
   } catch (error: any) {
@@ -371,7 +450,7 @@ const placeOrder = async () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   if (cartStore.itemsForCurrentBusiness.length === 0) {
     ElMessage.warning('您的购物车是空的，正在跳转到主页。');
     router.push({ name: 'Home' });
@@ -379,6 +458,8 @@ onMounted(() => {
   fetchAddresses();
   fetchVouchers();
   fetchPointsAccount();
+  // Fetch wallet information
+  await walletStore.fetchMyWallet();
 });
 
 const openAddressDialog = (address: DeliveryAddress | null = null) => {
@@ -505,6 +586,30 @@ const deleteAddress = async (id: number) => {
 }
 
 .points-tip {
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: #909399;
+}
+
+.payment-info {
+  margin-bottom: 15px;
+}
+
+.payment-info p {
+  margin-bottom: 10px;
+}
+
+.payment-info .el-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wallet-input {
+  margin-top: 15px;
+}
+
+.wallet-tip {
   margin-top: 8px;
   font-size: 0.9em;
   color: #909399;
