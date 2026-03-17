@@ -3,7 +3,6 @@ package cn.edu.tju.elm.model.BO;
 import cn.edu.tju.core.model.BaseEntity;
 import cn.edu.tju.core.model.User;
 import jakarta.persistence.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -11,126 +10,126 @@ import java.time.LocalDateTime;
 @Table(name = "orders")
 public class Order extends BaseEntity {
 
-    @ManyToOne
-    @JoinColumn(name = "customer_id", nullable = false)
-    private User customer;
+  @ManyToOne
+  @JoinColumn(name = "customer_id", nullable = false)
+  private User customer;
 
-    @ManyToOne
-    @JoinColumn(name = "business_id", nullable = false)
-    private Business business;
+  @ManyToOne
+  @JoinColumn(name = "business_id", nullable = false)
+  private Business business;
 
-    private LocalDateTime orderDate;
+  private LocalDateTime orderDate;
 
-    @Column(precision = 10, scale = 2, nullable = false)
-    private BigDecimal orderTotal;
+  @Column(precision = 10, scale = 2, nullable = false)
+  private BigDecimal orderTotal;
 
-    @ManyToOne
-    @JoinColumn(name = "address_id", nullable = false)
-    private DeliveryAddress deliveryAddress;
-    private Integer orderState;
+  @ManyToOne
+  @JoinColumn(name = "address_id", nullable = false)
+  private DeliveryAddress deliveryAddress;
 
-    @ManyToOne
-    @JoinColumn(name = "voucher_id")
-    private PrivateVoucher usedVoucher;
+  private Integer orderState;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal voucherDiscount;
+  @ManyToOne
+  @JoinColumn(name = "voucher_id")
+  private PrivateVoucher usedVoucher;
 
-    @Column(precision = 10, scale = 0)
-    private Integer pointsUsed;
+  @Column(precision = 10, scale = 2)
+  private BigDecimal voucherDiscount;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal pointsDiscount;
+  @Column(precision = 10, scale = 0)
+  private Integer pointsUsed;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal walletPaid;
+  @Column(precision = 10, scale = 2)
+  private BigDecimal pointsDiscount;
 
-    public User getCustomer() {
-        return customer;
-    }
+  @Column(precision = 10, scale = 2)
+  private BigDecimal walletPaid;
 
-    public void setCustomer(User customer) {
-        this.customer = customer;
-    }
+  public User getCustomer() {
+    return customer;
+  }
 
-    public Business getBusiness() {
-        return business;
-    }
+  public void setCustomer(User customer) {
+    this.customer = customer;
+  }
 
-    public void setBusiness(Business business) {
-        this.business = business;
-    }
+  public Business getBusiness() {
+    return business;
+  }
 
-    public LocalDateTime getOrderDate() {
-        return orderDate;
-    }
+  public void setBusiness(Business business) {
+    this.business = business;
+  }
 
-    public void setOrderDate(LocalDateTime orderDate) {
-        this.orderDate = orderDate;
-    }
+  public LocalDateTime getOrderDate() {
+    return orderDate;
+  }
 
-    public BigDecimal getOrderTotal() {
-        return orderTotal;
-    }
+  public void setOrderDate(LocalDateTime orderDate) {
+    this.orderDate = orderDate;
+  }
 
-    public void setOrderTotal(BigDecimal orderTotal) {
-        this.orderTotal = orderTotal;
-    }
+  public BigDecimal getOrderTotal() {
+    return orderTotal;
+  }
 
-    public DeliveryAddress getDeliveryAddress() {
-        return deliveryAddress;
-    }
+  public void setOrderTotal(BigDecimal orderTotal) {
+    this.orderTotal = orderTotal;
+  }
 
-    public void setDeliveryAddress(DeliveryAddress deliveryAddress) {
-        this.deliveryAddress = deliveryAddress;
-    }
+  public DeliveryAddress getDeliveryAddress() {
+    return deliveryAddress;
+  }
 
-    public Integer getOrderState() {
-        return orderState;
-    }
+  public void setDeliveryAddress(DeliveryAddress deliveryAddress) {
+    this.deliveryAddress = deliveryAddress;
+  }
 
-    public void setOrderState(Integer orderState) {
-        this.orderState = orderState;
-    }
+  public Integer getOrderState() {
+    return orderState;
+  }
 
-    public PrivateVoucher getUsedVoucher() {
-        return usedVoucher;
-    }
+  public void setOrderState(Integer orderState) {
+    this.orderState = orderState;
+  }
 
-    public void setUsedVoucher(PrivateVoucher usedVoucher) {
-        this.usedVoucher = usedVoucher;
-    }
+  public PrivateVoucher getUsedVoucher() {
+    return usedVoucher;
+  }
 
-    public BigDecimal getVoucherDiscount() {
-        return voucherDiscount;
-    }
+  public void setUsedVoucher(PrivateVoucher usedVoucher) {
+    this.usedVoucher = usedVoucher;
+  }
 
-    public void setVoucherDiscount(BigDecimal voucherDiscount) {
-        this.voucherDiscount = voucherDiscount;
-    }
+  public BigDecimal getVoucherDiscount() {
+    return voucherDiscount;
+  }
 
-    public Integer getPointsUsed() {
-        return pointsUsed;
-    }
+  public void setVoucherDiscount(BigDecimal voucherDiscount) {
+    this.voucherDiscount = voucherDiscount;
+  }
 
-    public void setPointsUsed(Integer pointsUsed) {
-        this.pointsUsed = pointsUsed;
-    }
+  public Integer getPointsUsed() {
+    return pointsUsed;
+  }
 
-    public BigDecimal getPointsDiscount() {
-        return pointsDiscount;
-    }
+  public void setPointsUsed(Integer pointsUsed) {
+    this.pointsUsed = pointsUsed;
+  }
 
-    public void setPointsDiscount(BigDecimal pointsDiscount) {
-        this.pointsDiscount = pointsDiscount;
-    }
+  public BigDecimal getPointsDiscount() {
+    return pointsDiscount;
+  }
 
-    public BigDecimal getWalletPaid() {
-        return walletPaid;
-    }
+  public void setPointsDiscount(BigDecimal pointsDiscount) {
+    this.pointsDiscount = pointsDiscount;
+  }
 
-    public void setWalletPaid(BigDecimal walletPaid) {
-        this.walletPaid = walletPaid;
-    }
+  public BigDecimal getWalletPaid() {
+    return walletPaid;
+  }
 
+  public void setWalletPaid(BigDecimal walletPaid) {
+    this.walletPaid = walletPaid;
+  }
 }

@@ -19,7 +19,7 @@
         </router-link>
       </el-card>
 
-      <el-card class="menu-card" style="margin-top: 1rem;">
+      <el-card class="menu-card" style="margin-top: 1rem">
         <div class="menu-item" @click="showRoles = !showRoles">
           <span>切换身份</span>
           <ChevronRight :size="20" color="#999" />
@@ -29,10 +29,18 @@
             <router-link to="/mobile/home" class="menu-item sub-item">
               <span>顾客</span>
             </router-link>
-            <router-link v-if="isMerchant" to="/mobile/merchant/dashboard" class="menu-item sub-item">
+            <router-link
+              v-if="isMerchant"
+              to="/mobile/merchant/dashboard"
+              class="menu-item sub-item"
+            >
               <span>商家</span>
             </router-link>
-            <router-link v-if="isAdmin" to="/mobile/admin/dashboard" class="menu-item sub-item">
+            <router-link
+              v-if="isAdmin"
+              to="/mobile/admin/dashboard"
+              class="menu-item sub-item"
+            >
               <span>管理</span>
             </router-link>
           </div>
@@ -43,15 +51,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useAuthStore } from '../../../store/auth';
-import { ChevronRight } from 'lucide-vue-next';
+import { ref, computed } from "vue";
+import { useAuthStore } from "../../../store/auth";
+import { ChevronRight } from "lucide-vue-next";
 
 const authStore = useAuthStore();
 const showRoles = ref(false);
 
-const isMerchant = computed(() => authStore.userRoles.includes('MERCHANT'));
-const isAdmin = computed(() => authStore.userRoles.includes('ADMIN'));
+const isMerchant = computed(() => authStore.userRoles.includes("MERCHANT"));
+const isAdmin = computed(() => authStore.userRoles.includes("ADMIN"));
 </script>
 
 <style scoped>

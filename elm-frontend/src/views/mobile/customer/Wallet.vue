@@ -13,19 +13,31 @@
 
     <el-tabs type="border-card" class="transaction-tabs">
       <el-tab-pane label="收入记录">
-        <div v-for="transaction in walletStore.incomingTransactions" :key="transaction.id" class="transaction-item">
+        <div
+          v-for="transaction in walletStore.incomingTransactions"
+          :key="transaction.id"
+          class="transaction-item"
+        >
           <p><strong>ID:</strong> {{ transaction.id }}</p>
           <p><strong>金额:</strong> ¥{{ transaction.amount }}</p>
           <p><strong>类型:</strong> {{ transaction.type }}</p>
-          <p><strong>已完成:</strong> {{ transaction.finished ? '是' : '否' }}</p>
+          <p>
+            <strong>已完成:</strong> {{ transaction.finished ? "是" : "否" }}
+          </p>
         </div>
       </el-tab-pane>
       <el-tab-pane label="支出记录">
-        <div v-for="transaction in walletStore.outgoingTransactions" :key="transaction.id" class="transaction-item">
+        <div
+          v-for="transaction in walletStore.outgoingTransactions"
+          :key="transaction.id"
+          class="transaction-item"
+        >
           <p><strong>ID:</strong> {{ transaction.id }}</p>
           <p><strong>金额:</strong> ¥{{ transaction.amount }}</p>
           <p><strong>类型:</strong> {{ transaction.type }}</p>
-          <p><strong>已完成:</strong> {{ transaction.finished ? '是' : '否' }}</p>
+          <p>
+            <strong>已完成:</strong> {{ transaction.finished ? "是" : "否" }}
+          </p>
         </div>
       </el-tab-pane>
     </el-tabs>
@@ -33,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useWalletStore } from '../../../store/wallet';
+import { onMounted } from "vue";
+import { useWalletStore } from "../../../store/wallet";
 
 const walletStore = useWalletStore();
 

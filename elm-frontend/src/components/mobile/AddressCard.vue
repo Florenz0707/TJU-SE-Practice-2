@@ -1,5 +1,9 @@
 <template>
-  <div class="address-card" :class="{ 'is-selected': selected }" @click="$emit('select')">
+  <div
+    class="address-card"
+    :class="{ 'is-selected': selected }"
+    @click="$emit('select')"
+  >
     <div class="info">
       <p class="name-tel">
         <strong>{{ address.contactName }}</strong>
@@ -14,15 +18,15 @@
 </template>
 
 <script setup lang="ts">
-import { CheckCircle2 } from 'lucide-vue-next';
-import type { DeliveryAddress } from '../../api/types';
+import { CheckCircle2 } from "lucide-vue-next";
+import type { DeliveryAddress } from "../../api/types";
 
 defineProps<{
   address: DeliveryAddress;
   selected: boolean;
 }>();
 
-defineEmits(['select']);
+defineEmits(["select"]);
 </script>
 
 <style scoped>

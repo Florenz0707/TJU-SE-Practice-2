@@ -5,7 +5,9 @@
     <div class="address-section">
       <div class="address-header">
         <h3>配送地址</h3>
-        <el-button type="text" @click="goToAddressManagement">管理地址</el-button>
+        <el-button type="text" @click="goToAddressManagement"
+          >管理地址</el-button
+        >
       </div>
       <div class="address-list">
         <AddressCard
@@ -16,7 +18,12 @@
           @select="selectedAddress = address"
         />
       </div>
-      <el-button v-if="addresses.length === 0" @click="goToAddressManagement" type="primary" plain>
+      <el-button
+        v-if="addresses.length === 0"
+        type="primary"
+        plain
+        @click="goToAddressManagement"
+      >
         去添加地址
       </el-button>
     </div>
@@ -24,25 +31,42 @@
     <!-- Voucher Section -->
     <div class="discount-section">
       <h3>优惠券</h3>
-      <el-select v-model="selectedVoucherId" placeholder="选择优惠券" clearable style="width: 100%;">
+      <el-select
+        v-model="selectedVoucherId"
+        placeholder="选择优惠券"
+        clearable
+        style="width: 100%"
+      >
         <el-option label="不使用优惠券" :value="null" />
-        <el-option 
-          v-for="voucher in availableVouchers" 
-          :key="voucher.id" 
+        <el-option
+          v-for="voucher in availableVouchers"
+          :key="voucher.id"
           :label="`满${voucher.threshold}减${voucher.value}`"
           :value="voucher.id"
           :disabled="cartStore.finalOrderTotal < voucher.threshold"
         >
-          <div style="display: flex; justify-content: space-between; width: 100%;">
+          <div
+            style="display: flex; justify-content: space-between; width: 100%"
+          >
             <span>满{{ voucher.threshold }}减{{ voucher.value }}</span>
-            <span style="color: var(--el-text-color-secondary); font-size: 0.9em;">
-              {{ cartStore.finalOrderTotal < voucher.threshold ? '不可用' : '可用' }}
+            <span
+              style="color: var(--el-text-color-secondary); font-size: 0.9em"
+            >
+              {{
+                cartStore.finalOrderTotal < voucher.threshold
+                  ? "不可用"
+                  : "可用"
+              }}
             </span>
           </div>
         </el-option>
       </el-select>
       <div v-if="selectedVoucher" class="selected-info">
-        <el-tag type="success" size="small">已选择: 满{{ selectedVoucher.threshold }}减{{ selectedVoucher.value }}</el-tag>
+        <el-tag type="success" size="small"
+          >已选择: 满{{ selectedVoucher.threshold }}减{{
+            selectedVoucher.value
+          }}</el-tag
+        >
       </div>
     </div>
 
@@ -50,17 +74,19 @@
     <div class="discount-section">
       <h3>积分抵扣</h3>
       <div class="points-info">
-        <p>可用积分: <strong>{{ pointsAccount?.availablePoints || 0 }}</strong></p>
+        <p>
+          可用积分: <strong>{{ pointsAccount?.availablePoints || 0 }}</strong>
+        </p>
         <el-checkbox v-model="usePoints">使用积分抵扣</el-checkbox>
       </div>
       <div v-if="usePoints" class="points-input">
-        <el-input-number 
-          v-model="pointsToUse" 
-          :min="0" 
+        <el-input-number
+          v-model="pointsToUse"
+          :min="0"
           :max="maxPointsCanUse"
           :step="100"
           placeholder="输入积分"
-          style="width: 100%;"
+          style="width: 100%"
         />
         <p class="points-tip">100积分 = ¥1，最多: {{ maxPointsCanUse }} 积分</p>
       </div>
@@ -68,7 +94,11 @@
 
     <div class="summary-section">
       <h3>订单概要</h3>
-      <div v-for="item in cartStore.itemsForCurrentBusiness" :key="item.id" class="summary-item">
+      <div
+        v-for="item in cartStore.itemsForCurrentBusiness"
+        :key="item.id"
+        class="summary-item"
+      >
         <span>{{ item.food?.foodName }} x {{ item.quantity }}</span>
         <span>¥{{ (item.food?.foodPrice! * item.quantity!).toFixed(2) }}</span>
       </div>
@@ -91,23 +121,33 @@
     </div>
 
     <div class="actions">
-      <el-button type="primary" size="large" @click="submitOrder" :loading="isSubmitting">提交订单</el-button>
+      <el-button
+        type="primary"
+        size="large"
+        :loading="isSubmitting"
+        @click="submitOrder"
+        >提交订单</el-button
+      >
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
-import { useCartStore } from '../../../store/cart';
-import { useAuthStore } from '../../../store/auth';
-import { getCurrentUserAddresses } from '../../../api/address';
-import { addOrder } from '../../../api/order';
-import { getMyVouchers } from '../../../api/privateVoucher';
-import { getMyPointsAccount } from '../../../api/points';
-import type { DeliveryAddress, PrivateVoucher, PointsAccount } from '../../../api/types';
-import { ElMessage } from 'element-plus';
-import AddressCard from '../../../components/mobile/AddressCard.vue';
+import { ref, onMounted, computed, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useCartStore } from "../../../store/cart";
+import { useAuthStore } from "../../../store/auth";
+import { getCurrentUserAddresses } from "../../../api/address";
+import { addOrder } from "../../../api/order";
+import { getMyVouchers } from "../../../api/privateVoucher";
+import { getMyPointsAccount } from "../../../api/points";
+import type {
+  DeliveryAddress,
+  PrivateVoucher,
+  PointsAccount,
+} from "../../../api/types";
+import { ElMessage } from "element-plus";
+import AddressCard from "../../../components/mobile/AddressCard.vue";
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();
@@ -123,7 +163,9 @@ const pointsAccount = ref<PointsAccount | null>(null);
 const usePoints = ref(false);
 const pointsToUse = ref(0);
 
-const selectedVoucher = computed(() => availableVouchers.value.find(v => v.id === selectedVoucherId.value));
+const selectedVoucher = computed(() =>
+  availableVouchers.value.find((v) => v.id === selectedVoucherId.value),
+);
 
 // Calculate discounts
 const voucherDiscount = computed(() => {
@@ -139,12 +181,15 @@ const pointsDiscount = computed(() => {
 
 const maxPointsCanUse = computed(() => {
   const available = pointsAccount.value?.availablePoints || 0;
-  const maxByOrder = Math.floor((cartStore.finalOrderTotal - voucherDiscount.value) * 100);
+  const maxByOrder = Math.floor(
+    (cartStore.finalOrderTotal - voucherDiscount.value) * 100,
+  );
   return Math.min(available, maxByOrder);
 });
 
 const finalPrice = computed(() => {
-  let price = cartStore.finalOrderTotal - voucherDiscount.value - pointsDiscount.value;
+  const price =
+    cartStore.finalOrderTotal - voucherDiscount.value - pointsDiscount.value;
   return Math.max(price, 0);
 });
 
@@ -165,10 +210,12 @@ const fetchVouchers = async () => {
   try {
     const res = await getMyVouchers();
     if (res.success) {
-      availableVouchers.value = res.data.filter(v => !v.used && new Date(v.expiryDate) > new Date());
+      availableVouchers.value = res.data.filter(
+        (v) => !v.used && new Date(v.expiryDate) > new Date(),
+      );
     }
   } catch (e) {
-    console.error('Failed to fetch vouchers:', e);
+    console.error("Failed to fetch vouchers:", e);
   }
 };
 
@@ -179,7 +226,7 @@ const fetchPointsAccount = async () => {
       pointsAccount.value = res.data;
     }
   } catch (e) {
-    console.error('Failed to fetch points account:', e);
+    console.error("Failed to fetch points account:", e);
   }
 };
 
@@ -194,16 +241,16 @@ onMounted(async () => {
 });
 
 const goToAddressManagement = () => {
-  router.push({ name: 'MobileAddressManagement', query: { from: 'checkout' } });
+  router.push({ name: "MobileAddressManagement", query: { from: "checkout" } });
 };
 
 const submitOrder = async () => {
   if (!authStore.user) {
-    ElMessage.error('用户未登录，无法下单。');
+    ElMessage.error("用户未登录，无法下单。");
     return;
   }
   if (!selectedAddress.value) {
-    ElMessage.error('请选择一个配送地址');
+    ElMessage.error("请选择一个配送地址");
     return;
   }
 
@@ -213,17 +260,17 @@ const submitOrder = async () => {
   }
 
   isSubmitting.value = true;
-  
+
   try {
     const currentCartItems = cartStore.itemsForCurrentBusiness;
     if (currentCartItems.length === 0) {
-      ElMessage.error('购物车为空，无法下单。');
+      ElMessage.error("购物车为空，无法下单。");
       return;
     }
 
     const business = currentCartItems[0]?.business;
     if (!business) {
-      ElMessage.error('无法确定商家信息，无法下单');
+      ElMessage.error("无法确定商家信息，无法下单");
       return;
     }
 
@@ -238,15 +285,14 @@ const submitOrder = async () => {
     });
 
     if (!res.success || !res.data?.id) {
-      throw new Error(res.message || '创建订单失败');
+      throw new Error(res.message || "创建订单失败");
     }
 
-    ElMessage.success('下单成功！');
+    ElMessage.success("下单成功！");
     cartStore.fetchCart();
-    router.push('/mobile/orders');
-    
-  } catch (error: any) {
-    ElMessage.error(error.message);
+    router.push("/mobile/orders");
+  } catch (error: unknown) {
+    ElMessage.error(error instanceof Error ? error.message : String(error));
   } finally {
     isSubmitting.value = false;
   }
@@ -254,12 +300,20 @@ const submitOrder = async () => {
 </script>
 
 <style scoped>
-.mobile-checkout-page { 
-  padding: 1rem; 
+.mobile-checkout-page {
+  padding: 1rem;
   padding-bottom: 5rem;
 }
-h2 { font-size: 1.5rem; margin-bottom: 1.5rem; }
-h3 { font-size: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
 
 .address-section,
 .discount-section,
@@ -305,23 +359,23 @@ h3 { font-size: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid #eee; padd
   color: #909399;
 }
 
-.summary-item { 
-  display: flex; 
-  justify-content: space-between; 
-  margin-bottom: 0.5rem; 
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
 
 .summary-item.discount {
   color: #67c23a;
 }
 
-.summary-total { 
-  display: flex; 
-  justify-content: space-between; 
-  font-size: 1.2rem; 
-  margin-top: 1rem; 
-  padding-top: 1rem; 
-  border-top: 1px solid #ddd; 
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
 }
 
 .final-price {
@@ -329,7 +383,7 @@ h3 { font-size: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid #eee; padd
   font-weight: bold;
 }
 
-.actions { 
+.actions {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -338,5 +392,7 @@ h3 { font-size: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid #eee; padd
   background: #fff;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
 }
-.actions .el-button { width: 100%; }
+.actions .el-button {
+  width: 100%;
+}
 </style>

@@ -1,29 +1,37 @@
-import request from '../utils/request';
-import type { HttpResult } from './types';
-import type { PublicVoucher } from './types';
+import request from "../utils/request";
+import type { HttpResult } from "./types";
+import type { PublicVoucher } from "./types";
 
 export function getAllPublicVouchers(): Promise<HttpResult<PublicVoucher[]>> {
-  return request.get('/publicVoucher/list');
+  return request.get("/publicVoucher/list");
 }
 
-export function addPublicVoucher(voucher: PublicVoucher): Promise<HttpResult<any>> {
-  return request.post('/publicVoucher', voucher);
+export function addPublicVoucher(
+  voucher: PublicVoucher,
+): Promise<HttpResult<PublicVoucher>> {
+  return request.post("/publicVoucher", voucher);
 }
 
 // Updated based on prompt: PUT /api/publicVoucher removed path parameter id
-export function updatePublicVoucher(voucher: PublicVoucher): Promise<HttpResult<any>> {
+export function updatePublicVoucher(
+  voucher: PublicVoucher,
+): Promise<HttpResult<PublicVoucher>> {
   return request.put(`/publicVoucher`, voucher);
 }
 
-export function getPublicVoucherById(id: string): Promise<HttpResult<PublicVoucher>> {
+export function getPublicVoucherById(
+  id: string,
+): Promise<HttpResult<PublicVoucher>> {
   return request.get(`/publicVoucher/${id}`);
 }
 
-export function deletePublicVoucher(id: string): Promise<HttpResult<any>> {
+export function deletePublicVoucher(id: string): Promise<HttpResult<void>> {
   return request.delete(`/publicVoucher/${id}`);
 }
 
 // Get available public vouchers for current user (not claimed yet)
-export function getAvailablePublicVouchers(): Promise<HttpResult<PublicVoucher[]>> {
-  return request.get('/publicVoucher/available');
+export function getAvailablePublicVouchers(): Promise<
+  HttpResult<PublicVoucher[]>
+> {
+  return request.get("/publicVoucher/available");
 }

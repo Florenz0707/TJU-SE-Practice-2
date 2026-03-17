@@ -2,73 +2,71 @@ package cn.edu.tju.elm.service.serviceImpl;
 
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.repository.UserRepository;
-import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.model.BO.PublicVoucher;
 import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.model.VO.PublicVoucherVO;
 import cn.edu.tju.elm.repository.PrivateVoucherRepository;
 import cn.edu.tju.elm.repository.PublicVoucherRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-
 @SpringBootTest
 public class PrivateVoucherClaimIntegrationTest {
 
-    @Autowired
-    private UserRepository userRepository;
+  @Autowired private UserRepository userRepository;
 
-    @Autowired
-    private WalletRepository walletRepository;
+  @Autowired private WalletRepository walletRepository;
 
-    @Autowired
-    private PublicVoucherRepository publicVoucherRepository;
+  @Autowired private PublicVoucherRepository publicVoucherRepository;
 
-    @Autowired
-    private PrivateVoucherRepository privateVoucherRepository;
+  @Autowired private PrivateVoucherRepository privateVoucherRepository;
 
-    @Autowired
-    private PrivateVoucherServiceImpl privateVoucherService;
+  @Autowired private PrivateVoucherServiceImpl privateVoucherService;
 
-    @Test
-    @Transactional
-    public void testDuplicateClaimIsPrevented() {
-        // create user
-        User user = new User();
-        user.setUsername("dup_claim_user");
-        user.setPassword("pwd");
-        user.setActivated(true);
-        user = userRepository.save(user);
+  @Test
+  @Transactional
+  public void testDuplicateClaimIsPrevented() {
+    // create user
+    User user = new User();
+    user.setUsername("dup_claim_user");
+    user.setPassword("pwd");
+    user.setActivated(true);
+    user = userRepository.save(user);
 
-        // create wallet
-        Wallet wallet = Wallet.getNewWallet(user);
-        wallet = walletRepository.save(wallet);
+    // create wallet
+    Wallet wallet = Wallet.getNewWallet(user);
+    wallet = walletRepository.save(wallet);
 
-        // create public voucher
-        PublicVoucher pv = PublicVoucher.createVoucher(BigDecimal.ZERO, new BigDecimal("10"), true, 30);
-        pv = publicVoucherRepository.save(pv);
+    // create public voucher
+    PublicVoucher pv = PublicVoucher.createVoucher(BigDecimal.ZERO, new BigDecimal("10"), true, 30);
+    pv = publicVoucherRepository.save(pv);
 
-        PublicVoucherVO vo = new PublicVoucherVO(pv);
-        final Long walletId = wallet.getId();
-        final Long pvId = pv.getId();
+    PublicVoucherVO vo = new PublicVoucherVO(pv);
+    final Long walletId = wallet.getId();
+    final Long pvId = pv.getId();
 
-        // first claim should succeed
-        boolean first = privateVoucherService.createPrivateVoucher(walletId, vo);
-        Assertions.assertTrue(first, "first claim should succeed");
+    // first claim should succeed
+    boolean first = privateVoucherService.createPrivateVoucher(walletId, vo);
+    Assertions.assertTrue(first, "first claim should succeed");
 
-        // second claim should be prevented
-        boolean second = privateVoucherService.createPrivateVoucher(walletId, vo);
-        Assertions.assertFalse(second, "second claim should be prevented by uniqueness check");
+    // second claim should be prevented
+    boolean second = privateVoucherService.createPrivateVoucher(walletId, vo);
+    Assertions.assertFalse(second, "second claim should be prevented by uniqueness check");
 
-        // DB should contain only one private voucher for this wallet-publicVoucher pair
-        long count = privateVoucherRepository.findAll().stream()
-            .filter(p -> p.getWallet().getId().equals(walletId) && p.getPublicVoucher() != null && p.getPublicVoucher().getId().equals(pvId))
+    // DB should contain only one private voucher for this wallet-publicVoucher pair
+    long count =
+        privateVoucherRepository.findAll().stream()
+            .filter(
+                p ->
+                    p.getWallet().getId().equals(walletId)
+                        && p.getPublicVoucher() != null
+                        && p.getPublicVoucher().getId().equals(pvId))
             .count();
-        Assertions.assertEquals(1L, count, "only one private voucher record expected");
-    }
+    Assertions.assertEquals(1L, count, "only one private voucher record expected");
+  }
 }

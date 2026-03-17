@@ -2,9 +2,15 @@
   <div class="mobile-layout">
     <header class="top-bar">
       <h1 class="page-title">{{ $route.meta.title }}</h1>
-      <router-link to="/mobile/cart" class="cart-icon-wrapper" v-if="route.name === 'MobileRestaurantDetail'">
+      <router-link
+        v-if="route.name === 'MobileRestaurantDetail'"
+        to="/mobile/cart"
+        class="cart-icon-wrapper"
+      >
         <ShoppingCart :size="26" />
-        <span v-if="cartStore.totalItems > 0" class="cart-badge">{{ cartStore.totalItems }}</span>
+        <span v-if="cartStore.totalItems > 0" class="cart-badge">{{
+          cartStore.totalItems
+        }}</span>
       </router-link>
     </header>
     <main class="main-content">
@@ -32,9 +38,9 @@
 </template>
 
 <script setup lang="ts">
-import { Home, ScrollText, User, ShoppingCart, Wallet } from 'lucide-vue-next';
-import { useCartStore } from '../store/cart';
-import { useRoute } from 'vue-router';
+import { Home, ScrollText, User, ShoppingCart, Wallet } from "lucide-vue-next";
+import { useCartStore } from "../store/cart";
+import { useRoute } from "vue-router";
 
 const cartStore = useCartStore();
 const route = useRoute();
@@ -76,7 +82,8 @@ const route = useRoute();
   position: absolute;
   top: -4px;
   right: -8px;
-  background-color: #f97316; /* Orange color */
+  background-color: #f97316;
+  /* Orange color */
   color: white;
   border-radius: 9999px;
   padding: 2px 5px;
@@ -119,6 +126,7 @@ const route = useRoute();
 }
 
 .nav-item.router-link-active {
-  color: #f97316; /* Orange color */
+  color: #f97316;
+  /* Orange color */
 }
 </style>

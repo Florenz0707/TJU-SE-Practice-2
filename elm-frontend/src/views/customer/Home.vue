@@ -18,23 +18,25 @@
     <div v-if="error" class="error">{{ error }}</div>
 
     <div v-if="filteredBusinesses.length" class="restaurant-grid">
-      <RestaurantCard v-for="business in filteredBusinesses" :key="business.id" :business="business" />
+      <RestaurantCard
+        v-for="business in filteredBusinesses"
+        :key="business.id"
+        :business="business"
+      />
     </div>
-    <div v-else-if="!loading" class="no-results">
-      没有找到符合条件的餐厅。
-    </div>
+    <div v-else-if="!loading" class="no-results">没有找到符合条件的餐厅。</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { Search } from 'lucide-vue-next';
-import { getBusinesses } from '../../api/business';
-import type { Business } from '../../api/types';
-import RestaurantCard from '../../components/RestaurantCard.vue';
+import { ref, onMounted, computed } from "vue";
+import { Search } from "lucide-vue-next";
+import { getBusinesses } from "../../api/business";
+import type { Business } from "../../api/types";
+import RestaurantCard from "../../components/RestaurantCard.vue";
 
 const allBusinesses = ref<Business[]>([]);
-const searchQuery = ref('');
+const searchQuery = ref("");
 const loading = ref(false);
 const error = ref<string | null>(null);
 
@@ -46,10 +48,11 @@ const fetchBusinesses = async () => {
     if (response.success) {
       allBusinesses.value = response.data;
     } else {
-      throw new Error(response.message || '获取商家列表失败');
+      throw new Error(response.message || "获取商家列表失败");
     }
-  } catch (err: any) {
-    error.value = err.message || '发生未知错误';
+  } catch (err: unknown) {
+    error.value =
+      (err instanceof Error ? err.message : String(err)) || "发生未知错误";
   } finally {
     loading.value = false;
   }
@@ -60,10 +63,11 @@ const filteredBusinesses = computed(() => {
     return allBusinesses.value;
   }
   const lowerCaseQuery = searchQuery.value.toLowerCase();
-  return allBusinesses.value.filter(business =>
-    business.businessName.toLowerCase().includes(lowerCaseQuery) ||
-    business.businessAddress?.toLowerCase().includes(lowerCaseQuery) ||
-    business.businessExplain?.toLowerCase().includes(lowerCaseQuery)
+  return allBusinesses.value.filter(
+    (business) =>
+      business.businessName.toLowerCase().includes(lowerCaseQuery) ||
+      business.businessAddress?.toLowerCase().includes(lowerCaseQuery) ||
+      business.businessExplain?.toLowerCase().includes(lowerCaseQuery),
   );
 });
 
@@ -96,7 +100,9 @@ onMounted(() => {
   gap: 1.5rem;
 }
 
-.loading, .error, .no-results {
+.loading,
+.error,
+.no-results {
   margin-top: 2rem;
   text-align: center;
   font-size: 1rem;
@@ -113,7 +119,9 @@ onMounted(() => {
   .restaurant-grid {
     gap: 1.75rem;
   }
-  .loading, .error, .no-results {
+  .loading,
+  .error,
+  .no-results {
     font-size: 1.125rem;
   }
 }

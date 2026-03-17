@@ -19,7 +19,7 @@ docker-compose --profile build up --build -d
 
 #### 第 1 步：在本地构建项目
 
-* **后端**：进入 `elm-v2.0` 目录并运行：
+- **后端**：进入 `elm-v2.0` 目录并运行：
 
   ```
   mvn package
@@ -27,7 +27,8 @@ docker-compose --profile build up --build -d
   ```
 
   这将在 `elm-v2.0/target/` 目录下生成 `elm-1.0.jar` 文件。
-* **前端**：进入 `elm-frontend` 目录并运行：
+
+- **前端**：进入 `elm-frontend` 目录并运行：
 
   ```
   npm install && npm run build

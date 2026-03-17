@@ -156,12 +156,14 @@ public class OrderService {
 **接口**：`POST /api/inner/points/notify/order-success`
 
 **请求头**：
+
 ```
 X-Internal-Service-Token: {internal.service.token}
 Content-Type: application/json
 ```
 
 **请求体**：
+
 ```json
 {
   "userId": 1001,
@@ -173,6 +175,7 @@ Content-Type: application/json
 ```
 
 **响应**：
+
 ```json
 {
   "success": true,
@@ -187,12 +190,14 @@ Content-Type: application/json
 **接口**：`POST /api/inner/points/notify/review-success`
 
 **请求头**：
+
 ```
 X-Internal-Service-Token: {internal.service.token}
 Content-Type: application/json
 ```
 
 **请求体**：
+
 ```json
 {
   "userId": 1001,
@@ -204,6 +209,7 @@ Content-Type: application/json
 ```
 
 **响应**：
+
 ```json
 {
   "success": true,
@@ -218,6 +224,7 @@ Content-Type: application/json
 **接口**：`POST /api/inner/points/trade/freeze`
 
 **请求体**：
+
 ```json
 {
   "userId": 1001,
@@ -227,6 +234,7 @@ Content-Type: application/json
 ```
 
 **响应**：
+
 ```json
 {
   "success": true,
@@ -246,6 +254,7 @@ Content-Type: application/json
 **接口**：`POST /api/inner/points/trade/deduct`
 
 **请求体**：
+
 ```json
 {
   "userId": 1001,
@@ -259,6 +268,7 @@ Content-Type: application/json
 **接口**：`POST /api/inner/points/trade/rollback`
 
 **请求体**：
+
 ```json
 {
   "userId": 1001,

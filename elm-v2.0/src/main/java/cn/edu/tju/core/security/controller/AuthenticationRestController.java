@@ -20,61 +20,59 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Controller to authenticate users.
- */
+/** Controller to authenticate users. */
 @RestController
 @RequestMapping("/api")
 @Tag(name = "管理认证", description = "提供基于JWT的身份认证和令牌管理功能")
 public class AuthenticationRestController {
 
-    private final TokenProvider tokenProvider;
+  private final TokenProvider tokenProvider;
 
-    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+  private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
-    public AuthenticationRestController(TokenProvider tokenProvider, AuthenticationManagerBuilder authenticationManagerBuilder) {
-        this.tokenProvider = tokenProvider;
-        this.authenticationManagerBuilder = authenticationManagerBuilder;
+  public AuthenticationRestController(
+      TokenProvider tokenProvider, AuthenticationManagerBuilder authenticationManagerBuilder) {
+    this.tokenProvider = tokenProvider;
+    this.authenticationManagerBuilder = authenticationManagerBuilder;
+  }
+
+  @PostMapping("/auth") /*authenticate*/
+  @Operation(summary = "用户登录", description = "用户身份认证，成功后返回JWT令牌")
+  public ResponseEntity<JWTToken> authorize(
+      @Parameter(description = "登录信息", required = true) @Valid @RequestBody LoginDto loginDto) {
+
+    UsernamePasswordAuthenticationToken authenticationToken =
+        new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
+
+    Authentication authentication =
+        authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+
+    boolean rememberMe = (loginDto.isRememberMe() != null && loginDto.isRememberMe());
+    String jwt = tokenProvider.createToken(authentication, rememberMe);
+
+    HttpHeaders httpHeaders = new HttpHeaders();
+    httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
+
+    return new ResponseEntity<>(new JWTToken(jwt), httpHeaders, HttpStatus.OK);
+  }
+
+  /** Object to return as body in JWT Authentication. */
+  static class JWTToken {
+
+    private String idToken;
+
+    JWTToken(String idToken) {
+      this.idToken = idToken;
     }
 
-    @PostMapping("/auth") /*authenticate*/
-    @Operation(summary = "用户登录", description = "用户身份认证，成功后返回JWT令牌")
-    public ResponseEntity<JWTToken> authorize(
-            @Parameter(description = "登录信息", required = true) @Valid @RequestBody LoginDto loginDto) {
-
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
-
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        boolean rememberMe = (loginDto.isRememberMe() != null && loginDto.isRememberMe());
-        String jwt = tokenProvider.createToken(authentication, rememberMe);
-
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
-
-        return new ResponseEntity<>(new JWTToken(jwt), httpHeaders, HttpStatus.OK);
+    @JsonProperty("id_token")
+    String getIdToken() {
+      return idToken;
     }
 
-    /**
-     * Object to return as body in JWT Authentication.
-     */
-    static class JWTToken {
-
-        private String idToken;
-
-        JWTToken(String idToken) {
-            this.idToken = idToken;
-        }
-
-        @JsonProperty("id_token")
-        String getIdToken() {
-            return idToken;
-        }
-
-        void setIdToken(String idToken) {
-            this.idToken = idToken;
-        }
+    void setIdToken(String idToken) {
+      this.idToken = idToken;
     }
+  }
 }

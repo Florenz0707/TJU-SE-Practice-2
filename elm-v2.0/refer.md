@@ -1,6 +1,6 @@
 # 项目代码阅读生成的需求与设计说明
 
-*说明：以下内容全部来源于代码实现（未阅读项目现有文档）。引用的源码位置以链接给出，便于复核。*
+_说明：以下内容全部来源于代码实现（未阅读项目现有文档）。引用的源码位置以链接给出，便于复核。_
 
 ## 一、需求部分
 
@@ -9,7 +9,7 @@
 - 设计要点：充值时触发发放“私有优惠券（PrivateVoucher）”。代码在创建 TOP_UP
   类型交易时会调用公券选择器并为用户创建私券：见 [TransactionServiceImpl](src/main/java/cn/edu/tju/elm/service/serviceImpl/TransactionServiceImpl.java)。
 - 公券属性：门槛（threshold）、面值（faceValue）、是否可领取（claimable）、有效天数（validDays），见 [PublicVoucher](src/main/java/cn/edu/tju/elm/model/BO/PublicVoucher.java)
-与 [PublicVoucherVO](src/main/java/cn/edu/tju/elm/model/VO/PublicVoucherVO.java)。
+  与 [PublicVoucherVO](src/main/java/cn/edu/tju/elm/model/VO/PublicVoucherVO.java)。
 - 私券行为：领取后记录到 `PrivateVoucher`，含到期时间（expiryDate），使用时通过 `redeem()`
   标记删除并判断是否过期，见 [PrivateVoucher](src/main/java/cn/edu/tju/elm/model/BO/PrivateVoucher.java)
   与私券服务实现 [PrivateVoucherServiceImpl](src/main/java/cn/edu/tju/elm/service/serviceImpl/PrivateVoucherServiceImpl.java)。

@@ -1,7 +1,11 @@
-import { defineStore } from 'pinia';
-import { getMyWallet, createWallet } from '../api/wallet';
-import { getTransactionsByWalletId, createTransaction, finishTransaction } from '../api/transaction';
-import type { Wallet, Transaction } from '../api/types';
+import { defineStore } from "pinia";
+import { getMyWallet, createWallet } from "../api/wallet";
+import {
+  getTransactionsByWalletId,
+  createTransaction,
+  finishTransaction,
+} from "../api/transaction";
+import type { Wallet, Transaction } from "../api/types";
 
 interface WalletState {
   wallet: Wallet | null;
@@ -11,7 +15,7 @@ interface WalletState {
   };
 }
 
-export const useWalletStore = defineStore('wallet', {
+export const useWalletStore = defineStore("wallet", {
   state: (): WalletState => ({
     wallet: null,
     transactions: {
@@ -32,7 +36,7 @@ export const useWalletStore = defineStore('wallet', {
         const response = await getMyWallet();
         this.wallet = response.data;
       } catch (error) {
-        console.error('Failed to fetch wallet:', error);
+        console.error("Failed to fetch wallet:", error);
       }
     },
 
@@ -46,7 +50,7 @@ export const useWalletStore = defineStore('wallet', {
           this.transactions.in = response.data.inTransactions;
           this.transactions.out = response.data.outTransactions;
         } catch (error) {
-          console.error('Failed to fetch transactions:', error);
+          console.error("Failed to fetch transactions:", error);
         }
       }
     },
@@ -56,7 +60,7 @@ export const useWalletStore = defineStore('wallet', {
         const response = await createWallet();
         this.wallet = response.data;
       } catch (error) {
-        console.error('Failed to create wallet:', error);
+        console.error("Failed to create wallet:", error);
       }
     },
 
@@ -65,7 +69,7 @@ export const useWalletStore = defineStore('wallet', {
         await createTransaction(transaction);
         await this.fetchTransactions(); // Refresh transactions after creating a new one
       } catch (error) {
-        console.error('Failed to create transaction:', error);
+        console.error("Failed to create transaction:", error);
       }
     },
 
@@ -74,7 +78,7 @@ export const useWalletStore = defineStore('wallet', {
         await finishTransaction(id, true);
         await this.fetchTransactions(); // Refresh transactions after finishing one
       } catch (error) {
-        console.error('Failed to finish transaction:', error);
+        console.error("Failed to finish transaction:", error);
       }
     },
   },

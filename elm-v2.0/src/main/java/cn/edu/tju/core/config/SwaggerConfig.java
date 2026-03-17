@@ -8,13 +8,14 @@ import org.springframework.context.annotation.Configuration;
 // Tell the Spring container that this is a configuration class
 @Configuration
 public class SwaggerConfig {
-    // Visit the website:http://127.0.0.1:8080/swagger-ui/index.html
-    @Bean
-    public OpenAPI springShopOpenAPI() {
-        return new OpenAPI()
-                .info(new Info().title("TJU SE Project")
-                        .description("Tianjin University Software Engineering Project")
-                        .version("v1"));
-
-    }
+  // Visit the website:http://127.0.0.1:8080/swagger-ui/index.html
+  @Bean
+  public OpenAPI springShopOpenAPI() {
+    return new OpenAPI()
+        .info(
+            new Info()
+                .title("TJU SE Project")
+                .description("Tianjin University Software Engineering Project")
+                .version("v1"));
+  }
 }

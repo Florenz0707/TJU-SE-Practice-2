@@ -1,7 +1,12 @@
 <template>
   <div class="mobile-restaurant-card" @click="goToRestaurant">
     <div class="card-image-wrapper">
-      <img v-if="business.businessImg" :src="business.businessImg" alt="餐厅图片" class="restaurant-image" />
+      <img
+        v-if="business.businessImg"
+        :src="business.businessImg"
+        alt="餐厅图片"
+        class="restaurant-image"
+      />
       <div v-else class="placeholder-image">
         <span>{{ business.businessName[0] }}</span>
       </div>
@@ -23,8 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
-import type { Business } from '../../api/types';
+import { useRouter } from "vue-router";
+import type { Business } from "../../api/types";
 
 const props = defineProps<{
   business: Business;
@@ -33,7 +38,10 @@ const props = defineProps<{
 const router = useRouter();
 
 const goToRestaurant = () => {
-  router.push({ name: 'MobileRestaurantDetail', params: { id: props.business.id } });
+  router.push({
+    name: "MobileRestaurantDetail",
+    params: { id: props.business.id },
+  });
 };
 </script>
 
@@ -90,7 +98,8 @@ const goToRestaurant = () => {
   margin: 0 0 0.25rem;
 }
 
-.details, .delivery-info {
+.details,
+.delivery-info {
   font-size: 0.75rem;
   color: #666;
   margin: 0 0 0.25rem;

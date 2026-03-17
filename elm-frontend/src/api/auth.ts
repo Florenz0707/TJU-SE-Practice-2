@@ -1,5 +1,5 @@
-import request from '../utils/request';
-import type { LoginDto, JWTToken } from './types';
+import request from "../utils/request";
+import type { LoginDto, JWTToken } from "./types";
 
 /**
  * @description Authenticates the user and returns a JWT token.
@@ -9,7 +9,7 @@ import type { LoginDto, JWTToken } from './types';
  */
 export function login(data: LoginDto): Promise<JWTToken> {
   // Note: The openapi.json specifies the response is directly the JWTToken, not wrapped in HttpResult.
-  return request.post('/auth', data);
+  return request.post("/auth", data);
 }
 
 /**
@@ -19,5 +19,5 @@ export function login(data: LoginDto): Promise<JWTToken> {
  * @see {@link openapi.json} - operationId: "refreshToken"
  */
 export function refreshToken(refreshToken: string): Promise<JWTToken> {
-  return request.post('/auth/refresh', { refresh_token: refreshToken });
+  return request.post("/auth/refresh", { refresh_token: refreshToken });
 }

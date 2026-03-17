@@ -23,28 +23,53 @@
             @keyup.enter="handleRegister"
           >
             <el-form-item label="用户名" prop="username">
-              <el-input v-model="registerForm.username" placeholder="请输入用户名" clearable size="large"></el-input>
+              <el-input
+                v-model="registerForm.username"
+                placeholder="请输入用户名"
+                clearable
+                size="large"
+              ></el-input>
             </el-form-item>
 
             <el-row :gutter="20">
               <el-col :span="12">
                 <el-form-item label="姓" prop="lastName">
-                  <el-input v-model="registerForm.lastName" placeholder="您的姓氏 (可选)" clearable size="large"></el-input>
+                  <el-input
+                    v-model="registerForm.lastName"
+                    placeholder="您的姓氏 (可选)"
+                    clearable
+                    size="large"
+                  ></el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
                 <el-form-item label="名" prop="firstName">
-                  <el-input v-model="registerForm.firstName" placeholder="您的名字 (可选)" clearable size="large"></el-input>
+                  <el-input
+                    v-model="registerForm.firstName"
+                    placeholder="您的名字 (可选)"
+                    clearable
+                    size="large"
+                  ></el-input>
                 </el-form-item>
               </el-col>
             </el-row>
 
             <el-form-item label="邮箱" prop="email">
-              <el-input v-model="registerForm.email" placeholder="邮箱地址 (可选)" clearable size="large"></el-input>
+              <el-input
+                v-model="registerForm.email"
+                placeholder="邮箱地址 (可选)"
+                clearable
+                size="large"
+              ></el-input>
             </el-form-item>
 
             <el-form-item label="电话" prop="phone">
-              <el-input v-model="registerForm.phone" placeholder="手机号码 (可选)" clearable size="large"></el-input>
+              <el-input
+                v-model="registerForm.phone"
+                placeholder="手机号码 (可选)"
+                clearable
+                size="large"
+              ></el-input>
             </el-form-item>
 
             <el-form-item label="密码" prop="password">
@@ -70,10 +95,10 @@
             <el-form-item>
               <el-button
                 type="primary"
-                @click="handleRegister"
                 :loading="loading"
                 class="register-button"
                 size="large"
+                @click="handleRegister"
               >
                 立即注册
               </el-button>
@@ -92,11 +117,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
-import { addPerson, updateUserPassword } from '../api/user';
-import { useAuthStore } from '../store/auth';
+import { ref, reactive } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage, type FormInstance, type FormRules } from "element-plus";
+import { addPerson, updateUserPassword } from "../api/user";
+import { useAuthStore } from "../store/auth";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -104,18 +129,22 @@ const registerFormRef = ref<FormInstance | null>(null);
 const loading = ref(false);
 
 const registerForm = reactive({
-  username: '',
-  password: '',
-  confirmPassword: '',
-  firstName: '',
-  lastName: '',
-  email: '',
-  phone: '',
+  username: "",
+  password: "",
+  confirmPassword: "",
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
 });
 
-const validatePass = (_rule: any, value: any, callback: any) => {
-  if (value === '') {
-    callback(new Error('请再次输入密码'));
+const validatePass = (
+  _rule: unknown,
+  value: unknown,
+  callback: (error?: Error) => void,
+) => {
+  if (value === "") {
+    callback(new Error("请再次输入密码"));
   } else if (value !== registerForm.password) {
     callback(new Error("两次输入的密码不一致!"));
   } else {
@@ -125,41 +154,41 @@ const validatePass = (_rule: any, value: any, callback: any) => {
 
 const registerRules = reactive<FormRules>({
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+    { required: true, message: "请输入用户名", trigger: "blur" },
+    { min: 3, max: 20, message: "长度在 3 到 20 个字符", trigger: "blur" },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    { required: true, message: "请输入密码", trigger: "blur" },
+    { min: 6, message: "密码长度不能少于6位", trigger: "blur" },
   ],
   confirmPassword: [
-    { required: true, validator: validatePass, trigger: 'blur' }
+    { required: true, validator: validatePass, trigger: "blur" },
   ],
 });
 
 async function retryUpdatePassword(
   params: { username: string; password: string },
-  maxAttempts = 3,        // 最大重试次数
-  delay = 2000            // 初始延迟(ms)
+  maxAttempts = 3, // 最大重试次数
+  delay = 2000, // 初始延迟(ms)
 ) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const res = await updateUserPassword(params);
       if (res.success) {
-        console.log('Password successfully updated.');
+        console.log("Password successfully updated.");
         await authStore.login(params);
-        console.log('Token refreshed with new password.');
+        console.log("Token refreshed with new password.");
         return;
       } else {
-        throw new Error(res.message || '密码更新失败');
+        throw new Error(res.message || "密码更新失败");
       }
     } catch (err) {
       console.error(`第 ${attempt} 次修改密码失败:`, err);
       if (attempt < maxAttempts) {
-        await new Promise(r => setTimeout(r, delay));
+        await new Promise((r) => setTimeout(r, delay));
         delay *= 2;
       } else {
-        ElMessage.error('后台密码修改失败，请稍后手动修改密码');
+        ElMessage.error("后台密码修改失败，请稍后手动修改密码");
       }
     }
   }
@@ -183,32 +212,38 @@ const handleRegister = async () => {
 
     const createRes = await addPerson(personData);
     if (!createRes.success) {
-      throw new Error(createRes.message || '创建用户失败');
+      throw new Error(createRes.message || "创建用户失败");
     }
-    ElMessage.success('用户创建成功，正在为您登录...');
+    ElMessage.success("用户创建成功，正在为您登录...");
 
     // Step 2: Log in with the default password to establish the session.
     await authStore.login({
       username: registerForm.username,
-      password: 'password',
+      password: "password",
     });
 
     // Immediately navigate to the homepage for a better user experience.
-    ElMessage.success('登录成功！正在跳转到主页...');
-    router.push('/');
+    ElMessage.success("登录成功！正在跳转到主页...");
+    router.push("/");
 
     // Step 3: Silently update the password in the background after a short delay.
     // This ensures the auth token from the recent login is attached to the request.
     setTimeout(() => {
-      retryUpdatePassword({
-        username: registerForm.username,
-        password: registerForm.password,
-      }, 3, 2000);
+      retryUpdatePassword(
+        {
+          username: registerForm.username,
+          password: registerForm.password,
+        },
+        3,
+        2000,
+      );
     }, 2000);
-
-  } catch (error: any) {
-    ElMessage.error(error.message || '注册流程失败，请稍后重试');
-    console.error('Registration process failed:', error);
+  } catch (error: unknown) {
+    ElMessage.error(
+      (error instanceof Error ? error.message : String(error)) ||
+        "注册流程失败，请稍后重试",
+    );
+    console.error("Registration process failed:", error);
   } finally {
     loading.value = false;
   }
@@ -231,14 +266,16 @@ const handleRegister = async () => {
   max-width: 960px;
   margin: 1.5rem;
   border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   background-color: #ffffff;
 }
 
 .welcome-panel {
   flex: 1;
-  background-color: #F97316; // Hardcoded orange
+  background-color: #f97316; // Hardcoded orange
   color: #ffffff;
   display: flex;
   flex-direction: column;

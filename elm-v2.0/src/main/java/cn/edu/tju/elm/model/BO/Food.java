@@ -5,71 +5,73 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-
 import java.math.BigDecimal;
 
 @Entity
 public class Food extends BaseEntity {
 
-    @Column(nullable = false)
-    private String foodName;
-    private String foodExplain;
-    @Column(columnDefinition = "TEXT")
-    private String foodImg;
-    @Column(precision = 10, scale = 2, nullable = false)
-    private BigDecimal foodPrice;
+  @Column(nullable = false)
+  private String foodName;
 
-    @ManyToOne
-    @JoinColumn(name = "business_id", nullable = false)
-    private Business business;
+  private String foodExplain;
 
-    private String remarks;
+  @Column(columnDefinition = "TEXT")
+  private String foodImg;
 
-    public String getFoodName() {
-        return foodName;
-    }
+  @Column(precision = 10, scale = 2, nullable = false)
+  private BigDecimal foodPrice;
 
-    public void setFoodName(String foodName) {
-        this.foodName = foodName;
-    }
+  @ManyToOne
+  @JoinColumn(name = "business_id", nullable = false)
+  private Business business;
 
-    public String getFoodExplain() {
-        return foodExplain;
-    }
+  private String remarks;
 
-    public void setFoodExplain(String foodExplain) {
-        this.foodExplain = foodExplain;
-    }
+  public String getFoodName() {
+    return foodName;
+  }
 
-    public String getFoodImg() {
-        return foodImg;
-    }
+  public void setFoodName(String foodName) {
+    this.foodName = foodName;
+  }
 
-    public void setFoodImg(String foodImg) {
-        this.foodImg = foodImg;
-    }
+  public String getFoodExplain() {
+    return foodExplain;
+  }
 
-    public BigDecimal getFoodPrice() {
-        return foodPrice;
-    }
+  public void setFoodExplain(String foodExplain) {
+    this.foodExplain = foodExplain;
+  }
 
-    public void setFoodPrice(BigDecimal foodPrice) {
-        this.foodPrice = foodPrice;
-    }
+  public String getFoodImg() {
+    return foodImg;
+  }
 
-    public Business getBusiness() {
-        return business;
-    }
+  public void setFoodImg(String foodImg) {
+    this.foodImg = foodImg;
+  }
 
-    public void setBusiness(Business business) {
-        this.business = business;
-    }
+  public BigDecimal getFoodPrice() {
+    return foodPrice;
+  }
 
-    public String getRemarks() {
-        return remarks;
-    }
+  public void setFoodPrice(BigDecimal foodPrice) {
+    this.foodPrice = foodPrice;
+  }
 
-    public void setRemarks(String remarks) {
-        this.remarks = remarks;
-    }
+  public Business getBusiness() {
+    return business;
+  }
+
+  public void setBusiness(Business business) {
+    this.business = business;
+  }
+
+  public String getRemarks() {
+    return remarks;
+  }
+
+  public void setRemarks(String remarks) {
+    this.remarks = remarks;
+  }
 }

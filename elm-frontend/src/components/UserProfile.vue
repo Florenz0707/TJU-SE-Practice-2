@@ -1,5 +1,5 @@
 <template>
-  <div class="user-profile-container" v-loading="loading">
+  <div v-loading="loading" class="user-profile-container">
     <!-- User Info Header -->
     <div class="user-info-header">
       <el-avatar :size="80" :src="userForm.photo" class="user-avatar">
@@ -15,18 +15,22 @@
     <div class="action-list">
       <el-menu>
         <el-menu-item index="1" @click="showEditProfileDialog = true">
-          <el-icon><User /></el-icon>
+          <el-icon>
+            <User />
+          </el-icon>
           <span>我的资料</span>
         </el-menu-item>
         <el-menu-item index="2" @click="showPasswordDialog = true">
-          <el-icon><Lock /></el-icon>
+          <el-icon>
+            <Lock />
+          </el-icon>
           <span>修改密码</span>
         </el-menu-item>
       </el-menu>
     </div>
 
     <!-- Role Switcher -->
-    <div class="role-switcher" v-if="availableRoles.length > 0">
+    <div v-if="availableRoles.length > 0" class="role-switcher">
       <h3 class="role-switcher-title">切换身份</h3>
       <el-menu>
         <el-menu-item
@@ -35,7 +39,9 @@
           :index="role.name"
           @click="switchRole(role.path)"
         >
-          <el-icon><component :is="role.icon" /></el-icon>
+          <el-icon>
+            <component :is="role.icon" />
+          </el-icon>
           <span>{{ role.title }}</span>
         </el-menu-item>
       </el-menu>
@@ -56,10 +62,18 @@
         @submit.prevent="handleUpdatePassword"
       >
         <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="passwordForm.newPassword" type="password" show-password />
+          <el-input
+            v-model="passwordForm.newPassword"
+            type="password"
+            show-password
+          />
         </el-form-item>
         <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
+          <el-input
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            show-password
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -83,20 +97,22 @@
       </el-form>
       <template #footer>
         <el-button @click="showEditProfileDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleUpdateProfile">保存更改</el-button>
+        <el-button type="primary" @click="handleUpdateProfile"
+          >保存更改</el-button
+        >
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, reactive, computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '../store/auth';
-import { getUserById, updateUserPassword, updateUser } from '../api/user';
-import { ElMessage, type FormInstance } from 'element-plus';
-import { User, Lock, ShoppingCart, UserCog } from 'lucide-vue-next';
-import type { Person } from '../api/types';
+import { ref, watch, reactive, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "../store/auth";
+import { getUserById, updateUserPassword, updateUser } from "../api/user";
+import { ElMessage, type FormInstance } from "element-plus";
+import { User, Lock, ShoppingCart, UserCog } from "lucide-vue-next";
+import type { Person } from "../api/types";
 
 const loading = ref(false);
 const showPasswordDialog = ref(false);
@@ -108,23 +124,27 @@ const user = authStore.user;
 
 const passwordFormRef = ref<FormInstance>();
 const passwordForm = reactive({
-  newPassword: '',
-  confirmPassword: '',
+  newPassword: "",
+  confirmPassword: "",
 });
 
 const passwordRules = {
-  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  newPassword: [{ required: true, message: "请输入新密码", trigger: "blur" }],
   confirmPassword: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { required: true, message: "请确认新密码", trigger: "blur" },
     {
-      validator: (_rule: any, value: any, callback: any) => {
+      validator: (
+        _rule: unknown,
+        value: unknown,
+        callback: (error?: Error) => void,
+      ) => {
         if (value !== passwordForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'));
+          callback(new Error("两次输入的密码不一致"));
         } else {
           callback();
         }
       },
-      trigger: 'blur',
+      trigger: "blur",
     },
   ],
 };
@@ -136,44 +156,58 @@ watch(
   (newUser) => {
     if (newUser?.id) {
       loading.value = true;
-      getUserById(newUser.id).then((res) => {
-        if (res.success) {
-          userForm.value = res.data;
-        } else {
-          ElMessage.error('获取用户信息失败: ' + res.message);
-        }
-      }).finally(() => {
-        loading.value = false;
-      });
+      getUserById(newUser.id)
+        .then((res) => {
+          if (res.success) {
+            userForm.value = res.data;
+          } else {
+            ElMessage.error("获取用户信息失败: " + res.message);
+          }
+        })
+        .finally(() => {
+          loading.value = false;
+        });
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 const allRoles = [
-  { name: 'CUSTOMER', title: '顾客', path: '/mobile/home', icon: ShoppingCart },
-  { name: 'MERCHANT', title: '商家', path: '/mobile/merchant/dashboard', icon: UserCog },
-  { name: 'ADMIN', title: '管理', path: '/mobile/admin/dashboard', icon: UserCog },
+  { name: "CUSTOMER", title: "顾客", path: "/mobile/home", icon: ShoppingCart },
+  {
+    name: "MERCHANT",
+    title: "商家",
+    path: "/mobile/merchant/dashboard",
+    icon: UserCog,
+  },
+  {
+    name: "ADMIN",
+    title: "管理",
+    path: "/mobile/admin/dashboard",
+    icon: UserCog,
+  },
 ];
 
 const getCurrentRole = () => {
   const currentPath = route.path;
-  if (currentPath.startsWith('/mobile/admin')) return 'ADMIN';
-  if (currentPath.startsWith('/mobile/merchant')) return 'MERCHANT';
-  return 'CUSTOMER';
+  if (currentPath.startsWith("/mobile/admin")) return "ADMIN";
+  if (currentPath.startsWith("/mobile/merchant")) return "MERCHANT";
+  return "CUSTOMER";
 };
 
 const availableRoles = computed(() => {
   const userRoles = authStore.userRoles;
   const currentRole = getCurrentRole();
-  return allRoles.filter(role => userRoles.includes(role.name) && role.name !== currentRole);
+  return allRoles.filter(
+    (role) => userRoles.includes(role.name) && role.name !== currentRole,
+  );
 });
 
 const userInitial = computed(() => {
   if (userForm.value && userForm.value.username) {
     return userForm.value.username.charAt(0).toUpperCase();
   }
-  return '';
+  return "";
 });
 
 const switchRole = (path: string) => {
@@ -192,16 +226,18 @@ const handleUpdatePassword = async () => {
           password: passwordForm.newPassword,
         });
         if (res.success) {
-          ElMessage.success('密码更新成功');
+          ElMessage.success("密码更新成功");
           showPasswordDialog.value = false;
-          passwordForm.newPassword = '';
-          passwordForm.confirmPassword = '';
+          passwordForm.newPassword = "";
+          passwordForm.confirmPassword = "";
           passwordFormRef.value?.resetFields();
         } else {
-          ElMessage.error(res.message || '密码更新失败');
+          ElMessage.error(res.message || "密码更新失败");
         }
       } catch (error) {
-        ElMessage.error('密码更新失败');
+        ElMessage.error(
+          "密码更新失败: " + (error instanceof Error ? error.message : ""),
+        );
       } finally {
         loading.value = false;
       }
@@ -211,12 +247,12 @@ const handleUpdatePassword = async () => {
 
 const handleLogout = () => {
   authStore.logout();
-  router.push('/login');
+  router.push("/login");
 };
 
 const handleUpdateProfile = async () => {
   if (!user || !user.id) {
-    ElMessage.error('用户数据不可用。');
+    ElMessage.error("用户数据不可用。");
     return;
   }
   loading.value = true;
@@ -230,13 +266,15 @@ const handleUpdateProfile = async () => {
     const response = await updateUser(user.id, payload);
     if (response.success) {
       authStore.setUser(response.data);
-      ElMessage.success('个人资料更新成功！');
+      ElMessage.success("个人资料更新成功！");
       showEditProfileDialog.value = false;
     } else {
-      throw new Error(response.message || '更新个人资料失败');
+      throw new Error(response.message || "更新个人资料失败");
     }
-  } catch (error: any) {
-    ElMessage.error(error.message || '发生错误');
+  } catch (error: unknown) {
+    ElMessage.error(
+      (error instanceof Error ? error.message : String(error)) || "发生错误",
+    );
   } finally {
     loading.value = false;
   }
@@ -278,12 +316,13 @@ const handleUpdateProfile = async () => {
   opacity: 0.9;
 }
 
-.action-list, .role-switcher {
+.action-list,
+.role-switcher {
   margin: 20px;
   background-color: #fff;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .role-switcher-title {

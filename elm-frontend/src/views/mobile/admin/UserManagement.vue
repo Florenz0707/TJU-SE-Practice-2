@@ -20,7 +20,12 @@
           <span>注册于: {{ user.createTime }}</span>
         </div>
         <div class="user-actions">
-          <el-button size="small" type="warning" @click="handlePasswordChange(user)">修改密码</el-button>
+          <el-button
+            size="small"
+            type="warning"
+            @click="handlePasswordChange(user)"
+            >修改密码</el-button
+          >
         </div>
       </div>
     </div>
@@ -29,13 +34,31 @@
     </div>
 
     <!-- Change Password Dialog -->
-    <el-dialog v-model="showPasswordDialog" title="修改密码" @closed="resetPasswordForm" width="90%">
-      <el-form ref="passwordFormRef" :model="passwordData" :rules="passwordRules" label-position="top">
+    <el-dialog
+      v-model="showPasswordDialog"
+      title="修改密码"
+      width="90%"
+      @closed="resetPasswordForm"
+    >
+      <el-form
+        ref="passwordFormRef"
+        :model="passwordData"
+        :rules="passwordRules"
+        label-position="top"
+      >
         <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="passwordData.newPassword" type="password" show-password />
+          <el-input
+            v-model="passwordData.newPassword"
+            type="password"
+            show-password
+          />
         </el-form-item>
         <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input v-model="passwordData.confirmPassword" type="password" show-password />
+          <el-input
+            v-model="passwordData.confirmPassword"
+            type="password"
+            show-password
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -47,35 +70,47 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive } from 'vue';
-import { ElMessage, ElButton, ElDialog, ElForm, ElFormItem, ElInput, type FormInstance } from 'element-plus';
-import { getAllUsers, updateUserPassword } from '@/api/user';
-import type { User, Authority } from '@/api/types';
+import { ref, onMounted, computed, reactive } from "vue";
+import {
+  ElMessage,
+  ElButton,
+  ElDialog,
+  ElForm,
+  ElFormItem,
+  ElInput,
+  type FormInstance,
+} from "element-plus";
+import { getAllUsers, updateUserPassword } from "@/api/user";
+import type { User, Authority } from "@/api/types";
 
 const rawUsers = ref<User[]>([]);
-const searchQuery = ref('');
+const searchQuery = ref("");
 
 const showPasswordDialog = ref(false);
 const passwordFormRef = ref<FormInstance>();
 const selectedUser = ref<User | null>(null);
 const passwordData = reactive({
-  newPassword: '',
-  confirmPassword: '',
+  newPassword: "",
+  confirmPassword: "",
 });
 
 const passwordRules = {
-  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  newPassword: [{ required: true, message: "请输入新密码", trigger: "blur" }],
   confirmPassword: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { required: true, message: "请确认新密码", trigger: "blur" },
     {
-      validator: (_rule: any, value: any, callback: any) => {
+      validator: (
+        _rule: unknown,
+        value: unknown,
+        callback: (error?: Error) => void,
+      ) => {
         if (value !== passwordData.newPassword) {
-          callback(new Error('两次输入的密码不一致'));
+          callback(new Error("两次输入的密码不一致"));
         } else {
           callback();
         }
       },
-      trigger: 'blur',
+      trigger: "blur",
     },
   ],
 };
@@ -86,21 +121,24 @@ const fetchUsers = async () => {
     if (res.success) {
       rawUsers.value = res.data || [];
     } else {
-      ElMessage.error(res.message || '获取用户列表失败。');
+      ElMessage.error(res.message || "获取用户列表失败。");
     }
   } catch (error) {
-    ElMessage.error('获取用户列表失败。');
-    console.error(error);
+    ElMessage.error("获取用户列表失败: " + (error as Error).message);
   }
 };
 
 onMounted(fetchUsers);
 
 const displayUsers = computed(() => {
-  return rawUsers.value.map(user => ({
+  return rawUsers.value.map((user) => ({
     ...user,
-    authorities: user.authorities ? user.authorities.map((auth: Authority) => auth.name).join(', ') : '暂无',
-    createTime: user.createTime ? new Date(user.createTime).toLocaleDateString() : 'N/A',
+    authorities: user.authorities
+      ? user.authorities.map((auth: Authority) => auth.name).join(", ")
+      : "暂无",
+    createTime: user.createTime
+      ? new Date(user.createTime).toLocaleDateString()
+      : "N/A",
   }));
 });
 
@@ -108,18 +146,18 @@ const filteredUsers = computed(() => {
   if (!searchQuery.value) {
     return displayUsers.value;
   }
-  return displayUsers.value.filter(user =>
-    user.username.toLowerCase().includes(searchQuery.value.toLowerCase())
+  return displayUsers.value.filter((user) =>
+    user.username.toLowerCase().includes(searchQuery.value.toLowerCase()),
   );
 });
 
 const handlePasswordChange = (user: { id?: number }) => {
-  const originalUser = rawUsers.value.find(u => u.id === user.id);
+  const originalUser = rawUsers.value.find((u) => u.id === user.id);
   if (originalUser) {
     selectedUser.value = originalUser;
     showPasswordDialog.value = true;
   } else {
-    ElMessage.error('未能找到该用户。');
+    ElMessage.error("未能找到该用户。");
   }
 };
 
@@ -134,13 +172,13 @@ const updatePassword = async () => {
           password: passwordData.newPassword,
         });
         if (res.success) {
-          ElMessage.success('密码更新成功');
+          ElMessage.success("密码更新成功");
           showPasswordDialog.value = false;
         } else {
-          ElMessage.error(res.message || '密码更新失败');
+          ElMessage.error(res.message || "密码更新失败");
         }
       } catch (error) {
-        ElMessage.error('密码更新失败');
+        ElMessage.error("密码更新失败: " + (error as Error).message);
       }
     }
   });
@@ -149,8 +187,8 @@ const updatePassword = async () => {
 const resetPasswordForm = () => {
   if (!passwordFormRef.value) return;
   passwordFormRef.value.resetFields();
-  passwordData.newPassword = '';
-  passwordData.confirmPassword = '';
+  passwordData.newPassword = "";
+  passwordData.confirmPassword = "";
   selectedUser.value = null;
 };
 </script>

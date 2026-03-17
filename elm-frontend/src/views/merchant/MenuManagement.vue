@@ -1,8 +1,10 @@
 <template>
-  <div class="menu-management-container" v-loading="loading">
+  <div v-loading="loading" class="menu-management-container">
     <div class="header">
       <h2>菜单管理</h2>
-      <el-button type="primary" @click="handleOpenEditor()">添加新菜品</el-button>
+      <el-button type="primary" @click="handleOpenEditor()"
+        >添加新菜品</el-button
+      >
     </div>
     <div v-if="!showNoBusinessMessage">
       <el-table :data="foods" stripe style="width: 100%">
@@ -15,18 +17,38 @@
         </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="{ row }">
-            <el-button size="small" @click="handleOpenEditor(row)">编辑</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button size="small" @click="handleOpenEditor(row)"
+              >编辑</el-button
+            >
+            <el-button size="small" type="danger" @click="handleDelete(row.id)"
+              >删除</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
     </div>
-    <el-empty v-if="showNoBusinessMessage" description="您当前未选择任何店铺，或您还未开设店铺。">
-      <el-button type="primary" @click="$router.push({ name: 'ApplyForBusiness' })">成为商家</el-button>
+    <el-empty
+      v-if="showNoBusinessMessage"
+      description="您当前未选择任何店铺，或您还未开设店铺。"
+    >
+      <el-button
+        type="primary"
+        @click="$router.push({ name: 'ApplyForBusiness' })"
+        >成为商家</el-button
+      >
     </el-empty>
 
-    <el-dialog v-model="dialogVisible" :title="isEditMode ? '编辑菜品' : '添加新菜品'" width="500px" @closed="selectedFood = null">
-      <FoodEditor v-if="dialogVisible" :food-data="selectedFood" ref="foodEditorRef" />
+    <el-dialog
+      v-model="dialogVisible"
+      :title="isEditMode ? '编辑菜品' : '添加新菜品'"
+      width="500px"
+      @closed="selectedFood = null"
+    >
+      <FoodEditor
+        v-if="dialogVisible"
+        ref="foodEditorRef"
+        :food-data="selectedFood"
+      />
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
@@ -38,19 +60,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
-import { getAllFoods, deleteFood, addFood, updateFood, type FoodCreationDto } from '../../api/food';
-import { useBusinessStore } from '../../store/business';
-import { storeToRefs } from 'pinia';
-import type { Food, HttpResultListFood } from '../../api/types';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import FoodEditor from './FoodEditor.vue';
+import { ref, onMounted, computed, watch } from "vue";
+import {
+  getAllFoods,
+  deleteFood,
+  addFood,
+  updateFood,
+  type FoodCreationDto,
+} from "../../api/food";
+import { useBusinessStore } from "../../store/business";
+import { storeToRefs } from "pinia";
+import type { Food, HttpResultListFood } from "../../api/types";
+import { ElMessage, ElMessageBox } from "element-plus";
+import FoodEditor from "./FoodEditor.vue";
 
 const loading = ref(true);
 const foods = ref<Food[]>([]);
 const dialogVisible = ref(false);
 const selectedFood = ref<Food | null>(null);
-const foodEditorRef = ref<{ getFormData: () => Promise<Partial<Food> | null> } | null>(null);
+const foodEditorRef = ref<{
+  getFormData: () => Promise<Partial<Food> | null>;
+} | null>(null);
 
 const businessStore = useBusinessStore();
 const { selectedBusinessId } = storeToRefs(businessStore);
@@ -65,22 +95,26 @@ const fetchFoods = async () => {
     return;
   }
   try {
-    const foodsResponse: HttpResultListFood = await getAllFoods({ business: selectedBusinessId.value });
+    const foodsResponse: HttpResultListFood = await getAllFoods({
+      business: selectedBusinessId.value,
+    });
     if (foodsResponse.success) {
       foods.value = foodsResponse.data || [];
     } else {
       foods.value = [];
-      ElMessage.warning(foodsResponse.message || '加载菜单信息失败');
+      ElMessage.warning(foodsResponse.message || "加载菜单信息失败");
     }
   } catch (error) {
-    ElMessage.error('加载菜单信息失败');
+    ElMessage.error("加载菜单信息失败");
     console.error(error);
   } finally {
     loading.value = false;
   }
 };
 
-const showNoBusinessMessage = computed(() => !selectedBusinessId.value && !loading.value);
+const showNoBusinessMessage = computed(
+  () => !selectedBusinessId.value && !loading.value,
+);
 
 onMounted(fetchFoods);
 
@@ -96,7 +130,7 @@ const handleSave = async () => {
 
   const formData = await foodEditorRef.value.getFormData();
   if (!formData) {
-    ElMessage.error('请检查表单输入');
+    ElMessage.error("请检查表单输入");
     return;
   }
 
@@ -106,16 +140,16 @@ const handleSave = async () => {
       // The `updateFood` API expects a full Food object.
       const payload: Food = { ...selectedFood.value, ...formData };
       await updateFood(selectedFood.value.id, payload);
-      ElMessage.success('更新成功！');
+      ElMessage.success("更新成功！");
     } else {
       if (!selectedBusinessId.value) {
-        ElMessage.error('无法确定当前店铺，无法添加菜品');
+        ElMessage.error("无法确定当前店铺，无法添加菜品");
         loading.value = false;
         return;
       }
       // The `addFood` API requires a specific DTO.
       const payload: FoodCreationDto = {
-        foodName: formData.foodName || '',
+        foodName: formData.foodName || "",
         foodPrice: formData.foodPrice || 0,
         foodExplain: formData.foodExplain,
         foodImg: formData.foodImg,
@@ -123,35 +157,37 @@ const handleSave = async () => {
         remarks: formData.remarks,
       };
       await addFood(payload);
-      ElMessage.success('添加成功！');
+      ElMessage.success("添加成功！");
     }
     dialogVisible.value = false;
     await fetchFoods();
   } catch (error) {
-    ElMessage.error('保存失败');
+    ElMessage.error("保存失败");
     console.error(error);
   } finally {
     loading.value = false;
   }
 };
 
-
 const handleDelete = async (id: number) => {
   try {
-    await ElMessageBox.confirm('确定要删除这个菜品吗？此操作无法撤销。', '警告', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    });
+    await ElMessageBox.confirm(
+      "确定要删除这个菜品吗？此操作无法撤销。",
+      "警告",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      },
+    );
 
     loading.value = true;
     await deleteFood(id);
-    ElMessage.success('菜品删除成功！');
+    ElMessage.success("菜品删除成功！");
     await fetchFoods();
-
   } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败');
+    if (error !== "cancel") {
+      ElMessage.error("删除失败");
       console.error(error);
     }
   } finally {

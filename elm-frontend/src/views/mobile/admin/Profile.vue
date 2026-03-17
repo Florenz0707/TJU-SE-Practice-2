@@ -13,7 +13,7 @@
 
     <!-- Menu List -->
     <div class="menu-list">
-      <el-card class="menu-card" style="margin-bottom: 1rem;">
+      <el-card class="menu-card" style="margin-bottom: 1rem">
         <div class="menu-item" @click="showPassword = !showPassword">
           <span>修改密码</span>
           <ChevronRight :size="20" color="#999" />
@@ -21,8 +21,8 @@
         <el-collapse-transition>
           <div v-show="showPassword" class="info-form">
             <el-form
-              :model="passwordForm"
               ref="passwordFormRef"
+              :model="passwordForm"
               :rules="passwordRules"
               label-position="top"
             >
@@ -43,8 +43,8 @@
               <el-form-item>
                 <el-button
                   type="primary"
-                  @click="handleUpdatePassword"
                   :loading="isSubmitting"
+                  @click="handleUpdatePassword"
                   >更新密码</el-button
                 >
               </el-form-item>
@@ -63,10 +63,18 @@
             <router-link to="/mobile/home" class="menu-item sub-item">
               <span>顾客</span>
             </router-link>
-            <router-link v-if="isMerchant" to="/mobile/merchant/dashboard" class="menu-item sub-item">
+            <router-link
+              v-if="isMerchant"
+              to="/mobile/merchant/dashboard"
+              class="menu-item sub-item"
+            >
               <span>商家</span>
             </router-link>
-            <router-link v-if="isAdmin" to="/mobile/admin/dashboard" class="menu-item sub-item">
+            <router-link
+              v-if="isAdmin"
+              to="/mobile/admin/dashboard"
+              class="menu-item sub-item"
+            >
               <span>管理</span>
             </router-link>
           </div>
@@ -76,18 +84,18 @@
 
     <!-- Logout Button -->
     <div class="actions">
-      <el-button type="danger" @click="logout" size="large">退出登录</el-button>
+      <el-button type="danger" size="large" @click="logout">退出登录</el-button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../../../store/auth';
-import { updateUserPassword } from '../../../api/user';
-import { ElMessage, type FormInstance } from 'element-plus';
-import { ChevronRight } from 'lucide-vue-next';
+import { ref, computed, reactive } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "../../../store/auth";
+import { updateUserPassword } from "../../../api/user";
+import { ElMessage, type FormInstance } from "element-plus";
+import { ChevronRight } from "lucide-vue-next";
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -97,29 +105,33 @@ const isSubmitting = ref(false);
 
 const passwordFormRef = ref<FormInstance>();
 const passwordForm = reactive({
-  newPassword: '',
-  confirmPassword: '',
+  newPassword: "",
+  confirmPassword: "",
 });
 
 const passwordRules = {
-  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  newPassword: [{ required: true, message: "请输入新密码", trigger: "blur" }],
   confirmPassword: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { required: true, message: "请确认新密码", trigger: "blur" },
     {
-      validator: (_rule: any, value: any, callback: any) => {
+      validator: (
+        _rule: unknown,
+        value: unknown,
+        callback: (error?: Error) => void,
+      ) => {
         if (value !== passwordForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'));
+          callback(new Error("两次输入的密码不一致"));
         } else {
           callback();
         }
       },
-      trigger: 'blur',
+      trigger: "blur",
     },
   ],
 };
 
-const isMerchant = computed(() => authStore.userRoles.includes('MERCHANT'));
-const isAdmin = computed(() => authStore.userRoles.includes('ADMIN'));
+const isMerchant = computed(() => authStore.userRoles.includes("MERCHANT"));
+const isAdmin = computed(() => authStore.userRoles.includes("ADMIN"));
 
 const handleUpdatePassword = async () => {
   if (!passwordFormRef.value || !authStore.user) return;
@@ -133,16 +145,16 @@ const handleUpdatePassword = async () => {
           password: passwordForm.newPassword,
         });
         if (res.success) {
-          ElMessage.success('密码更新成功');
-          passwordForm.newPassword = '';
-          passwordForm.confirmPassword = '';
+          ElMessage.success("密码更新成功");
+          passwordForm.newPassword = "";
+          passwordForm.confirmPassword = "";
           passwordFormRef.value?.resetFields();
           showPassword.value = false;
         } else {
-          ElMessage.error(res.message || '密码更新失败');
+          ElMessage.error(res.message || "密码更新失败");
         }
       } catch (error) {
-        ElMessage.error('密码更新失败');
+        ElMessage.error("密码更新失败: " + (error as Error).message);
       } finally {
         isSubmitting.value = false;
       }
@@ -152,7 +164,7 @@ const handleUpdatePassword = async () => {
 
 const logout = () => {
   authStore.logout();
-  router.push('/login');
+  router.push("/login");
 };
 </script>
 

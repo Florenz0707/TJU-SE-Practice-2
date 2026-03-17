@@ -4,19 +4,19 @@ import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.exception.PrivateVoucherException;
 import cn.edu.tju.elm.model.VO.PrivateVoucherVO;
 import cn.edu.tju.elm.model.VO.PublicVoucherVO;
+import java.util.List;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 public interface PrivateVoucherService {
-    @Transactional
-    boolean createPrivateVoucher(Long walletId, PublicVoucherVO publicVoucherVO) throws PrivateVoucherException;
+  @Transactional
+  boolean createPrivateVoucher(Long walletId, PublicVoucherVO publicVoucherVO)
+      throws PrivateVoucherException;
 
-    @Transactional
-    boolean redeemPrivateVoucher(Long id) throws PrivateVoucherException;
+  @Transactional
+  boolean redeemPrivateVoucher(Long id) throws PrivateVoucherException;
 
-    List<PrivateVoucherVO> getPrivateVouchers(User user) throws PrivateVoucherException;
+  List<PrivateVoucherVO> getPrivateVouchers(User user) throws PrivateVoucherException;
 
-    @Transactional
-    void clearExpiredPrivateVouchers(User user) throws PrivateVoucherException;
+  @Transactional
+  void clearExpiredPrivateVouchers(User user) throws PrivateVoucherException;
 }

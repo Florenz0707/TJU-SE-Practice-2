@@ -34,11 +34,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "data"
-                  ]
+                  "required": ["success", "code", "data"]
                 }
               }
             },
@@ -111,11 +107,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "data"
-                  ]
+                  "required": ["success", "code", "data"]
                 }
               }
             }
@@ -161,12 +153,7 @@
                   },
                   "channelType": {
                     "type": "string",
-                    "enum": [
-                      "ORDER",
-                      "COMMENT",
-                      "LOGIN",
-                      "REGISTER"
-                    ],
+                    "enum": ["ORDER", "COMMENT", "LOGIN", "REGISTER"],
                     "description": "触发渠道"
                   },
                   "ratio": {
@@ -250,11 +237,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "data"
-                  ]
+                  "required": ["success", "code", "data"]
                 }
               }
             }
@@ -433,12 +416,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "message",
-                    "data"
-                  ]
+                  "required": ["success", "code", "message", "data"]
                 },
                 "example": {
                   "success": true,
@@ -517,12 +495,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "message",
-                    "data"
-                  ]
+                  "required": ["success", "code", "message", "data"]
                 },
                 "example": {
                   "success": true,
@@ -562,11 +535,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "userId",
-                  "points",
-                  "tempOrderId"
-                ]
+                "required": ["userId", "points", "tempOrderId"]
               },
               "example": "{\n  \"userId\": 1001,\n  \"points\": 500,        // 用户希望抵扣500积分\n  \"tempOrderId\": \"TEMP_ORD_123456\" // 临时订单号/交易流水号\n}"
             }
@@ -616,11 +585,7 @@
                       ]
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "data"
-                  ]
+                  "required": ["success", "code", "data"]
                 },
                 "example": {
                   "success": true,
@@ -665,11 +630,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "userId",
-                  "tempOrderId",
-                  "finalOrderId"
-                ]
+                "required": ["userId", "tempOrderId", "finalOrderId"]
               },
               "example": "{\n  \"userId\": 1001,\n  \"tempOrderId\": \"TEMP_ORD_123456\", // 对应之前的冻结记录\n  \"finalOrderId\": \"ORD_20231111_001\" // 最终生成的订单号（用于关联流水）\n}"
             }
@@ -696,12 +657,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "message",
-                    "data"
-                  ]
+                  "required": ["success", "code", "message", "data"]
                 },
                 "example": {
                   "success": true,
@@ -741,11 +697,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "userId",
-                  "tempOrderId",
-                  "reason"
-                ]
+                "required": ["userId", "tempOrderId", "reason"]
               },
               "example": "{\n  \"userId\": 1001,\n  \"tempOrderId\": \"TEMP_ORD_123456\",\n  \"reason\": \"USER_CANCEL\" // 回滚原因\n}"
             }
@@ -772,12 +724,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "code",
-                    "message",
-                    "data"
-                  ]
+                  "required": ["success", "code", "message", "data"]
                 },
                 "example": {
                   "success": true,

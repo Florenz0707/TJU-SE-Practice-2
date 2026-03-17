@@ -1,8 +1,8 @@
-import { defineStore } from 'pinia';
-import { login as apiLogin } from '../api/auth';
-import { getActualUser } from '../api/user';
-import { setRequestToken } from '../utils/request';
-import type { User, LoginDto, JWTToken } from '../api/types';
+import { defineStore } from "pinia";
+import { login as apiLogin } from "../api/auth";
+import { getActualUser } from "../api/user";
+import { setRequestToken } from "../utils/request";
+import type { User, LoginDto, JWTToken } from "../api/types";
 
 // Define the state shape with types
 interface AuthState {
@@ -11,11 +11,11 @@ interface AuthState {
   user: User | null;
 }
 
-const AUTH_TOKEN_KEY = 'authToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
-const USER_KEY = 'user';
+const AUTH_TOKEN_KEY = "authToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+const USER_KEY = "user";
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore("auth", {
   state: (): AuthState => {
     // Retrieve the user from localStorage and parse it
     const storedUser = localStorage.getItem(USER_KEY);
@@ -30,17 +30,17 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn: (state): boolean => !!state.token,
     userRoles: (state): string[] => {
       if (!state.user?.authorities) {
-        return ['GUEST'];
+        return ["GUEST"];
       }
       const roleMap: { [key: string]: string } = {
-        USER: 'CUSTOMER',
-        BUSINESS: 'MERCHANT',
-        ADMIN: 'ADMIN',
+        USER: "CUSTOMER",
+        BUSINESS: "MERCHANT",
+        ADMIN: "ADMIN",
       };
       const roles = state.user.authorities
-        .map(auth => roleMap[auth.name] || auth.name)
+        .map((auth) => roleMap[auth.name] || auth.name)
         .filter(Boolean);
-      return roles.length > 0 ? roles : ['GUEST'];
+      return roles.length > 0 ? roles : ["GUEST"];
     },
   },
 
@@ -56,7 +56,7 @@ export const useAuthStore = defineStore('auth', {
         await this.fetchUserInfo();
         return this.userRoles;
       } catch (error) {
-        console.error('Login failed:', error);
+        console.error("Login failed:", error);
         this.logout();
         throw error; // Re-throw the error to be handled by the component
       }
@@ -71,9 +71,9 @@ export const useAuthStore = defineStore('auth', {
         const userInfo = await getActualUser();
         this.setUser(userInfo.data); // Use the setUser action to ensure data is saved
       } catch (error) {
-        console.error('Failed to fetch user info:', error);
+        console.error("Failed to fetch user info:", error);
         this.logout();
-        throw new Error('Failed to fetch user info');
+        throw new Error("Failed to fetch user info");
       }
     },
 

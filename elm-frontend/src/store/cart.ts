@@ -1,8 +1,13 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import { getCurrentUserCart, addCartItem, updateCartItem, deleteCartItem } from '../api/cart';
-import type { Cart, Food } from '../api/types';
-import { useAuthStore } from './auth';
+import { defineStore } from "pinia";
+import { ref, computed } from "vue";
+import {
+  getCurrentUserCart,
+  addCartItem,
+  updateCartItem,
+  deleteCartItem,
+} from "../api/cart";
+import type { Cart, Food } from "../api/types";
+import { useAuthStore } from "./auth";
 
 export interface AnimationOrigin {
   x: number;
@@ -10,7 +15,7 @@ export interface AnimationOrigin {
   imgSrc: string;
 }
 
-export const useCartStore = defineStore('cart', () => {
+export const useCartStore = defineStore("cart", () => {
   const items = ref<Cart[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -24,7 +29,9 @@ export const useCartStore = defineStore('cart', () => {
     if (!currentBusinessId.value) {
       return [];
     }
-    return items.value.filter(item => item.business?.id === currentBusinessId.value);
+    return items.value.filter(
+      (item) => item.business?.id === currentBusinessId.value,
+    );
   });
 
   const cartTotal = computed(() => {
@@ -36,7 +43,10 @@ export const useCartStore = defineStore('cart', () => {
   });
 
   const totalItems = computed(() => {
-    return itemsForCurrentBusiness.value.reduce((total, item) => total + (item.quantity ?? 0), 0);
+    return itemsForCurrentBusiness.value.reduce(
+      (total, item) => total + (item.quantity ?? 0),
+      0,
+    );
   });
 
   const finalOrderTotal = computed(() => {
@@ -64,25 +74,32 @@ export const useCartStore = defineStore('cart', () => {
       if (response.success) {
         items.value = response.data;
       } else {
-        throw new Error(response.message || 'Failed to fetch cart');
+        throw new Error(response.message || "Failed to fetch cart");
       }
-    } catch (err: any) {
-      error.value = err.message;
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : String(err);
     } finally {
       loading.value = false;
     }
   };
 
-  const addItem = async (food: Food, quantity: number, origin?: AnimationOrigin) => {
+  const addItem = async (
+    food: Food,
+    quantity: number,
+    origin?: AnimationOrigin,
+  ) => {
     // Trigger the animation
     if (origin) {
       // animationOrigin.value = origin; // Animation disabled due to reported issues
     }
 
-    const existingItem = items.value.find(item => item.food?.id === food.id);
+    const existingItem = items.value.find((item) => item.food?.id === food.id);
     if (existingItem && existingItem.id && existingItem.quantity) {
       // If item exists, update its quantity
-      await updateItemQuantity(existingItem.id, existingItem.quantity + quantity);
+      await updateItemQuantity(
+        existingItem.id,
+        existingItem.quantity + quantity,
+      );
     } else {
       // If item doesn't exist, add it as a new item
       loading.value = true;
@@ -90,7 +107,7 @@ export const useCartStore = defineStore('cart', () => {
       try {
         const authStore = useAuthStore();
         if (!authStore.user) {
-          throw new Error('User not logged in. Cannot add items to cart.');
+          throw new Error("User not logged in. Cannot add items to cart.");
         }
         const newCartItem: Cart = {
           food: food,
@@ -102,10 +119,10 @@ export const useCartStore = defineStore('cart', () => {
         if (response.success) {
           items.value.push(response.data);
         } else {
-          throw new Error(response.message || 'Failed to add item to cart');
+          throw new Error(response.message || "Failed to add item to cart");
         }
-      } catch (err: any) {
-        error.value = err.message;
+      } catch (err: unknown) {
+        error.value = err instanceof Error ? err.message : String(err);
       } finally {
         loading.value = false;
       }
@@ -122,15 +139,15 @@ export const useCartStore = defineStore('cart', () => {
     try {
       const response = await updateCartItem(itemId, quantity);
       if (response.success) {
-        const index = items.value.findIndex(item => item.id === itemId);
+        const index = items.value.findIndex((item) => item.id === itemId);
         if (index !== -1) {
           items.value[index] = response.data;
         }
       } else {
-        throw new Error(response.message || 'Failed to update item quantity');
+        throw new Error(response.message || "Failed to update item quantity");
       }
-    } catch (err: any) {
-      error.value = err.message;
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : String(err);
     } finally {
       loading.value = false;
     }
@@ -142,12 +159,12 @@ export const useCartStore = defineStore('cart', () => {
     try {
       const response = await deleteCartItem(itemId);
       if (response.success) {
-        items.value = items.value.filter(item => item.id !== itemId);
+        items.value = items.value.filter((item) => item.id !== itemId);
       } else {
-        throw new Error(response.message || 'Failed to remove item from cart');
+        throw new Error(response.message || "Failed to remove item from cart");
       }
-    } catch (err: any) {
-      error.value = err.message;
+    } catch (err: unknown) {
+      error.value = err instanceof Error ? err.message : String(err);
     } finally {
       loading.value = false;
     }

@@ -4,7 +4,9 @@
       <template #header>
         <div class="card-header">
           <span>公共优惠券管理</span>
-          <el-button type="primary" size="small" @click="openVoucherDialog()">添加</el-button>
+          <el-button type="primary" size="small" @click="openVoucherDialog()"
+            >添加</el-button
+          >
         </div>
       </template>
 
@@ -13,17 +15,28 @@
           <p><strong>ID:</strong> {{ voucher.id }}</p>
           <p><strong>门槛:</strong> ¥{{ voucher.threshold }}</p>
           <p><strong>价值:</strong> ¥{{ voucher.value }}</p>
-          <p><strong>可领取:</strong> {{ voucher.claimable ? '是' : '否' }}</p>
+          <p><strong>可领取:</strong> {{ voucher.claimable ? "是" : "否" }}</p>
           <p><strong>有效期:</strong> {{ voucher.validDays }} 天</p>
         </div>
         <div class="voucher-actions">
-          <el-button size="small" @click="openVoucherDialog(voucher)">编辑</el-button>
-          <el-button size="small" type="danger" @click="deleteVoucher(voucher.id)">删除</el-button>
+          <el-button size="small" @click="openVoucherDialog(voucher)"
+            >编辑</el-button
+          >
+          <el-button
+            size="small"
+            type="danger"
+            @click="deleteVoucher(voucher.id)"
+            >删除</el-button
+          >
         </div>
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑优惠券' : '添加优惠券'" width="90%">
+    <el-dialog
+      v-model="dialogVisible"
+      :title="isEdit ? '编辑优惠券' : '添加优惠券'"
+      width="90%"
+    >
       <el-form :model="voucherForm" label-position="top">
         <el-form-item label="门槛">
           <el-input-number v-model="voucherForm.threshold" :min="0" />
@@ -47,10 +60,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { getAllPublicVouchers, addPublicVoucher, updatePublicVoucher, deletePublicVoucher } from '../../../api/publicVoucher';
-import type { PublicVoucher } from '../../../api/types';
+import { ref, onMounted } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  getAllPublicVouchers,
+  addPublicVoucher,
+  updatePublicVoucher,
+  deletePublicVoucher,
+} from "../../../api/publicVoucher";
+import type { PublicVoucher } from "../../../api/types";
 
 const vouchers = ref<PublicVoucher[]>([]);
 const dialogVisible = ref(false);
@@ -68,7 +86,7 @@ async function fetchVouchers() {
     const response = await getAllPublicVouchers();
     vouchers.value = response.data;
   } catch (error) {
-    ElMessage.error('获取优惠券失败。');
+    ElMessage.error("获取优惠券失败:" + (error as Error).message);
   }
 }
 
@@ -93,30 +111,30 @@ async function saveVoucher() {
   try {
     if (isEdit.value) {
       await updatePublicVoucher(voucherForm.value);
-      ElMessage.success('优惠券更新成功。');
+      ElMessage.success("优惠券更新成功。");
     } else {
       await addPublicVoucher(voucherForm.value);
-      ElMessage.success('优惠券添加成功。');
+      ElMessage.success("优惠券添加成功。");
     }
     dialogVisible.value = false;
     fetchVouchers();
   } catch (error) {
-    ElMessage.error('保存优惠券失败。');
+    ElMessage.error("保存优惠券失败:" + (error as Error).message);
   }
 }
 
 async function deleteVoucher(id: number) {
   try {
-    await ElMessageBox.confirm('您确定要删除此优惠券吗？', '警告', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
+    await ElMessageBox.confirm("您确定要删除此优惠券吗？", "警告", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
     });
     await deletePublicVoucher(id.toString());
-    ElMessage.success('优惠券删除成功。');
+    ElMessage.success("优惠券删除成功。");
     fetchVouchers();
   } catch (error) {
-    ElMessage.info('删除已取消。');
+    ElMessage.info("删除已取消:" + (error as Error).message);
   }
 }
 

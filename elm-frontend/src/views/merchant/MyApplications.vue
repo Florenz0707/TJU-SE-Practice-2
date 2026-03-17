@@ -1,9 +1,11 @@
 <template>
-  <div class="my-application-container" v-loading="loading">
+  <div v-loading="loading" class="my-application-container">
     <!-- 头部 -->
     <div class="header">
       <h2>我的开店申请</h2>
-      <el-button type="primary" @click="openApplicationDialog">申请开店</el-button>
+      <el-button type="primary" @click="openApplicationDialog"
+        >申请开店</el-button
+      >
     </div>
 
     <!-- 无数据提示 -->
@@ -22,7 +24,9 @@
         <div class="timeline-item">
           <h4 class="item-title">{{ app.business.businessName }}</h4>
           <p class="item-address">{{ app.business.businessAddress }}</p>
-          <p class="item-desc"><strong>申请说明:</strong> {{ app.applicationExplain }}</p>
+          <p class="item-desc">
+            <strong>申请说明:</strong> {{ app.applicationExplain }}
+          </p>
           <p class="item-status">
             <strong>状态:</strong>
             <el-tag :type="statusType(app.applicationState)">
@@ -40,7 +44,11 @@
       width="600px"
       :before-close="handleClose"
     >
-      <el-form :model="applicationData" ref="applicationFormRef" label-width="120px">
+      <el-form
+        ref="applicationFormRef"
+        :model="applicationData"
+        label-width="120px"
+      >
         <el-form-item
           label="店铺名称"
           prop="business.businessName"
@@ -58,15 +66,24 @@
         </el-form-item>
 
         <el-form-item label="店铺简介">
-          <el-input v-model="applicationData.business.businessExplain" type="textarea" />
+          <el-input
+            v-model="applicationData.business.businessExplain"
+            type="textarea"
+          />
         </el-form-item>
 
         <el-form-item label="起送价">
-          <el-input-number v-model="applicationData.business.startPrice" :min="0" />
+          <el-input-number
+            v-model="applicationData.business.startPrice"
+            :min="0"
+          />
         </el-form-item>
 
         <el-form-item label="配送费">
-          <el-input-number v-model="applicationData.business.deliveryPrice" :min="0" />
+          <el-input-number
+            v-model="applicationData.business.deliveryPrice"
+            :min="0"
+          />
         </el-form-item>
 
         <el-form-item
@@ -74,14 +91,19 @@
           prop="applicationExplain"
           :rules="[{ required: true, message: '请输入申请说明' }]"
         >
-          <el-input v-model="applicationData.applicationExplain" type="textarea" />
+          <el-input
+            v-model="applicationData.applicationExplain"
+            type="textarea"
+          />
         </el-form-item>
       </el-form>
 
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitApplication">提交申请</el-button>
+          <el-button type="primary" @click="submitApplication"
+            >提交申请</el-button
+          >
         </span>
       </template>
     </el-dialog>
@@ -89,125 +111,122 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive, nextTick } from 'vue'
-import {
-  ElMessage,
-  type FormInstance
-} from 'element-plus'
+import { ref, onMounted, computed, reactive, nextTick } from "vue";
+import { ElMessage, type FormInstance } from "element-plus";
 import {
   getMyBusinessApplications,
   submitBusinessApplication,
-  ApplicationState
-} from '../../api/applicationService'
-import type { BusinessApplication, Business } from '../../api/types'
+  ApplicationState,
+} from "../../api/applicationService";
+import type { BusinessApplication, Business } from "../../api/types";
 
-const loading = ref(false)
+const loading = ref(false);
 
-const applications = ref<BusinessApplication[]>([])
-const dialogVisible = ref(false)
-const applicationFormRef = ref<FormInstance>()
+const applications = ref<BusinessApplication[]>([]);
+const dialogVisible = ref(false);
+const applicationFormRef = ref<FormInstance>();
 
 const applicationData = reactive({
   business: {
-    businessName: '',
-    businessAddress: '',
-    businessExplain: '',
+    businessName: "",
+    businessAddress: "",
+    businessExplain: "",
     startPrice: 0,
-    deliveryPrice: 0
+    deliveryPrice: 0,
   } as Business,
-  applicationExplain: ''
-})
+  applicationExplain: "",
+});
 
 const sortedApplications = computed(() =>
   [...applications.value].sort(
     (a, b) =>
       new Date(b.createTime || 0).getTime() -
-      new Date(a.createTime || 0).getTime()
-  )
-)
+      new Date(a.createTime || 0).getTime(),
+  ),
+);
 
 const fetchApplications = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    applications.value = await getMyBusinessApplications()
+    applications.value = await getMyBusinessApplications();
   } catch (error) {
-    console.error('获取申请列表失败:', error)
-    ElMessage.error('获取申请列表失败')
+    console.error("获取申请列表失败:", error);
+    ElMessage.error("获取申请列表失败");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
-onMounted(fetchApplications)
+onMounted(fetchApplications);
 
 const openApplicationDialog = () => {
   // Reset form
   Object.assign(applicationData, {
     business: {
-      businessName: '',
-      businessAddress: '',
-      businessExplain: '',
+      businessName: "",
+      businessAddress: "",
+      businessExplain: "",
       startPrice: 0,
-      deliveryPrice: 0
+      deliveryPrice: 0,
     },
-    applicationExplain: ''
-  })
+    applicationExplain: "",
+  });
   nextTick(() => {
-    applicationFormRef.value?.clearValidate()
-  })
-  dialogVisible.value = true
-}
+    applicationFormRef.value?.clearValidate();
+  });
+  dialogVisible.value = true;
+};
 
 const handleClose = (done: () => void) => {
-  dialogVisible.value = false
-  done()
-}
+  dialogVisible.value = false;
+  done();
+};
 
 const submitApplication = async () => {
-  if (!applicationFormRef.value) return
+  if (!applicationFormRef.value) return;
   await applicationFormRef.value.validate(async (valid) => {
     if (valid) {
-      loading.value = true
+      loading.value = true;
       try {
-        await submitBusinessApplication(applicationData)
-        ElMessage.success('申请已提交')
-        dialogVisible.value = false
-        await fetchApplications()
+        await submitBusinessApplication(applicationData);
+        ElMessage.success("申请已提交");
+        dialogVisible.value = false;
+        await fetchApplications();
       } catch (error) {
-        ElMessage.error('申请提交失败')
-        console.error('Failed to submit application:', error)
+        ElMessage.error("申请提交失败");
+        console.error("Failed to submit application:", error);
       } finally {
-        loading.value = false
+        loading.value = false;
       }
     }
-  })
-}
+  });
+};
 
 const statusText = (state?: number) => {
   switch (state) {
     case ApplicationState.UNDISPOSED:
-      return '待处理'
+      return "待处理";
     case ApplicationState.APPROVED:
-      return '已批准'
+      return "已批准";
     case ApplicationState.REJECTED:
-      return '已拒绝'
+      return "已拒绝";
     default:
-      return '未知'
+      return "未知";
   }
-}
+};
 
 const statusType = (state?: number) => {
   switch (state) {
     case ApplicationState.UNDISPOSED:
-      return 'warning'
+      return "warning";
     case ApplicationState.APPROVED:
-      return 'success'
+      return "success";
     case ApplicationState.REJECTED:
-      return 'danger'
+      return "danger";
     default:
-      return 'info'
+      return "info";
   }
-}
+};
 </script>
 
 <style scoped>

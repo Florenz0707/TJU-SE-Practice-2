@@ -16,13 +16,22 @@
     </div>
 
     <div v-if="filteredBusinesses.length" class="business-list">
-      <div v-for="business in filteredBusinesses" :key="business.id" class="business-card">
+      <div
+        v-for="business in filteredBusinesses"
+        :key="business.id"
+        class="business-card"
+      >
         <div class="business-header">
           <span class="business-name">{{ business.businessName }}</span>
-          <span :class="['status-badge', `status-${business.status.toLowerCase()}`]">{{ business.status }}</span>
+          <span
+            :class="['status-badge', `status-${business.status.toLowerCase()}`]"
+            >{{ business.status }}</span
+          >
         </div>
         <div class="business-body">
-          <p><strong>所有者:</strong> {{ business['businessOwner.username'] }}</p>
+          <p>
+            <strong>所有者:</strong> {{ business["businessOwner.username"] }}
+          </p>
           <p><strong>地址:</strong> {{ business.businessAddress }}</p>
         </div>
       </div>
@@ -38,19 +47,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { ElMessage } from 'element-plus';
-import { getBusinesses } from '@/api/business';
-import type { Business } from '@/api/types';
+import { ref, onMounted, computed } from "vue";
+import { ElMessage } from "element-plus";
+import { getBusinesses } from "@/api/business";
+import type { Business } from "@/api/types";
 
 const rawBusinesses = ref<Business[]>([]);
-const searchQuery = ref('');
-const statusFilter = ref('');
+const searchQuery = ref("");
+const statusFilter = ref("");
 
-const getStatus = (business: Business): '待处理' | '已批准' | '已拒绝' => {
-  if (business.remarks?.includes('pending')) return '待处理';
-  if (business.deleted) return '已拒绝';
-  return '已批准';
+const getStatus = (business: Business): "待处理" | "已批准" | "已拒绝" => {
+  if (business.remarks?.includes("pending")) return "待处理";
+  if (business.deleted) return "已拒绝";
+  return "已批准";
 };
 
 const fetchBusinesses = async () => {
@@ -59,27 +68,32 @@ const fetchBusinesses = async () => {
     if (res.success) {
       rawBusinesses.value = res.data || [];
     } else {
-      ElMessage.error(res.message || '获取店铺列表失败。');
+      ElMessage.error(res.message || "获取店铺列表失败。");
     }
   } catch (error) {
-    ElMessage.error('获取店铺列表失败。');
+    ElMessage.error("获取店铺列表失败: " + (error as Error).message);
   }
 };
 
 onMounted(fetchBusinesses);
 
 const displayBusinesses = computed(() => {
-  return rawBusinesses.value.map(b => ({
+  return rawBusinesses.value.map((b) => ({
     ...b,
     status: getStatus(b),
-    'businessOwner.username': b.businessOwner?.username || 'N/A',
+    "businessOwner.username": b.businessOwner?.username || "N/A",
   }));
 });
 
 const filteredBusinesses = computed(() => {
-  return displayBusinesses.value.filter(business => {
-    const searchMatch = !searchQuery.value || business.businessName.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const statusMatch = !statusFilter.value || business.status === statusFilter.value;
+  return displayBusinesses.value.filter((business) => {
+    const searchMatch =
+      !searchQuery.value ||
+      business.businessName
+        .toLowerCase()
+        .includes(searchQuery.value.toLowerCase());
+    const statusMatch =
+      !statusFilter.value || business.status === statusFilter.value;
     return searchMatch && statusMatch;
   });
 });
@@ -96,7 +110,8 @@ const filteredBusinesses = computed(() => {
   margin-bottom: 1rem;
 }
 
-.search-input, .status-select {
+.search-input,
+.status-select {
   width: 100%;
   padding: 0.75rem;
   font-size: 1rem;
@@ -139,9 +154,15 @@ const filteredBusinesses = computed(() => {
   color: #fff;
 }
 
-.status-待处理 { background-color: #e6a23c; }
-.status-已批准 { background-color: #67c23a; }
-.status-已拒绝 { background-color: #f56c6c; }
+.status-待处理 {
+  background-color: #e6a23c;
+}
+.status-已批准 {
+  background-color: #67c23a;
+}
+.status-已拒绝 {
+  background-color: #f56c6c;
+}
 
 .business-body {
   padding: 1rem;
@@ -153,7 +174,8 @@ const filteredBusinesses = computed(() => {
   margin: 0.5rem 0;
 }
 
-.no-results, .floating-notice {
+.no-results,
+.floating-notice {
   text-align: center;
   color: #909399;
 }

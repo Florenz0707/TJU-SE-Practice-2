@@ -6,10 +6,10 @@
       <p>商家: {{ order.business?.businessName }}</p>
       <el-form @submit.prevent="submitReview">
         <el-form-item label="评分">
-  <el-rate v-model="rating" :max="5" allow-half />
+          <el-rate v-model="rating" :max="5" allow-half />
         </el-form-item>
         <el-form-item label="评价内容">
-          <el-input type="textarea" v-model="comment" />
+          <el-input v-model="comment" type="textarea" />
         </el-form-item>
         <el-form-item>
           <el-checkbox v-model="isAnonymous">匿名评价</el-checkbox>
@@ -21,18 +21,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { getOrderById } from '../../api/order';
-import { addReview } from '../../api/review';
-import type { Order } from '../../api/types';
-import { ElMessage } from 'element-plus';
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { getOrderById } from "../../api/order";
+import { addReview } from "../../api/review";
+import type { Order } from "../../api/types";
+import { ElMessage } from "element-plus";
 
 const route = useRoute();
 const router = useRouter();
 const order = ref<Order | null>(null);
 const rating = ref(0);
-const comment = ref('');
+const comment = ref("");
 const isAnonymous = ref(false);
 
 onMounted(async () => {
@@ -42,7 +42,7 @@ onMounted(async () => {
     if (res.success) {
       order.value = res.data;
     } else {
-      ElMessage.error('加载订单信息失败');
+      ElMessage.error("加载订单信息失败");
     }
   }
 });
@@ -62,13 +62,13 @@ const submitReview = async () => {
     const res = await addReview(order.value.id, reviewData);
     if (res.success && res.data?.id) {
       // Points will be awarded automatically by the backend
-      ElMessage.success('评价成功！积分已发放');
-      router.push({ name: 'OrderHistory' });
+      ElMessage.success("评价成功！积分已发放");
+      router.push({ name: "OrderHistory" });
     } else {
-      ElMessage.error(res.message || '提交评价失败');
+      ElMessage.error(res.message || "提交评价失败");
     }
   } catch (error) {
-    ElMessage.error('提交评价失败');
+    ElMessage.error("提交评价失败: " + (error as Error).message);
   }
 };
 </script>

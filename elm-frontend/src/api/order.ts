@@ -1,12 +1,18 @@
-import request from '../utils/request';
-import type { Order, Review, HttpResultOrder, HttpResultListOrder, HttpResult } from './types';
+import request from "../utils/request";
+import type {
+  Order,
+  Review,
+  HttpResultOrder,
+  HttpResultListOrder,
+  HttpResult,
+} from "./types";
 
 /**
  * @description Retrieves a list of orders for the current customer.
  * @returns {Promise<HttpResultListOrder>} A promise that resolves to the list of orders.
  */
 export const getMyOrdersCustomer = (): Promise<HttpResultListOrder> => {
-  return request.get('/orders/user/my');
+  return request.get("/orders/user/my");
 };
 
 /**
@@ -14,7 +20,7 @@ export const getMyOrdersCustomer = (): Promise<HttpResultListOrder> => {
  * @returns {Promise<HttpResultListOrder>} A promise that resolves to the list of orders.
  */
 export const getMyOrdersMerchant = (): Promise<HttpResultListOrder> => {
-  return request.get('/orders/merchant/my');
+  return request.get("/orders/merchant/my");
 };
 
 /**
@@ -22,7 +28,9 @@ export const getMyOrdersMerchant = (): Promise<HttpResultListOrder> => {
  * @param {number} businessId - The ID of the business.
  * @returns {Promise<HttpResultListOrder>} A promise that resolves to the list of orders.
  */
-export const getOrdersByBusinessId = (businessId: number): Promise<HttpResultListOrder> => {
+export const getOrdersByBusinessId = (
+  businessId: number,
+): Promise<HttpResultListOrder> => {
   return request.get(`/orders/business/${businessId}`);
 };
 
@@ -34,7 +42,7 @@ export const getOrdersByBusinessId = (businessId: number): Promise<HttpResultLis
  * @see {@link openapi.json} - operationId: "listOrders"
  */
 export const listOrders = (userId?: number): Promise<HttpResultListOrder> => {
-  return request.get('/orders', { params: { userId } });
+  return request.get("/orders", { params: { userId } });
 };
 
 /**
@@ -44,7 +52,7 @@ export const listOrders = (userId?: number): Promise<HttpResultListOrder> => {
  * @see {@link openapi.json} - operationId: "addOrders"
  */
 export const addOrder = (data: Order): Promise<HttpResultOrder> => {
-  return request.post('/orders', data);
+  return request.post("/orders", data);
 };
 
 /**
@@ -63,8 +71,10 @@ export const getOrderById = (id: number): Promise<HttpResult<Order>> => {
  * @returns {Promise<HttpResultOrder>}
  * @see {@link openapi.json} - operationId: "updateOrderStatus"
  */
-export const updateOrderStatus = (data: Partial<Order>): Promise<HttpResultOrder> => {
-  return request.patch('/orders', data);
+export const updateOrderStatus = (
+  data: Partial<Order>,
+): Promise<HttpResultOrder> => {
+  return request.patch("/orders", data);
 };
 
 /**
@@ -72,6 +82,8 @@ export const updateOrderStatus = (data: Partial<Order>): Promise<HttpResultOrder
  * @param {Partial<Review>} data - The review data.
  * @returns {Promise<HttpResult<Review>>}
  */
-export const addReview = (data: Partial<Review>): Promise<HttpResult<Review>> => {
-  return request.post('/reviews', data);
+export const addReview = (
+  data: Partial<Review>,
+): Promise<HttpResult<Review>> => {
+  return request.post("/reviews", data);
 };

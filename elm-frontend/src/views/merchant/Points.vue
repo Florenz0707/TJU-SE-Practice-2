@@ -7,69 +7,73 @@
         </div>
       </template>
       <div v-if="loading" class="loading-container">
-         <el-skeleton :rows="3" animated />
+        <el-skeleton :rows="3" animated />
       </div>
       <div v-else class="points-info">
         <div class="point-item">
-            <div class="label">总积分</div>
-            <div class="value total">{{ account?.totalPoints || 0 }}</div>
+          <div class="label">总积分</div>
+          <div class="value total">{{ account?.totalPoints || 0 }}</div>
         </div>
         <div class="point-item">
-            <div class="label">可用积分</div>
-            <div class="value available">{{ account?.availablePoints || 0 }}</div>
+          <div class="label">可用积分</div>
+          <div class="value available">{{ account?.availablePoints || 0 }}</div>
         </div>
         <div class="point-item">
-            <div class="label">冻结积分</div>
-            <div class="value frozen">{{ account?.frozenPoints || 0 }}</div>
+          <div class="label">冻结积分</div>
+          <div class="value frozen">{{ account?.frozenPoints || 0 }}</div>
         </div>
       </div>
     </el-card>
 
     <el-card class="points-records">
-        <template #header>
-            <div class="card-header">
-            <span>积分明细</span>
-            </div>
-        </template>
-         <el-table :data="records" style="width: 100%">
-            <el-table-column prop="createTime" label="时间" width="180">
-                 <template #default="scope">
-                    {{ new Date(scope.row.createTime).toLocaleString() }}
-                 </template>
-            </el-table-column>
-            <el-table-column prop="type" label="类型" width="100">
-                <template #default="scope">
-                     <el-tag :type="getRecordTypeTag(scope.row.type)">
-                        {{ getRecordTypeLabel(scope.row.type) }}
-                     </el-tag>
-                </template>
-            </el-table-column>
-             <el-table-column prop="amount" label="变动数量">
-                 <template #default="scope">
-                    <span :class="scope.row.amount >= 0 ? 'plus' : 'minus'">
-                        {{ scope.row.amount > 0 ? '+' : '' }}{{ scope.row.amount }}
-                    </span>
-                 </template>
-            </el-table-column>
-            <el-table-column prop="reason" label="原因" />
-         </el-table>
-         <el-pagination
-            v-if="total > 0"
-            layout="prev, pager, next"
-            :total="total"
-            :page-size="pageSize"
-            :current-page="currentPage"
-            @current-change="handlePageChange"
-            class="pagination"
-         />
+      <template #header>
+        <div class="card-header">
+          <span>积分明细</span>
+        </div>
+      </template>
+      <el-table :data="records" style="width: 100%">
+        <el-table-column prop="createTime" label="时间" width="180">
+          <template #default="scope">
+            {{ new Date(scope.row.createTime).toLocaleString() }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="type" label="类型" width="100">
+          <template #default="scope">
+            <el-tag :type="getRecordTypeTag(scope.row.type)">
+              {{ getRecordTypeLabel(scope.row.type) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="amount" label="变动数量">
+          <template #default="scope">
+            <span :class="scope.row.amount >= 0 ? 'plus' : 'minus'">
+              {{ scope.row.amount > 0 ? "+" : "" }}{{ scope.row.amount }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="reason" label="原因" />
+      </el-table>
+      <el-pagination
+        v-if="total > 0"
+        layout="prev, pager, next"
+        :total="total"
+        :page-size="pageSize"
+        :current-page="currentPage"
+        class="pagination"
+        @current-change="handlePageChange"
+      />
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getMyPointsAccount, getMyPointsRecords } from '../../api/points';
-import { type PointsAccount, type PointsRecord, PointsRecordType } from '../../api/types';
+import { ref, onMounted } from "vue";
+import { getMyPointsAccount, getMyPointsRecords } from "../../api/points";
+import {
+  type PointsAccount,
+  type PointsRecord,
+  PointsRecordType,
+} from "../../api/types";
 
 const account = ref<PointsAccount | null>(null);
 const records = ref<PointsRecord[]>([]);
@@ -79,72 +83,91 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 
 async function fetchData() {
-    loading.value = true;
-    try {
-        const accRes = await getMyPointsAccount();
-        account.value = accRes.data;
+  loading.value = true;
+  try {
+    const accRes = await getMyPointsAccount();
+    account.value = accRes.data;
 
-        const recRes = await getMyPointsRecords(currentPage.value - 1, pageSize.value);
-        records.value = recRes.data.records;
-        total.value = recRes.data.total;
-    } catch (e) {
-        console.error(e);
-    } finally {
-        loading.value = false;
-    }
+    const recRes = await getMyPointsRecords(
+      currentPage.value - 1,
+      pageSize.value,
+    );
+    records.value = recRes.data.records;
+    total.value = recRes.data.total;
+  } catch (e) {
+    console.error(e);
+  } finally {
+    loading.value = false;
+  }
 }
 
 function handlePageChange(page: number) {
-    currentPage.value = page;
-    fetchData();
+  currentPage.value = page;
+  fetchData();
 }
 
-function getRecordTypeLabel(type: any) {
-    if (type === PointsRecordType.EARN) return '获取';
-    if (type === PointsRecordType.CONSUME) return '消费';
-    if (type === PointsRecordType.EXPIRE) return '过期';
-    if (type === PointsRecordType.FREEZE) return '冻结';
-    if (type === PointsRecordType.UNFREEZE) return '解冻';
-    return '未知';
+function getRecordTypeLabel(type: string) {
+  if (type === PointsRecordType.EARN) return "获取";
+  if (type === PointsRecordType.CONSUME) return "消费";
+  if (type === PointsRecordType.EXPIRE) return "过期";
+  if (type === PointsRecordType.FREEZE) return "冻结";
+  if (type === PointsRecordType.UNFREEZE) return "解冻";
+  return "未知";
 }
 
-function getRecordTypeTag(type: any) {
-     if (type === PointsRecordType.EARN) return 'success';
-    if (type === PointsRecordType.CONSUME) return 'warning';
-    if (type === PointsRecordType.EXPIRE) return 'danger';
-    return 'info';
+function getRecordTypeTag(type: string) {
+  if (type === PointsRecordType.EARN) return "success";
+  if (type === PointsRecordType.CONSUME) return "warning";
+  if (type === PointsRecordType.EXPIRE) return "danger";
+  return "info";
 }
 
 onMounted(() => {
-    fetchData();
+  fetchData();
 });
 </script>
 
 <style scoped>
 .points-view {
-    padding: 20px;
+  padding: 20px;
 }
 .points-summary {
-    margin-bottom: 20px;
+  margin-bottom: 20px;
 }
 .points-info {
-    display: flex;
-    justify-content: space-around;
-    text-align: center;
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
 }
 .point-item .label {
-    color: #909399;
-    margin-bottom: 8px;
+  color: #909399;
+  margin-bottom: 8px;
 }
 .point-item .value {
-    font-size: 24px;
-    font-weight: bold;
+  font-size: 24px;
+  font-weight: bold;
 }
-.value.total { color: #409EFF; }
-.value.available { color: #67C23A; }
-.value.frozen { color: #F56C6C; }
+.value.total {
+  color: #409eff;
+}
+.value.available {
+  color: #67c23a;
+}
+.value.frozen {
+  color: #f56c6c;
+}
 
-.plus { color: #67C23A; font-weight: bold; }
-.minus { color: #F56C6C; font-weight: bold; }
-.pagination { margin-top: 15px; display: flex; justify-content: flex-end; }
+.plus {
+  color: #67c23a;
+  font-weight: bold;
+}
+.minus {
+  color: #f56c6c;
+  font-weight: bold;
+}
+.pagination {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
 </style>

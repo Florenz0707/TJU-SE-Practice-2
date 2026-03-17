@@ -1,6 +1,6 @@
 <template>
   <div class="mobile-order-detail-page">
-    <el-page-header @back="goBack" content="订单详情"></el-page-header>
+    <el-page-header content="订单详情" @back="goBack"></el-page-header>
     <div v-if="loading" class="loading">加载中...</div>
     <div v-if="error" class="error">{{ error }}</div>
     <div v-if="order" class="order-content">
@@ -8,18 +8,35 @@
         <template #header>
           <h3>{{ order.business?.businessName }}</h3>
         </template>
-        <p><strong>订单状态:</strong> <el-tag :type="getOrderStatusInfo(order.orderState as OrderStatus).type">{{ getOrderStatusInfo(order.orderState as OrderStatus).text }}</el-tag></p>
+        <p>
+          <strong>订单状态:</strong>
+          <el-tag
+            :type="getOrderStatusInfo(order.orderState as OrderStatus).type"
+            >{{
+              getOrderStatusInfo(order.orderState as OrderStatus).text
+            }}</el-tag
+          >
+        </p>
         <p><strong>订单号:</strong> {{ order.id }}</p>
-        <p><strong>下单时间:</strong> {{ new Date(order.orderDate!).toLocaleString() }}</p>
+        <p>
+          <strong>下单时间:</strong>
+          {{ new Date(order.orderDate!).toLocaleString() }}
+        </p>
       </el-card>
 
       <el-card class="items-card">
         <template #header>
           <h4>商品列表</h4>
         </template>
-        <div v-for="item in order.orderDetails" :key="item.id" class="order-item">
+        <div
+          v-for="item in order.orderDetails"
+          :key="item.id"
+          class="order-item"
+        >
           <span>{{ item.food?.foodName }} x {{ item.quantity }}</span>
-          <span>¥{{ (item.food?.foodPrice! * item.quantity!).toFixed(2) }}</span>
+          <span
+            >¥{{ (item.food?.foodPrice! * item.quantity!).toFixed(2) }}</span
+          >
         </div>
         <div class="total-row">
           <strong>总计</strong>
@@ -33,7 +50,9 @@
         </template>
         <p><strong>配送地址:</strong> {{ order.deliveryAddress!.address }}</p>
         <p><strong>联系人:</strong> {{ order.deliveryAddress!.contactName }}</p>
-        <p><strong>联系电话:</strong> {{ order.deliveryAddress!.contactTel }}</p>
+        <p>
+          <strong>联系电话:</strong> {{ order.deliveryAddress!.contactTel }}
+        </p>
       </el-card>
 
       <el-card v-if="review" class="review-card">
@@ -48,12 +67,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { getOrderById } from '../../../api/order';
-import { getOrderReview } from '../../../api/review';
-import type { Order, Review, OrderStatus } from '../../../api/types';
-import { getOrderStatusInfo, OrderStatus as OrderStatusEnum } from '../../../api/types';
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { getOrderById } from "../../../api/order";
+import { getOrderReview } from "../../../api/review";
+import type { Order, Review, OrderStatus } from "../../../api/types";
+import {
+  getOrderStatusInfo,
+  OrderStatus as OrderStatusEnum,
+} from "../../../api/types";
 
 const route = useRoute();
 const router = useRouter();
@@ -68,7 +90,7 @@ const fetchOrderDetails = async () => {
   const orderId = Number(route.params.id);
 
   if (isNaN(orderId)) {
-    error.value = '无效的订单ID。';
+    error.value = "无效的订单ID。";
     loading.value = false;
     return;
   }
@@ -86,8 +108,9 @@ const fetchOrderDetails = async () => {
     } else {
       throw new Error(res.message);
     }
-  } catch (err: any) {
-    error.value = err.message || '获取订单详情失败';
+  } catch (err: unknown) {
+    error.value =
+      (err instanceof Error ? err.message : String(err)) || "获取订单详情失败";
   } finally {
     loading.value = false;
   }
@@ -101,9 +124,27 @@ onMounted(fetchOrderDetails);
 </script>
 
 <style scoped>
-.mobile-order-detail-page { padding: 1rem; }
-.el-page-header { margin-bottom: 1.5rem; }
-.info-card, .items-card, .address-card, .review-card { margin-bottom: 1rem; }
-.order-item, .total-row { display: flex; justify-content: space-between; padding: 0.5rem 0; }
-.total-row { font-size: 1.1rem; border-top: 1px solid #eee; margin-top: 0.5rem; }
+.mobile-order-detail-page {
+  padding: 1rem;
+}
+.el-page-header {
+  margin-bottom: 1.5rem;
+}
+.info-card,
+.items-card,
+.address-card,
+.review-card {
+  margin-bottom: 1rem;
+}
+.order-item,
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+}
+.total-row {
+  font-size: 1.1rem;
+  border-top: 1px solid #eee;
+  margin-top: 0.5rem;
+}
 </style>

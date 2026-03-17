@@ -9,7 +9,7 @@
 	        (#{od.orderId},#{od.foodId},#{od.quantity})
 	    </foreach>
 	</insert>
-	
+
 	<resultMap type="OrderDetailet" id="orderDetailetResultMap">
 	    <id column="odId" property="odId"/>
 	    <result column="orderId" property="orderId"/>
@@ -18,9 +18,9 @@
 	    <association property="food" javaType="Food"
 	         select="com.neusoft.elmboot.mapper.FoodMapper.getFoodById" column="foodId"/>
 	</resultMap>
-	
+
 	<select id="listOrderDetailetByOrderId" parameterType="Integer" resultMap="orderDetailetResultMap">
 	    select * from orderDetailet where orderId=#{orderId}
 	</select>
 
-</mapper>    
+</mapper>

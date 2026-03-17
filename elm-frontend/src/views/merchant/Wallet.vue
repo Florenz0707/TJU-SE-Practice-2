@@ -1,7 +1,10 @@
 <template>
-  <WalletManagement title="商家钱包" createSuccessMessage="为您自动创建了商家钱包" />
+  <WalletManagement
+    title="商家钱包"
+    create-success-message="为您自动创建了商家钱包"
+  />
 </template>
 
 <script setup lang="ts">
-import WalletManagement from '../../components/WalletManagement.vue';
+import WalletManagement from "../../components/WalletManagement.vue";
 </script>

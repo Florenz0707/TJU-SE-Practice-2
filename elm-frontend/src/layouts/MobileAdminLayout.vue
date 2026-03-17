@@ -36,7 +36,14 @@
 </template>
 
 <script setup lang="ts">
-import { LayoutDashboard, Users, Store, User, Building, Ticket } from 'lucide-vue-next';
+import {
+  LayoutDashboard,
+  Users,
+  Store,
+  User,
+  Building,
+  Ticket,
+} from "lucide-vue-next";
 </script>
 
 <style scoped>
@@ -52,7 +59,8 @@ import { LayoutDashboard, Users, Store, User, Building, Ticket } from 'lucide-vu
   right: 0;
   z-index: 10;
   display: flex;
-  justify-content: center; /* Center the title */
+  justify-content: center;
+  /* Center the title */
   align-items: center;
   padding: 0 1rem;
   height: 56px;
@@ -100,6 +108,7 @@ import { LayoutDashboard, Users, Store, User, Building, Ticket } from 'lucide-vu
 }
 
 .nav-item.router-link-active {
-  color: #f97316; /* Orange color */
+  color: #f97316;
+  /* Orange color */
 }
 </style>

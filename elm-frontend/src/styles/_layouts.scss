@@ -1,4 +1,4 @@
-@use 'variables' as *;
+@use "variables" as *;
 
 // This file contains styles for the main application layouts.
 
@@ -49,9 +49,10 @@
   min-height: calc(100vh - 64px); // Full height minus header
 }
 
-
 // Layout-specific styles
-.customer-layout, .admin-layout, .merchant-layout {
+.customer-layout,
+.admin-layout,
+.merchant-layout {
   .mobile-menu-button {
     display: none; // Hidden on desktop
   }
@@ -85,7 +86,8 @@
     padding: 0 16px;
   }
 
-  .admin-layout, .merchant-layout {
+  .admin-layout,
+  .merchant-layout {
     .header-menu {
       display: none; // Hide horizontal menu on mobile
     }
@@ -112,10 +114,9 @@
     padding: $space-unit * 3;
   }
   .show-on-mobile {
-      display: none !important;
+    display: none !important;
   }
 }
-
 
 // Page Transitions
 // -----------------

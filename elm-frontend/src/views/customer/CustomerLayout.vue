@@ -59,15 +59,18 @@
               <el-icon><CreditCard /></el-icon>
               <span>我的钱包</span>
             </el-menu-item>
-             <el-menu-item index="/profile/points">
+            <el-menu-item index="/profile/points">
               <el-icon><Coin /></el-icon>
               <span>我的积分</span>
             </el-menu-item>
-             <el-menu-item index="/profile/vouchers">
+            <el-menu-item index="/profile/vouchers">
               <el-icon><Ticket /></el-icon>
               <span>优惠券</span>
             </el-menu-item>
-            <el-menu-item index="/profile/apply-merchant" v-if="!authStore.userRoles.includes('MERCHANT')">
+            <el-menu-item
+              v-if="!authStore.userRoles.includes('MERCHANT')"
+              index="/profile/apply-merchant"
+            >
               <el-icon><Shop /></el-icon>
               <span>成为商家</span>
             </el-menu-item>
@@ -79,12 +82,30 @@
           <!-- Logged-in state -->
           <template v-if="authStore.isLoggedIn">
             <div class="user-info">
-              <el-button v-if="showCartIcon" ref="cartButtonRef" @click="cartVisible = true" type="primary" round class="hide-on-mobile">
+              <el-button
+                v-if="showCartIcon"
+                ref="cartButtonRef"
+                type="primary"
+                round
+                class="hide-on-mobile"
+                @click="cartVisible = true"
+              >
                 <el-icon class="el-icon--left"><ShoppingCartIcon /></el-icon>
                 购物车
-                <el-badge :value="cartStore.totalItems" :hidden="cartStore.totalItems === 0" class="cart-badge" />
+                <el-badge
+                  :value="cartStore.totalItems"
+                  :hidden="cartStore.totalItems === 0"
+                  class="cart-badge"
+                />
               </el-button>
-              <el-button v-if="showCartIcon" ref="cartButtonRef" @click="cartVisible = true" type="primary" circle class="show-on-mobile">
+              <el-button
+                v-if="showCartIcon"
+                ref="cartButtonRef"
+                type="primary"
+                circle
+                class="show-on-mobile"
+                @click="cartVisible = true"
+              >
                 <el-icon><ShoppingCartIcon /></el-icon>
               </el-button>
               <el-dropdown>
@@ -93,13 +114,18 @@
                 </el-avatar>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <router-link to="/profile/user-profile" class="dropdown-link">
+                    <router-link
+                      to="/profile/user-profile"
+                      class="dropdown-link"
+                    >
                       <el-dropdown-item>个人资料</el-dropdown-item>
                     </router-link>
                     <router-link to="/profile/orders" class="dropdown-link">
                       <el-dropdown-item>我的订单</el-dropdown-item>
                     </router-link>
-                    <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                    <el-dropdown-item divided @click="handleLogout"
+                      >退出登录</el-dropdown-item
+                    >
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -109,7 +135,9 @@
           <template v-else>
             <div class="auth-buttons">
               <el-button @click="goTo('/login')">登录</el-button>
-              <el-button @click="goTo('/register')" type="primary">注册</el-button>
+              <el-button type="primary" @click="goTo('/register')"
+                >注册</el-button
+              >
             </div>
           </template>
         </div>
@@ -125,19 +153,33 @@
       </el-main>
 
       <!-- Shopping Cart Drawer -->
-      <ShoppingCart :visible="cartVisible" @update:visible="cartVisible = $event" />
+      <ShoppingCart
+        :visible="cartVisible"
+        @update:visible="cartVisible = $event"
+      />
     </el-container>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '../../store/auth';
-import { useCartStore } from '../../store/cart';
-import { formatBase64Image } from '../../utils/image';
-import ShoppingCart from '../../components/ShoppingCart.vue';
-import { ShoppingCart as ShoppingCartIcon, User, Location, List, HomeFilled, Shop, Setting, CreditCard, Coin, Ticket } from '@element-plus/icons-vue';
+import { ref, watch, computed, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "../../store/auth";
+import { useCartStore } from "../../store/cart";
+import { formatBase64Image } from "../../utils/image";
+import ShoppingCart from "../../components/ShoppingCart.vue";
+import {
+  ShoppingCart as ShoppingCartIcon,
+  User,
+  Location,
+  List,
+  HomeFilled,
+  Shop,
+  Setting,
+  CreditCard,
+  Coin,
+  Ticket,
+} from "@element-plus/icons-vue";
 
 const authStore = useAuthStore();
 const cartStore = useCartStore();
@@ -153,7 +195,7 @@ onMounted(() => {
   }
 });
 
-import type { Person } from '../../api/types';
+import type { Person } from "../../api/types";
 
 const userAvatar = computed(() => {
   const user = authStore.user as Person | null;
@@ -161,40 +203,45 @@ const userAvatar = computed(() => {
 });
 
 const showCartIcon = computed(() => {
-  return ['RestaurantDetail', 'MobileRestaurantDetail'].includes(route.name as string);
+  return ["RestaurantDetail", "MobileRestaurantDetail"].includes(
+    route.name as string,
+  );
 });
 
 // Determine the active route for the profile menu
 const activeProfileRoute = computed(() => {
-  if (route.path.startsWith('/profile/orders')) {
-    return '/profile/orders';
+  if (route.path.startsWith("/profile/orders")) {
+    return "/profile/orders";
   }
   return route.path;
 });
 
 const activePath = computed(() => {
-  if (route.path.startsWith('/admin')) {
-    return '/admin/dashboard';
-  } else if (route.path.startsWith('/merchant')) {
-    return '/merchant/dashboard';
+  if (route.path.startsWith("/admin")) {
+    return "/admin/dashboard";
+  } else if (route.path.startsWith("/merchant")) {
+    return "/merchant/dashboard";
   }
-  return '/';
+  return "/";
 });
 
 const handleLogout = async () => {
   await authStore.logout();
-  router.push({ name: 'Login' });
+  router.push({ name: "Login" });
 };
 
 const goTo = (path: string) => {
   router.push(path);
 };
 
-watch(() => cartStore.animationOrigin, (newOrigin) => {
-  if (newOrigin) {
-    // This is now handled in App.vue
-  }
-});
+watch(
+  () => cartStore.animationOrigin,
+  (newOrigin) => {
+    if (newOrigin) {
+      // This is now handled in App.vue
+    }
+  },
+);
 </script>
 
 <style lang="scss" scoped>

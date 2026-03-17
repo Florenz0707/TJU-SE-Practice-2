@@ -23,7 +23,12 @@
             @keyup.enter="handleLogin"
           >
             <el-form-item label="用户名" prop="username">
-              <el-input v-model="loginForm.username" placeholder="请输入用户名" clearable size="large"></el-input>
+              <el-input
+                v-model="loginForm.username"
+                placeholder="请输入用户名"
+                clearable
+                size="large"
+              ></el-input>
             </el-form-item>
 
             <el-form-item label="密码" prop="password">
@@ -39,10 +44,10 @@
             <el-form-item>
               <el-button
                 type="primary"
-                @click="handleLogin"
                 :loading="loading"
                 class="login-button"
                 size="large"
+                @click="handleLogin"
               >
                 登录
               </el-button>
@@ -60,13 +65,13 @@
     </div>
   </div>
 </template>
-  
+
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '../store/auth';
-import { ElMessage, type FormInstance } from 'element-plus';
-import { isMobile } from '../utils/device';
+import { ref, reactive } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "../store/auth";
+import { ElMessage, type FormInstance } from "element-plus";
+import { isMobile } from "../utils/device";
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -76,13 +81,13 @@ const loginFormRef = ref<FormInstance | null>(null);
 const loading = ref(false);
 
 const loginForm = reactive({
-  username: '',
-  password: '',
+  username: "",
+  password: "",
 });
 
 const loginRules = reactive({
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  username: [{ required: true, message: "请输入用户名", trigger: "blur" }],
+  password: [{ required: true, message: "请输入密码", trigger: "blur" }],
 });
 
 const getRedirectPath = (roles: string[]): string => {
@@ -93,14 +98,14 @@ const getRedirectPath = (roles: string[]): string => {
 
   const mobile = isMobile();
 
-  if (roles.includes('ADMIN')) {
-    return mobile ? '/mobile/admin' : '/admin';
+  if (roles.includes("ADMIN")) {
+    return mobile ? "/mobile/admin" : "/admin";
   }
-  if (roles.includes('MERCHANT')) {
-    return mobile ? '/mobile/merchant' : '/merchant';
+  if (roles.includes("MERCHANT")) {
+    return mobile ? "/mobile/merchant" : "/merchant";
   }
 
-  return mobile ? '/mobile/home' : '/';
+  return mobile ? "/mobile/home" : "/";
 };
 
 const handleLogin = async () => {
@@ -110,19 +115,18 @@ const handleLogin = async () => {
     await loginFormRef.value.validate();
     loading.value = true;
     const userRoles = await authStore.login(loginForm);
-    ElMessage.success('登录成功！');
+    ElMessage.success("登录成功！");
 
     const redirectPath = getRedirectPath(userRoles);
     router.push(redirectPath);
-
   } catch (error) {
-    console.error('Login process failed:', error);
+    console.error("Login process failed:", error);
   } finally {
     loading.value = false;
   }
 };
 </script>
-  
+
 <style lang="scss" scoped>
 .auth-container {
   display: flex;
@@ -138,14 +142,16 @@ const handleLogin = async () => {
   max-width: 960px;
   margin: 1.5rem;
   border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   background-color: #ffffff;
 }
 
 .welcome-panel {
   flex: 1;
-  background-color: #F97316; // Hardcoded orange
+  background-color: #f97316; // Hardcoded orange
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -210,4 +216,3 @@ const handleLogin = async () => {
   }
 }
 </style>
-  

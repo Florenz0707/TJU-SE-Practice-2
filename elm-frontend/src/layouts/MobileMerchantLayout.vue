@@ -6,10 +6,10 @@
         v-if="businesses.length > 0"
         v-model="selectedBusinessId"
         placeholder="选择店铺"
-        @change="handleBusinessChange"
         filterable
         size="small"
         class="business-selector"
+        @change="handleBusinessChange"
       >
         <el-option
           v-for="business in businesses"
@@ -44,10 +44,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useBusinessStore } from '../store/business';
-import { storeToRefs } from 'pinia';
-import { LayoutDashboard, BookCopy, ScrollText, User } from 'lucide-vue-next';
+import { onMounted } from "vue";
+import { useBusinessStore } from "../store/business";
+import { storeToRefs } from "pinia";
+import { LayoutDashboard, BookCopy, ScrollText, User } from "lucide-vue-next";
 
 const businessStore = useBusinessStore();
 const { businesses, selectedBusinessId } = storeToRefs(businessStore);
@@ -74,7 +74,8 @@ const handleBusinessChange = (businessId: number) => {
   right: 0;
   z-index: 10;
   display: flex;
-  justify-content: space-between; /* Adjusted for title and selector */
+  justify-content: space-between;
+  /* Adjusted for title and selector */
   align-items: center;
   padding: 0 1rem;
   height: 56px;
@@ -83,7 +84,8 @@ const handleBusinessChange = (businessId: number) => {
 }
 
 .business-selector {
-  max-width: 150px; /* Adjust as needed */
+  max-width: 150px;
+  /* Adjust as needed */
 }
 
 .page-title {

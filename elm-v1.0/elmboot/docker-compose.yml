@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   backend:
-    build: 
+    build:
       context: ./
       dockerfile: Dockerfile
     container_name: elmboot-backend

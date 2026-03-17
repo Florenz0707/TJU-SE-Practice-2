@@ -1,10 +1,50 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  # 通用基础检查
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+
+  # 前端 prettier（格式化 Vue / JS / TS / CSS / JSON / Markdown）
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        files: \.(js|ts|vue|css|scss|json|md)$
+        exclude: |
+          (^|/)(node_modules|dist)/
+
+  # Java 代码格式化（google-java-format）
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.14.0
+    hooks:
+      - id: pretty-format-java
+        args: [--autofix]
+
+  # 前端 lint + build 检查（可选）
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend Lint
+        entry: bash -c "cd elm-frontend && npm run lint --fix && npm run build"
+        language: system
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+    -   id: check-secrets
+        name: Check for secrets
+        entry: bash -c 'grep -rn --include="*.properties" --include="*.yml" --include="*.yaml" "password\|secret\|key" elm-v2.0/src/main/resources/ | grep -v "# " || true'
+        language: system
+        pass_filenames: false
+    -   id: validate-pom
+        name: Validate Maven POM
+        entry: bash -c 'cd elm-v2.0 && mvn validate'
+        language: system
+        pass_filenames: false
+        files: pom\.xml$

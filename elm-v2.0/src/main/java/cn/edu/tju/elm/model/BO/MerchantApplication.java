@@ -9,48 +9,48 @@ import jakarta.persistence.ManyToOne;
 
 @Entity
 public class MerchantApplication extends BaseEntity {
-    @ManyToOne
-    @JoinColumn(name = "applicant_id", nullable = false)
-    private User applicant;
+  @ManyToOne
+  @JoinColumn(name = "applicant_id", nullable = false)
+  private User applicant;
 
-    @Column(columnDefinition = "TEXT")
-    private String applicationExplain;
+  @Column(columnDefinition = "TEXT")
+  private String applicationExplain;
 
-    private Integer applicationState;
+  private Integer applicationState;
 
-    @ManyToOne
-    @JoinColumn(name = "handler_id", nullable = false)
-    private User handler;
+  @ManyToOne
+  @JoinColumn(name = "handler_id", nullable = false)
+  private User handler;
 
-    public User getApplicant() {
-        return applicant;
-    }
+  public User getApplicant() {
+    return applicant;
+  }
 
-    public void setApplicant(User applicant) {
-        this.applicant = applicant;
-    }
+  public void setApplicant(User applicant) {
+    this.applicant = applicant;
+  }
 
-    public String getApplicationExplain() {
-        return applicationExplain;
-    }
+  public String getApplicationExplain() {
+    return applicationExplain;
+  }
 
-    public void setApplicationExplain(String applicationExplain) {
-        this.applicationExplain = applicationExplain;
-    }
+  public void setApplicationExplain(String applicationExplain) {
+    this.applicationExplain = applicationExplain;
+  }
 
-    public Integer getApplicationState() {
-        return applicationState;
-    }
+  public Integer getApplicationState() {
+    return applicationState;
+  }
 
-    public void setApplicationState(Integer applicationState) {
-        this.applicationState = applicationState;
-    }
+  public void setApplicationState(Integer applicationState) {
+    this.applicationState = applicationState;
+  }
 
-    public User getHandler() {
-        return handler;
-    }
+  public User getHandler() {
+    return handler;
+  }
 
-    public void setHandler(User handler) {
-        this.handler = handler;
-    }
+  public void setHandler(User handler) {
+    this.handler = handler;
+  }
 }

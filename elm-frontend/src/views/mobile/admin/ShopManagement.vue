@@ -16,14 +16,26 @@
     </div>
 
     <div v-if="filteredApplications.length" class="application-list">
-      <div v-for="app in filteredApplications" :key="app.id" class="application-card">
+      <div
+        v-for="app in filteredApplications"
+        :key="app.id"
+        class="application-card"
+      >
         <div class="application-header">
           <span class="business-name">{{ app.business.businessName }}</span>
-          <span :class="['status-badge', `status-${app.applicationState}`]">{{ statusText(app.applicationState) }}</span>
+          <span :class="['status-badge', `status-${app.applicationState}`]">{{
+            statusText(app.applicationState)
+          }}</span>
         </div>
         <div class="application-body">
-          <p><strong>申请人:</strong> {{ app.business.businessOwner?.username || 'N/A' }}</p>
-          <p><strong>申请时间:</strong> {{ new Date(app.createTime || '').toLocaleString() }}</p>
+          <p>
+            <strong>申请人:</strong>
+            {{ app.business.businessOwner?.username || "N/A" }}
+          </p>
+          <p>
+            <strong>申请时间:</strong>
+            {{ new Date(app.createTime || "").toLocaleString() }}
+          </p>
         </div>
       </div>
     </div>
@@ -38,22 +50,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { ElMessage } from 'element-plus';
-import { getBusinessApplications, ApplicationState } from '@/api/applicationService';
-import type { BusinessApplication } from '@/api/types';
+import { ref, onMounted, computed } from "vue";
+import { ElMessage } from "element-plus";
+import {
+  getBusinessApplications,
+  ApplicationState,
+} from "@/api/applicationService";
+import type { BusinessApplication } from "@/api/types";
 
 const applications = ref<BusinessApplication[]>([]);
-const searchQuery = ref('');
-const statusFilter = ref('');
+const searchQuery = ref("");
+const statusFilter = ref("");
 
 const fetchApplications = async () => {
   try {
     const response = await getBusinessApplications();
     applications.value = response;
   } catch (error) {
-    ElMessage.error('获取申请列表失败');
-    console.error('获取申请列表失败:', error);
+    ElMessage.error("获取申请列表失败");
+    console.error("获取申请列表失败:", error);
   }
 };
 
@@ -62,20 +77,26 @@ onMounted(fetchApplications);
 const statusText = (state?: number) => {
   switch (state) {
     case ApplicationState.UNDISPOSED:
-      return '待处理';
+      return "待处理";
     case ApplicationState.APPROVED:
-      return '已批准';
+      return "已批准";
     case ApplicationState.REJECTED:
-      return '已拒绝';
+      return "已拒绝";
     default:
-      return '未知';
+      return "未知";
   }
 };
 
 const filteredApplications = computed(() => {
-  return applications.value.filter(app => {
-    const searchMatch = !searchQuery.value || app.business.businessName.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const statusMatch = !statusFilter.value || app.applicationState === Number(statusFilter.value);
+  return applications.value.filter((app) => {
+    const searchMatch =
+      !searchQuery.value ||
+      app.business.businessName
+        .toLowerCase()
+        .includes(searchQuery.value.toLowerCase());
+    const statusMatch =
+      !statusFilter.value ||
+      app.applicationState === Number(statusFilter.value);
     return searchMatch && statusMatch;
   });
 });
@@ -92,7 +113,8 @@ const filteredApplications = computed(() => {
   margin-bottom: 1rem;
 }
 
-.search-input, .status-select {
+.search-input,
+.status-select {
   width: 100%;
   padding: 0.75rem;
   font-size: 1rem;
@@ -135,9 +157,15 @@ const filteredApplications = computed(() => {
   color: #fff;
 }
 
-.status-0 { background-color: #e6a23c; }
-.status-1 { background-color: #67c23a; }
-.status-2 { background-color: #f56c6c; }
+.status-0 {
+  background-color: #e6a23c;
+}
+.status-1 {
+  background-color: #67c23a;
+}
+.status-2 {
+  background-color: #f56c6c;
+}
 
 .application-body {
   padding: 1rem;
@@ -149,7 +177,8 @@ const filteredApplications = computed(() => {
   margin: 0.5rem 0;
 }
 
-.no-results, .floating-notice {
+.no-results,
+.floating-notice {
   text-align: center;
   color: #909399;
 }

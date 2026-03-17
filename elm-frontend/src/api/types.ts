@@ -5,7 +5,7 @@
  */
 
 // Generic API Response Wrapper
-export interface HttpResult<T = any> {
+export interface HttpResult<T = unknown> {
   success: boolean;
   code: string;
   data: T;
@@ -116,7 +116,7 @@ export interface Order {
   pointsUsed?: number;
   pointsDiscount?: number;
   walletPaid?: number;
-  paymentMethod?: 'external' | 'wallet' | 'mixed';
+  paymentMethod?: "external" | "wallet" | "mixed";
 }
 
 export interface OrderDetail {
@@ -193,19 +193,19 @@ export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 export function getOrderStatusInfo(status: OrderStatus) {
   switch (status) {
     case OrderStatus.CANCELED:
-      return { text: '已取消', type: 'info' as const };
+      return { text: "已取消", type: "info" as const };
     case OrderStatus.PAID:
-      return { text: '已支付', type: 'primary' as const };
+      return { text: "已支付", type: "primary" as const };
     case OrderStatus.ACCEPTED:
-      return { text: '已接单', type: 'warning' as const };
+      return { text: "已接单", type: "warning" as const };
     case OrderStatus.DELIVERY:
-      return { text: '配送中', type: 'warning' as const };
+      return { text: "配送中", type: "warning" as const };
     case OrderStatus.COMPLETE:
-      return { text: '已完成', type: 'success' as const };
+      return { text: "已完成", type: "success" as const };
     case OrderStatus.COMMENTED:
-      return { text: '已评价', type: 'success' as const };
+      return { text: "已评价", type: "success" as const };
     default:
-      return { text: '未知状态', type: 'info' as const };
+      return { text: "未知状态", type: "info" as const };
   }
 }
 
@@ -265,59 +265,61 @@ export interface PublicVoucher {
 }
 
 export interface PrivateVoucher {
-    id: number;
-    walletId: number;
-    publicVoucherId: number;
-    value: number;
-    threshold: number;
-    expiryDate: string;
-    used: boolean;
-    publicVoucher: PublicVoucher;
+  id: number;
+  walletId: number;
+  publicVoucherId: number;
+  value: number;
+  threshold: number;
+  expiryDate: string;
+  used: boolean;
+  publicVoucher: PublicVoucher;
 }
 
 // Points System Types
 
 export interface PointsAccount {
-    id: number;
-    userId: number;
-    totalPoints: number;
-    frozenPoints: number;
-    availablePoints: number;
+  id: number;
+  userId: number;
+  totalPoints: number;
+  frozenPoints: number;
+  availablePoints: number;
 }
 
 export const PointsRecordType = {
-    EARN: 'EARN',
-    CONSUME: 'CONSUME',
-    EXPIRE: 'EXPIRE',
-    FREEZE: 'FREEZE',
-    UNFREEZE: 'UNFREEZE'
+  EARN: "EARN",
+  CONSUME: "CONSUME",
+  EXPIRE: "EXPIRE",
+  FREEZE: "FREEZE",
+  UNFREEZE: "UNFREEZE",
 } as const;
-export type PointsRecordType = typeof PointsRecordType[keyof typeof PointsRecordType];
+export type PointsRecordType =
+  (typeof PointsRecordType)[keyof typeof PointsRecordType];
 
 export interface PointsRecord {
-    id: number;
-    userId: number;
-    type: PointsRecordType;
-    points: number;
-    bizId?: string;
-    channelType?: string;
-    description: string;
-    recordTime: string;
+  id: number;
+  userId: number;
+  type: PointsRecordType;
+  points: number;
+  bizId?: string;
+  channelType?: string;
+  description: string;
+  recordTime: string;
 }
 
 export const PointsRuleType = {
-    ORDER: 'ORDER',
-    COMMENT: 'COMMENT',
-    LOGIN: 'LOGIN',
-    REGISTER: 'REGISTER'
+  ORDER: "ORDER",
+  COMMENT: "COMMENT",
+  LOGIN: "LOGIN",
+  REGISTER: "REGISTER",
 } as const;
-export type PointsRuleType = typeof PointsRuleType[keyof typeof PointsRuleType];
+export type PointsRuleType =
+  (typeof PointsRuleType)[keyof typeof PointsRuleType];
 
 export interface PointsRule {
-    id?: number;
-    channelType: PointsRuleType;
-    ratio: number;
-    expireDays: number;
-    description: string;
-    isEnabled: boolean;
+  id?: number;
+  channelType: PointsRuleType;
+  ratio: number;
+  expireDays: number;
+  description: string;
+  isEnabled: boolean;
 }

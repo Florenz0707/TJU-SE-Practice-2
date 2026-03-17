@@ -13,7 +13,7 @@
 		     select="com.neusoft.elmboot.mapper.FoodMapper.getFoodById" column="foodId"/>
 		<association property="business" javaType="Business"
 		     select="com.neusoft.elmboot.mapper.BusinessMapper.getBusinessById" column="businessId"/>
-		
+
 	</resultMap>
 
     <select id="listCart" parameterType="Cart" resultMap="cartResultMap">
@@ -26,9 +26,9 @@
     	</where>
     	order by cartId
     </select>
-    
+
     <delete id="removeCart" parameterType="Cart">
-        delete from cart 
+        delete from cart
         <where>
         	userId=#{userId} and businessId=#{businessId}
         	<if test="foodId!=null and foodId!=''">
@@ -37,4 +37,4 @@
         </where>
     </delete>
 
-</mapper>    
+</mapper>

@@ -4,48 +4,49 @@ import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.BO.BusinessApplication;
 import cn.edu.tju.elm.repository.BusinessApplicationRepository;
 import cn.edu.tju.elm.utils.EntityUtils;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
 public class BusinessApplicationService {
 
-    private final BusinessApplicationRepository businessApplicationRepository;
+  private final BusinessApplicationRepository businessApplicationRepository;
 
-    public BusinessApplicationService(BusinessApplicationRepository businessApplicationRepository) {
-        this.businessApplicationRepository = businessApplicationRepository;
-    }
+  public BusinessApplicationService(BusinessApplicationRepository businessApplicationRepository) {
+    this.businessApplicationRepository = businessApplicationRepository;
+  }
 
-    public void addApplication(BusinessApplication businessApplication) {
-        businessApplicationRepository.save(businessApplication);
-    }
+  public void addApplication(BusinessApplication businessApplication) {
+    businessApplicationRepository.save(businessApplication);
+  }
 
-    public List<BusinessApplication> getAllBusinessApplications() {
-        return businessApplicationRepository.findAll();
-    }
+  public List<BusinessApplication> getAllBusinessApplications() {
+    return businessApplicationRepository.findAll();
+  }
 
-    public BusinessApplication getBusinessApplicationById(Long id) {
-        Optional<BusinessApplication> businessApplicationOptional = businessApplicationRepository.findById(id);
-        return businessApplicationOptional.map(EntityUtils::filterEntity).orElse(null);
-    }
+  public BusinessApplication getBusinessApplicationById(Long id) {
+    Optional<BusinessApplication> businessApplicationOptional =
+        businessApplicationRepository.findById(id);
+    return businessApplicationOptional.map(EntityUtils::filterEntity).orElse(null);
+  }
 
-    public void updateBusinessApplication(BusinessApplication businessApplication) {
-        businessApplicationRepository.save(businessApplication);
-    }
+  public void updateBusinessApplication(BusinessApplication businessApplication) {
+    businessApplicationRepository.save(businessApplication);
+  }
 
-    public List<BusinessApplication> getBusinessApplicationsByApplicant(User applicant) {
-        List<BusinessApplication> allBusinessApplications = businessApplicationRepository.findAll();
-        List<BusinessApplication> businessApplicationsByApplicant = new ArrayList<>(allBusinessApplications.size());
-        for (BusinessApplication businessApplication : allBusinessApplications) {
-            if (businessApplication.getBusiness().getBusinessOwner().equals(applicant)) {
-                businessApplicationsByApplicant.add(businessApplication);
-            }
-        }
-        return businessApplicationsByApplicant;
+  public List<BusinessApplication> getBusinessApplicationsByApplicant(User applicant) {
+    List<BusinessApplication> allBusinessApplications = businessApplicationRepository.findAll();
+    List<BusinessApplication> businessApplicationsByApplicant =
+        new ArrayList<>(allBusinessApplications.size());
+    for (BusinessApplication businessApplication : allBusinessApplications) {
+      if (businessApplication.getBusiness().getBusinessOwner().equals(applicant)) {
+        businessApplicationsByApplicant.add(businessApplication);
+      }
     }
+    return businessApplicationsByApplicant;
+  }
 }

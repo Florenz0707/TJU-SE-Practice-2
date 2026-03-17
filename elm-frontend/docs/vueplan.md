@@ -21,37 +21,37 @@
 
 为确保项目有序进行，我们将开发过程划分为四个主要阶段。以下是一个建议的时间线（以“周”为单位），可根据团队规模和实际情况进行调整。
 
-| 阶段                         | 主要内容                               | 预计周期  | 关键产出                                                     |
-| ---------------------------- | -------------------------------------- | --------- | ------------------------------------------------------------ |
-| **阶段 0：基础建设**         | 项目初始化、环境配置、核心架构搭建     | 第 1 周   | - 可运行的Vue 3 + Vite项目骨架 - 统一的代码规范配置 - CI/CD基础流程 |
+| 阶段                         | 主要内容                               | 预计周期  | 关键产出                                                                                        |
+| ---------------------------- | -------------------------------------- | --------- | ----------------------------------------------------------------------------------------------- |
+| **阶段 0：基础建设**         | 项目初始化、环境配置、核心架构搭建     | 第 1 周   | - 可运行的Vue 3 + Vite项目骨架 - 统一的代码规范配置 - CI/CD基础流程                             |
 | **阶段 1：核心功能开发**     | API层、认证授权、全局组件与布局        | 第 1-2 周 | - 封装完善的Axios实例 - 可用的登录、注册、路由守卫功能 - 三端（顾客、商家、后台）的基础页面布局 |
-| **阶段 2：应用模块并行开发** | 顾客端、商家端、管理后台的核心业务功能 | 第 3-6 周 | - 各端主要功能模块的完成 - 实现核心业务流程闭环              |
-| **阶段 3：集成、测试与优化** | 功能联调、性能优化、测试与缺陷修复     | 第 7-8 周 | - 稳定、高质量的前端应用 - 完整的测试报告 - 部署准备         |
+| **阶段 2：应用模块并行开发** | 顾客端、商家端、管理后台的核心业务功能 | 第 3-6 周 | - 各端主要功能模块的完成 - 实现核心业务流程闭环                                                 |
+| **阶段 3：集成、测试与优化** | 功能联调、性能优化、测试与缺陷修复     | 第 7-8 周 | - 稳定、高质量的前端应用 - 完整的测试报告 - 部署准备                                            |
 
 ## 3.0 任务分解 (Task Breakdown)
 
 ### 3.1 阶段 0：基础建设 (负责人: Tech Lead)
 
-| 任务ID       | 任务名称     | 描述                                                         | 预估工时 | 依赖     |
-| ------------ | ------------ | ------------------------------------------------------------ | -------- | -------- |
-| **SETUP-01** | 项目初始化   | 使用 Vite 创建 Vue 3 + TypeScript 项目。                     | 0.5 天   | -        |
-| **SETUP-02** | 依赖集成     | 安装并配置 Vue Router, Pinia, Axios, Element Plus, Sass, ESLint, Prettier。 | 0.5 天   | SETUP-01 |
-| **SETUP-03** | 目录结构搭建 | 按照 `vuedesign.md` 文档建立项目目录结构。                   | 0.5 天   | SETUP-01 |
+| 任务ID       | 任务名称     | 描述                                                                               | 预估工时 | 依赖     |
+| ------------ | ------------ | ---------------------------------------------------------------------------------- | -------- | -------- |
+| **SETUP-01** | 项目初始化   | 使用 Vite 创建 Vue 3 + TypeScript 项目。                                           | 0.5 天   | -        |
+| **SETUP-02** | 依赖集成     | 安装并配置 Vue Router, Pinia, Axios, Element Plus, Sass, ESLint, Prettier。        | 0.5 天   | SETUP-01 |
+| **SETUP-03** | 目录结构搭建 | 按照 `vuedesign.md` 文档建立项目目录结构。                                         | 0.5 天   | SETUP-01 |
 | **SETUP-04** | 环境配置     | 配置 `.env` 文件（development, production），定义 `VITE_API_BASE_URL` 等环境变量。 | 0.5 天   | SETUP-03 |
-| **SETUP-05** | 代码规范配置 | 配置 ESLint 和 Prettier 规则，并集成到 IDE 和 Git Hooks 中，确保代码提交质量。 | 1 天     | SETUP-02 |
+| **SETUP-05** | 代码规范配置 | 配置 ESLint 和 Prettier 规则，并集成到 IDE 和 Git Hooks 中，确保代码提交质量。     | 1 天     | SETUP-02 |
 
 ### 3.2 阶段 1：核心功能开发 (负责人: Tech Lead / Senior Dev)
 
 此阶段是后续所有开发的基础，必须优先完成。
 
-| 任务ID      | 任务名称             | 描述与技术要点                                               | 关联API                             | 预估工时 | 依赖     |
-| ----------- | -------------------- | ------------------------------------------------------------ | ----------------------------------- | -------- | -------- |
+| 任务ID      | 任务名称             | 描述与技术要点                                                                                                                              | 关联API                             | 预估工时 | 依赖     |
+| ----------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | -------- | -------- |
 | **CORE-01** | **API层封装**        | 在 `utils/request.js` 中创建 Axios 实例。实现请求拦截器（自动附加JWT）和响应拦截器（统一数据结构处理、全局错误提示、401自动刷新令牌逻辑）。 | 全部API                             | 2 天     | SETUP-04 |
-| **CORE-02** | **认证模块 (Store)** | 创建 `store/auth.js` (Pinia)，管理 `token`, `user` 信息。实现 `login`, `logout`, `fetchUserInfo` 等 actions。 | `POST /api/auth`, `GET /api/user`   | 1.5 天   | CORE-01  |
-| **CORE-03** | **登录/注册视图**    | 创建用户登录、注册页面组件。处理表单验证、API调用和认证状态更新。 | `POST /api/auth`, `POST /api/users` | 2 天     | CORE-02  |
-| **CORE-04** | **路由与守卫**       | 在 `router/` 中配置基础路由和全局前置守卫。根据 `meta` 字段（`requiresAuth`, `roles`）实现页面访问权限控制。 | -                                   | 1.5 天   | CORE-02  |
-| **CORE-05** | **全局布局组件**     | 创建三端（顾客、商家、后台）的基础 `Layout` 组件，包含通用的页头、侧边栏、内容区域等。 | -                                   | 2 天     | CORE-04  |
-| **CORE-06** | **WebSocket服务**    | 封装通用的 `useWebSocket` hook 或服务，用于处理连接、消息接收、心跳和重连机制。 | -                                   | 1 天     | -        |
+| **CORE-02** | **认证模块 (Store)** | 创建 `store/auth.js` (Pinia)，管理 `token`, `user` 信息。实现 `login`, `logout`, `fetchUserInfo` 等 actions。                               | `POST /api/auth`, `GET /api/user`   | 1.5 天   | CORE-01  |
+| **CORE-03** | **登录/注册视图**    | 创建用户登录、注册页面组件。处理表单验证、API调用和认证状态更新。                                                                           | `POST /api/auth`, `POST /api/users` | 2 天     | CORE-02  |
+| **CORE-04** | **路由与守卫**       | 在 `router/` 中配置基础路由和全局前置守卫。根据 `meta` 字段（`requiresAuth`, `roles`）实现页面访问权限控制。                                | -                                   | 1.5 天   | CORE-02  |
+| **CORE-05** | **全局布局组件**     | 创建三端（顾客、商家、后台）的基础 `Layout` 组件，包含通用的页头、侧边栏、内容区域等。                                                      | -                                   | 2 天     | CORE-04  |
+| **CORE-06** | **WebSocket服务**    | 封装通用的 `useWebSocket` hook 或服务，用于处理连接、消息接收、心跳和重连机制。                                                             | -                                   | 1 天     | -        |
 
 ### 3.3 阶段 2：应用模块并行开发
 
@@ -59,36 +59,36 @@
 
 #### 3.3.1 顾客应用 (负责人: Developer A)
 
-| 任务ID      | 任务名称                    | 描述与关键组件                                               | 关联API                                                      | 预估工时 | 依赖             |
-| ----------- | --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | -------- | ---------------- |
-| **CUST-01** | 首页-餐厅列表               | `Home.vue`: 获取并展示附近餐厅列表，支持滚动分页加载。`RestaurantCard.vue`: 单个餐厅信息展示。 | `GET /api/businesses`                                        | 2 天     | CORE-05          |
-| **CUST-02** | 搜索与筛选                  | `SearchBar.vue`, `FilterPanel.vue`: 实现按餐厅名、菜系、价格等条件筛选。 | `GET /api/businesses`                                        | 1.5 天   | CUST-01          |
-| **CUST-03** | 餐厅详情与菜单              | `RestaurantDetail.vue`: 展示餐厅详情和菜单。`MenuItem.vue`: 菜单项展示，处理添加商品到购物车的操作（含规格选择）。 | `GET /api/businesses/{id}`, `GET /api/foods`                 | 3 天     | CUST-01, CART-01 |
-| **CUST-04** | **购物车模块 (Store & UI)** | `store/cart.js`: 管理购物车状态。`ShoppingCart.vue`: 购物车侧边栏或页面，支持增、删、改商品。 | `GET /api/carts`, `POST /api/carts`, `PUT /api/carts/{id}`, `DELETE /api/carts/{id}` | 3 天     | CORE-02          |
-| **CUST-05** | 结账流程                    | `Checkout.vue`: 多步骤结账流程，包括地址选择、支付方式、订单预览和提交。 | `POST /api/orders`, `GET /api/addresses`                     | 3 天     | CUST-04, CUST-06 |
-| **CUST-06** | 个人中心-基础               | `ProfileLayout.vue`, `UserProfile.vue`: 查看和编辑个人信息。 | `GET /api/user`, `PUT /api/users/{id}`                       | 2 天     | CORE-05          |
-| **CUST-07** | 地址管理                    | `AddressManagement.vue`: 对收货地址进行增删改查。            | `GET /api/addresses`, `POST /api/addresses`, `PUT /api/addresses/{id}`, `DELETE /api/addresses/{id}` | 2 天     | CUST-06          |
-| **CUST-08** | 订单历史与追踪              | `OrderHistory.vue`, `OrderDetail.vue`, `OrderTracker.vue`: 查看历史订单，并使用WebSocket实时追踪订单状态。 | `GET /api/orders/my`, `GET /api/orders/{id}`                 | 3 天     | CUST-05, CORE-06 |
+| 任务ID      | 任务名称                    | 描述与关键组件                                                                                                     | 关联API                                                                                              | 预估工时 | 依赖             |
+| ----------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | -------- | ---------------- |
+| **CUST-01** | 首页-餐厅列表               | `Home.vue`: 获取并展示附近餐厅列表，支持滚动分页加载。`RestaurantCard.vue`: 单个餐厅信息展示。                     | `GET /api/businesses`                                                                                | 2 天     | CORE-05          |
+| **CUST-02** | 搜索与筛选                  | `SearchBar.vue`, `FilterPanel.vue`: 实现按餐厅名、菜系、价格等条件筛选。                                           | `GET /api/businesses`                                                                                | 1.5 天   | CUST-01          |
+| **CUST-03** | 餐厅详情与菜单              | `RestaurantDetail.vue`: 展示餐厅详情和菜单。`MenuItem.vue`: 菜单项展示，处理添加商品到购物车的操作（含规格选择）。 | `GET /api/businesses/{id}`, `GET /api/foods`                                                         | 3 天     | CUST-01, CART-01 |
+| **CUST-04** | **购物车模块 (Store & UI)** | `store/cart.js`: 管理购物车状态。`ShoppingCart.vue`: 购物车侧边栏或页面，支持增、删、改商品。                      | `GET /api/carts`, `POST /api/carts`, `PUT /api/carts/{id}`, `DELETE /api/carts/{id}`                 | 3 天     | CORE-02          |
+| **CUST-05** | 结账流程                    | `Checkout.vue`: 多步骤结账流程，包括地址选择、支付方式、订单预览和提交。                                           | `POST /api/orders`, `GET /api/addresses`                                                             | 3 天     | CUST-04, CUST-06 |
+| **CUST-06** | 个人中心-基础               | `ProfileLayout.vue`, `UserProfile.vue`: 查看和编辑个人信息。                                                       | `GET /api/user`, `PUT /api/users/{id}`                                                               | 2 天     | CORE-05          |
+| **CUST-07** | 地址管理                    | `AddressManagement.vue`: 对收货地址进行增删改查。                                                                  | `GET /api/addresses`, `POST /api/addresses`, `PUT /api/addresses/{id}`, `DELETE /api/addresses/{id}` | 2 天     | CUST-06          |
+| **CUST-08** | 订单历史与追踪              | `OrderHistory.vue`, `OrderDetail.vue`, `OrderTracker.vue`: 查看历史订单，并使用WebSocket实时追踪订单状态。         | `GET /api/orders/my`, `GET /api/orders/{id}`                                                         | 3 天     | CUST-05, CORE-06 |
 
 #### 3.3.2 商家仪表盘 (负责人: Developer B)
 
-| 任务ID       | 任务名称       | 描述与关键组件                                               | 关联API                                                      | 预估工时 | 依赖     |
-| ------------ | -------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | -------- | -------- |
-| **MERCH-01** | 商家仪表盘     | `Dashboard.vue`: 核心视图，通过WebSocket实时接收新订单并发出提醒。提供接单/拒单操作。 | WebSocket API                                                | 3 天     | CORE-06  |
-| **MERCH-02** | 订单管理       | `OrderManagement.vue`: 更新订单状态（备餐中 -> 待取餐）。    | (需要后端提供更新订单状态的API)                              | 2 天     | MERCH-01 |
+| 任务ID       | 任务名称       | 描述与关键组件                                                                                          | 关联API                                                                              | 预估工时 | 依赖     |
+| ------------ | -------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | -------- | -------- |
+| **MERCH-01** | 商家仪表盘     | `Dashboard.vue`: 核心视图，通过WebSocket实时接收新订单并发出提醒。提供接单/拒单操作。                   | WebSocket API                                                                        | 3 天     | CORE-06  |
+| **MERCH-02** | 订单管理       | `OrderManagement.vue`: 更新订单状态（备餐中 -> 待取餐）。                                               | (需要后端提供更新订单状态的API)                                                      | 2 天     | MERCH-01 |
 | **MERCH-03** | **菜单管理**   | `MenuManagement.vue`: 对店铺的菜品进行完整的增删改查(CRUD)操作。`FoodEditor.vue`: 新增/编辑菜品的表单。 | `GET /api/foods`, `POST /api/foods`, `PUT /api/foods/{id}`, `DELETE /api/foods/{id}` | 4 天     | CORE-05  |
-| **MERCH-04** | 店铺信息管理   | `BusinessProfile.vue`: 查看和编辑店铺的基本信息（名称、地址、公告、图片等）。 | `GET /api/businesses/my`, `PUT /api/businesses/{id}`         | 2 天     | CORE-05  |
-| **MERCH-05** | 历史订单查询   | `OrderHistory.vue`: 查看、搜索和筛选店铺的历史订单。         | `GET /api/orders` (需通过 `businessId` 筛选)                 | 2.5 天   | CORE-05  |
-| **MERCH-06** | 数据分析与报告 | `Analytics.vue`: (初步) 使用图表组件展示销售额、订单量等数据。 | (需要后端提供商家分析API)                                    | 2 天     | CORE-05  |
+| **MERCH-04** | 店铺信息管理   | `BusinessProfile.vue`: 查看和编辑店铺的基本信息（名称、地址、公告、图片等）。                           | `GET /api/businesses/my`, `PUT /api/businesses/{id}`                                 | 2 天     | CORE-05  |
+| **MERCH-05** | 历史订单查询   | `OrderHistory.vue`: 查看、搜索和筛选店铺的历史订单。                                                    | `GET /api/orders` (需通过 `businessId` 筛选)                                         | 2.5 天   | CORE-05  |
+| **MERCH-06** | 数据分析与报告 | `Analytics.vue`: (初步) 使用图表组件展示销售额、订单量等数据。                                          | (需要后端提供商家分析API)                                                            | 2 天     | CORE-05  |
 
 #### 3.3.3 管理员后台 (负责人: Developer C)
 
-| 任务ID       | 任务名称     | 描述与关键组件                                               | 关联API                                                      | 预估工时 | 依赖     |
-| ------------ | ------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | -------- | -------- |
+| 任务ID       | 任务名称     | 描述与关键组件                                                                          | 关联API                                                                      | 预估工时 | 依赖     |
+| ------------ | ------------ | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------- | -------- |
 | **ADMIN-01** | **用户管理** | `UserManagement.vue`: 使用可复用的数据表格组件，展示、搜索、筛选所有用户（顾客/商家）。 | `GET /api/users`, `PUT /api/users/{id}` (更新状态), `DELETE /api/users/{id}` | 3 天     | CORE-05  |
-| **ADMIN-02** | **店铺管理** | `BusinessManagement.vue`: 管理平台所有店铺，包括查看详情、修改状态等。 | `GET /api/businesses`, `PUT /api/businesses/{id}`            | 3 天     | CORE-05  |
-| **ADMIN-03** | 商家入驻审核 | `MerchantApproval.vue`: 待审核商家列表，管理员可进行批准或拒绝操作。 | (需要 `GET /api/businesses?status=pending` 类似的API)        | 2 天     | ADMIN-02 |
-| **ADMIN-04** | 平台数据总览 | `PlatformDashboard.vue`: 展示平台级的核心指标，如总收入、订单量、活跃用户数。 | (需要平台级分析API)                                          | 2 天     | CORE-05  |
+| **ADMIN-02** | **店铺管理** | `BusinessManagement.vue`: 管理平台所有店铺，包括查看详情、修改状态等。                  | `GET /api/businesses`, `PUT /api/businesses/{id}`                            | 3 天     | CORE-05  |
+| **ADMIN-03** | 商家入驻审核 | `MerchantApproval.vue`: 待审核商家列表，管理员可进行批准或拒绝操作。                    | (需要 `GET /api/businesses?status=pending` 类似的API)                        | 2 天     | ADMIN-02 |
+| **ADMIN-04** | 平台数据总览 | `PlatformDashboard.vue`: 展示平台级的核心指标，如总收入、订单量、活跃用户数。           | (需要平台级分析API)                                                          | 2 天     | CORE-05  |
 
 ## 4.0 跨模块接口与协同约定
 

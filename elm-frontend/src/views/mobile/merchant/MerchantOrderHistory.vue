@@ -1,5 +1,5 @@
 <template>
-  <div class="mobile-order-history" v-loading="loading">
+  <div v-loading="loading" class="mobile-order-history">
     <div class="header">
       <h4>历史订单查询</h4>
     </div>
@@ -7,10 +7,10 @@
       v-model="searchQuery"
       placeholder="搜索订单ID或顾客信息"
       class="search-input"
-      @keyup.enter="handleSearch"
       clearable
-      @clear="handleSearch"
       size="large"
+      @keyup.enter="handleSearch"
+      @clear="handleSearch"
     >
       <template #prefix>
         <Search :size="18" />
@@ -18,15 +18,32 @@
     </el-input>
 
     <div v-if="filteredOrders.length" class="order-list">
-      <el-card v-for="order in filteredOrders" :key="order.id" class="order-card">
+      <el-card
+        v-for="order in filteredOrders"
+        :key="order.id"
+        class="order-card"
+      >
         <div class="order-info">
-          <p class="order-id"><strong>订单 #{{ order.id }}</strong></p>
-          <p class="customer-name">顾客: {{ order.customer?.username ?? 'N/A' }}</p>
-          <p class="order-time">{{ order.orderDate ? new Date(order.orderDate).toLocaleString() : 'N/A' }}</p>
+          <p class="order-id">
+            <strong>订单 #{{ order.id }}</strong>
+          </p>
+          <p class="customer-name">
+            顾客: {{ order.customer?.username ?? "N/A" }}
+          </p>
+          <p class="order-time">
+            {{
+              order.orderDate
+                ? new Date(order.orderDate).toLocaleString()
+                : "N/A"
+            }}
+          </p>
         </div>
         <div class="order-status">
           <p class="order-total">¥{{ (order.orderTotal ?? 0).toFixed(2) }}</p>
-          <el-tag :type="getOrderStatusInfo(order.orderState as OrderStatus).type" size="small">
+          <el-tag
+            :type="getOrderStatusInfo(order.orderState as OrderStatus).type"
+            size="small"
+          >
             {{ getOrderStatusInfo(order.orderState as OrderStatus).text }}
           </el-tag>
         </div>
@@ -37,18 +54,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { Search } from 'lucide-vue-next';
-import { getOrdersByBusinessId } from '../../../api/order';
-import { useBusinessStore } from '../../../store/business';
-import type { Order, OrderStatus } from '../../../api/types';
-import { getOrderStatusInfo } from '../../../api/types';
-import { ElMessage } from 'element-plus';
-import { storeToRefs } from 'pinia';
+import { ref, computed, watch } from "vue";
+import { Search } from "lucide-vue-next";
+import { getOrdersByBusinessId } from "../../../api/order";
+import { useBusinessStore } from "../../../store/business";
+import type { Order, OrderStatus } from "../../../api/types";
+import { getOrderStatusInfo } from "../../../api/types";
+import { ElMessage } from "element-plus";
+import { storeToRefs } from "pinia";
 
 const loading = ref(true);
 const allOrders = ref<Order[]>([]);
-const searchQuery = ref('');
+const searchQuery = ref("");
 
 const businessStore = useBusinessStore();
 const { selectedBusinessId } = storeToRefs(businessStore);
@@ -64,30 +81,35 @@ const fetchOrdersForBusiness = async (businessId: number) => {
     if (res.success) {
       allOrders.value = res.data || [];
     } else {
-      ElMessage.error(res.message || '获取订单列表失败');
+      ElMessage.error(res.message || "获取订单列表失败");
     }
   } catch (error) {
-    ElMessage.error('加载订单历史失败');
+    ElMessage.error("加载订单历史失败");
     console.error(error);
   } finally {
     loading.value = false;
   }
 };
 
-watch(selectedBusinessId, (newId) => {
-  if (newId) {
-    fetchOrdersForBusiness(newId);
-  }
-}, { immediate: true });
+watch(
+  selectedBusinessId,
+  (newId) => {
+    if (newId) {
+      fetchOrdersForBusiness(newId);
+    }
+  },
+  { immediate: true },
+);
 
 const filteredOrders = computed(() => {
   if (!searchQuery.value) {
     return allOrders.value;
   }
   const query = searchQuery.value.toLowerCase();
-  return allOrders.value.filter(order =>
-    (order.id?.toString() ?? '').includes(query) ||
-    (order.customer?.username?.toLowerCase() ?? '').includes(query)
+  return allOrders.value.filter(
+    (order) =>
+      (order.id?.toString() ?? "").includes(query) ||
+      (order.customer?.username?.toLowerCase() ?? "").includes(query),
   );
 });
 
@@ -126,7 +148,8 @@ const handleSearch = () => {
   justify-content: space-between;
   align-items: center;
 }
-.order-info p, .order-status p {
+.order-info p,
+.order-status p {
   margin: 0.25rem 0;
   font-size: 0.875rem;
 }

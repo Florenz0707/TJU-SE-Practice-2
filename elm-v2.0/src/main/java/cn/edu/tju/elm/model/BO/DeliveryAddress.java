@@ -9,52 +9,52 @@ import jakarta.persistence.ManyToOne;
 @Entity
 public class DeliveryAddress extends BaseEntity {
 
-    private String contactName;
-    private Integer contactSex;
-    private String contactTel;
-    private String address;
+  private String contactName;
+  private Integer contactSex;
+  private String contactTel;
+  private String address;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User customer;
+  @ManyToOne
+  @JoinColumn(name = "user_id", nullable = false)
+  private User customer;
 
-    public String getContactName() {
-        return contactName;
-    }
+  public String getContactName() {
+    return contactName;
+  }
 
-    public void setContactName(String contactName) {
-        this.contactName = contactName;
-    }
+  public void setContactName(String contactName) {
+    this.contactName = contactName;
+  }
 
-    public Integer getContactSex() {
-        return contactSex;
-    }
+  public Integer getContactSex() {
+    return contactSex;
+  }
 
-    public void setContactSex(Integer contactSex) {
-        this.contactSex = contactSex;
-    }
+  public void setContactSex(Integer contactSex) {
+    this.contactSex = contactSex;
+  }
 
-    public String getContactTel() {
-        return contactTel;
-    }
+  public String getContactTel() {
+    return contactTel;
+  }
 
-    public void setContactTel(String contactTel) {
-        this.contactTel = contactTel;
-    }
+  public void setContactTel(String contactTel) {
+    this.contactTel = contactTel;
+  }
 
-    public String getAddress() {
-        return address;
-    }
+  public String getAddress() {
+    return address;
+  }
 
-    public void setAddress(String address) {
-        this.address = address;
-    }
+  public void setAddress(String address) {
+    this.address = address;
+  }
 
-    public User getCustomer() {
-        return customer;
-    }
+  public User getCustomer() {
+    return customer;
+  }
 
-    public void setCustomer(User customer) {
-        this.customer = customer;
-    }
+  public void setCustomer(User customer) {
+    this.customer = customer;
+  }
 }

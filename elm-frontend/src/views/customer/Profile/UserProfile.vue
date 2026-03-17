@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-import DesktopUserProfile from '../../../components/DesktopUserProfile.vue';
+import DesktopUserProfile from "../../../components/DesktopUserProfile.vue";
 </script>

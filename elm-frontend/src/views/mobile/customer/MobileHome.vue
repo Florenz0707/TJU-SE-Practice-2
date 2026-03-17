@@ -25,21 +25,19 @@
         class="restaurant-list-item"
       />
     </div>
-    <div v-else-if="!loading" class="no-results-state">
-      没有找到相关餐厅。
-    </div>
+    <div v-else-if="!loading" class="no-results-state">没有找到相关餐厅。</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
-import { Search } from 'lucide-vue-next';
-import { getBusinesses } from '../../../api/business';
-import type { Business } from '../../../api/types';
-import MobileRestaurantCard from '../../../components/mobile/MobileRestaurantCard.vue';
+import { ref, onMounted, computed } from "vue";
+import { Search } from "lucide-vue-next";
+import { getBusinesses } from "../../../api/business";
+import type { Business } from "../../../api/types";
+import MobileRestaurantCard from "../../../components/mobile/MobileRestaurantCard.vue";
 
 const allBusinesses = ref<Business[]>([]);
-const searchQuery = ref('');
+const searchQuery = ref("");
 const loading = ref(false);
 const error = ref<string | null>(null);
 
@@ -51,10 +49,11 @@ const fetchBusinesses = async () => {
     if (response.success) {
       allBusinesses.value = response.data;
     } else {
-      throw new Error(response.message || '获取商家列表失败');
+      throw new Error(response.message || "获取商家列表失败");
     }
-  } catch (err: any) {
-    error.value = err.message || '发生未知错误';
+  } catch (err: unknown) {
+    error.value =
+      (err instanceof Error ? err.message : String(err)) || "发生未知错误";
   } finally {
     loading.value = false;
   }
@@ -64,8 +63,10 @@ const filteredBusinesses = computed(() => {
   if (!searchQuery.value) {
     return allBusinesses.value;
   }
-  return allBusinesses.value.filter(business =>
-    business.businessName.toLowerCase().includes(searchQuery.value.toLowerCase())
+  return allBusinesses.value.filter((business) =>
+    business.businessName
+      .toLowerCase()
+      .includes(searchQuery.value.toLowerCase()),
   );
 });
 
@@ -85,7 +86,7 @@ onMounted(() => {
   border-radius: 8px;
   margin: -0.75rem -0.75rem 1rem -0.75rem;
   padding: 1rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .restaurant-list {
@@ -94,7 +95,9 @@ onMounted(() => {
   gap: 1rem;
 }
 
-.loading-state, .error-state, .no-results-state {
+.loading-state,
+.error-state,
+.no-results-state {
   text-align: center;
   margin-top: 3rem;
   color: #6b7280;

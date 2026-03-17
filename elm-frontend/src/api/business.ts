@@ -1,14 +1,20 @@
-import request from '../utils/request';
-import type { Business, HttpResultBusiness, HttpResultListBusiness } from './types';
+import request from "../utils/request";
+import type {
+  Business,
+  HttpResultBusiness,
+  HttpResultListBusiness,
+} from "./types";
 
 /**
  * @description Retrieves a list of all businesses.
- * @param {any} [params] - Optional query parameters.
+ * @param {Record<string, unknown>} [params] - Optional query parameters.
  * @returns {Promise<HttpResultListBusiness>}
  * @see {@link openapi.json} - operationId: "getBusinesses"
  */
-export const getBusinesses = (params?: any): Promise<HttpResultListBusiness> => {
-  return request.get('/businesses', { params });
+export const getBusinesses = (
+  params?: Record<string, unknown>,
+): Promise<HttpResultListBusiness> => {
+  return request.get("/businesses", { params });
 };
 
 /**
@@ -17,8 +23,10 @@ export const getBusinesses = (params?: any): Promise<HttpResultListBusiness> => 
  * @returns {Promise<HttpResultBusiness>}
  * @see {@link openapi.json} - operationId: "addBusiness"
  */
-export const addBusiness = (data: Partial<Business>): Promise<HttpResultBusiness> => {
-  return request.post('/businesses', data);
+export const addBusiness = (
+  data: Partial<Business>,
+): Promise<HttpResultBusiness> => {
+  return request.post("/businesses", data);
 };
 
 /**
@@ -27,7 +35,7 @@ export const addBusiness = (data: Partial<Business>): Promise<HttpResultBusiness
  * @see {@link openapi.json} - operationId: "getCurrentUserBusinesses"
  */
 export const getCurrentUserBusinesses = (): Promise<HttpResultListBusiness> => {
-  return request.get('/businesses/my');
+  return request.get("/businesses/my");
 };
 
 /**
@@ -47,7 +55,10 @@ export const getBusinessById = (id: number): Promise<HttpResultBusiness> => {
  * @returns {Promise<HttpResultBusiness>}
  * @see {@link openapi.json} - operationId: "updateBusiness"
  */
-export const updateBusiness = (id: number, data: Business): Promise<HttpResultBusiness> => {
+export const updateBusiness = (
+  id: number,
+  data: Business,
+): Promise<HttpResultBusiness> => {
   return request.put(`/businesses/${id}`, data);
 };
 
@@ -68,6 +79,9 @@ export const deleteBusiness = (id: number): Promise<HttpResultBusiness> => {
  * @returns {Promise<HttpResultBusiness>}
  * @see {@link openapi.json} - operationId: "patchBusiness"
  */
-export const patchBusiness = (id: number, data: Partial<Business>): Promise<HttpResultBusiness> => {
+export const patchBusiness = (
+  id: number,
+  data: Partial<Business>,
+): Promise<HttpResultBusiness> => {
   return request.patch(`/businesses/${id}`, data);
 };

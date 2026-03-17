@@ -1,5 +1,10 @@
-import request from '../utils/request';
-import type { Cart, HttpResultCart, HttpResultListCart, HttpResultEmpty } from './types';
+import request from "../utils/request";
+import type {
+  Cart,
+  HttpResultCart,
+  HttpResultListCart,
+  HttpResultEmpty,
+} from "./types";
 
 /**
  * @description Fetches the current user's shopping cart.
@@ -7,7 +12,7 @@ import type { Cart, HttpResultCart, HttpResultListCart, HttpResultEmpty } from '
  * @see {@link openapi.json} - operationId: "getCurrentUserCart"
  */
 export const getCurrentUserCart = (): Promise<HttpResultListCart> => {
-  return request.get('/carts');
+  return request.get("/carts");
 };
 
 /**
@@ -17,7 +22,7 @@ export const getCurrentUserCart = (): Promise<HttpResultListCart> => {
  * @see {@link openapi.json} - operationId: "addCartItem"
  */
 export const addCartItem = (data: Cart): Promise<HttpResultCart> => {
-  return request.post('/carts', data);
+  return request.post("/carts", data);
 };
 
 /**
@@ -27,7 +32,10 @@ export const addCartItem = (data: Cart): Promise<HttpResultCart> => {
  * @returns {Promise<HttpResultCart>}
  * @see {@link openapi.json} - operationId: "updateCartItem"
  */
-export const updateCartItem = (id: number, quantity: number): Promise<HttpResultCart> => {
+export const updateCartItem = (
+  id: number,
+  quantity: number,
+): Promise<HttpResultCart> => {
   return request.patch(`/carts/${id}`, { quantity });
 };
 

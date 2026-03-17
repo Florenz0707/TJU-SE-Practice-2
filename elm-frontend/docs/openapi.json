@@ -50,9 +50,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "getBusiness",
-        "tags": [
-          "管理店铺"
-        ],
+        "tags": ["管理店铺"],
         "parameters": [
           {
             "name": "id",
@@ -86,9 +84,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "updateBusiness",
-        "tags": [
-          "管理店铺"
-        ],
+        "tags": ["管理店铺"],
         "parameters": [
           {
             "name": "id",
@@ -132,9 +128,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "deleteBusiness",
-        "tags": [
-          "管理店铺"
-        ],
+        "tags": ["管理店铺"],
         "parameters": [
           {
             "name": "id",
@@ -183,9 +177,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "patchBusiness",
-        "tags": [
-          "管理店铺"
-        ],
+        "tags": ["管理店铺"],
         "parameters": [
           {
             "name": "id",
@@ -231,9 +223,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "getBusinesses",
-        "tags": [
-          "管理店铺"
-        ],
+        "tags": ["管理店铺"],
         "parameters": [],
         "responses": {
           "200": {
@@ -255,9 +245,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "addBusiness",
-        "tags": [
-          "管理店铺"
-        ],
+        "tags": ["管理店铺"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -291,9 +279,7 @@
         "deprecated": false,
         "description": "获取当前登录用户所拥有的所有店铺列表",
         "operationId": "getCurrentUserBusinesses",
-        "tags": [
-          "管理店铺"
-        ],
+        "tags": ["管理店铺"],
         "parameters": [],
         "responses": {
           "200": {
@@ -317,9 +303,7 @@
         "deprecated": false,
         "description": "创建一个新的用户（仅登录帐号）",
         "operationId": "createUser",
-        "tags": [
-          "管理用户"
-        ],
+        "tags": ["管理用户"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -351,9 +335,7 @@
         "deprecated": false,
         "description": "获取所有用户的列表，主要用于管理界面",
         "operationId": "getAllUsers",
-        "tags": [
-          "管理用户"
-        ],
+        "tags": ["管理用户"],
         "parameters": [],
         "responses": {
           "200": {
@@ -377,9 +359,7 @@
         "deprecated": false,
         "description": "创建一个新的用户（自然人）\n必需参数：username，默认密码password，默认权限User，同时会创建一个User",
         "operationId": "addPerson",
-        "tags": [
-          "管理用户"
-        ],
+        "tags": ["管理用户"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -413,9 +393,7 @@
         "deprecated": false,
         "description": "已登录的用户只可以修改自己的密码，Admin可以修改任何人的密码",
         "operationId": "updateUserPassword",
-        "tags": [
-          "管理用户"
-        ],
+        "tags": ["管理用户"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -464,9 +442,7 @@
         "deprecated": false,
         "description": "查询单个用户的详细信息",
         "operationId": "getUserById",
-        "tags": [
-          "管理用户"
-        ],
+        "tags": ["管理用户"],
         "parameters": [
           {
             "name": "id",
@@ -500,9 +476,7 @@
         "deprecated": false,
         "description": "更新指定ID用户的详细信息",
         "operationId": "updateUser",
-        "tags": [
-          "管理用户"
-        ],
+        "tags": ["管理用户"],
         "parameters": [
           {
             "name": "id",
@@ -546,9 +520,7 @@
         "deprecated": false,
         "description": "删除指定ID的用户",
         "operationId": "deleteUser",
-        "tags": [
-          "管理用户"
-        ],
+        "tags": ["管理用户"],
         "parameters": [
           {
             "name": "id",
@@ -599,9 +571,7 @@
         "deprecated": false,
         "description": "判断当前登录的用户",
         "operationId": "getActualUser",
-        "tags": [
-          "管理用户"
-        ],
+        "tags": ["管理用户"],
         "parameters": [],
         "responses": {
           "200": {
@@ -624,9 +594,7 @@
         "summary": "getMyOrders(Customer)",
         "deprecated": false,
         "description": "根据token的用户信息，获取该消费者的所有订单",
-        "tags": [
-          "管理订单"
-        ],
+        "tags": ["管理订单"],
         "parameters": [],
         "responses": {
           "200": {
@@ -667,9 +635,7 @@
         "summary": "getMyOrders(Merchant)",
         "deprecated": false,
         "description": "根据token获取商家信息，查看商家的所有订单",
-        "tags": [
-          "管理订单"
-        ],
+        "tags": ["管理订单"],
         "parameters": [],
         "responses": {
           "200": {
@@ -710,9 +676,7 @@
         "summary": "getOrdersByBusinessId",
         "deprecated": false,
         "description": "根据BusinessId获取该店铺的所有订单",
-        "tags": [
-          "管理订单"
-        ],
+        "tags": ["管理订单"],
         "parameters": [
           {
             "name": "id",
@@ -764,9 +728,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "listOrdersByUserId",
-        "tags": [
-          "管理订单"
-        ],
+        "tags": ["管理订单"],
         "parameters": [
           {
             "name": "userId",
@@ -799,9 +761,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "addOrders",
-        "tags": [
-          "管理订单"
-        ],
+        "tags": ["管理订单"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -833,9 +793,7 @@
         "deprecated": false,
         "description": "更新订单状态",
         "operationId": "updateOrderStatus",
-        "tags": [
-          "管理订单"
-        ],
+        "tags": ["管理订单"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -869,9 +827,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "getOrderById",
-        "tags": [
-          "管理订单"
-        ],
+        "tags": ["管理订单"],
         "parameters": [
           {
             "name": "id",
@@ -907,9 +863,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "getAllFoods",
-        "tags": [
-          "管理商品"
-        ],
+        "tags": ["管理商品"],
         "parameters": [
           {
             "name": "business",
@@ -952,9 +906,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "addFood",
-        "tags": [
-          "管理商品"
-        ],
+        "tags": ["管理商品"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1052,19 +1004,13 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "id"
-                    ]
+                    "required": ["id"]
                   },
                   "remarks": {
                     "type": "string"
                   }
                 },
-                "required": [
-                  "foodName",
-                  "foodPrice",
-                  "business"
-                ]
+                "required": ["foodName", "foodPrice", "business"]
               },
               "examples": {}
             }
@@ -1092,9 +1038,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "getFoodById",
-        "tags": [
-          "管理商品"
-        ],
+        "tags": ["管理商品"],
         "parameters": [
           {
             "name": "id",
@@ -1128,9 +1072,7 @@
         "deprecated": false,
         "description": "更新指定ID的商品信息",
         "operationId": "updateFood",
-        "tags": [
-          "管理商品"
-        ],
+        "tags": ["管理商品"],
         "parameters": [
           {
             "name": "id",
@@ -1174,9 +1116,7 @@
         "deprecated": false,
         "description": "删除指定ID的商品",
         "operationId": "deleteFood",
-        "tags": [
-          "管理商品"
-        ],
+        "tags": ["管理商品"],
         "parameters": [
           {
             "name": "id",
@@ -1227,9 +1167,7 @@
         "deprecated": false,
         "description": "获取当前登录用户的所有购物车项目",
         "operationId": "getCurrentUserCart",
-        "tags": [
-          "管理购物车"
-        ],
+        "tags": ["管理购物车"],
         "parameters": [],
         "responses": {
           "200": {
@@ -1251,9 +1189,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "addCartItem",
-        "tags": [
-          "管理购物车"
-        ],
+        "tags": ["管理购物车"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1287,9 +1223,7 @@
         "deprecated": false,
         "description": "更新购物车中某个项目的数量",
         "operationId": "updateCartItem",
-        "tags": [
-          "管理购物车"
-        ],
+        "tags": ["管理购物车"],
         "parameters": [
           {
             "name": "id",
@@ -1314,9 +1248,7 @@
                     "format": "int32"
                   }
                 },
-                "required": [
-                  "quantity"
-                ]
+                "required": ["quantity"]
               },
               "examples": {}
             }
@@ -1342,9 +1274,7 @@
         "deprecated": false,
         "description": "从购物车中删除一个项目",
         "operationId": "deleteCartItem",
-        "tags": [
-          "管理购物车"
-        ],
+        "tags": ["管理购物车"],
         "parameters": [
           {
             "name": "id",
@@ -1394,10 +1324,7 @@
         "summary": "refresh",
         "deprecated": false,
         "description": "使用刷新令牌获取新的访问令牌",
-        "tags": [
-          "管理认证",
-          "认证 (Authentication)"
-        ],
+        "tags": ["管理认证", "认证 (Authentication)"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1409,9 +1336,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "refresh_token"
-                ]
+                "required": ["refresh_token"]
               },
               "examples": {}
             }
@@ -1439,9 +1364,7 @@
         "deprecated": false,
         "description": "身份认证成功后拿到令牌",
         "operationId": "authorize",
-        "tags": [
-          "管理认证"
-        ],
+        "tags": ["管理认证"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1475,9 +1398,7 @@
         "deprecated": false,
         "description": "获取当前登录用户的所有收货地址列表",
         "operationId": "getCurrentUserAddresses",
-        "tags": [
-          "管理地址"
-        ],
+        "tags": ["管理地址"],
         "parameters": [],
         "responses": {
           "200": {
@@ -1499,9 +1420,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "addDeliveryAddress",
-        "tags": [
-          "管理地址"
-        ],
+        "tags": ["管理地址"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1535,9 +1454,7 @@
         "deprecated": false,
         "description": "更新指定的收货地址信息",
         "operationId": "updateDeliveryAddress",
-        "tags": [
-          "管理地址"
-        ],
+        "tags": ["管理地址"],
         "parameters": [
           {
             "name": "id",
@@ -1581,9 +1498,7 @@
         "deprecated": false,
         "description": "删除指定的收货地址",
         "operationId": "deleteDeliveryAddress",
-        "tags": [
-          "管理地址"
-        ],
+        "tags": ["管理地址"],
         "parameters": [
           {
             "name": "id",
@@ -1634,9 +1549,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "success",
-        "tags": [
-          "统一结果测试"
-        ],
+        "tags": ["统一结果测试"],
         "parameters": [],
         "responses": {
           "200": {
@@ -1660,9 +1573,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "successWithData",
-        "tags": [
-          "统一结果测试"
-        ],
+        "tags": ["统一结果测试"],
         "parameters": [],
         "responses": {
           "200": {
@@ -1686,9 +1597,7 @@
         "deprecated": false,
         "description": "",
         "operationId": "failure",
-        "tags": [
-          "统一结果测试"
-        ],
+        "tags": ["统一结果测试"],
         "parameters": [],
         "responses": {
           "200": {
@@ -1711,9 +1620,7 @@
         "summary": "提交店铺申请",
         "deprecated": false,
         "description": "商家申请店铺",
-        "tags": [
-          "管理店铺申请"
-        ],
+        "tags": ["管理店铺申请"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -1758,10 +1665,7 @@
                     "format": "int32"
                   }
                 },
-                "required": [
-                  "business",
-                  "id"
-                ]
+                "required": ["business", "id"]
               },
               "examples": {}
             }
@@ -1821,9 +1725,7 @@
                           "format": "int32"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     },
                     "message": {
                       "type": "string",
@@ -1842,9 +1744,7 @@
         "summary": "获取申请列表",
         "deprecated": false,
         "description": "获取所有店铺申请",
-        "tags": [
-          "管理店铺申请"
-        ],
+        "tags": ["管理店铺申请"],
         "parameters": [],
         "responses": {
           "200": {
@@ -1871,9 +1771,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -1888,9 +1786,7 @@
         "summary": "获取申请详情",
         "deprecated": false,
         "description": "获取单个店铺申请",
-        "tags": [
-          "管理店铺申请"
-        ],
+        "tags": ["管理店铺申请"],
         "parameters": [
           {
             "name": "id",
@@ -1925,9 +1821,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -1940,9 +1834,7 @@
         "summary": "审批店铺申请",
         "deprecated": false,
         "description": "管理员审批店铺申请",
-        "tags": [
-          "管理店铺申请"
-        ],
+        "tags": ["管理店铺申请"],
         "parameters": [
           {
             "name": "id",
@@ -1998,10 +1890,7 @@
                     "format": "int32"
                   }
                 },
-                "required": [
-                  "id",
-                  "applicationState"
-                ]
+                "required": ["id", "applicationState"]
               },
               "examples": {}
             }
@@ -2029,9 +1918,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2046,9 +1933,7 @@
         "summary": "获取个人店铺申请",
         "deprecated": false,
         "description": "获取个人店铺申请列表",
-        "tags": [
-          "管理店铺申请"
-        ],
+        "tags": ["管理店铺申请"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2089,9 +1974,7 @@
         "summary": "提交商家申请",
         "deprecated": false,
         "description": "用户申请商家",
-        "tags": [
-          "管理商家申请"
-        ],
+        "tags": ["管理商家申请"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2136,10 +2019,7 @@
                     "$ref": "#/components/schemas/User"
                   }
                 },
-                "required": [
-                  "id",
-                  "applicant"
-                ]
+                "required": ["id", "applicant"]
               },
               "examples": {}
             }
@@ -2199,18 +2079,14 @@
                           "$ref": "#/components/schemas/User"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     },
                     "message": {
                       "type": "string",
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2223,9 +2099,7 @@
         "summary": "获取申请列表",
         "deprecated": false,
         "description": "",
-        "tags": [
-          "管理商家申请"
-        ],
+        "tags": ["管理商家申请"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2252,9 +2126,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2269,9 +2141,7 @@
         "summary": "获取申请详细",
         "deprecated": false,
         "description": "获取单个商家申请",
-        "tags": [
-          "管理商家申请"
-        ],
+        "tags": ["管理商家申请"],
         "parameters": [
           {
             "name": "id",
@@ -2306,9 +2176,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2321,9 +2189,7 @@
         "summary": "审批商家申请 ",
         "deprecated": false,
         "description": "管理员审批商家申请",
-        "tags": [
-          "管理商家申请"
-        ],
+        "tags": ["管理商家申请"],
         "parameters": [
           {
             "name": "id",
@@ -2378,10 +2244,7 @@
                     "$ref": "#/components/schemas/User"
                   }
                 },
-                "required": [
-                  "applicationState",
-                  "id"
-                ]
+                "required": ["applicationState", "id"]
               },
               "examples": {}
             }
@@ -2441,19 +2304,14 @@
                           "$ref": "#/components/schemas/User"
                         }
                       },
-                      "required": [
-                        "applicationState",
-                        "id"
-                      ]
+                      "required": ["applicationState", "id"]
                     },
                     "message": {
                       "type": "string",
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2468,9 +2326,7 @@
         "summary": "获取个人商家申请",
         "deprecated": false,
         "description": "获取个人商家申请列表",
-        "tags": [
-          "管理商家申请"
-        ],
+        "tags": ["管理商家申请"],
         "parameters": [],
         "responses": {
           "200": {
@@ -2511,9 +2367,7 @@
         "summary": "添加评价",
         "deprecated": false,
         "description": "用户评价订单",
-        "tags": [
-          "管理评价"
-        ],
+        "tags": ["管理评价"],
         "parameters": [
           {
             "name": "orderId",
@@ -2575,12 +2429,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "stars",
-                  "id",
-                  "content",
-                  "anonymous"
-                ]
+                "required": ["stars", "id", "content", "anonymous"]
               },
               "examples": {}
             }
@@ -2608,9 +2457,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2623,9 +2470,7 @@
         "summary": "获取订单评价 ",
         "deprecated": false,
         "description": "获取指定订单评价",
-        "tags": [
-          "管理评价"
-        ],
+        "tags": ["管理评价"],
         "parameters": [
           {
             "name": "orderId",
@@ -2670,9 +2515,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2687,9 +2530,7 @@
         "summary": "修改评价 ",
         "deprecated": false,
         "description": "用户修改评价（仅能修改stars, content和anonymous）",
-        "tags": [
-          "管理评价"
-        ],
+        "tags": ["管理评价"],
         "parameters": [
           {
             "name": "reviewId",
@@ -2778,9 +2619,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2793,9 +2632,7 @@
         "summary": "删除评价",
         "deprecated": false,
         "description": "用户或管理员删除评价",
-        "tags": [
-          "管理评价"
-        ],
+        "tags": ["管理评价"],
         "parameters": [
           {
             "name": "reviewId",
@@ -2854,9 +2691,7 @@
         "summary": "获取当前用户所有订单评价",
         "deprecated": false,
         "description": "获取当前用户所有订单评价·",
-        "tags": [
-          "管理评价"
-        ],
+        "tags": ["管理评价"],
         "parameters": [],
         "requestBody": {
           "content": {
@@ -2896,9 +2731,7 @@
                       "nullable": true
                     }
                   },
-                  "required": [
-                    "data"
-                  ]
+                  "required": ["data"]
                 }
               }
             },
@@ -2913,9 +2746,7 @@
         "summary": "获取店铺全部订单评价",
         "deprecated": false,
         "description": "获取店铺全部订单评价，若用户设置匿名，则order, customer, creator置null",
-        "tags": [
-          "管理评价"
-        ],
+        "tags": ["管理评价"],
         "parameters": [
           {
             "name": "businessId",
@@ -3095,15 +2926,10 @@
             "format": "int32"
           }
         },
-        "required": [
-          "business",
-          "id"
-        ]
+        "required": ["business", "id"]
       },
       "Authority": {
-        "required": [
-          "name"
-        ],
+        "required": ["name"],
         "type": "object",
         "properties": {
           "name": {
@@ -3166,9 +2992,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id"
-        ]
+        "required": ["id"]
       },
       "Review": {
         "type": "object",
@@ -3216,15 +3040,10 @@
             "type": "string"
           }
         },
-        "required": [
-          "stars",
-          "id"
-        ]
+        "required": ["stars", "id"]
       },
       "User": {
-        "required": [
-          "username"
-        ],
+        "required": ["username"],
         "type": "object",
         "properties": {
           "id": {
@@ -3283,9 +3102,7 @@
         }
       },
       "Person": {
-        "required": [
-          "username"
-        ],
+        "required": ["username"],
         "type": "object",
         "properties": {
           "id": {
@@ -3350,10 +3167,7 @@
         }
       },
       "LoginDto": {
-        "required": [
-          "password",
-          "username"
-        ],
+        "required": ["password", "username"],
         "type": "object",
         "properties": {
           "username": {
@@ -3771,10 +3585,7 @@
             "$ref": "#/components/schemas/User"
           }
         },
-        "required": [
-          "id",
-          "applicant"
-        ]
+        "required": ["id", "applicant"]
       }
     },
     "securitySchemes": {

@@ -1,126 +1,114 @@
 package cn.edu.tju.core.model;
 
-
 import java.io.Serializable;
 
 public class HttpResult<T> implements Serializable {
 
-    /**
-     * 是否响应成功
-     */
-    private Boolean success;
-    /**
-     * 响应状态码
-     */
-    private String code;
-    /**
-     * 响应数据
-     */
-    private T data;
-    /**
-     * 错误信息
-     */
-    private String message;
+  /** 是否响应成功 */
+  private Boolean success;
 
-    // 构造器开始
+  /** 响应状态码 */
+  private String code;
 
-    /**
-     * 无参构造器(构造器私有，外部不可以直接创建)
-     */
-    private HttpResult() {
-        this.code = ResultCodeEnum.SUCCESS.getCode();
-        this.success = true;
-    }
+  /** 响应数据 */
+  private T data;
 
-    /**
-     * 有参构造器
-     */
-    private HttpResult(T obj) {
-        this.code = ResultCodeEnum.SUCCESS.getCode();
-        this.data = obj;
-        this.success = true;
-    }
+  /** 错误信息 */
+  private String message;
 
-    /**
-     * 有参构造器
-     */
-    private HttpResult(ResultCodeEnum resultCode) {
-        this.success = false;
-        this.code = resultCode.getCode();
-        this.message = resultCode.getMessage();
-    }
+  // 构造器开始
 
-    private HttpResult(ResultCodeEnum resultCode, String message) {
-        this.success = false;
-        this.code = resultCode.getCode();
-        this.message = message;
-    }
-    // 构造器结束
+  /** 无参构造器(构造器私有，外部不可以直接创建) */
+  private HttpResult() {
+    this.code = ResultCodeEnum.SUCCESS.getCode();
+    this.success = true;
+  }
 
-    /**
-     * 通用返回成功（没有返回结果）
-     */
-    public static <T> HttpResult<T> success() {
-        return new HttpResult<>();
-    }
+  /** 有参构造器 */
+  private HttpResult(T obj) {
+    this.code = ResultCodeEnum.SUCCESS.getCode();
+    this.data = obj;
+    this.success = true;
+  }
 
-    /**
-     * 返回成功（有返回结果）
-     */
-    public static <T> HttpResult<T> success(T data) {
-        return new HttpResult<>(data);
-    }
+  /** 有参构造器 */
+  private HttpResult(ResultCodeEnum resultCode) {
+    this.success = false;
+    this.code = resultCode.getCode();
+    this.message = resultCode.getMessage();
+  }
 
-    /**
-     * 通用返回失败
-     */
-    public static <T> HttpResult<T> failure(ResultCodeEnum resultCode) {
-        return new HttpResult<>(resultCode);
-    }
+  private HttpResult(ResultCodeEnum resultCode, String message) {
+    this.success = false;
+    this.code = resultCode.getCode();
+    this.message = message;
+  }
 
-    public static <T> HttpResult<T> failure(ResultCodeEnum resultCode, String message) {
-        return new HttpResult<>(resultCode, message);
-    }
+  // 构造器结束
 
-    public Boolean getSuccess() {
-        return success;
-    }
+  /** 通用返回成功（没有返回结果） */
+  public static <T> HttpResult<T> success() {
+    return new HttpResult<>();
+  }
 
-    public void setSuccess(Boolean success) {
-        this.success = success;
-    }
+  /** 返回成功（有返回结果） */
+  public static <T> HttpResult<T> success(T data) {
+    return new HttpResult<>(data);
+  }
 
-    public String getCode() {
-        return code;
-    }
+  /** 通用返回失败 */
+  public static <T> HttpResult<T> failure(ResultCodeEnum resultCode) {
+    return new HttpResult<>(resultCode);
+  }
 
-    public void setCode(String code) {
-        this.code = code;
-    }
+  public static <T> HttpResult<T> failure(ResultCodeEnum resultCode, String message) {
+    return new HttpResult<>(resultCode, message);
+  }
 
-    public T getData() {
-        return data;
-    }
+  public Boolean getSuccess() {
+    return success;
+  }
 
-    public void setData(T data) {
-        this.data = data;
-    }
+  public void setSuccess(Boolean success) {
+    this.success = success;
+  }
 
-    public String getMessage() {
-        return message;
-    }
+  public String getCode() {
+    return code;
+  }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
+  public void setCode(String code) {
+    this.code = code;
+  }
 
-    @Override
-    public String toString() {
-        return "HttpResult{" +
-                "success=" + success +
-                ", code=" + code +
-                ", data=" + data +
-                ", message='" + message + '\'' +
-                '}';
-    }
+  public T getData() {
+    return data;
+  }
+
+  public void setData(T data) {
+    this.data = data;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
+
+  @Override
+  public String toString() {
+    return "HttpResult{"
+        + "success="
+        + success
+        + ", code="
+        + code
+        + ", data="
+        + data
+        + ", message='"
+        + message
+        + '\''
+        + '}';
+  }
 }

@@ -1,5 +1,5 @@
-import request from '../utils/request';
-import type { Review, HttpResult, HttpResultEmpty } from './types';
+import request from "../utils/request";
+import type { Review, HttpResult, HttpResultEmpty } from "./types";
 
 /**
  * @description Adds a review for a specific order.
@@ -8,7 +8,10 @@ import type { Review, HttpResult, HttpResultEmpty } from './types';
  * @returns {Promise<HttpResult<Review>>}
  * @see {@link openapi.json} - operationId: "addReview"
  */
-export const addReview = (orderId: number, data: Partial<Review>): Promise<HttpResult<Review>> => {
+export const addReview = (
+  orderId: number,
+  data: Partial<Review>,
+): Promise<HttpResult<Review>> => {
   return request.post(`/reviews/order/${orderId}`, data);
 };
 
@@ -18,7 +21,9 @@ export const addReview = (orderId: number, data: Partial<Review>): Promise<HttpR
  * @returns {Promise<HttpResult<Review>>}
  * @see {@link openapi.json} - operationId: "getOrderReview"
  */
-export const getOrderReview = (orderId: number): Promise<HttpResult<Review>> => {
+export const getOrderReview = (
+  orderId: number,
+): Promise<HttpResult<Review>> => {
   return request.get(`/reviews/order/${orderId}`);
 };
 
@@ -29,7 +34,10 @@ export const getOrderReview = (orderId: number): Promise<HttpResult<Review>> => 
  * @returns {Promise<HttpResult<Review>>}
  * @see {@link openapi.json} - operationId: "updateReview"
  */
-export const updateReview = (reviewId: number, data: Partial<Review>): Promise<HttpResult<Review>> => {
+export const updateReview = (
+  reviewId: number,
+  data: Partial<Review>,
+): Promise<HttpResult<Review>> => {
   return request.patch(`/reviews/${reviewId}`, data);
 };
 
@@ -49,7 +57,7 @@ export const deleteReview = (reviewId: number): Promise<HttpResultEmpty> => {
  * @see {@link openapi.json} - operationId: "getMyReviews"
  */
 export const getMyReviews = (): Promise<HttpResult<Review[]>> => {
-  return request.get('/reviews/my');
+  return request.get("/reviews/my");
 };
 
 /**
@@ -58,6 +66,8 @@ export const getMyReviews = (): Promise<HttpResult<Review[]>> => {
  * @returns {Promise<HttpResult<Review[]>>}
  * @see {@link openapi.json} - operationId: "getBusinessReviews"
  */
-export const getBusinessReviews = (businessId: number): Promise<HttpResult<Review[]>> => {
+export const getBusinessReviews = (
+  businessId: number,
+): Promise<HttpResult<Review[]>> => {
   return request.get(`/reviews/business/${businessId}`);
 };

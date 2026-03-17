@@ -7,436 +7,449 @@ import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.exception.PointsException;
 import cn.edu.tju.elm.model.BO.*;
-import cn.edu.tju.elm.repository.PrivateVoucherRepository;
 import cn.edu.tju.elm.model.BO.Wallet;
+import cn.edu.tju.elm.repository.PrivateVoucherRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.*;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
 import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
-import cn.edu.tju.elm.constant.TransactionType;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/orders")
 @Tag(name = "管理订单", description = "提供对订单的增删改查功能")
 public class OrderController {
-    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
-    private final UserService userService;
-    private final OrderService orderService;
-    private final BusinessService businessService;
-    private final AddressService addressService;
-    private final CartItemService cartItemService;
-    private final OrderDetailetService orderDetailetService;
-    private final PointsService pointsService;
-    private final PrivateVoucherRepository privateVoucherRepository;
-    private final PrivateVoucherService privateVoucherService;
-    private final InternalServiceClient internalServiceClient;
-    private final WalletRepository walletRepository;
-    private final WalletService walletService;
-    private final TransactionService transactionService;
+  private static final Logger log = LoggerFactory.getLogger(OrderController.class);
+  private final UserService userService;
+  private final OrderService orderService;
+  private final BusinessService businessService;
+  private final AddressService addressService;
+  private final CartItemService cartItemService;
+  private final OrderDetailetService orderDetailetService;
+  private final PointsService pointsService;
+  private final PrivateVoucherRepository privateVoucherRepository;
+  private final PrivateVoucherService privateVoucherService;
+  private final InternalServiceClient internalServiceClient;
+  private final WalletRepository walletRepository;
+  private final WalletService walletService;
+  private final TransactionService transactionService;
 
-    public OrderController(UserService userService, OrderService orderService, BusinessService businessService,
-                           AddressService addressService, CartItemService cartItemService, OrderDetailetService orderDetailetService,
-                           PointsService pointsService, PrivateVoucherRepository privateVoucherRepository, 
-                           PrivateVoucherService privateVoucherService, InternalServiceClient internalServiceClient,
-                           WalletRepository walletRepository, WalletService walletService, TransactionService transactionService) {
-        this.userService = userService;
-        this.orderService = orderService;
-        this.businessService = businessService;
-        this.addressService = addressService;
-        this.cartItemService = cartItemService;
-        this.orderDetailetService = orderDetailetService;
-        this.pointsService = pointsService;
-        this.privateVoucherRepository = privateVoucherRepository;
-        this.privateVoucherService = privateVoucherService;
-        this.internalServiceClient = internalServiceClient;
-        this.walletRepository = walletRepository;
-        this.walletService = walletService;
-        this.transactionService = transactionService;
-    }
+  public OrderController(
+      UserService userService,
+      OrderService orderService,
+      BusinessService businessService,
+      AddressService addressService,
+      CartItemService cartItemService,
+      OrderDetailetService orderDetailetService,
+      PointsService pointsService,
+      PrivateVoucherRepository privateVoucherRepository,
+      PrivateVoucherService privateVoucherService,
+      InternalServiceClient internalServiceClient,
+      WalletRepository walletRepository,
+      WalletService walletService,
+      TransactionService transactionService) {
+    this.userService = userService;
+    this.orderService = orderService;
+    this.businessService = businessService;
+    this.addressService = addressService;
+    this.cartItemService = cartItemService;
+    this.orderDetailetService = orderDetailetService;
+    this.pointsService = pointsService;
+    this.privateVoucherRepository = privateVoucherRepository;
+    this.privateVoucherService = privateVoucherService;
+    this.internalServiceClient = internalServiceClient;
+    this.walletRepository = walletRepository;
+    this.walletService = walletService;
+    this.transactionService = transactionService;
+  }
 
-    @PostMapping(value = "")
-    @Operation(summary = "创建订单", description = "顾客创建新订单，支持优惠券、积分和钱包支付")
-    public HttpResult<Order> addOrders(
-            @Parameter(description = "订单信息", required = true) @RequestBody Order order) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
+  @PostMapping(value = "")
+  @Operation(summary = "创建订单", description = "顾客创建新订单，支持优惠券、积分和钱包支付")
+  public HttpResult<Order> addOrders(
+      @Parameter(description = "订单信息", required = true) @RequestBody Order order) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
 
-        if (order == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
-        if (order.getBusiness() == null || order.getBusiness().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
-        if (order.getDeliveryAddress() == null || order.getDeliveryAddress().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress.Id CANT BE NULL");
+    if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
+    if (order.getBusiness() == null || order.getBusiness().getId() == null)
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
+    if (order.getDeliveryAddress() == null || order.getDeliveryAddress().getId() == null)
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress.Id CANT BE NULL");
 
-        Business business = businessService.getBusinessById(order.getBusiness().getId());
-        if (business == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-        DeliveryAddress address = addressService.getAddressById(order.getDeliveryAddress().getId());
-        if (address == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
+    Business business = businessService.getBusinessById(order.getBusiness().getId());
+    if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+    DeliveryAddress address = addressService.getAddressById(order.getDeliveryAddress().getId());
+    if (address == null)
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
 
-        List<Cart> cartList = cartItemService.getCart(business.getId(), me.getId());
-        if (cartList.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
+    List<Cart> cartList = cartItemService.getCart(business.getId(), me.getId());
+    if (cartList.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
-        if (me.equals(address.getCustomer())) {
-            BigDecimal totalPrice = new BigDecimal(0);
-            for (Cart cart : cartList) {
-                BigDecimal quantity = new BigDecimal(cart.getQuantity());
-                totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
+    if (me.equals(address.getCustomer())) {
+      BigDecimal totalPrice = new BigDecimal(0);
+      for (Cart cart : cartList) {
+        BigDecimal quantity = new BigDecimal(cart.getQuantity());
+        totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
+      }
+      if (business.getDeliveryPrice() != null)
+        totalPrice = totalPrice.add(business.getDeliveryPrice());
+      if (business.getStartPrice() != null && totalPrice.compareTo(business.getStartPrice()) < 0)
+        return HttpResult.failure(
+            ResultCodeEnum.SERVER_ERROR, "Order.TotalPrice IS LESS THAN BUSINESS START PRICE");
+
+      // Handle voucher discount
+      BigDecimal voucherDiscount = BigDecimal.ZERO;
+      PrivateVoucher usedVoucher = null;
+      if (order.getUsedVoucher() != null && order.getUsedVoucher().getId() != null) {
+        Optional<PrivateVoucher> voucherOpt =
+            privateVoucherRepository.findById(order.getUsedVoucher().getId());
+        if (voucherOpt.isPresent()) {
+          usedVoucher = voucherOpt.get();
+          // Validate voucher ownership and validity
+          if (!usedVoucher.getWallet().getOwner().equals(me)) {
+            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "Voucher does not belong to you");
+          }
+          if (usedVoucher.getDeleted() != null && usedVoucher.getDeleted()) {
+            return HttpResult.failure(
+                ResultCodeEnum.SERVER_ERROR, "Voucher has been used or expired");
+          }
+          if (usedVoucher.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Voucher has expired");
+          }
+          // Check if voucher threshold is met
+          if (usedVoucher.getPublicVoucher() != null) {
+            BigDecimal threshold = usedVoucher.getPublicVoucher().getThreshold();
+            if (threshold != null && totalPrice.compareTo(threshold) < 0) {
+              return HttpResult.failure(
+                  ResultCodeEnum.SERVER_ERROR, "Order total does not meet voucher threshold");
             }
-            if (business.getDeliveryPrice() != null)
-                totalPrice = totalPrice.add(business.getDeliveryPrice());
-            if (business.getStartPrice() != null &&
-                    totalPrice.compareTo(business.getStartPrice()) < 0)
-                return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order.TotalPrice IS LESS THAN BUSINESS START PRICE");
+          }
+          voucherDiscount = usedVoucher.getFaceValue();
+          if (voucherDiscount.compareTo(totalPrice) > 0) {
+            voucherDiscount = totalPrice; // Voucher cannot exceed order total
+          }
+        }
+      }
 
-            // Handle voucher discount
-            BigDecimal voucherDiscount = BigDecimal.ZERO;
-            PrivateVoucher usedVoucher = null;
-            if (order.getUsedVoucher() != null && order.getUsedVoucher().getId() != null) {
-                Optional<PrivateVoucher> voucherOpt = privateVoucherRepository.findById(order.getUsedVoucher().getId());
-                if (voucherOpt.isPresent()) {
-                    usedVoucher = voucherOpt.get();
-                    // Validate voucher ownership and validity
-                    if (!usedVoucher.getWallet().getOwner().equals(me)) {
-                        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "Voucher does not belong to you");
-                    }
-                    if (usedVoucher.getDeleted() != null && usedVoucher.getDeleted()) {
-                        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Voucher has been used or expired");
-                    }
-                    if (usedVoucher.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-                        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Voucher has expired");
-                    }
-                    // Check if voucher threshold is met
-                    if (usedVoucher.getPublicVoucher() != null) {
-                        BigDecimal threshold = usedVoucher.getPublicVoucher().getThreshold();
-                        if (threshold != null && totalPrice.compareTo(threshold) < 0) {
-                            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order total does not meet voucher threshold");
-                        }
-                    }
-                    voucherDiscount = usedVoucher.getFaceValue();
-                    if (voucherDiscount.compareTo(totalPrice) > 0) {
-                        voucherDiscount = totalPrice; // Voucher cannot exceed order total
-                    }
-                }
+      // Handle points discount
+      BigDecimal pointsDiscount = BigDecimal.ZERO;
+      Integer pointsUsed = 0;
+      if (order.getPointsUsed() != null && order.getPointsUsed() > 0) {
+        pointsUsed = order.getPointsUsed();
+        pointsDiscount =
+            new BigDecimal(pointsUsed)
+                .divide(new BigDecimal(100), 2, java.math.RoundingMode.HALF_UP);
+
+        // Validate points
+        BigDecimal maxPointsDiscount = totalPrice.subtract(voucherDiscount);
+        if (pointsDiscount.compareTo(maxPointsDiscount) > 0) {
+          return HttpResult.failure(
+              ResultCodeEnum.SERVER_ERROR, "Points discount exceeds remaining order total");
+        }
+      }
+
+      // Handle wallet payment
+      BigDecimal walletPaid = BigDecimal.ZERO;
+      Wallet userWallet = null;
+      if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
+        walletPaid = order.getWalletPaid();
+
+        // Get or create user's wallet
+        Optional<Wallet> walletOpt = walletRepository.findByOwnerId(me.getId());
+        if (walletOpt.isEmpty()) {
+          try {
+            walletService.createWallet(me);
+            walletOpt = walletRepository.findByOwnerId(me.getId());
+            if (walletOpt.isEmpty()) {
+              return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create wallet");
             }
+          } catch (Exception e) {
+            log.error("Failed to create wallet: {}", e.getMessage());
+            return HttpResult.failure(
+                ResultCodeEnum.SERVER_ERROR, "Failed to create wallet: " + e.getMessage());
+          }
+        }
+        userWallet = walletOpt.get();
 
-            // Handle points discount
-            BigDecimal pointsDiscount = BigDecimal.ZERO;
-            Integer pointsUsed = 0;
-            if (order.getPointsUsed() != null && order.getPointsUsed() > 0) {
-                pointsUsed = order.getPointsUsed();
-                pointsDiscount = new BigDecimal(pointsUsed).divide(new BigDecimal(100), 2, java.math.RoundingMode.HALF_UP);
-                
-                // Validate points
-                BigDecimal maxPointsDiscount = totalPrice.subtract(voucherDiscount);
-                if (pointsDiscount.compareTo(maxPointsDiscount) > 0) {
-                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Points discount exceeds remaining order total");
-                }
-            }
-
-            // Handle wallet payment
-            BigDecimal walletPaid = BigDecimal.ZERO;
-            Wallet userWallet = null;
-            if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
-                walletPaid = order.getWalletPaid();
-                
-                // Get or create user's wallet
-                Optional<Wallet> walletOpt = walletRepository.findByOwnerId(me.getId());
-                if (walletOpt.isEmpty()) {
-                    try {
-                        walletService.createWallet(me);
-                        walletOpt = walletRepository.findByOwnerId(me.getId());
-                        if (walletOpt.isEmpty()) {
-                            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create wallet");
-                        }
-                    } catch (Exception e) {
-                        log.error("Failed to create wallet: {}", e.getMessage());
-                        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create wallet: " + e.getMessage());
-                    }
-                }
-                userWallet = walletOpt.get();
-                
-                // Validate wallet paid amount
-                BigDecimal maxWalletPaid = totalPrice.subtract(voucherDiscount).subtract(pointsDiscount);
-                if (walletPaid.compareTo(maxWalletPaid) > 0) {
-                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Wallet payment exceeds remaining order total");
-                }
-                
-                // Check wallet balance
-                if (userWallet.getBalance().compareTo(walletPaid) < 0) {
-                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Insufficient wallet balance. Current balance: " + userWallet.getBalance() + ", Required: " + walletPaid);
-                }
-            }
-
-            // Calculate final price (amount to be paid after wallet deduction)
-            BigDecimal finalPrice = totalPrice.subtract(voucherDiscount).subtract(pointsDiscount).subtract(walletPaid);
-            if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
-                finalPrice = BigDecimal.ZERO;
-            }
-
-            EntityUtils.setNewEntity(order);
-            // orderTotal should store the original order total (items + delivery)
-            // NOT the final price after wallet payment
-            // Wallet payment is tracked separately in walletPaid field
-            order.setOrderTotal(totalPrice);
-            order.setOrderState(OrderState.PAID);
-            order.setOrderDate(order.getCreateTime());
-            order.setBusiness(business);
-            order.setCustomer(me);
-            order.setDeliveryAddress(address);
-            order.setUsedVoucher(usedVoucher);
-            order.setVoucherDiscount(voucherDiscount);
-            order.setPointsUsed(pointsUsed);
-            order.setPointsDiscount(pointsDiscount);
-            order.setWalletPaid(walletPaid);
-            
-            // Redeem voucher if used
-            if (usedVoucher != null) {
-                try {
-                    privateVoucherService.redeemPrivateVoucher(usedVoucher.getId());
-                } catch (Exception e) {
-                    log.error("Failed to redeem voucher: {}", e.getMessage());
-                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to redeem voucher: " + e.getMessage());
-                }
-            }
-
-            // Deduct wallet balance if used
-            // Note: We don't create a Transaction record here because:
-            // 1. Transaction system is for wallet operations (top-up, withdraw, wallet-to-wallet)
-            // 2. Order payments are tracked in Order.walletPaid field
-            // 3. Creating a transaction would cause double deduction
-            if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
-                if (!userWallet.decBalance(walletPaid)) {
-                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to deduct wallet balance");
-                }
-                EntityUtils.updateEntity(userWallet);
-                walletRepository.save(userWallet);
-            }
-
-            // Deduct points if used
-            if (pointsUsed > 0) {
-                try {
-                    String tempOrderId = "TEMP_" + System.currentTimeMillis();
-                    pointsService.freezePoints(me.getId(), pointsUsed, tempOrderId);
-                    orderService.addOrder(order);
-                    pointsService.deductPoints(me.getId(), tempOrderId, order.getId().toString());
-                } catch (PointsException e) {
-                    log.error("Failed to deduct points: {}", e.getMessage());
-                    // Rollback wallet deduction if points deduction failed
-                    if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
-                        userWallet.addBalance(walletPaid);
-                        EntityUtils.updateEntity(userWallet);
-                        walletRepository.save(userWallet);
-                    }
-                    return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to deduct points: " + e.getMessage());
-                }
-            } else {
-                orderService.addOrder(order);
-            }
-
-            for (Cart cart : cartList) {
-                cartItemService.deleteCart(cart);
-
-                OrderDetailet orderDetailet = new OrderDetailet();
-                EntityUtils.setNewEntity(orderDetailet);
-                orderDetailet.setOrder(order);
-                orderDetailet.setFood(cart.getFood());
-                orderDetailet.setQuantity(cart.getQuantity());
-                orderDetailetService.addOrderDetailet(orderDetailet);
-            }
-            return HttpResult.success(order);
+        // Validate wallet paid amount
+        BigDecimal maxWalletPaid = totalPrice.subtract(voucherDiscount).subtract(pointsDiscount);
+        if (walletPaid.compareTo(maxWalletPaid) > 0) {
+          return HttpResult.failure(
+              ResultCodeEnum.SERVER_ERROR, "Wallet payment exceeds remaining order total");
         }
 
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
-
-    @GetMapping("/{id}")
-    @Operation(summary = "根据ID获取订单", description = "通过订单ID查询订单详细信息")
-    public HttpResult<Order> getOrderById(
-            @Parameter(description = "订单ID", required = true) @PathVariable Long id) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        Order order = orderService.getOrderById(id);
-        if (order == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
-
-        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-        if (isAdmin || me.equals(order.getCustomer()))
-            return HttpResult.success(order);
-
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
-
-    @GetMapping("")
-    @Operation(summary = "根据用户ID获取订单列表", description = "查询指定用户的所有订单")
-    public HttpResult<List<Order>> listOrdersByUserId(
-            @Parameter(description = "用户ID", required = true) @RequestParam Long userId) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        User user = userService.getUserById(userId);
-        if (user == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
-
-        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-        if (isAdmin || me.equals(user))
-            return HttpResult.success(orderService.getOrdersByCustomerId(userId));
-
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
-
-    @PatchMapping("")
-    @Operation(summary = "更新订单状态", description = "更新订单状态，订单完成时自动发放积分")
-    public HttpResult<Order> updateOrderStatus(
-            @Parameter(description = "包含订单ID和新状态的订单对象", required = true) @RequestBody Order order) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        if (order == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
-        if (order.getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.Id CANT BE NULL");
-
-        Order newOrder = orderService.getOrderById(order.getId());
-        if (newOrder == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
-        if (order.getOrderState() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.OrderState CANT BE NULL");
-        Integer orderState = order.getOrderState();
-        if (orderState == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OrderState CANT BE NULL");
-        if (order.getOrderState().equals(OrderState.CANCELED) ||
-                !OrderState.isValidOrderState(orderState))
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
-
-        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-        if (isAdmin || (isBusiness && me.equals(newOrder.getBusiness().getBusinessOwner()))
-                || me.equals(newOrder.getCustomer())) {
-            Integer oldOrderState = newOrder.getOrderState();
-            newOrder.setOrderState(orderState);
-            EntityUtils.updateEntity(newOrder);
-            orderService.updateOrder(newOrder);
-            
-            // 订单完成时发放积分
-            if (orderState.equals(OrderState.COMPLETE) && !oldOrderState.equals(OrderState.COMPLETE)) {
-                try {
-                    // 计算积分基数：订单总金额 - 优惠券折扣 - 积分抵扣
-                    // 不扣除钱包支付，因为钱包里的钱也是用户的钱
-                    BigDecimal pointsBase = newOrder.getOrderTotal() != null ? newOrder.getOrderTotal() : BigDecimal.ZERO;
-                    if (newOrder.getVoucherDiscount() != null) {
-                        pointsBase = pointsBase.subtract(newOrder.getVoucherDiscount());
-                    }
-                    if (newOrder.getPointsDiscount() != null) {
-                        pointsBase = pointsBase.subtract(newOrder.getPointsDiscount());
-                    }
-                    if (pointsBase.compareTo(BigDecimal.ZERO) < 0) {
-                        pointsBase = BigDecimal.ZERO;
-                    }
-                    
-                    Double orderAmount = pointsBase.doubleValue();
-                    internalServiceClient.notifyOrderSuccess(
-                        newOrder.getCustomer().getId(),
-                        newOrder.getId().toString(),
-                        orderAmount,
-                        newOrder.getOrderDate() != null ? newOrder.getOrderDate().toString() : null,
-                        "订单完成"
-                    );
-                } catch (Exception e) {
-                    log.error("Failed to notify order success for points: {}", e.getMessage());
-                    // 不影响订单状态更新
-                }
-            }
-            
-            return HttpResult.success(newOrder);
+        // Check wallet balance
+        if (userWallet.getBalance().compareTo(walletPaid) < 0) {
+          return HttpResult.failure(
+              ResultCodeEnum.SERVER_ERROR,
+              "Insufficient wallet balance. Current balance: "
+                  + userWallet.getBalance()
+                  + ", Required: "
+                  + walletPaid);
         }
+      }
 
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
+      // Calculate final price (amount to be paid after wallet deduction)
+      BigDecimal finalPrice =
+          totalPrice.subtract(voucherDiscount).subtract(pointsDiscount).subtract(walletPaid);
+      if (finalPrice.compareTo(BigDecimal.ZERO) < 0) {
+        finalPrice = BigDecimal.ZERO;
+      }
 
-    @GetMapping("/user/my")
-    @Operation(summary = "获取我的订单", description = "获取当前用户作为顾客的所有订单")
-    public HttpResult<List<Order>> getMyOrders() {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
+      EntityUtils.setNewEntity(order);
+      // orderTotal should store the original order total (items + delivery)
+      // NOT the final price after wallet payment
+      // Wallet payment is tracked separately in walletPaid field
+      order.setOrderTotal(totalPrice);
+      order.setOrderState(OrderState.PAID);
+      order.setOrderDate(order.getCreateTime());
+      order.setBusiness(business);
+      order.setCustomer(me);
+      order.setDeliveryAddress(address);
+      order.setUsedVoucher(usedVoucher);
+      order.setVoucherDiscount(voucherDiscount);
+      order.setPointsUsed(pointsUsed);
+      order.setPointsDiscount(pointsDiscount);
+      order.setWalletPaid(walletPaid);
 
-        User user = userService.getUserById(me.getId());
-        if (user == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
-
-        return HttpResult.success(orderService.getOrdersByCustomerId(me.getId()));
-    }
-
-    @GetMapping("/merchant/my")
-    @Operation(summary = "获取商家订单", description = "获取当前商家用户的所有店铺订单")
-    public HttpResult<List<Order>> getMerchantOrders() {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-        if (!isBusiness)
-            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-
-        List<Business> myBusinesses = businessService.getBusinessByOwner(me);
-        List<Order> myOrders = new ArrayList<>();
-
-        for (Business business : myBusinesses) {
-            List<Order> orders = orderService.getOrdersByBusinessId(business.getId());
-            myOrders.addAll(orders);
+      // Redeem voucher if used
+      if (usedVoucher != null) {
+        try {
+          privateVoucherService.redeemPrivateVoucher(usedVoucher.getId());
+        } catch (Exception e) {
+          log.error("Failed to redeem voucher: {}", e.getMessage());
+          return HttpResult.failure(
+              ResultCodeEnum.SERVER_ERROR, "Failed to redeem voucher: " + e.getMessage());
         }
+      }
 
-        return HttpResult.success(myOrders);
+      // Deduct wallet balance if used
+      // Note: We don't create a Transaction record here because:
+      // 1. Transaction system is for wallet operations (top-up, withdraw, wallet-to-wallet)
+      // 2. Order payments are tracked in Order.walletPaid field
+      // 3. Creating a transaction would cause double deduction
+      if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
+        if (!userWallet.decBalance(walletPaid)) {
+          return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to deduct wallet balance");
+        }
+        EntityUtils.updateEntity(userWallet);
+        walletRepository.save(userWallet);
+      }
+
+      // Deduct points if used
+      if (pointsUsed > 0) {
+        try {
+          String tempOrderId = "TEMP_" + System.currentTimeMillis();
+          pointsService.freezePoints(me.getId(), pointsUsed, tempOrderId);
+          orderService.addOrder(order);
+          pointsService.deductPoints(me.getId(), tempOrderId, order.getId().toString());
+        } catch (PointsException e) {
+          log.error("Failed to deduct points: {}", e.getMessage());
+          // Rollback wallet deduction if points deduction failed
+          if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
+            userWallet.addBalance(walletPaid);
+            EntityUtils.updateEntity(userWallet);
+            walletRepository.save(userWallet);
+          }
+          return HttpResult.failure(
+              ResultCodeEnum.SERVER_ERROR, "Failed to deduct points: " + e.getMessage());
+        }
+      } else {
+        orderService.addOrder(order);
+      }
+
+      for (Cart cart : cartList) {
+        cartItemService.deleteCart(cart);
+
+        OrderDetailet orderDetailet = new OrderDetailet();
+        EntityUtils.setNewEntity(orderDetailet);
+        orderDetailet.setOrder(order);
+        orderDetailet.setFood(cart.getFood());
+        orderDetailet.setQuantity(cart.getQuantity());
+        orderDetailetService.addOrderDetailet(orderDetailet);
+      }
+      return HttpResult.success(order);
     }
 
-    @GetMapping("/business/{id}")
-    @Operation(summary = "根据店铺ID获取订单", description = "查询指定店铺的所有订单")
-    public HttpResult<List<Order>> getOrdersByBusinessId(
-            @Parameter(description = "店铺ID", required = true) @PathVariable Long id) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
 
-        Business business = businessService.getBusinessById(id);
-        if (business == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+  @GetMapping("/{id}")
+  @Operation(summary = "根据ID获取订单", description = "通过订单ID查询订单详细信息")
+  public HttpResult<Order> getOrderById(
+      @Parameter(description = "订单ID", required = true) @PathVariable Long id) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
 
-        boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-        boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-        if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner())))
-            return HttpResult.success(orderService.getOrdersByBusinessId(business.getId()));
+    Order order = orderService.getOrderById(id);
+    if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
 
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    if (isAdmin || me.equals(order.getCustomer())) return HttpResult.success(order);
+
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
+
+  @GetMapping("")
+  @Operation(summary = "根据用户ID获取订单列表", description = "查询指定用户的所有订单")
+  public HttpResult<List<Order>> listOrdersByUserId(
+      @Parameter(description = "用户ID", required = true) @RequestParam Long userId) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    User user = userService.getUserById(userId);
+    if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    if (isAdmin || me.equals(user))
+      return HttpResult.success(orderService.getOrdersByCustomerId(userId));
+
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
+
+  @PatchMapping("")
+  @Operation(summary = "更新订单状态", description = "更新订单状态，订单完成时自动发放积分")
+  public HttpResult<Order> updateOrderStatus(
+      @Parameter(description = "包含订单ID和新状态的订单对象", required = true) @RequestBody Order order) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
+    if (order.getId() == null)
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.Id CANT BE NULL");
+
+    Order newOrder = orderService.getOrderById(order.getId());
+    if (newOrder == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+    if (order.getOrderState() == null)
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.OrderState CANT BE NULL");
+    Integer orderState = order.getOrderState();
+    if (orderState == null)
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OrderState CANT BE NULL");
+    if (order.getOrderState().equals(OrderState.CANCELED)
+        || !OrderState.isValidOrderState(orderState))
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
+
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+    if (isAdmin
+        || (isBusiness && me.equals(newOrder.getBusiness().getBusinessOwner()))
+        || me.equals(newOrder.getCustomer())) {
+      Integer oldOrderState = newOrder.getOrderState();
+      newOrder.setOrderState(orderState);
+      EntityUtils.updateEntity(newOrder);
+      orderService.updateOrder(newOrder);
+
+      // 订单完成时发放积分
+      if (orderState.equals(OrderState.COMPLETE) && !oldOrderState.equals(OrderState.COMPLETE)) {
+        try {
+          // 计算积分基数：订单总金额 - 优惠券折扣 - 积分抵扣
+          // 不扣除钱包支付，因为钱包里的钱也是用户的钱
+          BigDecimal pointsBase =
+              newOrder.getOrderTotal() != null ? newOrder.getOrderTotal() : BigDecimal.ZERO;
+          if (newOrder.getVoucherDiscount() != null) {
+            pointsBase = pointsBase.subtract(newOrder.getVoucherDiscount());
+          }
+          if (newOrder.getPointsDiscount() != null) {
+            pointsBase = pointsBase.subtract(newOrder.getPointsDiscount());
+          }
+          if (pointsBase.compareTo(BigDecimal.ZERO) < 0) {
+            pointsBase = BigDecimal.ZERO;
+          }
+
+          Double orderAmount = pointsBase.doubleValue();
+          internalServiceClient.notifyOrderSuccess(
+              newOrder.getCustomer().getId(),
+              newOrder.getId().toString(),
+              orderAmount,
+              newOrder.getOrderDate() != null ? newOrder.getOrderDate().toString() : null,
+              "订单完成");
+        } catch (Exception e) {
+          log.error("Failed to notify order success for points: {}", e.getMessage());
+          // 不影响订单状态更新
+        }
+      }
+
+      return HttpResult.success(newOrder);
     }
+
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
+
+  @GetMapping("/user/my")
+  @Operation(summary = "获取我的订单", description = "获取当前用户作为顾客的所有订单")
+  public HttpResult<List<Order>> getMyOrders() {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    User user = userService.getUserById(me.getId());
+    if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+
+    return HttpResult.success(orderService.getOrdersByCustomerId(me.getId()));
+  }
+
+  @GetMapping("/merchant/my")
+  @Operation(summary = "获取商家订单", description = "获取当前商家用户的所有店铺订单")
+  public HttpResult<List<Order>> getMerchantOrders() {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+    if (!isBusiness) return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+
+    List<Business> myBusinesses = businessService.getBusinessByOwner(me);
+    List<Order> myOrders = new ArrayList<>();
+
+    for (Business business : myBusinesses) {
+      List<Order> orders = orderService.getOrdersByBusinessId(business.getId());
+      myOrders.addAll(orders);
+    }
+
+    return HttpResult.success(myOrders);
+  }
+
+  @GetMapping("/business/{id}")
+  @Operation(summary = "根据店铺ID获取订单", description = "查询指定店铺的所有订单")
+  public HttpResult<List<Order>> getOrdersByBusinessId(
+      @Parameter(description = "店铺ID", required = true) @PathVariable Long id) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    Business business = businessService.getBusinessById(id);
+    if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+    if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner())))
+      return HttpResult.success(orderService.getOrdersByBusinessId(business.getId()));
+
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
 }
-

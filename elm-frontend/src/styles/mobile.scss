@@ -46,6 +46,7 @@ body {
 }
 
 // Ensure all links and active router links use the theme color
-a, .router-link-active {
+a,
+.router-link-active {
   color: var(--el-color-primary);
 }

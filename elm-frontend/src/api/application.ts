@@ -1,9 +1,9 @@
-import request from '../utils/request';
+import request from "../utils/request";
 import type {
   BusinessApplication,
   MerchantApplication,
   HttpResult,
-} from './types';
+} from "./types";
 
 // Business Application APIs
 
@@ -13,8 +13,10 @@ import type {
  * @returns {Promise<HttpResult<BusinessApplication>>}
  * @see {@link openapi.json} - operationId: "submitBusinessApplication"
  */
-export const submitBusinessApplication = (data: BusinessApplication): Promise<HttpResult<BusinessApplication>> => {
-  return request.post('/applications/business', data);
+export const submitBusinessApplication = (
+  data: BusinessApplication,
+): Promise<HttpResult<BusinessApplication>> => {
+  return request.post("/applications/business", data);
 };
 
 /**
@@ -22,8 +24,10 @@ export const submitBusinessApplication = (data: BusinessApplication): Promise<Ht
  * @returns {Promise<HttpResult<BusinessApplication[]>>}
  * @see {@link openapi.json} - operationId: "getBusinessApplications"
  */
-export const getBusinessApplications = (): Promise<HttpResult<BusinessApplication[]>> => {
-  return request.get('/applications/business');
+export const getBusinessApplications = (): Promise<
+  HttpResult<BusinessApplication[]>
+> => {
+  return request.get("/applications/business");
 };
 
 /**
@@ -32,7 +36,9 @@ export const getBusinessApplications = (): Promise<HttpResult<BusinessApplicatio
  * @returns {Promise<HttpResult<BusinessApplication>>}
  * @see {@link openapi.json} - operationId: "getBusinessApplicationById"
  */
-export const getBusinessApplicationById = (id: number): Promise<HttpResult<BusinessApplication>> => {
+export const getBusinessApplicationById = (
+  id: number,
+): Promise<HttpResult<BusinessApplication>> => {
   return request.get(`/applications/business/${id}`);
 };
 
@@ -43,7 +49,10 @@ export const getBusinessApplicationById = (id: number): Promise<HttpResult<Busin
  * @returns {Promise<HttpResult<BusinessApplication>>}
  * @see {@link openapi.json} - operationId: "approveBusinessApplication"
  */
-export const approveBusinessApplication = (id: number, data: Partial<BusinessApplication>): Promise<HttpResult<BusinessApplication>> => {
+export const approveBusinessApplication = (
+  id: number,
+  data: Partial<BusinessApplication>,
+): Promise<HttpResult<BusinessApplication>> => {
   return request.patch(`/applications/business/${id}`, data);
 };
 
@@ -52,8 +61,10 @@ export const approveBusinessApplication = (id: number, data: Partial<BusinessApp
  * @returns {Promise<HttpResult<BusinessApplication[]>>}
  * @see {@link openapi.json} - operationId: "getMyBusinessApplications"
  */
-export const getMyBusinessApplications = (): Promise<HttpResult<BusinessApplication[]>> => {
-  return request.get('/applications/business/my');
+export const getMyBusinessApplications = (): Promise<
+  HttpResult<BusinessApplication[]>
+> => {
+  return request.get("/applications/business/my");
 };
 
 // Merchant Application APIs
@@ -64,8 +75,10 @@ export const getMyBusinessApplications = (): Promise<HttpResult<BusinessApplicat
  * @returns {Promise<HttpResult<MerchantApplication>>}
  * @see {@link openapi.json} - operationId: "submitMerchantApplication"
  */
-export const applyToBeMerchant = (applicationData: Partial<MerchantApplication>): Promise<HttpResult<MerchantApplication>> => {
-  return request.post('/applications/merchant', applicationData);
+export const applyToBeMerchant = (
+  applicationData: Partial<MerchantApplication>,
+): Promise<HttpResult<MerchantApplication>> => {
+  return request.post("/applications/merchant", applicationData);
 };
 
 /**
@@ -73,8 +86,10 @@ export const applyToBeMerchant = (applicationData: Partial<MerchantApplication>)
  * @returns {Promise<HttpResult<MerchantApplication[]>>}
  * @see {@link openapi.json} - operationId: "getMerchantApplications"
  */
-export const getMerchantApplications = (): Promise<HttpResult<MerchantApplication[]>> => {
-  return request.get('/applications/merchant');
+export const getMerchantApplications = (): Promise<
+  HttpResult<MerchantApplication[]>
+> => {
+  return request.get("/applications/merchant");
 };
 
 /**
@@ -83,7 +98,9 @@ export const getMerchantApplications = (): Promise<HttpResult<MerchantApplicatio
  * @returns {Promise<HttpResult<MerchantApplication>>}
  * @see {@link openapi.json} - operationId: "getMerchantApplicationById"
  */
-export const getMerchantApplicationById = (id: number): Promise<HttpResult<MerchantApplication>> => {
+export const getMerchantApplicationById = (
+  id: number,
+): Promise<HttpResult<MerchantApplication>> => {
   return request.get(`/applications/merchant/${id}`);
 };
 
@@ -94,7 +111,10 @@ export const getMerchantApplicationById = (id: number): Promise<HttpResult<Merch
  * @returns {Promise<HttpResult<MerchantApplication>>}
  * @see {@link openapi.json} - operationId: "approveMerchantApplication"
  */
-export const approveMerchantApplication = (id: number, data: Partial<MerchantApplication>): Promise<HttpResult<MerchantApplication>> => {
+export const approveMerchantApplication = (
+  id: number,
+  data: Partial<MerchantApplication>,
+): Promise<HttpResult<MerchantApplication>> => {
   return request.patch(`/applications/merchant/${id}`, data);
 };
 
@@ -103,6 +123,8 @@ export const approveMerchantApplication = (id: number, data: Partial<MerchantApp
  * @returns {Promise<HttpResult<MerchantApplication[]>>}
  * @see {@link openapi.json} - operationId: "getMyMerchantApplications"
  */
-export const getMyMerchantApplications = (): Promise<HttpResult<MerchantApplication[]>> => {
-  return request.get('/applications/merchant/my');
+export const getMyMerchantApplications = (): Promise<
+  HttpResult<MerchantApplication[]>
+> => {
+  return request.get("/applications/merchant/my");
 };

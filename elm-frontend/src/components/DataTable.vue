@@ -16,19 +16,20 @@
 </template>
 
 <script setup lang="ts">
-import type { PropType } from 'vue';
+import type { PropType } from "vue";
 
 interface Column {
   prop: string;
   label: string;
   width?: string | number;
   slot?: string;
-  formatter?: (row: any, column: any, cellValue: any, index: number) => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formatter?: (...args: any[]) => string;
 }
 
 defineProps({
   data: {
-    type: Array as PropType<any[]>,
+    type: Array as PropType<unknown[]>,
     required: true,
   },
   columns: {
