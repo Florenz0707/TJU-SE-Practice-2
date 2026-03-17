@@ -23,7 +23,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '../../store/auth';
 import { getOrderById } from '../../api/order';
 import { addReview } from '../../api/review';
 import type { Order } from '../../api/types';
@@ -31,7 +30,6 @@ import { ElMessage } from 'element-plus';
 
 const route = useRoute();
 const router = useRouter();
-const authStore = useAuthStore();
 const order = ref<Order | null>(null);
 const rating = ref(0);
 const comment = ref('');

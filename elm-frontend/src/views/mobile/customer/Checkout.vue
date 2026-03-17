@@ -122,7 +122,6 @@ const selectedVoucherId = ref<number | null>(null);
 const pointsAccount = ref<PointsAccount | null>(null);
 const usePoints = ref(false);
 const pointsToUse = ref(0);
-const tempOrderId = ref<string>('');
 
 const selectedVoucher = computed(() => availableVouchers.value.find(v => v.id === selectedVoucherId.value));
 
