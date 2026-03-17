@@ -8,6 +8,8 @@ import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.service.AddressService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,7 +18,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-@Tag(name = "管理地址", description = "对配送地址的增删改查")
+@Tag(name = "管理地址", description = "提供对配送地址的增删改查功能")
 public class AddressController {
     private final AddressService addressService;
     private final UserService userService;
@@ -27,7 +29,9 @@ public class AddressController {
     }
 
     @PostMapping("/addresses")
-    public HttpResult<DeliveryAddress> addDeliveryAddress(@RequestBody DeliveryAddress address) {
+    @Operation(summary = "添加配送地址", description = "用户添加新的配送地址")
+    public HttpResult<DeliveryAddress> addDeliveryAddress(
+            @Parameter(description = "配送地址信息", required = true) @RequestBody DeliveryAddress address) {
         // 整体流程：Controller -> Service -> Repository
         // Controller负责方法路由和鉴权
         // Service负责数据库数据的再次处理，如比较复杂的排序、去重等
@@ -51,6 +55,7 @@ public class AddressController {
     }
 
     @GetMapping("/addresses")
+    @Operation(summary = "获取我的地址列表", description = "获取当前用户的所有配送地址")
     public HttpResult<List<DeliveryAddress>> getMyAddresses() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
@@ -62,9 +67,10 @@ public class AddressController {
     }
 
     @PutMapping("/addresses/{id}")
+    @Operation(summary = "更新配送地址", description = "完全替换指定配送地址的信息")
     public HttpResult<DeliveryAddress> updateAddress(
-            @PathVariable("id") Long id,
-            @RequestBody DeliveryAddress newAddress) {
+            @Parameter(description = "地址ID", required = true) @PathVariable("id") Long id,
+            @Parameter(description = "新地址信息", required = true) @RequestBody DeliveryAddress newAddress) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -91,7 +97,9 @@ public class AddressController {
     }
 
     @DeleteMapping("/{id}")
-    public HttpResult<String> deleteAddress(@PathVariable("id") Long id) {
+    @Operation(summary = "删除配送地址", description = "软删除指定配送地址")
+    public HttpResult<String> deleteAddress(
+            @Parameter(description = "地址ID", required = true) @PathVariable("id") Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");

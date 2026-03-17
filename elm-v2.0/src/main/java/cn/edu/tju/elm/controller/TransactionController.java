@@ -9,6 +9,9 @@ import cn.edu.tju.elm.model.RECORD.TransactionsRecord;
 import cn.edu.tju.elm.model.VO.TransactionVO;
 import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +20,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/transaction")
+@Tag(name = "管理交易", description = "提供钱包交易的创建和查询功能")
 public class TransactionController {
     private final UserService userService;
     private final WalletService walletService;
@@ -32,8 +36,9 @@ public class TransactionController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "根据ID获取交易", description = "查询指定交易的详细信息")
     public HttpResult<TransactionVO> getTransactionById(
-            @PathVariable("id") Long id) {
+            @Parameter(description = "交易ID", required = true) @PathVariable("id") Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -50,8 +55,9 @@ public class TransactionController {
     }
 
     @GetMapping("/list/{walletId}")
+    @Operation(summary = "根据钱包ID获取交易列表", description = "查询指定钱包的所有交易记录")
     public HttpResult<TransactionsRecord> getTransactionsByWalletId(
-            @PathVariable Long walletId) {
+            @Parameter(description = "钱包ID", required = true) @PathVariable Long walletId) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -75,8 +81,9 @@ public class TransactionController {
     }
 
     @PostMapping("")
+    @Operation(summary = "创建交易", description = "创建充值、提现或转账交易")
     public HttpResult<TransactionVO> createTransaction(
-            @RequestBody TransactionVO transactionVO) {
+            @Parameter(description = "交易信息", required = true) @RequestBody TransactionVO transactionVO) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -123,8 +130,9 @@ public class TransactionController {
     }
 
     @PatchMapping("/finished")
+    @Operation(summary = "完成交易", description = "标记交易为已完成状态")
     public HttpResult<TransactionVO> finishTransaction(
-            @RequestParam Long id) {
+            @Parameter(description = "交易ID", required = true) @RequestParam Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");

@@ -11,6 +11,8 @@ import cn.edu.tju.elm.service.BusinessApplicationService;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +23,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/applications/business")
-@Tag(name = "管理开店申请", description = "对商家提出的开店申请进行增删改查")
+@Tag(name = "管理开店申请", description = "提供商家开店申请的提交、审核和查询功能")
 public class BusinessApplicationController {
     private final UserService userService;
     private final BusinessService businessService;
@@ -35,8 +37,9 @@ public class BusinessApplicationController {
 
 
     @PostMapping("")
+    @Operation(summary = "提交开店申请", description = "商家用户提交新的开店申请")
     public HttpResult<BusinessApplication> addBusinessApplication(
-            @RequestBody BusinessApplication businessApplication) {
+            @Parameter(description = "开店申请信息", required = true) @RequestBody BusinessApplication businessApplication) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -68,12 +71,15 @@ public class BusinessApplicationController {
 
     @GetMapping("")
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "获取所有开店申请", description = "管理员查询所有开店申请列表")
     public HttpResult<List<BusinessApplication>> getBusinessApplications() {
         return HttpResult.success(businessApplicationService.getAllBusinessApplications());
     }
 
     @GetMapping("/{id}")
-    public HttpResult<BusinessApplication> getBusinessApplication(@PathVariable Long id) {
+    @Operation(summary = "根据ID获取开店申请", description = "查询指定开店申请的详细信息")
+    public HttpResult<BusinessApplication> getBusinessApplication(
+            @Parameter(description = "申请ID", required = true) @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -93,9 +99,10 @@ public class BusinessApplicationController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "审核开店申请", description = "管理员审核开店申请，通过后店铺自动上线")
     public HttpResult<BusinessApplication> handleBusinessApplication(
-            @PathVariable Long id,
-            @RequestBody BusinessApplication businessApplication) {
+            @Parameter(description = "申请ID", required = true) @PathVariable Long id,
+            @Parameter(description = "审核结果", required = true) @RequestBody BusinessApplication businessApplication) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -135,6 +142,7 @@ public class BusinessApplicationController {
     }
 
     @GetMapping("/my")
+    @Operation(summary = "获取我的开店申请", description = "商家查询自己提交的所有开店申请")
     public HttpResult<List<BusinessApplication>> getMyBusinessApplication() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())

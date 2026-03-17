@@ -5,6 +5,7 @@ import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.elm.exception.PointsException;
 import cn.edu.tju.elm.service.PointsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/inner/points")
-@Tag(name = "积分内部接口", description = "系统内部调用的积分接口")
+@Tag(name = "积分内部接口", description = "系统内部调用的积分接口，用于订单和评价积分发放")
 public class PointsInnerController {
     private final PointsService pointsService;
 
@@ -24,8 +25,9 @@ public class PointsInnerController {
     }
 
     @PostMapping("/notify/order-success")
-    @Operation(summary = "订单完成（发放积分）", description = "订单系统调用此接口。积分系统内部会查找 channelType=ORDER 的规则，计算积分，创建 PointsRecord 和 PointsBatch")
-    public HttpResult<Integer> notifyOrderSuccess(@RequestBody OrderSuccessRequest request) {
+    @Operation(summary = "订单完成发放积分", description = "订单系统调用此接口，根据订单金额发放积分")
+    public HttpResult<Integer> notifyOrderSuccess(
+            @Parameter(description = "订单成功请求信息", required = true) @RequestBody OrderSuccessRequest request) {
         try {
             Integer points = pointsService.notifyOrderSuccess(
                     request.getUserId().longValue(),
@@ -43,8 +45,9 @@ public class PointsInnerController {
     }
 
     @PostMapping("/notify/review-success")
-    @Operation(summary = "评价完成发放积分", description = "评价发布后调用，发放积分")
-    public HttpResult<Integer> notifyReviewSuccess(@RequestBody ReviewSuccessRequest request) {
+    @Operation(summary = "评价完成发放积分", description = "评价发布后调用，发放评价积分")
+    public HttpResult<Integer> notifyReviewSuccess(
+            @Parameter(description = "评价成功请求信息", required = true) @RequestBody ReviewSuccessRequest request) {
         try {
             Integer points = pointsService.notifyReviewSuccess(
                     request.getUserId().longValue(),
@@ -62,8 +65,9 @@ public class PointsInnerController {
     }
 
     @PostMapping("/trade/freeze")
-    @Operation(summary = "积分冻结（积分抵扣）", description = "用户在确认订单页面选择积分抵扣时调用。系统需按有效期优先原则（FIFO）锁定即将过期的积分")
-    public HttpResult<Map<String, Object>> freezePoints(@RequestBody FreezePointsRequest request) {
+    @Operation(summary = "积分冻结", description = "用户选择积分抵扣时调用，按有效期优先原则冻结积分")
+    public HttpResult<Map<String, Object>> freezePoints(
+            @Parameter(description = "冻结积分请求信息", required = true) @RequestBody FreezePointsRequest request) {
         try {
             Map<String, Object> result = pointsService.freezePoints(
                     request.getUserId().longValue(),
@@ -79,8 +83,9 @@ public class PointsInnerController {
     }
 
     @PostMapping("/trade/deduct")
-    @Operation(summary = "积分扣除", description = "支付成功后调用，将冻结状态转为实际扣除，并生成消费流水记录。")
-    public HttpResult<Boolean> deductPoints(@RequestBody DeductPointsRequest request) {
+    @Operation(summary = "积分扣除", description = "支付成功后调用，将冻结积分转为实际扣除")
+    public HttpResult<Boolean> deductPoints(
+            @Parameter(description = "扣除积分请求信息", required = true) @RequestBody DeductPointsRequest request) {
         try {
             boolean success = pointsService.deductPoints(
                     request.getUserId().longValue(),
@@ -96,8 +101,9 @@ public class PointsInnerController {
     }
 
     @PostMapping("/trade/rollback")
-    @Operation(summary = "积分解冻/回滚", description = "用户未支付/取消订单，或支付失败时调用。将冻结的积分释放回账户。")
-    public HttpResult<Boolean> rollbackPoints(@RequestBody RollbackPointsRequest request) {
+    @Operation(summary = "积分解冻回滚", description = "订单取消或支付失败时调用，释放冻结的积分")
+    public HttpResult<Boolean> rollbackPoints(
+            @Parameter(description = "回滚积分请求信息", required = true) @RequestBody RollbackPointsRequest request) {
         try {
             boolean success = pointsService.rollbackPoints(
                     request.getUserId().longValue(),

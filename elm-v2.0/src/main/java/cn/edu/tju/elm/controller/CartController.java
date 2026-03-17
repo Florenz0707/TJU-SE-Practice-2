@@ -11,6 +11,8 @@ import cn.edu.tju.elm.service.CartItemService;
 import cn.edu.tju.elm.service.FoodService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +21,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-@Tag(name = "管理购物车", description = "对购物车内的商品增删改查")
+@Tag(name = "管理购物车", description = "提供对购物车商品的增删改查功能")
 public class CartController {
     private final UserService userService;
     private final CartItemService cartItemService;
@@ -32,7 +34,9 @@ public class CartController {
     }
 
     @PostMapping("/carts")
-    public HttpResult<Cart> addCartItem(@RequestBody Cart cart) {
+    @Operation(summary = "添加购物车商品", description = "将商品添加到购物车")
+    public HttpResult<Cart> addCartItem(
+            @Parameter(description = "购物车项信息", required = true) @RequestBody Cart cart) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
@@ -60,6 +64,7 @@ public class CartController {
     }
 
     @GetMapping("/carts")
+    @Operation(summary = "获取我的购物车", description = "获取当前用户的所有购物车商品")
     public HttpResult<List<Cart>> getCarts() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -68,7 +73,10 @@ public class CartController {
     }
 
     @PatchMapping("/carts/{id}")
-    public HttpResult<Cart> updateCartItem(@PathVariable("id") Long id, @RequestBody Cart newCart) {
+    @Operation(summary = "更新购物车商品数量", description = "修改购物车中商品的数量")
+    public HttpResult<Cart> updateCartItem(
+            @Parameter(description = "购物车项ID", required = true) @PathVariable("id") Long id,
+            @Parameter(description = "新的购物车信息", required = true) @RequestBody Cart newCart) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
@@ -95,7 +103,9 @@ public class CartController {
     }
 
     @DeleteMapping("/carts/{id}")
-    public HttpResult<String> deleteCartItem(@PathVariable("id") Long id) {
+    @Operation(summary = "删除购物车商品", description = "从购物车中移除指定商品")
+    public HttpResult<String> deleteCartItem(
+            @Parameter(description = "购物车项ID", required = true) @PathVariable("id") Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Authority NOT FOUND");

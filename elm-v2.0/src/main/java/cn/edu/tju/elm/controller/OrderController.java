@@ -18,6 +18,8 @@ import cn.edu.tju.elm.constant.TransactionType;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalServiceClient;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +32,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/orders")
-@Tag(name = "管理订单", description = "对订单进行增删改查")
+@Tag(name = "管理订单", description = "提供对订单的增删改查功能")
 public class OrderController {
     private static final Logger log = LoggerFactory.getLogger(OrderController.class);
     private final UserService userService;
@@ -68,7 +70,9 @@ public class OrderController {
     }
 
     @PostMapping(value = "")
-    public HttpResult<Order> addOrders(@RequestBody Order order) {
+    @Operation(summary = "创建订单", description = "顾客创建新订单，支持优惠券、积分和钱包支付")
+    public HttpResult<Order> addOrders(
+            @Parameter(description = "订单信息", required = true) @RequestBody Order order) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -266,7 +270,9 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public HttpResult<Order> getOrderById(@PathVariable Long id) {
+    @Operation(summary = "根据ID获取订单", description = "通过订单ID查询订单详细信息")
+    public HttpResult<Order> getOrderById(
+            @Parameter(description = "订单ID", required = true) @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -284,7 +290,9 @@ public class OrderController {
     }
 
     @GetMapping("")
-    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
+    @Operation(summary = "根据用户ID获取订单列表", description = "查询指定用户的所有订单")
+    public HttpResult<List<Order>> listOrdersByUserId(
+            @Parameter(description = "用户ID", required = true) @RequestParam Long userId) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -302,7 +310,9 @@ public class OrderController {
     }
 
     @PatchMapping("")
-    public HttpResult<Order> updateOrderStatus(@RequestBody Order order) {
+    @Operation(summary = "更新订单状态", description = "更新订单状态，订单完成时自动发放积分")
+    public HttpResult<Order> updateOrderStatus(
+            @Parameter(description = "包含订单ID和新状态的订单对象", required = true) @RequestBody Order order) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -371,6 +381,7 @@ public class OrderController {
     }
 
     @GetMapping("/user/my")
+    @Operation(summary = "获取我的订单", description = "获取当前用户作为顾客的所有订单")
     public HttpResult<List<Order>> getMyOrders() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
@@ -385,6 +396,7 @@ public class OrderController {
     }
 
     @GetMapping("/merchant/my")
+    @Operation(summary = "获取商家订单", description = "获取当前商家用户的所有店铺订单")
     public HttpResult<List<Order>> getMerchantOrders() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
@@ -407,7 +419,9 @@ public class OrderController {
     }
 
     @GetMapping("/business/{id}")
-    public HttpResult<List<Order>> getOrdersByBusinessId(@PathVariable Long id) {
+    @Operation(summary = "根据店铺ID获取订单", description = "查询指定店铺的所有订单")
+    public HttpResult<List<Order>> getOrdersByBusinessId(
+            @Parameter(description = "店铺ID", required = true) @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");

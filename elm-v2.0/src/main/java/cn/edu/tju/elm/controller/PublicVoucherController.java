@@ -9,6 +9,9 @@ import cn.edu.tju.elm.repository.PrivateVoucherRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.service.serviceInterface.PublicVoucherService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +22,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/publicVoucher")
+@Tag(name = "管理公共优惠券", description = "提供平台优惠券的增删改查功能（管理员）")
 public class PublicVoucherController {
     private final PublicVoucherService publicVoucherService;
     private final UserService userService;
@@ -38,6 +42,7 @@ public class PublicVoucherController {
 
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "获取所有公共优惠券", description = "管理员查询所有平台优惠券")
     public HttpResult<List<PublicVoucherVO>> getAllPublicVouchers() {
         try {
             List<PublicVoucherVO> publicVoucherVOS = publicVoucherService.getPublicVouchers();
@@ -49,8 +54,9 @@ public class PublicVoucherController {
 
     @PostMapping()
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "创建公共优惠券", description = "管理员创建新的平台优惠券")
     public HttpResult<String> createPublicVoucher(
-            @RequestBody PublicVoucherVO publicVoucherVO) {
+            @Parameter(description = "公共优惠券信息", required = true) @RequestBody PublicVoucherVO publicVoucherVO) {
         HttpResult<String> failure = PublicVoucherVO.isValidPublicVoucherVO(publicVoucherVO);
         if (failure != null) return failure;
 
@@ -64,8 +70,9 @@ public class PublicVoucherController {
 
     @PutMapping()
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "更新公共优惠券", description = "管理员更新平台优惠券信息")
     public HttpResult<String> updatePublicVoucher(
-            @RequestBody PublicVoucherVO publicVoucherVO) {
+            @Parameter(description = "公共优惠券信息", required = true) @RequestBody PublicVoucherVO publicVoucherVO) {
         HttpResult<String> failure = PublicVoucherVO.isValidPublicVoucherVO(publicVoucherVO);
         if (failure != null) return failure;
 
@@ -79,8 +86,9 @@ public class PublicVoucherController {
 
     @GetMapping("{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "根据ID获取公共优惠券", description = "管理员查询指定优惠券详情")
     public HttpResult<PublicVoucherVO> getPublicVoucher(
-            @PathVariable Long id) {
+            @Parameter(description = "公共优惠券ID", required = true) @PathVariable Long id) {
         if (id == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ID CANT BE NULL");
 
@@ -94,8 +102,9 @@ public class PublicVoucherController {
 
     @DeleteMapping("{id}")
     @PreAuthorize("hasAuthority('ADMIN')")
+    @Operation(summary = "删除公共优惠券", description = "管理员删除指定优惠券")
     public HttpResult<String> deletePublicVoucher(
-            @PathVariable Long id) {
+            @Parameter(description = "公共优惠券ID", required = true) @PathVariable Long id) {
         if (id == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ID CANT BE NULL");
 
@@ -108,6 +117,7 @@ public class PublicVoucherController {
     }
 
     @GetMapping("/available")
+    @Operation(summary = "获取可领取的优惠券", description = "用户查询可以领取的平台优惠券列表")
     public HttpResult<List<PublicVoucherVO>> getAvailablePublicVouchers() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) {

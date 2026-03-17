@@ -8,6 +8,8 @@ import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +29,9 @@ public class BusinessController {
     }
 
     @GetMapping("/{id}")
-    public HttpResult<Business> getBusiness(@PathVariable("id") Long id) {
+    @Operation(summary = "根据ID获取店铺", description = "通过店铺ID查询店铺详细信息")
+    public HttpResult<Business> getBusiness(
+            @Parameter(description = "店铺ID", required = true) @PathVariable("id") Long id) {
         Business business = businessService.getBusinessById(id);
         if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
         return HttpResult.success(business);
@@ -35,12 +39,15 @@ public class BusinessController {
 
 
     @GetMapping("")
+    @Operation(summary = "获取所有店铺", description = "查询所有店铺列表")
     public HttpResult<List<Business>> getBusinesses() {
         return HttpResult.success(businessService.getBusinesses());
     }
 
     @PostMapping("")
-    public HttpResult<Business> addBusiness(@RequestBody Business business) {
+    @Operation(summary = "添加店铺", description = "商家或管理员添加新店铺")
+    public HttpResult<Business> addBusiness(
+            @Parameter(description = "店铺信息", required = true) @RequestBody Business business) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -72,9 +79,10 @@ public class BusinessController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "替换店铺", description = "完全替换指定店铺的所有信息")
     public HttpResult<Business> updateBusiness(
-            @PathVariable("id") Long id,
-            @RequestBody Business business) {
+            @Parameter(description = "店铺ID", required = true) @PathVariable("id") Long id,
+            @Parameter(description = "新店铺信息", required = true) @RequestBody Business business) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -105,9 +113,10 @@ public class BusinessController {
     }
 
     @PatchMapping("/{id}")
+    @Operation(summary = "更新店铺", description = "部分更新店铺信息")
     public HttpResult<Business> patchBusiness(
-            @PathVariable("id") Long id,
-            @RequestBody Business business) {
+            @Parameter(description = "店铺ID", required = true) @PathVariable("id") Long id,
+            @Parameter(description = "要更新的店铺字段", required = true) @RequestBody Business business) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         User me = meOptional.get();
@@ -152,7 +161,9 @@ public class BusinessController {
     }
 
     @DeleteMapping("/{id}")
-    public HttpResult<String> deleteBusiness(@PathVariable("id") Long id) {
+    @Operation(summary = "删除店铺", description = "软删除指定店铺")
+    public HttpResult<String> deleteBusiness(
+            @Parameter(description = "店铺ID", required = true) @PathVariable("id") Long id) {
         Business business = businessService.getBusinessById(id);
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
@@ -174,6 +185,7 @@ public class BusinessController {
     }
 
     @GetMapping("/my")
+    @Operation(summary = "获取我的店铺", description = "获取当前商家用户的所有店铺")
     public HttpResult<List<Business>> getMyBusinesses() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())

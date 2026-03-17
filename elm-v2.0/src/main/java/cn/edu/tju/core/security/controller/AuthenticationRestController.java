@@ -5,6 +5,7 @@ import cn.edu.tju.core.security.jwt.JWTFilter;
 import cn.edu.tju.core.security.jwt.TokenProvider;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -24,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api")
-@Tag(name = "管理认证", description = "提供基于JWT的身份认证和令牌管理")
+@Tag(name = "管理认证", description = "提供基于JWT的身份认证和令牌管理功能")
 public class AuthenticationRestController {
 
     private final TokenProvider tokenProvider;
@@ -37,8 +38,9 @@ public class AuthenticationRestController {
     }
 
     @PostMapping("/auth") /*authenticate*/
-    @Operation(description = "身份认证成功后拿到令牌")
-    public ResponseEntity<JWTToken> authorize(@Valid @RequestBody LoginDto loginDto) {
+    @Operation(summary = "用户登录", description = "用户身份认证，成功后返回JWT令牌")
+    public ResponseEntity<JWTToken> authorize(
+            @Parameter(description = "登录信息", required = true) @Valid @RequestBody LoginDto loginDto) {
 
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());

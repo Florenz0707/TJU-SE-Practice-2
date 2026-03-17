@@ -14,6 +14,8 @@ import cn.edu.tju.elm.service.OrderDetailetService;
 import cn.edu.tju.elm.service.OrderService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +25,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/foods")
-@Tag(name = "管理商品")
+@Tag(name = "管理商品", description = "提供对菜品的增删改查功能")
 public class FoodController {
     private final UserService userService;
     private final FoodService foodService;
@@ -40,7 +42,9 @@ public class FoodController {
     }
 
     @GetMapping("/{id}")
-    public HttpResult<Food> getFoodById(@PathVariable Long id) {
+    @Operation(summary = "根据ID获取菜品", description = "通过菜品ID查询菜品详细信息")
+    public HttpResult<Food> getFoodById(
+            @Parameter(description = "菜品ID", required = true) @PathVariable Long id) {
         Food food = foodService.getFoodById(id);
         if (food == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
@@ -48,9 +52,10 @@ public class FoodController {
     }
 
     @GetMapping("")
+    @Operation(summary = "获取菜品列表", description = "根据商家ID或订单ID获取菜品列表（二选一）")
     public HttpResult<List<Food>> getAllFoods(
-            @RequestParam(name = "business", required = false) Long businessId,
-            @RequestParam(name = "order", required = false) Long orderId) {
+            @Parameter(description = "商家ID") @RequestParam(name = "business", required = false) Long businessId,
+            @Parameter(description = "订单ID") @RequestParam(name = "order", required = false) Long orderId) {
         if ((businessId == null && orderId == null) || (businessId != null && orderId != null))
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "HAVE TO PROVIDE ONE AND ONLY ONE ARG");
 
@@ -71,7 +76,9 @@ public class FoodController {
     }
 
     @PostMapping("")
-    public HttpResult<Food> addFood(@RequestBody Food food) {
+    @Operation(summary = "添加菜品", description = "商家或管理员添加新菜品")
+    public HttpResult<Food> addFood(
+            @Parameter(description = "菜品信息", required = true) @RequestBody Food food) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND);
         User me = meOptional.get();
@@ -104,9 +111,10 @@ public class FoodController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "替换菜品", description = "完全替换指定菜品的所有信息")
     public HttpResult<Food> substituteFood(
-            @PathVariable Long id,
-            @RequestBody Food food) {
+            @Parameter(description = "菜品ID", required = true) @PathVariable Long id,
+            @Parameter(description = "新菜品信息", required = true) @RequestBody Food food) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -140,9 +148,10 @@ public class FoodController {
     }
 
     @PatchMapping("/{id}")
+    @Operation(summary = "更新菜品", description = "部分更新菜品信息")
     public HttpResult<Food> updateFood(
-            @PathVariable Long id,
-            @RequestBody Food newFood) {
+            @Parameter(description = "菜品ID", required = true) @PathVariable Long id,
+            @Parameter(description = "要更新的菜品字段", required = true) @RequestBody Food newFood) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -178,7 +187,9 @@ public class FoodController {
     }
 
     @DeleteMapping("/{id}")
-    public HttpResult<String> deleteFood(@PathVariable Long id) {
+    @Operation(summary = "删除菜品", description = "软删除指定菜品")
+    public HttpResult<String> deleteFood(
+            @Parameter(description = "菜品ID", required = true) @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");

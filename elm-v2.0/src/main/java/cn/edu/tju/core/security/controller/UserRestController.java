@@ -12,6 +12,7 @@ import cn.edu.tju.elm.service.serviceInterface.WalletService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +23,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
-@Tag(name = "管理用户", description = "提供用户的增删改查操作")
+@Tag(name = "管理用户", description = "提供用户的增删改查和密码管理功能")
 public class UserRestController {
 
     private final UserService userService;
@@ -37,8 +38,9 @@ public class UserRestController {
 
     @PostMapping("/users")
     @PreAuthorize("hasAuthority('ADMIN')")
-    @Operation(summary = "新增用户（仅登录帐号）", description = "创建一个新的用户（仅登录帐号）")
-    public HttpResult<User> createUser(@RequestBody User user) {
+    @Operation(summary = "新增用户（仅登录帐号）", description = "管理员创建新用户账号，自动创建钱包")
+    public HttpResult<User> createUser(
+            @Parameter(description = "用户信息", required = true) @RequestBody User user) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -81,8 +83,9 @@ public class UserRestController {
     }
 
     @PostMapping("/password")
-    @Operation(summary = "修改密码", description = "已登录的用户只可以修改自己的密码，Admin可以修改任何人的密码")
-    public HttpResult<String> updateUserPassword(@RequestBody LoginDto loginDto) {
+    @Operation(summary = "修改密码", description = "用户修改自己的密码，管理员可修改任何用户密码")
+    public HttpResult<String> updateUserPassword(
+            @Parameter(description = "用户名和新密码", required = true) @RequestBody LoginDto loginDto) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -103,8 +106,9 @@ public class UserRestController {
     }
 
     @PostMapping("/persons")
-    @Operation(summary = "新增用户（自然人）", description = "创建一个新的用户（自然人）")
-    public HttpResult<Person> addPerson(@RequestBody Person person) {
+    @Operation(summary = "新增用户（自然人）", description = "注册新用户（包含个人信息），自动创建钱包")
+    public HttpResult<Person> addPerson(
+            @Parameter(description = "用户个人信息", required = true) @RequestBody Person person) {
         if (person == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person CANT BE NULL");
         if (person.getUsername() == null)
@@ -137,6 +141,7 @@ public class UserRestController {
     }
 
     @GetMapping("/users")
+    @Operation(summary = "获取所有用户", description = "管理员查询所有用户列表")
     public HttpResult<List<User>> getUsers() {
         Optional<User> meoptional = userService.getUserWithAuthorities();
         if (meoptional.isEmpty())
@@ -151,7 +156,9 @@ public class UserRestController {
     }
 
     @GetMapping("/users/{id}")
-    public HttpResult<User> getUser(@PathVariable Long id) {
+    @Operation(summary = "根据ID获取用户", description = "查询指定用户的详细信息")
+    public HttpResult<User> getUser(
+            @Parameter(description = "用户ID", required = true) @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -168,7 +175,9 @@ public class UserRestController {
     }
 
     @DeleteMapping("/users/{id}")
-    public HttpResult<User> deleteUser(@PathVariable Long id) {
+    @Operation(summary = "删除用户", description = "软删除指定用户")
+    public HttpResult<User> deleteUser(
+            @Parameter(description = "用户ID", required = true) @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");

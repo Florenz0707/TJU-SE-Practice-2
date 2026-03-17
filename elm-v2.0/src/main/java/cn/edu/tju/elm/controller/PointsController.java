@@ -11,6 +11,7 @@ import cn.edu.tju.elm.model.VO.PointsAccountVO;
 import cn.edu.tju.elm.model.VO.PointsRecordVO;
 import cn.edu.tju.elm.service.PointsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
 
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/points")
-@Tag(name = "积分管理", description = "用户积分账户和积分明细查询")
+@Tag(name = "积分管理", description = "提供用户积分账户和积分明细查询功能")
 public class PointsController {
     private final UserService userService;
     private final PointsService pointsService;
@@ -58,11 +59,11 @@ public class PointsController {
     }
 
     @GetMapping("/record/my")
-    @Operation(summary = "分页查询积分明细", description = "分页展示积分获取和消费的记录")
+    @Operation(summary = "分页查询积分明细", description = "分页展示当前用户积分获取和消费的记录")
     public HttpResult<Map<String, Object>> getMyPointsRecords(
-            @RequestParam("page") Integer page,
-            @RequestParam("size") Integer size,
-            @RequestParam(value = "type", required = false) String type) {
+            @Parameter(description = "页码", required = true) @RequestParam("page") Integer page,
+            @Parameter(description = "每页数量", required = true) @RequestParam("size") Integer size,
+            @Parameter(description = "记录类型") @RequestParam(value = "type", required = false) String type) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty()) {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "用户未登录");

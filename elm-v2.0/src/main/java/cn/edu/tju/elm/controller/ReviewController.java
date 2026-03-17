@@ -14,6 +14,9 @@ import cn.edu.tju.elm.service.ReviewService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalServiceClient;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +26,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/reviews")
+@Tag(name = "管理评价", description = "提供对订单评价的增删改查功能")
 public class ReviewController {
     private static final Logger log = LoggerFactory.getLogger(ReviewController.class);
     private final ReviewService reviewService;
@@ -40,7 +44,10 @@ public class ReviewController {
     }
 
     @PostMapping("/order/{orderId}")
-    public HttpResult<Review> addReview(@PathVariable Long orderId, @RequestBody Review review) {
+    @Operation(summary = "添加订单评价", description = "顾客对已完成订单进行评价，评价后自动发放积分")
+    public HttpResult<Review> addReview(
+            @Parameter(description = "订单ID", required = true) @PathVariable Long orderId,
+            @Parameter(description = "评价信息", required = true) @RequestBody Review review) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -97,7 +104,10 @@ public class ReviewController {
     }
 
     @PatchMapping("/{reviewId}")
-    public HttpResult<Review> updateReview(@PathVariable Long reviewId, @RequestBody Review review) {
+    @Operation(summary = "更新评价", description = "修改已发表的评价内容")
+    public HttpResult<Review> updateReview(
+            @Parameter(description = "评价ID", required = true) @PathVariable Long reviewId,
+            @Parameter(description = "要更新的评价字段", required = true) @RequestBody Review review) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -128,7 +138,9 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{reviewId}")
-    public HttpResult<String> deleteReview(@PathVariable Long reviewId) {
+    @Operation(summary = "删除评价", description = "软删除指定评价，订单状态恢复为已完成")
+    public HttpResult<String> deleteReview(
+            @Parameter(description = "评价ID", required = true) @PathVariable Long reviewId) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -154,6 +166,7 @@ public class ReviewController {
     }
 
     @GetMapping("/my")
+    @Operation(summary = "获取我的评价", description = "获取当前用户发表的所有评价")
     public HttpResult<List<Review>> getReviewsByUserId() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
@@ -164,7 +177,9 @@ public class ReviewController {
     }
 
     @GetMapping("/order/{orderId}")
-    public HttpResult<Review> getReviewByOrderId(@PathVariable Long orderId) {
+    @Operation(summary = "根据订单ID获取评价", description = "查询指定订单的评价，匿名评价对商家不可见")
+    public HttpResult<Review> getReviewByOrderId(
+            @Parameter(description = "订单ID", required = true) @PathVariable Long orderId) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -193,7 +208,9 @@ public class ReviewController {
     }
 
     @GetMapping("/business/{businessId}")
-    public HttpResult<List<Review>> getReviewsByBusinessId(@PathVariable Long businessId) {
+    @Operation(summary = "根据店铺ID获取评价列表", description = "查询指定店铺的所有评价，匿名评价会隐藏用户信息")
+    public HttpResult<List<Review>> getReviewsByBusinessId(
+            @Parameter(description = "店铺ID", required = true) @PathVariable Long businessId) {
         Business business = businessService.getBusinessById(businessId);
         if (business == null)
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");

@@ -6,6 +6,9 @@ import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.model.VO.WalletVO;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +17,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/wallet")
+@Tag(name = "管理钱包", description = "提供钱包的创建和查询功能")
 public class WalletController {
     private final UserService userService;
     private final WalletService walletService;
@@ -26,8 +30,9 @@ public class WalletController {
     }
 
     @GetMapping("/owner/{id}")
+    @Operation(summary = "根据钱包ID获取所有者", description = "查询指定钱包的所有者信息")
     public HttpResult<User> getWalletOwnerById(
-            @PathVariable Long id) {
+            @Parameter(description = "钱包ID", required = true) @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -44,8 +49,9 @@ public class WalletController {
     }
 
     @GetMapping("{id}")
+    @Operation(summary = "根据ID获取钱包", description = "查询指定钱包的详细信息")
     public HttpResult<WalletVO> getWalletById(
-            @PathVariable Long id) {
+            @Parameter(description = "钱包ID", required = true) @PathVariable Long id) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -63,9 +69,10 @@ public class WalletController {
     }
 
     @PostMapping("/voucher/{walletId}")
+    @Operation(summary = "添加优惠券到钱包", description = "向指定钱包添加优惠券")
     public HttpResult<String> addVoucher(
-            @PathVariable Long walletId,
-            @RequestBody BigDecimal amount) {
+            @Parameter(description = "钱包ID", required = true) @PathVariable Long walletId,
+            @Parameter(description = "优惠券金额", required = true) @RequestBody BigDecimal amount) {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -84,6 +91,7 @@ public class WalletController {
     }
 
     @GetMapping("/my")
+    @Operation(summary = "获取我的钱包", description = "获取当前用户的钱包信息")
     public HttpResult<WalletVO> getWalletByAuthorization() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
@@ -99,6 +107,7 @@ public class WalletController {
     }
 
     @PostMapping("")
+    @Operation(summary = "创建钱包", description = "为当前用户创建新钱包")
     public HttpResult<WalletVO> createWalletByAuthorization() {
         Optional<User> meOptional = userService.getUserWithAuthorities();
         if (meOptional.isEmpty())
