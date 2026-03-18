@@ -10,6 +10,7 @@ import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.OrderService;
+import cn.edu.tju.elm.service.PointsService;
 import cn.edu.tju.elm.service.ReviewService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
@@ -33,18 +34,21 @@ public class ReviewController {
   private final OrderService orderService;
   private final UserService userService;
   private final InternalServiceClient internalServiceClient;
+  private final PointsService pointsService;
 
   public ReviewController(
       ReviewService reviewService,
       BusinessService businessService,
       OrderService orderService,
       UserService userService,
-      InternalServiceClient internalServiceClient) {
+      InternalServiceClient internalServiceClient,
+      PointsService pointsService) {
     this.reviewService = reviewService;
     this.businessService = businessService;
     this.orderService = orderService;
     this.userService = userService;
     this.internalServiceClient = internalServiceClient;
+    this.pointsService = pointsService;
   }
 
   @PostMapping("/order/{orderId}")
@@ -61,6 +65,10 @@ public class ReviewController {
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
     if (!order.getOrderState().equals(OrderState.COMPLETE))
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order.OrderState ERROR");
+
+    Review existingReview = reviewService.getReviewByOrderId(orderId);
+    if (existingReview != null) return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "订单已评价");
+
     Business business = order.getBusiness();
     User customer = order.getCustomer();
 
@@ -152,6 +160,13 @@ public class ReviewController {
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     if (isAdmin || me.equals(review.getCustomer())) {
+      // 返还评价积分
+      try {
+        pointsService.notifyReviewDeleted(review.getCustomer().getId(), reviewId.toString());
+      } catch (Exception e) {
+        log.error("Failed to refund points for deleted review: {}", e.getMessage());
+      }
+
       EntityUtils.deleteEntity(review);
       reviewService.updateReview(review);
 

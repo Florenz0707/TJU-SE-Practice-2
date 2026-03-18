@@ -373,6 +373,45 @@ public class PointsService {
     return points;
   }
 
+  /** 评价删除通知（扣除积分） */
+  public boolean notifyReviewDeleted(Long userId, String reviewId) throws PointsException {
+    Optional<PointsRecord> recordOpt = pointsRecordRepository.findByBizId(reviewId);
+    if (recordOpt.isEmpty()) {
+      return false;
+    }
+
+    PointsRecord earnRecord = recordOpt.get();
+    if (!earnRecord.getType().equals(PointsRecordType.EARN)) {
+      return false;
+    }
+
+    int pointsToDeduct = earnRecord.getPoints();
+    PointsAccount account = getOrCreateAccount(userId);
+    if (account == null) {
+      throw new PointsException(PointsException.ACCOUNT_NOT_FOUND);
+    }
+
+    if (account.getTotalPoints() < pointsToDeduct) {
+      throw new PointsException(PointsException.INSUFFICIENT_POINTS);
+    }
+
+    account.expirePoints(pointsToDeduct);
+    EntityUtils.updateEntity(account);
+    pointsAccountRepository.save(account);
+
+    PointsRecord deductRecord =
+        PointsRecord.createRecord(
+            account.getUser(),
+            PointsRecordType.CONSUME,
+            pointsToDeduct,
+            reviewId,
+            ChannelType.COMMENT,
+            "删除评价扣除积分");
+    pointsRecordRepository.save(deductRecord);
+
+    return true;
+  }
+
   @Scheduled(cron = "0 0 2 * * ?")
   @Transactional
   public void expirePoints() {
