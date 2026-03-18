@@ -36,6 +36,7 @@ public class OrderController {
   private final UserService userService;
   private final OrderService orderService;
   private final BusinessService businessService;
+  private final FoodService foodService;
   private final AddressService addressService;
   private final CartItemService cartItemService;
   private final OrderDetailetService orderDetailetService;
@@ -51,6 +52,7 @@ public class OrderController {
       UserService userService,
       OrderService orderService,
       BusinessService businessService,
+      FoodService foodService,
       AddressService addressService,
       CartItemService cartItemService,
       OrderDetailetService orderDetailetService,
@@ -64,6 +66,7 @@ public class OrderController {
     this.userService = userService;
     this.orderService = orderService;
     this.businessService = businessService;
+    this.foodService = foodService;
     this.addressService = addressService;
     this.cartItemService = cartItemService;
     this.orderDetailetService = orderDetailetService;
@@ -220,6 +223,14 @@ public class OrderController {
         finalPrice = BigDecimal.ZERO;
       }
 
+      // Check stock availability before creating order
+      for (Cart cart : cartList) {
+        if (cart.getFood().getStock() < cart.getQuantity()) {
+          return HttpResult.failure(
+              ResultCodeEnum.SERVER_ERROR, "商品 " + cart.getFood().getFoodName() + " 库存不足");
+        }
+      }
+
       EntityUtils.setNewEntity(order);
       // orderTotal should store the original order total (items + delivery)
       // NOT the final price after wallet payment
@@ -292,6 +303,12 @@ public class OrderController {
       }
 
       for (Cart cart : cartList) {
+        // Deduct stock
+        Food food = cart.getFood();
+        food.decreaseStock(cart.getQuantity());
+        EntityUtils.updateEntity(food);
+        foodService.updateFood(food);
+
         cartItemService.deleteCart(cart);
 
         OrderDetailet orderDetailet = new OrderDetailet();
@@ -301,6 +318,9 @@ public class OrderController {
         orderDetailet.setQuantity(cart.getQuantity());
         orderDetailetService.addOrderDetailet(orderDetailet);
       }
+
+      log.info(
+          "Order created: orderId={}, userId={}, total={}", order.getId(), me.getId(), totalPrice);
       return HttpResult.success(order);
     }
 
@@ -363,10 +383,22 @@ public class OrderController {
         privateVoucherService.restoreVoucher(order.getUsedVoucher().getId());
       }
 
+      // Restore stock
+      List<OrderDetailet> orderDetails =
+          orderDetailetService.getOrderDetailetsByOrderId(order.getId());
+      for (OrderDetailet detail : orderDetails) {
+        Food food = detail.getFood();
+        food.increaseStock(detail.getQuantity());
+        EntityUtils.updateEntity(food);
+        foodService.updateFood(food);
+      }
+
       order.setOrderState(OrderState.CANCELED);
       EntityUtils.updateEntity(order);
       orderService.updateOrder(order);
 
+      log.warn(
+          "Order canceled: orderId={}, userId={}, reason=user_request", order.getId(), me.getId());
       return HttpResult.success(order);
     } catch (Exception e) {
       log.error("Failed to cancel order: {}", e.getMessage());

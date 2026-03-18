@@ -25,6 +25,9 @@ public class Food extends BaseEntity {
   @JoinColumn(name = "business_id", nullable = false)
   private Business business;
 
+  @Column(nullable = false)
+  private Integer stock = 0;
+
   private String remarks;
 
   public String getFoodName() {
@@ -73,5 +76,27 @@ public class Food extends BaseEntity {
 
   public void setRemarks(String remarks) {
     this.remarks = remarks;
+  }
+
+  public Integer getStock() {
+    return stock;
+  }
+
+  public void setStock(Integer stock) {
+    this.stock = stock;
+  }
+
+  public boolean decreaseStock(Integer quantity) {
+    if (quantity == null || quantity <= 0 || stock < quantity) {
+      return false;
+    }
+    stock -= quantity;
+    return true;
+  }
+
+  public void increaseStock(Integer quantity) {
+    if (quantity != null && quantity > 0) {
+      stock += quantity;
+    }
   }
 }
