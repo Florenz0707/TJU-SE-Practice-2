@@ -18,6 +18,9 @@ public class MerchantApplication extends BaseEntity {
 
   private Integer applicationState;
 
+  @Column(length = 500)
+  private String rejectReason;
+
   @ManyToOne
   @JoinColumn(name = "handler_id", nullable = false)
   private User handler;
@@ -52,5 +55,13 @@ public class MerchantApplication extends BaseEntity {
 
   public void setHandler(User handler) {
     this.handler = handler;
+  }
+
+  public String getRejectReason() {
+    return rejectReason;
+  }
+
+  public void setRejectReason(String rejectReason) {
+    this.rejectReason = rejectReason;
   }
 }

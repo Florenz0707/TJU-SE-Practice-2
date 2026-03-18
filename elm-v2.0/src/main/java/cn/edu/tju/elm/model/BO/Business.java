@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import java.math.BigDecimal;
+import java.time.LocalTime;
 
 @Entity
 public class Business extends BaseEntity {
@@ -33,6 +34,10 @@ public class Business extends BaseEntity {
   private BigDecimal deliveryPrice;
 
   private String remarks;
+
+  private LocalTime openTime;
+
+  private LocalTime closeTime;
 
   public String getBusinessName() {
     return businessName;
@@ -104,5 +109,21 @@ public class Business extends BaseEntity {
 
   public void setBusinessOwner(User businessOwner) {
     this.businessOwner = businessOwner;
+  }
+
+  public LocalTime getOpenTime() {
+    return openTime;
+  }
+
+  public void setOpenTime(LocalTime openTime) {
+    this.openTime = openTime;
+  }
+
+  public LocalTime getCloseTime() {
+    return closeTime;
+  }
+
+  public void setCloseTime(LocalTime closeTime) {
+    this.closeTime = closeTime;
   }
 }

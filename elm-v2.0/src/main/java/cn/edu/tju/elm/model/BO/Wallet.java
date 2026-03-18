@@ -52,26 +52,26 @@ public class Wallet extends BaseEntity {
     return wallet;
   }
 
-  public boolean addBalance(BigDecimal amount) {
+  public synchronized boolean addBalance(BigDecimal amount) {
     if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
     balance = balance.add(amount);
     return true;
   }
 
-  public boolean decBalance(BigDecimal amount) {
+  public synchronized boolean decBalance(BigDecimal amount) {
     if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
     if (amount.compareTo(balance) > 0) return false;
     balance = balance.subtract(amount);
     return true;
   }
 
-  public boolean addVoucher(BigDecimal amount) {
+  public synchronized boolean addVoucher(BigDecimal amount) {
     if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
     voucher = voucher.add(amount);
     return true;
   }
 
-  public boolean decVoucher(BigDecimal amount) {
+  public synchronized boolean decVoucher(BigDecimal amount) {
     if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
     if (amount.compareTo(voucher) > 0) return false;
     voucher = voucher.subtract(amount);
@@ -95,7 +95,7 @@ public class Wallet extends BaseEntity {
   }
 
   /** 支持透支扣减：允许余额变为负值，但不超过 creditLimit */
-  public boolean decBalanceWithCredit(BigDecimal amount) {
+  public synchronized boolean decBalanceWithCredit(BigDecimal amount) {
     if (amount.compareTo(BigDecimal.ZERO) < 0) return false;
     BigDecimal allowed = balance.add(creditLimit);
     if (allowed.compareTo(amount) < 0) return false;

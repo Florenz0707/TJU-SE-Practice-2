@@ -6,6 +6,8 @@ import cn.edu.tju.elm.repository.OrderRepository;
 import cn.edu.tju.elm.utils.EntityUtils;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +31,11 @@ public class OrderService {
   }
 
   public List<Order> getOrdersByCustomerId(Long id) {
-    return EntityUtils.filterEntityList(orderRepository.findAllByCustomerId(id));
+    return EntityUtils.filterEntityList(orderRepository.findAllByCustomerIdWithDetails(id));
+  }
+
+  public Page<Order> getOrdersByCustomerId(Long id, Pageable pageable) {
+    return orderRepository.findAllByCustomerId(id, pageable).map(EntityUtils::filterEntity);
   }
 
   public void updateOrder(Order order) {
@@ -37,7 +43,11 @@ public class OrderService {
   }
 
   public List<Order> getOrdersByBusinessId(Long businessId) {
-    return EntityUtils.filterEntityList(orderRepository.findAllByBusinessId(businessId));
+    return EntityUtils.filterEntityList(orderRepository.findAllByBusinessIdWithDetails(businessId));
+  }
+
+  public Page<Order> getOrdersByBusinessId(Long businessId, Pageable pageable) {
+    return orderRepository.findAllByBusinessId(businessId, pageable).map(EntityUtils::filterEntity);
   }
 
   public Order getOrderByRequestId(String requestId) {

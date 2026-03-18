@@ -104,6 +104,15 @@ public class OrderController {
 
     Business business = businessService.getBusinessById(order.getBusiness().getId());
     if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+
+    // Check business hours
+    if (business.getOpenTime() != null && business.getCloseTime() != null) {
+      java.time.LocalTime now = java.time.LocalTime.now();
+      if (now.isBefore(business.getOpenTime()) || now.isAfter(business.getCloseTime())) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "商家未营业");
+      }
+    }
+
     DeliveryAddress address = addressService.getAddressById(order.getDeliveryAddress().getId());
     if (address == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");

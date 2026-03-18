@@ -50,6 +50,8 @@ public class CartController {
 
     Food food = foodService.getFoodById(cart.getFood().getId());
     if (food == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+    if (food.getDeleted() != null && food.getDeleted())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "商品已下架");
     Business business = food.getBusiness();
     if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 

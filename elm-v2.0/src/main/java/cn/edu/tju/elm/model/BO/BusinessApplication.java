@@ -22,6 +22,9 @@ public class BusinessApplication extends BaseEntity {
 
   private Integer applicationState;
 
+  @Column(length = 500)
+  private String rejectReason;
+
   public Business getBusiness() {
     return business;
   }
@@ -52,5 +55,13 @@ public class BusinessApplication extends BaseEntity {
 
   public void setApplicationState(Integer applicationState) {
     this.applicationState = applicationState;
+  }
+
+  public String getRejectReason() {
+    return rejectReason;
+  }
+
+  public void setRejectReason(String rejectReason) {
+    this.rejectReason = rejectReason;
   }
 }
