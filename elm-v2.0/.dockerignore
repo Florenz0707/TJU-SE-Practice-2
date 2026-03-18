@@ -1,0 +1,9 @@
+target/
+.mvn/
+*.iml
+.idea/
+.env
+.git/
+.gitignore
+README.md
+*.md

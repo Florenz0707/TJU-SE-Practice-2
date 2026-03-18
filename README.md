@@ -1,8 +1,46 @@
 # 天津大学软件学院-软件工程（系列）实践项目
 
+## 项目结构
+
+- `elm-v2.0/` - 后端服务（Spring Boot + MySQL）
+- `elm-frontend/` - 前端服务（Vue 3 + Vite）
+- `docker-compose.yml` - Docker编排配置
+
+## 快速开始
+
+### 环境变量配置
+
+1. 复制环境变量模板：
+
+```bash
+cp elm-v2.0/.env.example elm-v2.0/.env
+```
+
+2. 编辑`.env`文件，配置数据库连接信息：
+
+```
+DB_URL=jdbc:mysql://localhost:3306/elm?...
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
+
 ## **部署方式：**
 
-### 选项 1：在 Docker 中构建所有内容（适合CI/CD或无本地环境）
+### 选项 1：使用Docker Compose（推荐）
+
+启动所有服务（前端、后端、MySQL）：
+
+```bash
+docker-compose up -d
+```
+
+访问应用：
+
+- 前端：http://localhost
+- 后端API：http://localhost:8080/elm
+- Swagger文档：http://localhost:8080/elm/swagger-ui/index.html
+
+### 选项 2：在 Docker 中构建所有内容（适合CI/CD或无本地环境）
 
 **如果本地没有开发环境，或者想让 Docker 处理所有编译工作，请运行以下命令：**
 
