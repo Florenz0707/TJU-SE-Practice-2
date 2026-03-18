@@ -21,6 +21,10 @@ public class PublicVoucher extends BaseEntity {
   @Column(nullable = false)
   private Integer validDays;
 
+  @Column private Integer totalQuantity;
+
+  @Column private Integer perUserLimit;
+
   public static PublicVoucher createVoucher(
       BigDecimal threshold, BigDecimal value, Boolean claimable, Integer valid_days) {
     PublicVoucher publicVoucher = new PublicVoucher();
@@ -46,5 +50,13 @@ public class PublicVoucher extends BaseEntity {
 
   public Integer getValidDays() {
     return validDays;
+  }
+
+  public Integer getTotalQuantity() {
+    return totalQuantity;
+  }
+
+  public Integer getPerUserLimit() {
+    return perUserLimit;
   }
 }

@@ -15,6 +15,9 @@ public interface PrivateVoucherService {
   @Transactional
   boolean redeemPrivateVoucher(Long id) throws PrivateVoucherException;
 
+  @Transactional
+  void restoreVoucher(Long voucherId) throws PrivateVoucherException;
+
   List<PrivateVoucherVO> getPrivateVouchers(User user) throws PrivateVoucherException;
 
   @Transactional

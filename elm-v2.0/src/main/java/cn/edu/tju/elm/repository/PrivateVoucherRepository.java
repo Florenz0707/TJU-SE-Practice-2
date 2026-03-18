@@ -12,4 +12,12 @@ public interface PrivateVoucherRepository extends JpaRepository<PrivateVoucher, 
   java.util.List<PrivateVoucher> findByWalletOwnerId(@Param("ownerId") Long ownerId);
 
   boolean existsByWalletIdAndPublicVoucherId(Long walletId, Long publicVoucherId);
+
+  long countByPublicVoucherId(Long publicVoucherId);
+
+  @Query(
+      "SELECT COUNT(pv) FROM PrivateVoucher pv WHERE pv.publicVoucher.id = :publicVoucherId AND"
+          + " pv.wallet.owner.id = :ownerId")
+  long countByPublicVoucherIdAndWalletOwnerId(
+      @Param("publicVoucherId") Long publicVoucherId, @Param("ownerId") Long ownerId);
 }

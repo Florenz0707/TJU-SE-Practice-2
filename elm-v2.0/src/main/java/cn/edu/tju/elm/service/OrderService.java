@@ -1,5 +1,6 @@
 package cn.edu.tju.elm.service;
 
+import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.repository.OrderRepository;
 import cn.edu.tju.elm.utils.EntityUtils;
@@ -37,5 +38,15 @@ public class OrderService {
 
   public List<Order> getOrdersByBusinessId(Long businessId) {
     return EntityUtils.filterEntityList(orderRepository.findAllByBusinessId(businessId));
+  }
+
+  public boolean isValidStateTransition(Integer from, Integer to) {
+    if (from.equals(OrderState.CANCELED) || from.equals(OrderState.COMMENTED)) {
+      return false;
+    }
+    if (to.equals(OrderState.CANCELED)) {
+      return from.equals(OrderState.PAID);
+    }
+    return to > from;
   }
 }

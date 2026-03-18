@@ -11,6 +11,7 @@ import cn.edu.tju.elm.repository.PrivateVoucherRepository;
 import cn.edu.tju.elm.repository.PublicVoucherRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
+import cn.edu.tju.elm.utils.EntityUtils;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +43,25 @@ public class PrivateVoucherServiceImpl implements PrivateVoucherService {
       }
       PublicVoucher pub = publicVoucherRepository.findById(pubId).orElse(null);
       if (pub == null) throw new PrivateVoucherException("PublicVoucher NOT FOUND");
+
+      // 检查总库存
+      if (pub.getTotalQuantity() != null) {
+        long claimed = privateVoucherRepository.countByPublicVoucherId(pubId);
+        if (claimed >= pub.getTotalQuantity()) {
+          throw new PrivateVoucherException("优惠券已领完");
+        }
+      }
+
+      // 检查用户领取限额
+      if (pub.getPerUserLimit() != null) {
+        long userClaimed =
+            privateVoucherRepository.countByPublicVoucherIdAndWalletOwnerId(
+                pubId, wallet.getOwner().getId());
+        if (userClaimed >= pub.getPerUserLimit()) {
+          throw new PrivateVoucherException("已达领取上限");
+        }
+      }
+
       PrivateVoucher privateVoucher = PrivateVoucher.createPrivateVoucher(wallet, publicVoucherVO);
       privateVoucher.setPublicVoucher(pub);
       privateVoucherRepository.save(privateVoucher);
@@ -60,6 +80,22 @@ public class PrivateVoucherServiceImpl implements PrivateVoucherService {
     boolean ok = pv.redeem();
     privateVoucherRepository.save(pv);
     return ok;
+  }
+
+  @Transactional
+  public void restoreVoucher(Long voucherId) throws PrivateVoucherException {
+    PrivateVoucher voucher =
+        privateVoucherRepository
+            .findById(voucherId)
+            .orElseThrow(() -> new PrivateVoucherException("优惠券不存在"));
+
+    if (voucher.getDeleted() == null || !voucher.getDeleted()) {
+      throw new PrivateVoucherException("优惠券未使用");
+    }
+
+    voucher.setDeleted(false);
+    EntityUtils.updateEntity(voucher);
+    privateVoucherRepository.save(voucher);
   }
 
   public List<PrivateVoucherVO> getPrivateVouchers(User user) throws PrivateVoucherException {
