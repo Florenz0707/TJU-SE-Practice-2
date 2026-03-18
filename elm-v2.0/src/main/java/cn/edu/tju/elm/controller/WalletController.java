@@ -148,4 +148,29 @@ public class WalletController {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }
   }
+
+  @PostMapping("/my/withdraw")
+  @Operation(summary = "钱包提现", description = "从当前用户钱包提现")
+  public HttpResult<TransactionVO> withdraw(
+      @Parameter(description = "提现金额", required = true) @RequestBody BigDecimal amount) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "提现金额必须大于0");
+
+    try {
+      WalletVO walletVO = walletService.getWalletByOwner(me);
+      if (walletVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "钱包不存在");
+
+      TransactionVO transaction =
+          transactionService.createTransaction(
+              amount, TransactionType.WITHDRAW, null, walletVO.getId());
+      return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
 }

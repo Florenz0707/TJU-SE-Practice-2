@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -370,5 +371,51 @@ public class PointsService {
     pointsAccountRepository.save(account);
 
     return points;
+  }
+
+  @Scheduled(cron = "0 0 2 * * ?")
+  @Transactional
+  public void expirePoints() {
+    List<PointsBatch> expiredBatches =
+        pointsBatchRepository.findExpiredBatches(LocalDateTime.now());
+
+    for (PointsBatch batch : expiredBatches) {
+      int expiredPoints = batch.getAvailablePoints();
+      if (expiredPoints > 0) {
+        PointsAccount account = getOrCreateAccount(batch.getUser().getId());
+        account.expirePoints(expiredPoints);
+        pointsAccountRepository.save(account);
+
+        batch.setAvailablePoints(0);
+        pointsBatchRepository.save(batch);
+
+        PointsRecord record =
+            PointsRecord.createRecord(
+                batch.getUser(),
+                PointsRecordType.EXPIRE,
+                expiredPoints,
+                batch.getId().toString(),
+                null,
+                "积分过期");
+        pointsRecordRepository.save(record);
+      }
+    }
+  }
+
+  @Scheduled(fixedDelay = 3600000)
+  @Transactional
+  public void rollbackTimeoutFrozenPoints() {
+    LocalDateTime timeout = LocalDateTime.now().minusHours(24);
+    List<PointsBatch> timeoutBatches = pointsBatchRepository.findFrozenBatchesBeforeTime(timeout);
+
+    for (PointsBatch batch : timeoutBatches) {
+      if (batch.getTempOrderId() != null && batch.getFrozenPoints() > 0) {
+        try {
+          rollbackPoints(batch.getUser().getId(), batch.getTempOrderId(), "订单超时");
+        } catch (PointsException e) {
+          // 记录日志但不中断处理
+        }
+      }
+    }
   }
 }

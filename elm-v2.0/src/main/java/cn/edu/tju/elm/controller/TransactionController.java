@@ -77,6 +77,26 @@ public class TransactionController {
     }
   }
 
+  @GetMapping("/my")
+  @Operation(summary = "获取我的交易记录", description = "查询当前用户钱包的所有交易记录")
+  public HttpResult<TransactionsRecord> getMyTransactions() {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    try {
+      var walletVO = walletService.getWalletByOwner(me);
+      if (walletVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "钱包不存在");
+
+      TransactionsRecord transactionsRecord =
+          transactionService.getTransactionsByWalletId(walletVO.getId());
+      return HttpResult.success(transactionsRecord);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
   @PostMapping("")
   @Operation(summary = "创建交易", description = "创建充值、提现或转账交易")
   public HttpResult<TransactionVO> createTransaction(

@@ -73,6 +73,12 @@ public class PointsAccount extends BaseEntity {
     }
   }
 
+  public void expirePoints(Integer points) {
+    if (points != null && points > 0) {
+      this.totalPoints -= points;
+    }
+  }
+
   public static PointsAccount createNewAccount(User user) {
     PointsAccount account = new PointsAccount();
     account.setUser(user);
