@@ -8,4 +8,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   List<Order> findAllByCustomerId(Long id);
 
   List<Order> findAllByBusinessId(Long businessId);
+
+  Order findByRequestId(String requestId);
 }

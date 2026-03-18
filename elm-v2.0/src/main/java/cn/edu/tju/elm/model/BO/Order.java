@@ -45,6 +45,9 @@ public class Order extends BaseEntity {
   @Column(precision = 10, scale = 2)
   private BigDecimal walletPaid;
 
+  @Column(unique = true)
+  private String requestId;
+
   public User getCustomer() {
     return customer;
   }
@@ -131,5 +134,13 @@ public class Order extends BaseEntity {
 
   public void setWalletPaid(BigDecimal walletPaid) {
     this.walletPaid = walletPaid;
+  }
+
+  public String getRequestId() {
+    return requestId;
+  }
+
+  public void setRequestId(String requestId) {
+    this.requestId = requestId;
   }
 }

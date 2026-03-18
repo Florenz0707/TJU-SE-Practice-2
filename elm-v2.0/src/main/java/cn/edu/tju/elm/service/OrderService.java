@@ -40,6 +40,11 @@ public class OrderService {
     return EntityUtils.filterEntityList(orderRepository.findAllByBusinessId(businessId));
   }
 
+  public Order getOrderByRequestId(String requestId) {
+    Order order = orderRepository.findByRequestId(requestId);
+    return order != null ? EntityUtils.filterEntity(order) : null;
+  }
+
   public boolean isValidStateTransition(Integer from, Integer to) {
     if (from.equals(OrderState.CANCELED) || from.equals(OrderState.COMMENTED)) {
       return false;

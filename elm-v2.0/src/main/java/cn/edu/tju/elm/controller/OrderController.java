@@ -79,11 +79,19 @@ public class OrderController {
   @PostMapping(value = "")
   @Operation(summary = "创建订单", description = "顾客创建新订单，支持优惠券、积分和钱包支付")
   public HttpResult<Order> addOrders(
-      @Parameter(description = "订单信息", required = true) @RequestBody Order order) {
+      @Parameter(description = "订单信息", required = true) @RequestBody Order order,
+      @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
     Optional<User> meOptional = userService.getUserWithAuthorities();
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
+
+    if (requestId != null) {
+      Order existingOrder = orderService.getOrderByRequestId(requestId);
+      if (existingOrder != null) {
+        return HttpResult.success(existingOrder);
+      }
+    }
 
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
     if (order.getBusiness() == null || order.getBusiness().getId() == null)
@@ -227,6 +235,7 @@ public class OrderController {
       order.setPointsUsed(pointsUsed);
       order.setPointsDiscount(pointsDiscount);
       order.setWalletPaid(walletPaid);
+      order.setRequestId(requestId);
 
       // Redeem voucher if used
       if (usedVoucher != null) {
