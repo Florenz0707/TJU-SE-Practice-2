@@ -260,12 +260,20 @@ public class OrderController {
           orderService.addOrder(order);
           pointsService.deductPoints(me.getId(), tempOrderId, order.getId().toString());
         } catch (PointsException e) {
-          log.error("Failed to deduct points: {}", e.getMessage());
+          log.error("Failed to deduct points: ", e.getMessage());
           // Rollback wallet deduction if points deduction failed
           if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
             userWallet.addBalance(walletPaid);
             EntityUtils.updateEntity(userWallet);
             walletRepository.save(userWallet);
+          }
+          // Rollback voucher if used
+          if (usedVoucher != null) {
+            try {
+              privateVoucherService.restoreVoucher(usedVoucher.getId());
+            } catch (Exception ex) {
+              log.error("Failed to restore voucher: {}", ex.getMessage());
+            }
           }
           return HttpResult.failure(
               ResultCodeEnum.SERVER_ERROR, "Failed to deduct points: " + e.getMessage());
@@ -306,6 +314,55 @@ public class OrderController {
     if (isAdmin || me.equals(order.getCustomer())) return HttpResult.success(order);
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
+
+  @PostMapping("/{id}/cancel")
+  @Operation(summary = "取消订单", description = "取消已支付订单，退还钱包余额、解冻积分、恢复优惠券")
+  public HttpResult<Order> cancelOrder(
+      @Parameter(description = "订单ID", required = true) @PathVariable Long id) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    Order order = orderService.getOrderById(id);
+    if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+
+    if (!me.equals(order.getCustomer()))
+      return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+
+    if (!order.getOrderState().equals(OrderState.PAID)) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "只能取消已支付订单");
+    }
+
+    try {
+      if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
+        Optional<Wallet> walletOpt = walletRepository.findByOwnerId(me.getId());
+        if (walletOpt.isPresent()) {
+          Wallet wallet = walletOpt.get();
+          wallet.addBalance(order.getWalletPaid());
+          EntityUtils.updateEntity(wallet);
+          walletRepository.save(wallet);
+        }
+      }
+
+      if (order.getPointsUsed() != null && order.getPointsUsed() > 0) {
+        pointsService.rollbackPoints(me.getId(), "ORDER_" + order.getId(), "订单取消");
+      }
+
+      if (order.getUsedVoucher() != null) {
+        privateVoucherService.restoreVoucher(order.getUsedVoucher().getId());
+      }
+
+      order.setOrderState(OrderState.CANCELED);
+      EntityUtils.updateEntity(order);
+      orderService.updateOrder(order);
+
+      return HttpResult.success(order);
+    } catch (Exception e) {
+      log.error("Failed to cancel order: {}", e.getMessage());
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "取消订单失败: " + e.getMessage());
+    }
   }
 
   @GetMapping("")

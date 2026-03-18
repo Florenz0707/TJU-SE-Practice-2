@@ -4,7 +4,10 @@ import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.constant.TransactionType;
+import cn.edu.tju.elm.model.VO.TransactionVO;
 import cn.edu.tju.elm.model.VO.WalletVO;
+import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,11 +23,15 @@ import org.springframework.web.bind.annotation.*;
 public class WalletController {
   private final UserService userService;
   private final WalletService walletService;
+  private final TransactionService transactionService;
 
   public WalletController(
-      UserService userService, @Qualifier("walletServiceImpl") WalletService walletServiceImpl) {
+      UserService userService,
+      @Qualifier("walletServiceImpl") WalletService walletServiceImpl,
+      TransactionService transactionService) {
     this.userService = userService;
     this.walletService = walletServiceImpl;
+    this.transactionService = transactionService;
   }
 
   @GetMapping("/owner/{id}")
@@ -112,6 +119,31 @@ public class WalletController {
     try {
       WalletVO walletVO = walletService.createWallet(me);
       return HttpResult.success(walletVO);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @PostMapping("/my/topup")
+  @Operation(summary = "钱包充值", description = "为当前用户钱包充值")
+  public HttpResult<TransactionVO> topup(
+      @Parameter(description = "充值金额", required = true) @RequestBody BigDecimal amount) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0)
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "充值金额必须大于0");
+
+    try {
+      WalletVO walletVO = walletService.getWalletByOwner(me);
+      if (walletVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "钱包不存在，请先创建钱包");
+
+      TransactionVO transaction =
+          transactionService.createTransaction(
+              amount, TransactionType.TOP_UP, walletVO.getId(), null);
+      return HttpResult.success(transaction);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }
