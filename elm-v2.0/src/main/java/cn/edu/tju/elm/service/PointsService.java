@@ -1,7 +1,5 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.core.model.User;
-import cn.edu.tju.core.security.repository.UserRepository;
 import cn.edu.tju.elm.constant.ChannelType;
 import cn.edu.tju.elm.constant.PointsRecordType;
 import cn.edu.tju.elm.exception.PointsException;
@@ -33,19 +31,16 @@ public class PointsService {
   private final PointsRuleRepository pointsRuleRepository;
   private final PointsRecordRepository pointsRecordRepository;
   private final PointsBatchRepository pointsBatchRepository;
-  private final UserRepository userRepository;
 
   public PointsService(
       PointsAccountRepository pointsAccountRepository,
       PointsRuleRepository pointsRuleRepository,
       PointsRecordRepository pointsRecordRepository,
-      PointsBatchRepository pointsBatchRepository,
-      UserRepository userRepository) {
+      PointsBatchRepository pointsBatchRepository) {
     this.pointsAccountRepository = pointsAccountRepository;
     this.pointsRuleRepository = pointsRuleRepository;
     this.pointsRecordRepository = pointsRecordRepository;
     this.pointsBatchRepository = pointsBatchRepository;
-    this.userRepository = userRepository;
   }
 
   /** 获取或创建用户积分账户 */
@@ -57,14 +52,8 @@ public class PointsService {
         return account;
       }
     }
-    // 账户不存在，创建新账户
-    Optional<User> userOpt = userRepository.findById(userId);
-    if (userOpt.isEmpty()) {
-      return null;
-    }
-    User user = userOpt.get();
-    PointsAccount account = PointsAccount.createNewAccount(user);
-    return pointsAccountRepository.save(account);
+    // 账户不存在，按 userId 创建新账户，避免积分域依赖用户聚合
+    return pointsAccountRepository.save(PointsAccount.createNewAccount(userId));
   }
 
   /** 获取用户积分账户 */
@@ -212,10 +201,9 @@ public class PointsService {
     pointsAccountRepository.save(account);
 
     // 创建消费记录
-    User user = account.getUser();
     PointsRecord record =
         PointsRecord.createRecord(
-            user,
+            account.getUserId(),
             PointsRecordType.CONSUME,
             totalDeducted,
             finalOrderId,
@@ -261,6 +249,57 @@ public class PointsService {
     return true;
   }
 
+  /** 返还订单已扣减积分（用于订单取消） */
+  public boolean refundDeductedPoints(Long userId, String orderBizId, String reason)
+      throws PointsException {
+    PointsAccount account = getOrCreateAccount(userId);
+    if (account == null) {
+      throw new PointsException(PointsException.ACCOUNT_NOT_FOUND);
+    }
+
+    Optional<PointsRecord> consumeRecordOpt =
+        pointsRecordRepository.findTopByUserIdAndTypeAndBizIdOrderByRecordTimeDesc(
+            userId, PointsRecordType.CONSUME, orderBizId);
+    if (consumeRecordOpt.isEmpty()) {
+      return false;
+    }
+
+    String refundBizId = "REFUND_" + orderBizId;
+    boolean alreadyRefunded =
+        pointsRecordRepository
+            .findTopByUserIdAndTypeAndBizIdOrderByRecordTimeDesc(
+                userId, PointsRecordType.EARN, refundBizId)
+            .isPresent();
+    if (alreadyRefunded) {
+      return true;
+    }
+
+    int pointsToRefund = consumeRecordOpt.get().getPoints();
+    if (pointsToRefund <= 0) {
+      return false;
+    }
+
+    account.addPoints(pointsToRefund);
+    EntityUtils.updateEntity(account);
+    pointsAccountRepository.save(account);
+
+    PointsRecord refundRecord =
+        PointsRecord.createRecord(
+            account.getUserId(),
+            PointsRecordType.EARN,
+            pointsToRefund,
+            refundBizId,
+            ChannelType.ORDER,
+            reason != null && !reason.isEmpty() ? reason : "订单取消返还积分");
+    pointsRecordRepository.save(refundRecord);
+
+    PointsBatch refundBatch =
+        PointsBatch.createBatch(account.getUserId(), pointsToRefund, null, refundRecord);
+    pointsBatchRepository.save(refundBatch);
+
+    return true;
+  }
+
   /** 订单完成通知（发放积分） */
   public Integer notifyOrderSuccess(
       Long userId, String bizId, Double amount, String eventTime, String extraInfo)
@@ -291,7 +330,7 @@ public class PointsService {
     // 创建积分记录
     PointsRecord record =
         PointsRecord.createRecord(
-            account.getUser(),
+            account.getUserId(),
             PointsRecordType.EARN,
             points,
             bizId,
@@ -306,7 +345,7 @@ public class PointsService {
     }
 
     // 创建积分批次
-    PointsBatch batch = PointsBatch.createBatch(account.getUser(), points, expireTime, record);
+    PointsBatch batch = PointsBatch.createBatch(account.getUserId(), points, expireTime, record);
     pointsBatchRepository.save(batch);
 
     // 更新账户
@@ -347,7 +386,7 @@ public class PointsService {
     // 创建积分记录
     PointsRecord record =
         PointsRecord.createRecord(
-            account.getUser(),
+            account.getUserId(),
             PointsRecordType.EARN,
             points,
             bizId,
@@ -362,7 +401,7 @@ public class PointsService {
     }
 
     // 创建积分批次
-    PointsBatch batch = PointsBatch.createBatch(account.getUser(), points, expireTime, record);
+    PointsBatch batch = PointsBatch.createBatch(account.getUserId(), points, expireTime, record);
     pointsBatchRepository.save(batch);
 
     // 更新账户
@@ -401,7 +440,7 @@ public class PointsService {
 
     PointsRecord deductRecord =
         PointsRecord.createRecord(
-            account.getUser(),
+            account.getUserId(),
             PointsRecordType.CONSUME,
             pointsToDeduct,
             reviewId,
@@ -421,7 +460,7 @@ public class PointsService {
     for (PointsBatch batch : expiredBatches) {
       int expiredPoints = batch.getAvailablePoints();
       if (expiredPoints > 0) {
-        PointsAccount account = getOrCreateAccount(batch.getUser().getId());
+        PointsAccount account = getOrCreateAccount(batch.getUserId());
         account.expirePoints(expiredPoints);
         pointsAccountRepository.save(account);
 
@@ -430,7 +469,7 @@ public class PointsService {
 
         PointsRecord record =
             PointsRecord.createRecord(
-                batch.getUser(),
+                batch.getUserId(),
                 PointsRecordType.EXPIRE,
                 expiredPoints,
                 batch.getId().toString(),
@@ -450,7 +489,7 @@ public class PointsService {
     for (PointsBatch batch : timeoutBatches) {
       if (batch.getTempOrderId() != null && batch.getFrozenPoints() > 0) {
         try {
-          rollbackPoints(batch.getUser().getId(), batch.getTempOrderId(), "订单超时");
+          rollbackPoints(batch.getUserId(), batch.getTempOrderId(), "订单超时");
         } catch (PointsException e) {
           // 记录日志但不中断处理
         }

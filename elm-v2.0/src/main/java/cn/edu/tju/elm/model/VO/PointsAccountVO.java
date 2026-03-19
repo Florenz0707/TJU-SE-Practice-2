@@ -14,7 +14,7 @@ public class PointsAccountVO {
   public PointsAccountVO(PointsAccount account) {
     if (account != null) {
       this.id = account.getId();
-      this.userId = account.getUser() != null ? account.getUser().getId() : null;
+      this.userId = account.getUserId();
       this.totalPoints = account.getTotalPoints();
       this.frozenPoints = account.getFrozenPoints();
       this.availablePoints = account.getAvailablePoints();

@@ -1,7 +1,6 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.utils.EntityUtils;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -9,9 +8,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "points_batch")
 public class PointsBatch extends BaseEntity {
-  @ManyToOne
-  @JoinColumn(name = "user_id", nullable = false)
-  private User user;
+  @Column(name = "user_id", nullable = false)
+  private Long userId;
 
   @Column(nullable = false)
   private Integer points;
@@ -32,12 +30,12 @@ public class PointsBatch extends BaseEntity {
   @Column(name = "temp_order_id", length = 100)
   private String tempOrderId;
 
-  public User getUser() {
-    return user;
+  public Long getUserId() {
+    return userId;
   }
 
-  public void setUser(User user) {
-    this.user = user;
+  public void setUserId(Long userId) {
+    this.userId = userId;
   }
 
   public Integer getPoints() {
@@ -110,9 +108,9 @@ public class PointsBatch extends BaseEntity {
   }
 
   public static PointsBatch createBatch(
-      User user, Integer points, LocalDateTime expireTime, PointsRecord record) {
+      Long userId, Integer points, LocalDateTime expireTime, PointsRecord record) {
     PointsBatch batch = new PointsBatch();
-    batch.setUser(user);
+    batch.setUserId(userId);
     batch.setPoints(points);
     batch.setExpireTime(expireTime);
     batch.setRecord(record);

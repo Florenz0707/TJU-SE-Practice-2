@@ -15,4 +15,7 @@ public interface PointsRecordRepository extends JpaRepository<PointsRecord, Long
   List<PointsRecord> findByUserId(Long userId);
 
   Optional<PointsRecord> findByBizId(String bizId);
+
+  Optional<PointsRecord> findTopByUserIdAndTypeAndBizIdOrderByRecordTimeDesc(
+      Long userId, String type, String bizId);
 }

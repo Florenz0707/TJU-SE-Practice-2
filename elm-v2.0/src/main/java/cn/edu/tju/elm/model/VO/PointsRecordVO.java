@@ -18,7 +18,7 @@ public class PointsRecordVO {
   public PointsRecordVO(PointsRecord record) {
     if (record != null) {
       this.id = record.getId();
-      this.userId = record.getUser() != null ? record.getUser().getId() : null;
+      this.userId = record.getUserId();
       this.type = record.getType();
       this.points = record.getPoints();
       this.bizId = record.getBizId();

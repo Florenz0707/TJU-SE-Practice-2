@@ -48,6 +48,9 @@ public class Order extends BaseEntity {
   @Column(unique = true)
   private String requestId;
 
+  @Column(name = "points_trade_no", length = 100)
+  private String pointsTradeNo;
+
   public User getCustomer() {
     return customer;
   }
@@ -142,5 +145,13 @@ public class Order extends BaseEntity {
 
   public void setRequestId(String requestId) {
     this.requestId = requestId;
+  }
+
+  public String getPointsTradeNo() {
+    return pointsTradeNo;
+  }
+
+  public void setPointsTradeNo(String pointsTradeNo) {
+    this.pointsTradeNo = pointsTradeNo;
   }
 }

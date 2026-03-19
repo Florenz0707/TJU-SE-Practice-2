@@ -19,11 +19,13 @@ public class InternalServiceClient {
   private final String internalServiceToken;
 
   public InternalServiceClient(
-      @Value("${server.servlet.context-path:/elm}") String contextPath,
-      @Value("${server.port:8080}") int port,
+      @Value("${points.service.url:http://localhost:8080/elm}") String pointsServiceUrl,
       @Value("${internal.service.token}") String internalServiceToken) {
     this.restTemplate = new RestTemplate();
-    this.baseUrl = "http://localhost:" + port + contextPath;
+    this.baseUrl =
+        pointsServiceUrl.endsWith("/")
+            ? pointsServiceUrl.substring(0, pointsServiceUrl.length() - 1)
+            : pointsServiceUrl;
     this.internalServiceToken = internalServiceToken;
   }
 
@@ -35,11 +37,34 @@ public class InternalServiceClient {
     return headers;
   }
 
+  private Map<?, ?> postInternal(String path, Map<String, Object> requestBody) {
+    String url = baseUrl + path;
+    HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+    ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+    return response.getBody();
+  }
+
+  private boolean isSuccessResponse(Map<?, ?> body) {
+    return body != null && Boolean.TRUE.equals(body.get("success"));
+  }
+
+  private Integer readIntegerData(Map<?, ?> body) {
+    if (body == null) {
+      return null;
+    }
+    Object data = body.get("data");
+    if (data instanceof Integer i) {
+      return i;
+    }
+    if (data instanceof Number n) {
+      return n.intValue();
+    }
+    return null;
+  }
+
   /** 通知订单完成（发放积分） */
   public Integer notifyOrderSuccess(
       Long userId, String bizId, Double amount, String eventTime, String extraInfo) {
-    String url = baseUrl + "/api/inner/points/notify/order-success";
-
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("userId", userId);
     requestBody.put("bizId", bizId);
@@ -47,13 +72,11 @@ public class InternalServiceClient {
     requestBody.put("eventTime", eventTime != null ? eventTime : "");
     requestBody.put("extraInfo", extraInfo != null ? extraInfo : "");
 
-    HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
-
     try {
-      ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-      if (response.getBody() != null
-          && Boolean.TRUE.equals(((Map<?, ?>) response.getBody()).get("success"))) {
-        return (Integer) ((Map<?, ?>) response.getBody()).get("data");
+      Map<?, ?> responseBody = postInternal("/api/inner/points/notify/order-success", requestBody);
+      if (isSuccessResponse(responseBody)) {
+        Integer points = readIntegerData(responseBody);
+        return points != null ? points : 0;
       }
     } catch (Exception e) {
       // 记录日志，但不抛出异常，避免影响主业务流程
@@ -65,8 +88,6 @@ public class InternalServiceClient {
   /** 通知评价完成（发放积分） */
   public Integer notifyReviewSuccess(
       Long userId, String bizId, Integer amount, String eventTime, String extraInfo) {
-    String url = baseUrl + "/api/inner/points/notify/review-success";
-
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("userId", userId);
     requestBody.put("bizId", bizId);
@@ -74,18 +95,52 @@ public class InternalServiceClient {
     requestBody.put("eventTime", eventTime != null ? eventTime : "");
     requestBody.put("extraInfo", extraInfo != null ? extraInfo : "");
 
-    HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
-
     try {
-      ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-      if (response.getBody() != null
-          && Boolean.TRUE.equals(((Map<?, ?>) response.getBody()).get("success"))) {
-        return (Integer) ((Map<?, ?>) response.getBody()).get("data");
+      Map<?, ?> responseBody = postInternal("/api/inner/points/notify/review-success", requestBody);
+      if (isSuccessResponse(responseBody)) {
+        Integer points = readIntegerData(responseBody);
+        return points != null ? points : 0;
       }
     } catch (Exception e) {
       System.err.println("Failed to notify review success: " + e.getMessage());
     }
     return 0;
+  }
+
+  /** 通知订单完成（用于Outbox可靠投递） */
+  public boolean notifyOrderSuccessReliable(
+      Long userId, String bizId, Double amount, String eventTime, String extraInfo) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("userId", userId);
+    requestBody.put("bizId", bizId);
+    requestBody.put("amount", amount);
+    requestBody.put("eventTime", eventTime != null ? eventTime : "");
+    requestBody.put("extraInfo", extraInfo != null ? extraInfo : "");
+    try {
+      Map<?, ?> responseBody = postInternal("/api/inner/points/notify/order-success", requestBody);
+      return isSuccessResponse(responseBody);
+    } catch (Exception e) {
+      System.err.println("Failed to notify order success reliably: " + e.getMessage());
+      return false;
+    }
+  }
+
+  /** 通知评价完成（用于Outbox可靠投递） */
+  public boolean notifyReviewSuccessReliable(
+      Long userId, String bizId, Integer amount, String eventTime, String extraInfo) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("userId", userId);
+    requestBody.put("bizId", bizId);
+    requestBody.put("amount", amount != null ? amount : 0);
+    requestBody.put("eventTime", eventTime != null ? eventTime : "");
+    requestBody.put("extraInfo", extraInfo != null ? extraInfo : "");
+    try {
+      Map<?, ?> responseBody = postInternal("/api/inner/points/notify/review-success", requestBody);
+      return isSuccessResponse(responseBody);
+    } catch (Exception e) {
+      System.err.println("Failed to notify review success reliably: " + e.getMessage());
+      return false;
+    }
   }
 
   /** 冻结积分 */

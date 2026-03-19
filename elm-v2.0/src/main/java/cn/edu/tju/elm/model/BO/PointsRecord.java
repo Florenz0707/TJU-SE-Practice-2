@@ -1,7 +1,6 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.utils.EntityUtils;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -9,9 +8,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "points_record")
 public class PointsRecord extends BaseEntity {
-  @ManyToOne
-  @JoinColumn(name = "user_id", nullable = false)
-  private User user;
+  @Column(name = "user_id", nullable = false)
+  private Long userId;
 
   @Column(nullable = false, length = 20)
   private String type;
@@ -31,12 +29,12 @@ public class PointsRecord extends BaseEntity {
   @Column(name = "record_time", nullable = false)
   private LocalDateTime recordTime;
 
-  public User getUser() {
-    return user;
+  public Long getUserId() {
+    return userId;
   }
 
-  public void setUser(User user) {
-    this.user = user;
+  public void setUserId(Long userId) {
+    this.userId = userId;
   }
 
   public String getType() {
@@ -88,14 +86,14 @@ public class PointsRecord extends BaseEntity {
   }
 
   public static PointsRecord createRecord(
-      User user,
+      Long userId,
       String type,
       Integer points,
       String bizId,
       String channelType,
       String description) {
     PointsRecord record = new PointsRecord();
-    record.setUser(user);
+    record.setUserId(userId);
     record.setType(type);
     record.setPoints(points);
     record.setBizId(bizId);

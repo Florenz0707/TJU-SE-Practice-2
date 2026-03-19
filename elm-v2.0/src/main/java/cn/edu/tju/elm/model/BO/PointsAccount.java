@@ -1,16 +1,14 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.utils.EntityUtils;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "points_account")
 public class PointsAccount extends BaseEntity {
-  @ManyToOne
-  @JoinColumn(name = "user_id", nullable = false, unique = true)
-  private User user;
+  @Column(name = "user_id", nullable = false, unique = true)
+  private Long userId;
 
   @Column(name = "total_points", nullable = false)
   private Integer totalPoints = 0;
@@ -18,12 +16,12 @@ public class PointsAccount extends BaseEntity {
   @Column(name = "frozen_points", nullable = false)
   private Integer frozenPoints = 0;
 
-  public User getUser() {
-    return user;
+  public Long getUserId() {
+    return userId;
   }
 
-  public void setUser(User user) {
-    this.user = user;
+  public void setUserId(Long userId) {
+    this.userId = userId;
   }
 
   public Integer getTotalPoints() {
@@ -79,9 +77,9 @@ public class PointsAccount extends BaseEntity {
     }
   }
 
-  public static PointsAccount createNewAccount(User user) {
+  public static PointsAccount createNewAccount(Long userId) {
     PointsAccount account = new PointsAccount();
-    account.setUser(user);
+    account.setUserId(userId);
     account.setTotalPoints(0);
     account.setFrozenPoints(0);
     EntityUtils.setNewEntity(account);
