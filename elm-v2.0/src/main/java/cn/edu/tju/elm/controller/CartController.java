@@ -58,7 +58,7 @@ public class CartController {
     EntityUtils.setNewEntity(cart);
     cart.setFood(food);
     cart.setBusiness(business);
-    cart.setCustomer(me);
+    cart.setCustomerId(me.getId());
     cartItemService.addCart(cart);
     return HttpResult.success(cart);
   }
@@ -90,10 +90,10 @@ public class CartController {
 
     Cart cart = cartItemService.getCartById(id);
     if (cart == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
-    User owner = cart.getCustomer();
+    Long ownerId = cart.getCustomerId();
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-    if (isAdmin || me.equals(owner)) {
+    if (isAdmin || me.getId().equals(ownerId)) {
       cart.setQuantity(newCart.getQuantity());
       EntityUtils.updateEntity(cart);
       cartItemService.updateCart(cart);
@@ -115,7 +115,7 @@ public class CartController {
     if (cart == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-    if (isAdmin || me.equals(cart.getCustomer())) {
+    if (isAdmin || me.getId().equals(cart.getCustomerId())) {
       cartItemService.deleteCart(cart);
       return HttpResult.success("Delete cart successfully.");
     }

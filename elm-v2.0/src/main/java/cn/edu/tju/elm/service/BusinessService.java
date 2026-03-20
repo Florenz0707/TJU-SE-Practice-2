@@ -1,6 +1,5 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.repository.BusinessRepository;
 import cn.edu.tju.elm.utils.EntityUtils;
@@ -28,8 +27,8 @@ public class BusinessService {
     return businessOptional.map(EntityUtils::filterEntity).orElse(null);
   }
 
-  public List<Business> getBusinessByOwner(User owner) {
-    List<Business> businessList = businessRepository.findAllByBusinessOwner(owner);
+  public List<Business> getBusinessByOwnerId(Long ownerId) {
+    List<Business> businessList = businessRepository.findAllByBusinessOwnerId(ownerId);
     return EntityUtils.filterEntityList(businessList);
   }
 

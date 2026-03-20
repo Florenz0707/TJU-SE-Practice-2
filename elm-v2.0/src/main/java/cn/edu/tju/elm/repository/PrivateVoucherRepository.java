@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface PrivateVoucherRepository extends JpaRepository<PrivateVoucher, Long> {
   @Query(
-      "SELECT pv FROM PrivateVoucher pv WHERE pv.wallet.owner.id = :ownerId AND (pv.deleted IS NULL"
+      "SELECT pv FROM PrivateVoucher pv WHERE pv.wallet.ownerId = :ownerId AND (pv.deleted IS NULL"
           + " OR pv.deleted = false)")
   java.util.List<PrivateVoucher> findByWalletOwnerId(@Param("ownerId") Long ownerId);
 
@@ -17,7 +17,7 @@ public interface PrivateVoucherRepository extends JpaRepository<PrivateVoucher, 
 
   @Query(
       "SELECT COUNT(pv) FROM PrivateVoucher pv WHERE pv.publicVoucher.id = :publicVoucherId AND"
-          + " pv.wallet.owner.id = :ownerId")
+          + " pv.wallet.ownerId = :ownerId")
   long countByPublicVoucherIdAndWalletOwnerId(
       @Param("publicVoucherId") Long publicVoucherId, @Param("ownerId") Long ownerId);
 }

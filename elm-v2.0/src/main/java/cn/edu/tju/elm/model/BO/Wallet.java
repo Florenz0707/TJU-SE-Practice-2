@@ -1,12 +1,9 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.utils.EntityUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,9 +16,8 @@ public class Wallet extends BaseEntity {
   @Column(nullable = false)
   private BigDecimal voucher;
 
-  @OneToOne
-  @JoinColumn(name = "owner_id", nullable = false)
-  private User owner;
+  @Column(name = "owner_id", nullable = false, unique = true)
+  private Long ownerId;
 
   @Column(name = "credit_limit", nullable = false)
   private BigDecimal creditLimit = BigDecimal.ZERO;
@@ -39,13 +35,13 @@ public class Wallet extends BaseEntity {
     return voucher;
   }
 
-  public User getOwner() {
-    return owner;
+  public Long getOwnerId() {
+    return ownerId;
   }
 
-  public static Wallet getNewWallet(User owner) {
+  public static Wallet getNewWallet(Long ownerId) {
     Wallet wallet = new Wallet();
-    wallet.owner = owner;
+    wallet.ownerId = ownerId;
     wallet.balance = BigDecimal.ZERO;
     wallet.voucher = BigDecimal.ZERO;
     EntityUtils.setNewEntity(wallet);

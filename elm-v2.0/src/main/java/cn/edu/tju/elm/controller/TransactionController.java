@@ -9,6 +9,7 @@ import cn.edu.tju.elm.model.RECORD.TransactionsRecord;
 import cn.edu.tju.elm.model.VO.TransactionVO;
 import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
+import cn.edu.tju.elm.utils.AuthorityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -64,9 +65,10 @@ public class TransactionController {
     if (walletId == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "WalletId CANT BE NULL");
 
-    User owner = walletService.getWalletOwnerById(walletId);
-    if (owner == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Wallet NOT FOUND");
-    if (!me.equals(owner)) return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    Long ownerId = walletService.getWalletOwnerIdById(walletId);
+    if (ownerId == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Wallet NOT FOUND");
+    if (!me.getId().equals(ownerId))
+      return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
     try {
       TransactionsRecord transactionsRecord =
@@ -86,7 +88,7 @@ public class TransactionController {
     User me = meOptional.get();
 
     try {
-      var walletVO = walletService.getWalletByOwner(me);
+      var walletVO = walletService.getWalletByOwnerId(me.getId());
       if (walletVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "钱包不存在");
 
       TransactionsRecord transactionsRecord =
@@ -159,7 +161,8 @@ public class TransactionController {
     if (id == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ID CANT BE NULL");
 
     try {
-      TransactionVO transactionVO = transactionService.finishTransaction(id, me);
+      boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+      TransactionVO transactionVO = transactionService.finishTransaction(id, me.getId(), isAdmin);
       return HttpResult.success(transactionVO);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());

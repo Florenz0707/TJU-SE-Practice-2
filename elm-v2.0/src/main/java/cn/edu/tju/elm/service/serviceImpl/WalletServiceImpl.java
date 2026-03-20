@@ -1,12 +1,10 @@
 package cn.edu.tju.elm.service.serviceImpl;
 
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.exception.WalletException;
 import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.model.VO.WalletVO;
 import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
-import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
@@ -19,10 +17,11 @@ public class WalletServiceImpl implements WalletService {
     this.walletRepository = walletRepository;
   }
 
-  public WalletVO createWallet(User owner) throws WalletException {
-    if (walletRepository.findByOwner(owner).isPresent())
+  public WalletVO createWallet(Long ownerId) throws WalletException {
+    if (ownerId == null) throw new WalletException(WalletException.NOT_FOUND);
+    if (walletRepository.findByOwnerId(ownerId).isPresent())
       throw new WalletException(WalletException.ALREADY_EXISTS);
-    Wallet wallet = Wallet.getNewWallet(owner);
+    Wallet wallet = Wallet.getNewWallet(ownerId);
     walletRepository.save(wallet);
     return new WalletVO(wallet);
   }
@@ -36,22 +35,23 @@ public class WalletServiceImpl implements WalletService {
     new WalletVO(wallet);
   }
 
-  public User getWalletOwnerById(Long id) throws WalletException {
+  public Long getWalletOwnerIdById(Long id) throws WalletException {
     Wallet wallet = walletRepository.findById(id).orElse(null);
     if (wallet == null) throw new WalletException(WalletException.NOT_FOUND);
-    return wallet.getOwner();
+    return wallet.getOwnerId();
   }
 
-  public WalletVO getWalletByOwner(User owner) throws WalletException {
-    Wallet wallet = walletRepository.findByOwner(owner).orElse(null);
+  public WalletVO getWalletByOwnerId(Long ownerId) throws WalletException {
+    Wallet wallet = walletRepository.findByOwnerId(ownerId).orElse(null);
     if (wallet == null) throw new WalletException(WalletException.NOT_FOUND);
     return new WalletVO(wallet);
   }
 
-  public WalletVO getWalletById(Long walletId, User operator) throws WalletException {
+  public WalletVO getWalletById(Long walletId, Long operatorId, boolean isAdmin)
+      throws WalletException {
     Wallet wallet = walletRepository.findById(walletId).orElse(null);
     if (wallet == null) throw new WalletException(WalletException.NOT_FOUND);
-    if (!wallet.getOwner().equals(operator) && !AuthorityUtils.hasAuthority(operator, "ADMIN"))
+    if (!wallet.getOwnerId().equals(operatorId) && !isAdmin)
       throw new WalletException(WalletException.FORBIDDEN);
     return new WalletVO(wallet);
   }

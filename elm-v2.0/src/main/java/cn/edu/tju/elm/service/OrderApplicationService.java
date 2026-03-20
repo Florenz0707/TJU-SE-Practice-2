@@ -2,7 +2,6 @@ package cn.edu.tju.elm.service;
 
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.exception.PointsException;
 import cn.edu.tju.elm.model.BO.Business;
@@ -17,7 +16,6 @@ import cn.edu.tju.elm.repository.PrivateVoucherRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
-import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import java.math.BigDecimal;
 import java.util.List;
@@ -73,7 +71,7 @@ public class OrderApplicationService {
   }
 
   @Transactional
-  public HttpResult<Order> addOrder(User me, Order order, String requestId) {
+  public HttpResult<Order> addOrder(Long currentUserId, Order order, String requestId) {
     if (requestId != null) {
       Order existingOrder = orderService.getOrderByRequestId(requestId);
       if (existingOrder != null) {
@@ -101,11 +99,11 @@ public class OrderApplicationService {
     if (address == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
 
-    List<Cart> cartList = cartItemService.getCart(business.getId(), me.getId());
+    List<Cart> cartList = cartItemService.getCart(business.getId(), currentUserId);
     if (cartList.isEmpty())
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
-    if (!me.equals(address.getCustomer()))
+    if (!currentUserId.equals(address.getCustomerId()))
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
     BigDecimal totalPrice = BigDecimal.ZERO;
@@ -126,7 +124,7 @@ public class OrderApplicationService {
           privateVoucherRepository.findById(order.getUsedVoucher().getId());
       if (voucherOpt.isPresent()) {
         usedVoucher = voucherOpt.get();
-        if (!usedVoucher.getWallet().getOwner().equals(me)) {
+        if (!currentUserId.equals(usedVoucher.getWallet().getOwnerId())) {
           return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "Voucher does not belong to you");
         }
         if (usedVoucher.getDeleted() != null && usedVoucher.getDeleted()) {
@@ -168,11 +166,11 @@ public class OrderApplicationService {
     if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
       walletPaid = order.getWalletPaid();
 
-      Optional<Wallet> walletOpt = walletRepository.findByOwnerId(me.getId());
+      Optional<Wallet> walletOpt = walletRepository.findByOwnerId(currentUserId);
       if (walletOpt.isEmpty()) {
         try {
-          walletService.createWallet(me);
-          walletOpt = walletRepository.findByOwnerId(me.getId());
+          walletService.createWallet(currentUserId);
+          walletOpt = walletRepository.findByOwnerId(currentUserId);
           if (walletOpt.isEmpty()) {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create wallet");
           }
@@ -212,7 +210,7 @@ public class OrderApplicationService {
     order.setOrderState(OrderState.PAID);
     order.setOrderDate(order.getCreateTime());
     order.setBusiness(business);
-    order.setCustomer(me);
+    order.setCustomerId(currentUserId);
     order.setDeliveryAddress(address);
     order.setUsedVoucher(usedVoucher);
     order.setVoucherDiscount(voucherDiscount);
@@ -243,10 +241,10 @@ public class OrderApplicationService {
     if (pointsUsed > 0) {
       try {
         pointsTradeNo = "ORDER_" + UUID.randomUUID();
-        pointsService.freezePoints(me.getId(), pointsUsed, pointsTradeNo);
+        pointsService.freezePoints(currentUserId, pointsUsed, pointsTradeNo);
         order.setPointsTradeNo(pointsTradeNo);
         orderService.addOrder(order);
-        pointsService.deductPoints(me.getId(), pointsTradeNo, pointsTradeNo);
+        pointsService.deductPoints(currentUserId, pointsTradeNo, pointsTradeNo);
       } catch (PointsException e) {
         log.error("Failed to deduct points: {}", e.getMessage());
         if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
@@ -285,16 +283,16 @@ public class OrderApplicationService {
     }
 
     log.info(
-        "Order created: orderId={}, userId={}, total={}", order.getId(), me.getId(), totalPrice);
+        "Order created: orderId={}, userId={}, total={}", order.getId(), currentUserId, totalPrice);
     return HttpResult.success(order);
   }
 
   @Transactional
-  public HttpResult<Order> cancelOrder(User me, Long id) {
+  public HttpResult<Order> cancelOrder(Long currentUserId, Long id) {
     Order order = orderService.getOrderById(id);
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
 
-    if (!me.equals(order.getCustomer()))
+    if (!currentUserId.equals(order.getCustomerId()))
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
     if (!order.getOrderState().equals(OrderState.PAID)) {
@@ -303,7 +301,7 @@ public class OrderApplicationService {
 
     try {
       if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
-        Optional<Wallet> walletOpt = walletRepository.findByOwnerId(me.getId());
+        Optional<Wallet> walletOpt = walletRepository.findByOwnerId(currentUserId);
         if (walletOpt.isPresent()) {
           Wallet wallet = walletOpt.get();
           wallet.addBalance(order.getWalletPaid());
@@ -315,9 +313,10 @@ public class OrderApplicationService {
       if (order.getPointsUsed() != null && order.getPointsUsed() > 0) {
         String orderBizId =
             order.getPointsTradeNo() != null ? order.getPointsTradeNo() : "ORDER_" + order.getId();
-        boolean refunded = pointsService.refundDeductedPoints(me.getId(), orderBizId, "订单取消返还积分");
+        boolean refunded =
+            pointsService.refundDeductedPoints(currentUserId, orderBizId, "订单取消返还积分");
         if (!refunded) {
-          pointsService.rollbackPoints(me.getId(), orderBizId, "订单取消");
+          pointsService.rollbackPoints(currentUserId, orderBizId, "订单取消");
         }
       }
 
@@ -339,7 +338,9 @@ public class OrderApplicationService {
       orderService.updateOrder(order);
 
       log.warn(
-          "Order canceled: orderId={}, userId={}, reason=user_request", order.getId(), me.getId());
+          "Order canceled: orderId={}, userId={}, reason=user_request",
+          order.getId(),
+          currentUserId);
       return HttpResult.success(order);
     } catch (Exception e) {
       log.error("Failed to cancel order: {}", e.getMessage());
@@ -348,7 +349,8 @@ public class OrderApplicationService {
   }
 
   @Transactional
-  public HttpResult<Order> updateOrderStatus(User me, Order order) {
+  public HttpResult<Order> updateOrderStatus(
+      Long currentUserId, boolean isAdmin, boolean isBusiness, Order order) {
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order CANT BE NULL");
     if (order.getId() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.Id CANT BE NULL");
@@ -364,11 +366,9 @@ public class OrderApplicationService {
     if (!orderService.isValidStateTransition(newOrder.getOrderState(), orderState))
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "非法的状态转换");
 
-    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
     if (!(isAdmin
-        || (isBusiness && me.equals(newOrder.getBusiness().getBusinessOwner()))
-        || me.equals(newOrder.getCustomer()))) {
+        || (isBusiness && currentUserId.equals(newOrder.getBusiness().getBusinessOwnerId()))
+        || currentUserId.equals(newOrder.getCustomerId()))) {
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
@@ -393,7 +393,7 @@ public class OrderApplicationService {
 
         Double orderAmount = pointsBase.doubleValue();
         integrationOutboxService.enqueuePointsOrderSuccess(
-            newOrder.getCustomer().getId(),
+            newOrder.getCustomerId(),
             newOrder.getId().toString(),
             orderAmount,
             newOrder.getOrderDate() != null ? newOrder.getOrderDate().toString() : null,

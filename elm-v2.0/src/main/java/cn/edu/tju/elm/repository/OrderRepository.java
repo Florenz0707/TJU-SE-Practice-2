@@ -18,22 +18,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   @Query(
       "SELECT o FROM Order o "
           + "LEFT JOIN FETCH o.business "
-          + "LEFT JOIN FETCH o.customer "
           + "LEFT JOIN FETCH o.deliveryAddress "
-          + "WHERE o.customer.id = :customerId")
+          + "WHERE o.customerId = :customerId")
   List<Order> findAllByCustomerIdWithDetails(@Param("customerId") Long customerId);
 
   @Query(
       "SELECT o FROM Order o "
           + "LEFT JOIN FETCH o.business "
-          + "LEFT JOIN FETCH o.customer "
           + "LEFT JOIN FETCH o.deliveryAddress "
           + "WHERE o.business.id = :businessId")
   List<Order> findAllByBusinessIdWithDetails(@Param("businessId") Long businessId);
 
   @Query(
-      value = "SELECT o FROM Order o WHERE o.customer.id = :customerId",
-      countQuery = "SELECT COUNT(o) FROM Order o WHERE o.customer.id = :customerId")
+      value = "SELECT o FROM Order o WHERE o.customerId = :customerId",
+      countQuery = "SELECT COUNT(o) FROM Order o WHERE o.customerId = :customerId")
   Page<Order> findAllByCustomerId(@Param("customerId") Long customerId, Pageable pageable);
 
   @Query(

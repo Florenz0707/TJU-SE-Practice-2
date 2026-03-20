@@ -9,6 +9,7 @@ import cn.edu.tju.elm.model.VO.TransactionVO;
 import cn.edu.tju.elm.model.VO.WalletVO;
 import cn.edu.tju.elm.service.serviceInterface.TransactionService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
+import cn.edu.tju.elm.utils.AuthorityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,7 +37,7 @@ public class WalletController {
 
   @GetMapping("/owner/{id}")
   @Operation(summary = "根据钱包ID获取所有者", description = "查询指定钱包的所有者信息")
-  public HttpResult<User> getWalletOwnerById(
+  public HttpResult<Long> getWalletOwnerById(
       @Parameter(description = "钱包ID", required = true) @PathVariable Long id) {
     Optional<User> meOptional = userService.getUserWithAuthorities();
     if (meOptional.isEmpty())
@@ -45,8 +46,8 @@ public class WalletController {
     if (id == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "WalletId CANT BE NULL");
 
     try {
-      User owner = walletService.getWalletOwnerById(id);
-      return HttpResult.success(owner);
+      Long ownerId = walletService.getWalletOwnerIdById(id);
+      return HttpResult.success(ownerId);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }
@@ -64,7 +65,8 @@ public class WalletController {
     if (id == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "WalletId CANT BE NULL");
 
     try {
-      WalletVO walletVO = walletService.getWalletById(id, me);
+      boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+      WalletVO walletVO = walletService.getWalletById(id, me.getId(), isAdmin);
       return HttpResult.success(walletVO);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
@@ -101,7 +103,7 @@ public class WalletController {
     User me = meOptional.get();
 
     try {
-      WalletVO walletVO = walletService.getWalletByOwner(me);
+      WalletVO walletVO = walletService.getWalletByOwnerId(me.getId());
       return HttpResult.success(walletVO);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
@@ -117,7 +119,7 @@ public class WalletController {
     User me = meOptional.get();
 
     try {
-      WalletVO walletVO = walletService.createWallet(me);
+      WalletVO walletVO = walletService.createWallet(me.getId());
       return HttpResult.success(walletVO);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
@@ -137,7 +139,7 @@ public class WalletController {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "充值金额必须大于0");
 
     try {
-      WalletVO walletVO = walletService.getWalletByOwner(me);
+      WalletVO walletVO = walletService.getWalletByOwnerId(me.getId());
       if (walletVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "钱包不存在，请先创建钱包");
 
       TransactionVO transaction =
@@ -162,7 +164,7 @@ public class WalletController {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "提现金额必须大于0");
 
     try {
-      WalletVO walletVO = walletService.getWalletByOwner(me);
+      WalletVO walletVO = walletService.getWalletByOwnerId(me.getId());
       if (walletVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "钱包不存在");
 
       TransactionVO transaction =

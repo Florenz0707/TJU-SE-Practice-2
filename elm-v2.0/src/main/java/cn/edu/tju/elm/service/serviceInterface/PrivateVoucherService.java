@@ -1,6 +1,5 @@
 package cn.edu.tju.elm.service.serviceInterface;
 
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.exception.PrivateVoucherException;
 import cn.edu.tju.elm.model.VO.PrivateVoucherVO;
 import cn.edu.tju.elm.model.VO.PublicVoucherVO;
@@ -18,8 +17,8 @@ public interface PrivateVoucherService {
   @Transactional
   void restoreVoucher(Long voucherId) throws PrivateVoucherException;
 
-  List<PrivateVoucherVO> getPrivateVouchers(User user) throws PrivateVoucherException;
+  List<PrivateVoucherVO> getPrivateVouchers(Long userId) throws PrivateVoucherException;
 
   @Transactional
-  void clearExpiredPrivateVouchers(User user) throws PrivateVoucherException;
+  void clearExpiredPrivateVouchers(Long userId) throws PrivateVoucherException;
 }

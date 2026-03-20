@@ -1,6 +1,5 @@
 package cn.edu.tju.elm.service.serviceImpl;
 
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.exception.PrivateVoucherException;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.model.BO.PublicVoucher;
@@ -56,7 +55,7 @@ public class PrivateVoucherServiceImpl implements PrivateVoucherService {
       if (pub.getPerUserLimit() != null) {
         long userClaimed =
             privateVoucherRepository.countByPublicVoucherIdAndWalletOwnerId(
-                pubId, wallet.getOwner().getId());
+                pubId, wallet.getOwnerId());
         if (userClaimed >= pub.getPerUserLimit()) {
           throw new PrivateVoucherException("已达领取上限");
         }
@@ -98,9 +97,9 @@ public class PrivateVoucherServiceImpl implements PrivateVoucherService {
     privateVoucherRepository.save(voucher);
   }
 
-  public List<PrivateVoucherVO> getPrivateVouchers(User user) throws PrivateVoucherException {
-    if (user == null) throw new PrivateVoucherException("User CANT BE NULL");
-    List<PrivateVoucher> pvList = privateVoucherRepository.findByWalletOwnerId(user.getId());
+  public List<PrivateVoucherVO> getPrivateVouchers(Long userId) throws PrivateVoucherException {
+    if (userId == null) throw new PrivateVoucherException("UserId CANT BE NULL");
+    List<PrivateVoucher> pvList = privateVoucherRepository.findByWalletOwnerId(userId);
     java.util.List<PrivateVoucherVO> ret = new java.util.ArrayList<>();
     for (PrivateVoucher pv : pvList) {
       ret.add(new PrivateVoucherVO(pv));
@@ -108,5 +107,5 @@ public class PrivateVoucherServiceImpl implements PrivateVoucherService {
     return ret;
   }
 
-  public void clearExpiredPrivateVouchers(User user) throws PrivateVoucherException {}
+  public void clearExpiredPrivateVouchers(Long userId) throws PrivateVoucherException {}
 }

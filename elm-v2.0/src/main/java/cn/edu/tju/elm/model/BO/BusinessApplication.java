@@ -1,7 +1,6 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -13,9 +12,8 @@ public class BusinessApplication extends BaseEntity {
   @JoinColumn(name = "business_id", nullable = false)
   private Business business;
 
-  @ManyToOne
-  @JoinColumn(name = "handler_id", nullable = false)
-  private User handler;
+  @Column(name = "handler_id", nullable = false)
+  private Long handlerId;
 
   @Column(columnDefinition = "TEXT")
   private String applicationExplain;
@@ -33,12 +31,12 @@ public class BusinessApplication extends BaseEntity {
     this.business = business;
   }
 
-  public User getHandler() {
-    return handler;
+  public Long getHandlerId() {
+    return handlerId;
   }
 
-  public void setHandler(User handler) {
-    this.handler = handler;
+  public void setHandlerId(Long handlerId) {
+    this.handlerId = handlerId;
   }
 
   public String getApplicationExplain() {

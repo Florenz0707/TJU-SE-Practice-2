@@ -46,7 +46,7 @@ public class AddressController {
     if (address == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
-    address.setCustomer(me);
+    address.setCustomerId(me.getId());
     EntityUtils.setNewEntity(address);
     addressService.addAddress(address);
 
@@ -80,11 +80,11 @@ public class AddressController {
 
     DeliveryAddress address = addressService.getAddressById(id);
     if (address == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
-    User oldCustomer = address.getCustomer();
+    Long oldCustomerId = address.getCustomerId();
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-    if (isAdmin || me.equals(oldCustomer)) {
-      newAddress.setCustomer(oldCustomer);
+    if (isAdmin || me.getId().equals(oldCustomerId)) {
+      newAddress.setCustomerId(oldCustomerId);
       newAddress.setId(null);
       EntityUtils.substituteEntity(address, newAddress);
       addressService.updateAddress(address);
@@ -105,10 +105,10 @@ public class AddressController {
 
     DeliveryAddress address = addressService.getAddressById(id);
     if (address == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
-    User customer = address.getCustomer();
+    Long customerId = address.getCustomerId();
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-    if (isAdmin || (me.equals(customer))) {
+    if (isAdmin || me.getId().equals(customerId)) {
       EntityUtils.deleteEntity(address);
       addressService.updateAddress(address);
       return HttpResult.success("Delete address successfully.");

@@ -48,9 +48,9 @@ public class MerchantApplicationController {
 
     EntityUtils.setNewEntity(merchantApplication);
     merchantApplication.setApplicationState(ApplicationState.UNDISPOSED);
-    merchantApplication.setApplicant(me);
+    merchantApplication.setApplicantId(me.getId());
     User admin = userService.getUserWithUsername("admin");
-    merchantApplication.setHandler(admin);
+    merchantApplication.setHandlerId(admin.getId());
     merchantApplicationService.addApplication(merchantApplication);
     return HttpResult.success(merchantApplication);
   }
@@ -78,7 +78,7 @@ public class MerchantApplicationController {
     if (merchantApplication == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "MerchantApplication NOT FOUND");
 
-    if (isAdmin || (isBusiness && me.equals(merchantApplication.getApplicant())))
+    if (isAdmin || (isBusiness && me.getId().equals(merchantApplication.getApplicantId())))
       return HttpResult.success(merchantApplication);
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -110,7 +110,9 @@ public class MerchantApplicationController {
     merchantApplicationService.updateMerchantApplication(merchantApplication);
 
     if (merchantApplication.getApplicationState().equals(ApplicationState.APPROVED)) {
-      User applicant = merchantApplication.getApplicant();
+      User applicant = userService.getUserById(merchantApplication.getApplicantId());
+      if (applicant == null)
+        return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Applicant NOT FOUND");
       applicant.setAuthorities(AuthorityUtils.getAuthoritySet("USER BUSINESS"));
       EntityUtils.updateEntity(applicant);
       userService.updateUser(applicant);

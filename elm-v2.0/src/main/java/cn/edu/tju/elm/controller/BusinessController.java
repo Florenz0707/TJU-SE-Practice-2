@@ -56,10 +56,10 @@ public class BusinessController {
 
     if (business.getBusinessName() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessName CANT BE NULL");
-    if (business.getBusinessOwner() == null || business.getBusinessOwner().getId() == null)
+    if (business.getBusinessOwnerId() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner.Id CANT BE NULL");
 
-    User owner = userService.getUserById(business.getBusinessOwner().getId());
+    User owner = userService.getUserById(business.getBusinessOwnerId());
     if (owner == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner NOT FOUND");
 
@@ -67,7 +67,7 @@ public class BusinessController {
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
     if (isAdmin || (isBusiness && me.equals(owner))) {
-      business.setBusinessOwner(owner);
+      business.setBusinessOwnerId(owner.getId());
       EntityUtils.setNewEntity(business);
       businessService.addBusiness(business);
 
@@ -89,7 +89,7 @@ public class BusinessController {
     Business oldBusiness = businessService.getBusinessById(id);
     if (oldBusiness == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-    User oldOwner = oldBusiness.getBusinessOwner();
+    Long oldOwnerId = oldBusiness.getBusinessOwnerId();
 
     if (business == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business CANT BE NULL");
@@ -98,10 +98,10 @@ public class BusinessController {
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-    if (isAdmin || (isBusiness && me.equals(oldOwner))) {
+    if (isAdmin || (isBusiness && me.getId().equals(oldOwnerId))) {
       business.setId(null);
       EntityUtils.substituteEntity(oldBusiness, business);
-      business.setBusinessOwner(oldOwner);
+      business.setBusinessOwnerId(oldOwnerId);
       businessService.updateBusiness(oldBusiness);
       businessService.updateBusiness(business);
 
@@ -123,15 +123,15 @@ public class BusinessController {
     Business oldBusiness = businessService.getBusinessById(id);
     if (oldBusiness == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-    User oldOwner = oldBusiness.getBusinessOwner();
+    Long oldOwnerId = oldBusiness.getBusinessOwnerId();
 
     if (business == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business CANT BE NULL");
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-    if (isAdmin || (isBusiness && me.equals(oldOwner))) {
-      business.setBusinessOwner(oldOwner);
+    if (isAdmin || (isBusiness && me.getId().equals(oldOwnerId))) {
+      business.setBusinessOwnerId(oldOwnerId);
       if (business.getBusinessName() == null)
         business.setBusinessName(oldBusiness.getBusinessName());
       if (business.getBusinessAddress() == null)
@@ -169,7 +169,7 @@ public class BusinessController {
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-    if (isAdmin || (isBusiness && business.getBusinessOwner().equals(me))) {
+    if (isAdmin || (isBusiness && business.getBusinessOwnerId().equals(me.getId()))) {
       EntityUtils.deleteEntity(business);
       businessService.updateBusiness(business);
       return HttpResult.success("Delete business successfully.");
@@ -187,7 +187,7 @@ public class BusinessController {
     User me = meOptional.get();
 
     if (AuthorityUtils.hasAuthority(me, "BUSINESS"))
-      return HttpResult.success(businessService.getBusinessByOwner(me));
+      return HttpResult.success(businessService.getBusinessByOwnerId(me.getId()));
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
 }

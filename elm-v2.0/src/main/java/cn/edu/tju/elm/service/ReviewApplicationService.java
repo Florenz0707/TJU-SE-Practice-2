@@ -2,11 +2,9 @@ package cn.edu.tju.elm.service;
 
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.Review;
-import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +32,7 @@ public class ReviewApplicationService {
   }
 
   @Transactional
-  public HttpResult<Review> addReview(User me, Long orderId, Review review) {
+  public HttpResult<Review> addReview(Long currentUserId, Long orderId, Review review) {
     Order order = orderService.getOrderById(orderId);
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
     if (!order.getOrderState().equals(OrderState.COMPLETE))
@@ -43,7 +41,7 @@ public class ReviewApplicationService {
     Review existingReview = reviewService.getReviewByOrderId(orderId);
     if (existingReview != null) return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "订单已评价");
 
-    User customer = order.getCustomer();
+    Long customerId = order.getCustomerId();
 
     if (review == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review CANT BE NULL");
     if (review.getStars() == null)
@@ -56,13 +54,13 @@ public class ReviewApplicationService {
     if (review.getAnonymous() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review.Anonymous CANT BE NULL");
 
-    if (!me.equals(customer))
+    if (!currentUserId.equals(customerId))
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
     EntityUtils.setNewEntity(review);
     review.setOrder(order);
     review.setBusiness(order.getBusiness());
-    review.setCustomer(customer);
+    review.setCustomerId(customerId);
     reviewService.addReview(review);
 
     order.setOrderState(OrderState.COMMENTED);
@@ -71,7 +69,7 @@ public class ReviewApplicationService {
 
     try {
       integrationOutboxService.enqueuePointsReviewSuccess(
-          customer.getId(),
+          customerId,
           review.getId().toString(),
           null,
           review.getCreateTime() != null ? review.getCreateTime().toString() : null,
@@ -84,17 +82,16 @@ public class ReviewApplicationService {
   }
 
   @Transactional
-  public HttpResult<String> deleteReview(User me, Long reviewId) {
+  public HttpResult<String> deleteReview(Long currentUserId, boolean isAdmin, Long reviewId) {
     Review review = reviewService.getReviewById(reviewId);
     if (review == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");
 
-    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-    if (!(isAdmin || me.equals(review.getCustomer()))) {
+    if (!(isAdmin || currentUserId.equals(review.getCustomerId()))) {
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     try {
-      pointsService.notifyReviewDeleted(review.getCustomer().getId(), reviewId.toString());
+      pointsService.notifyReviewDeleted(review.getCustomerId(), reviewId.toString());
     } catch (Exception e) {
       log.error("Failed to refund points for deleted review: {}", e.getMessage());
     }

@@ -1,6 +1,5 @@
 package cn.edu.tju.elm.service.serviceInterface;
 
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.exception.TransactionException;
 import cn.edu.tju.elm.model.RECORD.TransactionsRecord;
 import cn.edu.tju.elm.model.VO.TransactionVO;
@@ -14,7 +13,8 @@ public interface TransactionService {
       throws TransactionException;
 
   @Transactional
-  TransactionVO finishTransaction(Long id, User operator) throws TransactionException;
+  TransactionVO finishTransaction(Long id, Long operatorId, boolean isAdmin)
+      throws TransactionException;
 
   TransactionsRecord getTransactionsByWalletId(Long walletId) throws TransactionException;
 

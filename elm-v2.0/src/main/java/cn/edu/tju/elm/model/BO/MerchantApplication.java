@@ -1,17 +1,13 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 
 @Entity
 public class MerchantApplication extends BaseEntity {
-  @ManyToOne
-  @JoinColumn(name = "applicant_id", nullable = false)
-  private User applicant;
+  @Column(name = "applicant_id", nullable = false)
+  private Long applicantId;
 
   @Column(columnDefinition = "TEXT")
   private String applicationExplain;
@@ -21,16 +17,15 @@ public class MerchantApplication extends BaseEntity {
   @Column(length = 500)
   private String rejectReason;
 
-  @ManyToOne
-  @JoinColumn(name = "handler_id", nullable = false)
-  private User handler;
+  @Column(name = "handler_id", nullable = false)
+  private Long handlerId;
 
-  public User getApplicant() {
-    return applicant;
+  public Long getApplicantId() {
+    return applicantId;
   }
 
-  public void setApplicant(User applicant) {
-    this.applicant = applicant;
+  public void setApplicantId(Long applicantId) {
+    this.applicantId = applicantId;
   }
 
   public String getApplicationExplain() {
@@ -49,12 +44,12 @@ public class MerchantApplication extends BaseEntity {
     this.applicationState = applicationState;
   }
 
-  public User getHandler() {
-    return handler;
+  public Long getHandlerId() {
+    return handlerId;
   }
 
-  public void setHandler(User handler) {
-    this.handler = handler;
+  public void setHandlerId(Long handlerId) {
+    this.handlerId = handlerId;
   }
 
   public String getRejectReason() {

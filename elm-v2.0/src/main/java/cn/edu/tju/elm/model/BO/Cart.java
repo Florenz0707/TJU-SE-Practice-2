@@ -1,7 +1,7 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -12,9 +12,8 @@ public class Cart extends BaseEntity {
   @JoinColumn(name = "food_id", nullable = false)
   private Food food;
 
-  @ManyToOne
-  @JoinColumn(name = "customer_id", nullable = false)
-  private User customer;
+  @Column(name = "customer_id", nullable = false)
+  private Long customerId;
 
   @ManyToOne
   @JoinColumn(name = "business_id", nullable = false)
@@ -30,12 +29,12 @@ public class Cart extends BaseEntity {
     this.food = food;
   }
 
-  public User getCustomer() {
-    return customer;
+  public Long getCustomerId() {
+    return customerId;
   }
 
-  public void setCustomer(User customer) {
-    this.customer = customer;
+  public void setCustomerId(Long customerId) {
+    this.customerId = customerId;
   }
 
   public Business getBusiness() {

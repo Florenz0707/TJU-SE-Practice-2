@@ -1,7 +1,6 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -10,9 +9,8 @@ import java.time.LocalDateTime;
 @Table(name = "orders")
 public class Order extends BaseEntity {
 
-  @ManyToOne
-  @JoinColumn(name = "customer_id", nullable = false)
-  private User customer;
+  @Column(name = "customer_id", nullable = false)
+  private Long customerId;
 
   @ManyToOne
   @JoinColumn(name = "business_id", nullable = false)
@@ -51,12 +49,12 @@ public class Order extends BaseEntity {
   @Column(name = "points_trade_no", length = 100)
   private String pointsTradeNo;
 
-  public User getCustomer() {
-    return customer;
+  public Long getCustomerId() {
+    return customerId;
   }
 
-  public void setCustomer(User customer) {
-    this.customer = customer;
+  public void setCustomerId(Long customerId) {
+    this.customerId = customerId;
   }
 
   public Business getBusiness() {

@@ -14,7 +14,7 @@ public class WalletVO implements Serializable {
     id = wallet.getId();
     balance = wallet.getBalance();
     voucher = wallet.getVoucher();
-    ownerId = wallet.getOwner().getId();
+    ownerId = wallet.getOwnerId();
   }
 
   public Long getId() {

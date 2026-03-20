@@ -1,6 +1,5 @@
 package cn.edu.tju.elm.service;
 
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.model.BO.BusinessApplication;
 import cn.edu.tju.elm.repository.BusinessApplicationRepository;
 import cn.edu.tju.elm.utils.EntityUtils;
@@ -38,12 +37,12 @@ public class BusinessApplicationService {
     businessApplicationRepository.save(businessApplication);
   }
 
-  public List<BusinessApplication> getBusinessApplicationsByApplicant(User applicant) {
+  public List<BusinessApplication> getBusinessApplicationsByApplicantId(Long applicantId) {
     List<BusinessApplication> allBusinessApplications = businessApplicationRepository.findAll();
     List<BusinessApplication> businessApplicationsByApplicant =
         new ArrayList<>(allBusinessApplications.size());
     for (BusinessApplication businessApplication : allBusinessApplications) {
-      if (businessApplication.getBusiness().getBusinessOwner().equals(applicant)) {
+      if (businessApplication.getBusiness().getBusinessOwnerId().equals(applicantId)) {
         businessApplicationsByApplicant.add(businessApplication);
       }
     }

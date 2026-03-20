@@ -1,6 +1,5 @@
 package cn.edu.tju.elm.service.serviceImpl;
 
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.constant.TransactionType;
 import cn.edu.tju.elm.exception.TransactionException;
 import cn.edu.tju.elm.model.BO.Transaction;
@@ -128,7 +127,8 @@ public class TransactionServiceImpl implements TransactionService {
   }
 
   @Transactional
-  public TransactionVO finishTransaction(Long id, User operator) throws TransactionException {
+  public TransactionVO finishTransaction(Long id, Long operatorId, boolean isAdmin)
+      throws TransactionException {
     Transaction transaction = transactionRepository.findById(id).orElse(null);
     if (transaction == null) throw new TransactionException(TransactionException.NOT_FOUND);
     if (transaction.isFinished())

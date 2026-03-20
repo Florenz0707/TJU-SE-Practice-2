@@ -58,7 +58,7 @@ public class ReviewController {
     Optional<User> meOptional = userService.getUserWithAuthorities();
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-    return reviewApplicationService.addReview(meOptional.get(), orderId, review);
+    return reviewApplicationService.addReview(meOptional.get().getId(), orderId, review);
   }
 
   @PatchMapping("/{reviewId}")
@@ -80,7 +80,7 @@ public class ReviewController {
             && review.getAnonymous() == null))
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "NewReview CANT BE NULL");
 
-    if (me.equals(oldReview.getCustomer())) {
+    if (me.getId().equals(oldReview.getCustomerId())) {
       if (review.getStars() != null) oldReview.setStars(review.getStars());
       if (review.getContent() != null) oldReview.setContent(review.getContent());
       if (review.getAnonymous() != null) oldReview.setAnonymous(review.getAnonymous());
@@ -100,7 +100,9 @@ public class ReviewController {
     Optional<User> meOptional = userService.getUserWithAuthorities();
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-    return reviewApplicationService.deleteReview(meOptional.get(), reviewId);
+    User me = meOptional.get();
+    return reviewApplicationService.deleteReview(
+        me.getId(), AuthorityUtils.hasAuthority(me, "ADMIN"), reviewId);
   }
 
   @GetMapping("/my")
@@ -128,10 +130,10 @@ public class ReviewController {
     Review review = reviewService.getReviewByOrderId(orderId);
     if (review == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");
 
-    if (me.equals(review.getCustomer())) return HttpResult.success(review);
+    if (me.getId().equals(review.getCustomerId())) return HttpResult.success(review);
 
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-    if (isBusiness && me.equals(review.getBusiness().getBusinessOwner())) {
+    if (isBusiness && me.getId().equals(review.getBusiness().getBusinessOwnerId())) {
       if (review.getAnonymous())
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");
       return HttpResult.success(review);
@@ -150,7 +152,7 @@ public class ReviewController {
     List<Review> reviewList = reviewService.getReviewsByBusinessId(businessId);
     for (Review review : reviewList) {
       if (review.getAnonymous()) {
-        review.setCustomer(null);
+        review.setCustomerId(null);
         review.setOrder(null);
       }
     }

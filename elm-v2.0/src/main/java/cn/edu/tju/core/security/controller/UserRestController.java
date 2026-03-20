@@ -63,7 +63,7 @@ public class UserRestController {
 
     // Auto create wallet for new user
     try {
-      walletService.createWallet(user);
+      walletService.createWallet(user.getId());
     } catch (Exception e) {
       // Log error but don't fail user creation
       System.err.println("Failed to create wallet for user: " + e.getMessage());
@@ -128,7 +128,7 @@ public class UserRestController {
 
     // Auto create wallet for new user
     try {
-      walletService.createWallet(person);
+      walletService.createWallet(person.getId());
     } catch (Exception e) {
       // Log error but don't fail user creation
       System.err.println("Failed to create wallet for person: " + e.getMessage());

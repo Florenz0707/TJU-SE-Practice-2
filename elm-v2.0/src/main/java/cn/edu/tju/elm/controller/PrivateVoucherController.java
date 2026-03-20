@@ -49,7 +49,7 @@ public class PrivateVoucherController {
       PublicVoucherVO publicVoucherVO = publicVoucherService.getPublicVoucherById(publicVoucherId);
       if (publicVoucherVO == null)
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "PublicVoucher NOT FOUND");
-      WalletVO walletVO = walletService.getWalletByOwner(me);
+      WalletVO walletVO = walletService.getWalletByOwnerId(me.getId());
       if (walletVO == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Wallet NOT FOUND");
       boolean ok = privateVoucherService.createPrivateVoucher(walletVO.getId(), publicVoucherVO);
       if (ok) return HttpResult.success("Claimed");
@@ -66,7 +66,7 @@ public class PrivateVoucherController {
     if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "用户未登录");
     User me = meOptional.get();
     try {
-      List<PrivateVoucherVO> list = privateVoucherService.getPrivateVouchers(me);
+      List<PrivateVoucherVO> list = privateVoucherService.getPrivateVouchers(me.getId());
       return HttpResult.success(list);
     } catch (PrivateVoucherException e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());

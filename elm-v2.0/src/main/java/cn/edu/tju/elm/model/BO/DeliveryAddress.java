@@ -1,10 +1,8 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 
 @Entity
 public class DeliveryAddress extends BaseEntity {
@@ -14,9 +12,8 @@ public class DeliveryAddress extends BaseEntity {
   private String contactTel;
   private String address;
 
-  @ManyToOne
-  @JoinColumn(name = "user_id", nullable = false)
-  private User customer;
+  @Column(name = "user_id", nullable = false)
+  private Long customerId;
 
   public String getContactName() {
     return contactName;
@@ -50,11 +47,11 @@ public class DeliveryAddress extends BaseEntity {
     this.address = address;
   }
 
-  public User getCustomer() {
-    return customer;
+  public Long getCustomerId() {
+    return customerId;
   }
 
-  public void setCustomer(User customer) {
-    this.customer = customer;
+  public void setCustomerId(Long customerId) {
+    this.customerId = customerId;
   }
 }

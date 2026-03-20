@@ -54,7 +54,7 @@ public class OrderController {
     Optional<User> meOptional = userService.getUserWithAuthorities();
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-    return orderApplicationService.addOrder(meOptional.get(), order, requestId);
+    return orderApplicationService.addOrder(meOptional.get().getId(), order, requestId);
   }
 
   @GetMapping("/{id}")
@@ -70,7 +70,7 @@ public class OrderController {
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-    if (isAdmin || me.equals(order.getCustomer())) return HttpResult.success(order);
+    if (isAdmin || me.getId().equals(order.getCustomerId())) return HttpResult.success(order);
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
@@ -82,7 +82,7 @@ public class OrderController {
     Optional<User> meOptional = userService.getUserWithAuthorities();
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-    return orderApplicationService.cancelOrder(meOptional.get(), id);
+    return orderApplicationService.cancelOrder(meOptional.get().getId(), id);
   }
 
   @GetMapping("")
@@ -94,11 +94,8 @@ public class OrderController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    User user = userService.getUserById(userId);
-    if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
-
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
-    if (isAdmin || me.equals(user))
+    if (isAdmin || me.getId().equals(userId))
       return HttpResult.success(orderService.getOrdersByCustomerId(userId));
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -111,7 +108,12 @@ public class OrderController {
     Optional<User> meOptional = userService.getUserWithAuthorities();
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-    return orderApplicationService.updateOrderStatus(meOptional.get(), order);
+    User me = meOptional.get();
+    return orderApplicationService.updateOrderStatus(
+        me.getId(),
+        AuthorityUtils.hasAuthority(me, "ADMIN"),
+        AuthorityUtils.hasAuthority(me, "BUSINESS"),
+        order);
   }
 
   @GetMapping("/user/my")
@@ -121,9 +123,6 @@ public class OrderController {
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
-
-    User user = userService.getUserById(me.getId());
-    if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
 
     return HttpResult.success(orderService.getOrdersByCustomerId(me.getId()));
   }
@@ -139,7 +138,7 @@ public class OrderController {
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
     if (!isBusiness) return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
-    List<Business> myBusinesses = businessService.getBusinessByOwner(me);
+    List<Business> myBusinesses = businessService.getBusinessByOwnerId(me.getId());
     List<Order> myOrders = new ArrayList<>();
 
     for (Business business : myBusinesses) {
@@ -164,7 +163,7 @@ public class OrderController {
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-    if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner())))
+    if (isAdmin || (isBusiness && me.getId().equals(business.getBusinessOwnerId())))
       return HttpResult.success(orderService.getOrdersByBusinessId(business.getId()));
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");

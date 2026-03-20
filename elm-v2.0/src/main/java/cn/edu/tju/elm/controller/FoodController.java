@@ -102,9 +102,9 @@ public class FoodController {
 
     Business business = businessService.getBusinessById(food.getBusiness().getId());
     if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-    User owner = business.getBusinessOwner();
+    Long ownerId = business.getBusinessOwnerId();
 
-    if (isAdmin || (isBusiness && me.equals(owner))) {
+    if (isAdmin || (isBusiness && me.getId().equals(ownerId))) {
       EntityUtils.setNewEntity(food);
       food.setBusiness(business);
       foodService.addFood(food);
@@ -139,7 +139,7 @@ public class FoodController {
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-    if (isAdmin || (isBusiness && me.equals(business.getBusinessOwner()))) {
+    if (isAdmin || (isBusiness && me.getId().equals(business.getBusinessOwnerId()))) {
       food.setId(null);
       EntityUtils.substituteEntity(oldFood, food);
       foodService.updateFood(oldFood);
@@ -167,7 +167,7 @@ public class FoodController {
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
-    if (isAdmin || (isBusiness && me.equals(food.getBusiness().getBusinessOwner()))) {
+    if (isAdmin || (isBusiness && me.getId().equals(food.getBusiness().getBusinessOwnerId()))) {
       if (newFood.getFoodName() == null) newFood.setFoodName(food.getFoodName());
       if (newFood.getFoodPrice() == null) newFood.setFoodPrice(food.getFoodPrice());
       if (newFood.getFoodExplain() == null) newFood.setFoodExplain(food.getFoodExplain());
@@ -196,7 +196,7 @@ public class FoodController {
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
-    if (isAdmin || (isBusiness && me.equals(food.getBusiness().getBusinessOwner()))) {
+    if (isAdmin || (isBusiness && me.getId().equals(food.getBusiness().getBusinessOwnerId()))) {
       EntityUtils.deleteEntity(food);
       foodService.updateFood(food);
       return HttpResult.success("Delete food successfully.");

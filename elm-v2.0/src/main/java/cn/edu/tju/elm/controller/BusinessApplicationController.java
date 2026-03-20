@@ -60,14 +60,14 @@ public class BusinessApplicationController {
     Business business = businessApplication.getBusiness();
     EntityUtils.setNewEntity(business);
     business.setDeleted(true);
-    business.setBusinessOwner(me);
+    business.setBusinessOwnerId(me.getId());
     businessService.addBusiness(business);
 
     EntityUtils.setNewEntity(businessApplication);
     businessApplication.setBusiness(business);
     businessApplication.setApplicationState(ApplicationState.UNDISPOSED);
     User admin = userService.getUserWithUsername("admin");
-    businessApplication.setHandler(admin);
+    businessApplication.setHandlerId(admin.getId());
     businessApplicationService.addApplication(businessApplication);
     return HttpResult.success(businessApplication);
   }
@@ -96,7 +96,9 @@ public class BusinessApplicationController {
     if (businessApplication == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication NOT FOUND");
 
-    if (isAdmin || (isBusiness && me.equals(businessApplication.getBusiness().getBusinessOwner())))
+    if (isAdmin
+        || (isBusiness
+            && me.getId().equals(businessApplication.getBusiness().getBusinessOwnerId())))
       return HttpResult.success(businessApplication);
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
@@ -130,7 +132,7 @@ public class BusinessApplicationController {
     if (!ApplicationState.isValidApplicationState(oldApplication.getApplicationState()))
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ApplicationState NOT VALID");
 
-    if (me.equals(oldApplication.getHandler())) {
+    if (me.getId().equals(oldApplication.getHandlerId())) {
       oldApplication.setApplicationState(businessApplication.getApplicationState());
       EntityUtils.updateEntity(oldApplication);
       businessApplicationService.updateBusinessApplication(oldApplication);
@@ -158,6 +160,7 @@ public class BusinessApplicationController {
     if (!AuthorityUtils.hasAuthority(me, "BUSINESS"))
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "NOT A MERCHANT YET");
 
-    return HttpResult.success(businessApplicationService.getBusinessApplicationsByApplicant(me));
+    return HttpResult.success(
+        businessApplicationService.getBusinessApplicationsByApplicantId(me.getId()));
   }
 }

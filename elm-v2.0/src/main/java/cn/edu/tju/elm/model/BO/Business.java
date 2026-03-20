@@ -1,11 +1,8 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
-import cn.edu.tju.core.model.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 
@@ -14,9 +11,8 @@ public class Business extends BaseEntity {
   @Column(nullable = false)
   private String businessName;
 
-  @ManyToOne
-  @JoinColumn(name = "user_id", nullable = false)
-  private User businessOwner;
+  @Column(name = "user_id", nullable = false)
+  private Long businessOwnerId;
 
   private String businessAddress;
 
@@ -103,12 +99,12 @@ public class Business extends BaseEntity {
     this.remarks = remarks;
   }
 
-  public User getBusinessOwner() {
-    return businessOwner;
+  public Long getBusinessOwnerId() {
+    return businessOwnerId;
   }
 
-  public void setBusinessOwner(User businessOwner) {
-    this.businessOwner = businessOwner;
+  public void setBusinessOwnerId(Long businessOwnerId) {
+    this.businessOwnerId = businessOwnerId;
   }
 
   public LocalTime getOpenTime() {
