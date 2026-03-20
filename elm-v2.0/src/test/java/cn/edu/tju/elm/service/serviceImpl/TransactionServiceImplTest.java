@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-import cn.edu.tju.core.model.User;
 import cn.edu.tju.elm.constant.TransactionType;
 import cn.edu.tju.elm.exception.TransactionException;
 import cn.edu.tju.elm.model.BO.Transaction;
@@ -51,15 +50,11 @@ public class TransactionServiceImplTest {
   @Test
   public void testCreatePaymentAndFinish() throws Exception {
     // 准备 payer (outWallet) 和 receiver (inWallet)
-    User payerUser = new User();
-    payerUser.setUsername("payer");
-    Wallet outWallet = Wallet.getNewWallet(payerUser);
+    Wallet outWallet = Wallet.getNewWallet(1001L);
     // 反射或直接设置初始余额（Wallet 默认值为 0），此处通过 addBalance 增加
     outWallet.addBalance(new BigDecimal("100.00"));
 
-    User receiverUser = new User();
-    receiverUser.setUsername("receiver");
-    Wallet inWallet = Wallet.getNewWallet(receiverUser);
+    Wallet inWallet = Wallet.getNewWallet(1002L);
     inWallet.addBalance(new BigDecimal("10.00"));
 
     Long inWalletId = 10L;
@@ -79,6 +74,7 @@ public class TransactionServiceImplTest {
     var txVo =
         transactionService.createTransaction(
             amount, TransactionType.PAYMENT, inWalletId, outWalletId);
+    assertThat(txVo).isNotNull();
 
     // 验证付款方余额减少
     assertThat(outWallet.getBalance()).isEqualByComparingTo(new BigDecimal("50.00"));
@@ -90,9 +86,7 @@ public class TransactionServiceImplTest {
     when(transactionRepository.findById(eq(1L))).thenReturn(Optional.of(saved));
 
     // 完成交易（入账给收款方）
-    User operator = new User();
-    operator.setUsername("op");
-    var finished = transactionService.finishTransaction(1L, operator);
+    var finished = transactionService.finishTransaction(1L, 999L, true);
 
     // 收款方余额增加
     assertThat(inWallet.getBalance()).isEqualByComparingTo(new BigDecimal("60.00"));
@@ -104,14 +98,10 @@ public class TransactionServiceImplTest {
 
   @Test
   public void testCreatePayment_insufficientBalance_throws() {
-    User payerUser = new User();
-    payerUser.setUsername("payer");
-    Wallet outWallet = Wallet.getNewWallet(payerUser);
+    Wallet outWallet = Wallet.getNewWallet(1003L);
     outWallet.addBalance(new BigDecimal("10.00"));
 
-    User receiverUser = new User();
-    receiverUser.setUsername("receiver");
-    Wallet inWallet = Wallet.getNewWallet(receiverUser);
+    Wallet inWallet = Wallet.getNewWallet(1004L);
 
     Long inWalletId = 30L;
     Long outWalletId = 40L;
@@ -130,14 +120,10 @@ public class TransactionServiceImplTest {
   @Test
   public void concurrencySimulation_multiplePayments_reduceBalanceAtomically() throws Exception {
     // 该测试为示例，模拟多线程环境下并发调用 createTransaction
-    User payerUser = new User();
-    payerUser.setUsername("payer");
-    Wallet outWallet = Wallet.getNewWallet(payerUser);
+    Wallet outWallet = Wallet.getNewWallet(1005L);
     outWallet.addBalance(new BigDecimal("1000.00"));
 
-    User receiverUser = new User();
-    receiverUser.setUsername("receiver");
-    Wallet inWallet = Wallet.getNewWallet(receiverUser);
+    Wallet inWallet = Wallet.getNewWallet(1006L);
 
     Long inWalletId = 100L;
     Long outWalletId = 200L;

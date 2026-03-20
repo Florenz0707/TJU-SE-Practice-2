@@ -1,8 +1,10 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
+import cn.edu.tju.elm.model.VO.UserSummaryView;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 
@@ -13,6 +15,8 @@ public class Business extends BaseEntity {
 
   @Column(name = "user_id", nullable = false)
   private Long businessOwnerId;
+
+  @Transient private UserSummaryView businessOwner;
 
   private String businessAddress;
 
@@ -105,6 +109,14 @@ public class Business extends BaseEntity {
 
   public void setBusinessOwnerId(Long businessOwnerId) {
     this.businessOwnerId = businessOwnerId;
+  }
+
+  public UserSummaryView getBusinessOwner() {
+    return businessOwner;
+  }
+
+  public void setBusinessOwner(UserSummaryView businessOwner) {
+    this.businessOwner = businessOwner;
   }
 
   public LocalTime getOpenTime() {

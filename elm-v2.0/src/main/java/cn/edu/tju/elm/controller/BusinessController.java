@@ -8,6 +8,7 @@ import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,10 +22,15 @@ import org.springframework.web.bind.annotation.*;
 public class BusinessController {
   private final UserService userService;
   private final BusinessService businessService;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
-  public BusinessController(UserService userService, BusinessService businessService) {
+  public BusinessController(
+      UserService userService,
+      BusinessService businessService,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.userService = userService;
     this.businessService = businessService;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   @GetMapping("/{id}")
@@ -70,6 +76,7 @@ public class BusinessController {
       business.setBusinessOwnerId(owner.getId());
       EntityUtils.setNewEntity(business);
       businessService.addBusiness(business);
+      compatibilityEnricher.enrichBusiness(business);
 
       return HttpResult.success(business);
     }
@@ -104,6 +111,7 @@ public class BusinessController {
       business.setBusinessOwnerId(oldOwnerId);
       businessService.updateBusiness(oldBusiness);
       businessService.updateBusiness(business);
+      compatibilityEnricher.enrichBusiness(business);
 
       return HttpResult.success(business);
     }
@@ -149,6 +157,7 @@ public class BusinessController {
       EntityUtils.substituteEntity(oldBusiness, business);
       businessService.updateBusiness(oldBusiness);
       businessService.updateBusiness(business);
+      compatibilityEnricher.enrichBusiness(business);
       return HttpResult.success(business);
     }
 

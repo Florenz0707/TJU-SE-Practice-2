@@ -9,6 +9,7 @@ import cn.edu.tju.elm.model.BO.MerchantApplication;
 import cn.edu.tju.elm.service.MerchantApplicationService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,11 +24,15 @@ import org.springframework.web.bind.annotation.*;
 public class MerchantApplicationController {
   private final UserService userService;
   private final MerchantApplicationService merchantApplicationService;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public MerchantApplicationController(
-      UserService userService, MerchantApplicationService merchantApplicationService) {
+      UserService userService,
+      MerchantApplicationService merchantApplicationService,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.userService = userService;
     this.merchantApplicationService = merchantApplicationService;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   @PostMapping("")
@@ -52,6 +57,7 @@ public class MerchantApplicationController {
     User admin = userService.getUserWithUsername("admin");
     merchantApplication.setHandlerId(admin.getId());
     merchantApplicationService.addApplication(merchantApplication);
+    compatibilityEnricher.enrichMerchantApplication(merchantApplication);
     return HttpResult.success(merchantApplication);
   }
 
@@ -117,6 +123,7 @@ public class MerchantApplicationController {
       EntityUtils.updateEntity(applicant);
       userService.updateUser(applicant);
     }
+    compatibilityEnricher.enrichMerchantApplication(merchantApplication);
     return HttpResult.success(merchantApplication);
   }
 

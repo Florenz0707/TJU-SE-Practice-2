@@ -8,6 +8,7 @@ import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.service.AddressService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,10 +22,15 @@ import org.springframework.web.bind.annotation.*;
 public class AddressController {
   private final AddressService addressService;
   private final UserService userService;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
-  public AddressController(AddressService addressService, UserService userService) {
+  public AddressController(
+      AddressService addressService,
+      UserService userService,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.addressService = addressService;
     this.userService = userService;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   @PostMapping("/addresses")
@@ -49,6 +55,7 @@ public class AddressController {
     address.setCustomerId(me.getId());
     EntityUtils.setNewEntity(address);
     addressService.addAddress(address);
+    compatibilityEnricher.enrichAddress(address);
 
     return HttpResult.success(address);
   }
@@ -89,6 +96,7 @@ public class AddressController {
       EntityUtils.substituteEntity(address, newAddress);
       addressService.updateAddress(address);
       addressService.updateAddress(newAddress);
+      compatibilityEnricher.enrichAddress(newAddress);
       return HttpResult.success(newAddress);
     }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");

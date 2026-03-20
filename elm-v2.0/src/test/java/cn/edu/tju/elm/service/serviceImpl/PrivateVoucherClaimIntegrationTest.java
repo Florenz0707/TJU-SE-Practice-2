@@ -39,7 +39,7 @@ public class PrivateVoucherClaimIntegrationTest {
     user = userRepository.save(user);
 
     // create wallet
-    Wallet wallet = Wallet.getNewWallet(user);
+    Wallet wallet = Wallet.getNewWallet(user.getId());
     wallet = walletRepository.save(wallet);
 
     // create public voucher

@@ -11,6 +11,7 @@ import cn.edu.tju.elm.service.BusinessApplicationService;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,14 +28,17 @@ public class BusinessApplicationController {
   private final UserService userService;
   private final BusinessService businessService;
   private final BusinessApplicationService businessApplicationService;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public BusinessApplicationController(
       UserService userService,
       BusinessService businessService,
-      BusinessApplicationService businessApplicationService) {
+      BusinessApplicationService businessApplicationService,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.userService = userService;
     this.businessService = businessService;
     this.businessApplicationService = businessApplicationService;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   @PostMapping("")
@@ -69,6 +73,7 @@ public class BusinessApplicationController {
     User admin = userService.getUserWithUsername("admin");
     businessApplication.setHandlerId(admin.getId());
     businessApplicationService.addApplication(businessApplication);
+    compatibilityEnricher.enrichBusinessApplication(businessApplication);
     return HttpResult.success(businessApplication);
   }
 
@@ -143,6 +148,7 @@ public class BusinessApplicationController {
         business.setUpdateTime(LocalDateTime.now());
         businessService.updateBusiness(business);
       }
+      compatibilityEnricher.enrichBusinessApplication(oldApplication);
       return HttpResult.success(oldApplication);
     }
 

@@ -3,6 +3,7 @@ package cn.edu.tju.elm.service;
 import cn.edu.tju.elm.model.BO.BusinessApplication;
 import cn.edu.tju.elm.repository.BusinessApplicationRepository;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,9 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class BusinessApplicationService {
 
   private final BusinessApplicationRepository businessApplicationRepository;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
-  public BusinessApplicationService(BusinessApplicationRepository businessApplicationRepository) {
+  public BusinessApplicationService(
+      BusinessApplicationRepository businessApplicationRepository,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.businessApplicationRepository = businessApplicationRepository;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   public void addApplication(BusinessApplication businessApplication) {
@@ -24,13 +29,18 @@ public class BusinessApplicationService {
   }
 
   public List<BusinessApplication> getAllBusinessApplications() {
-    return businessApplicationRepository.findAll();
+    List<BusinessApplication> apps = businessApplicationRepository.findAll();
+    compatibilityEnricher.enrichBusinessApplications(apps);
+    return apps;
   }
 
   public BusinessApplication getBusinessApplicationById(Long id) {
     Optional<BusinessApplication> businessApplicationOptional =
         businessApplicationRepository.findById(id);
-    return businessApplicationOptional.map(EntityUtils::filterEntity).orElse(null);
+    BusinessApplication app =
+        businessApplicationOptional.map(EntityUtils::filterEntity).orElse(null);
+    compatibilityEnricher.enrichBusinessApplication(app);
+    return app;
   }
 
   public void updateBusinessApplication(BusinessApplication businessApplication) {
@@ -46,6 +56,7 @@ public class BusinessApplicationService {
         businessApplicationsByApplicant.add(businessApplication);
       }
     }
+    compatibilityEnricher.enrichBusinessApplications(businessApplicationsByApplicant);
     return businessApplicationsByApplicant;
   }
 }

@@ -1,13 +1,17 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
+import cn.edu.tju.elm.model.VO.UserSummaryView;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 
 @Entity
 public class MerchantApplication extends BaseEntity {
   @Column(name = "applicant_id", nullable = false)
   private Long applicantId;
+
+  @Transient private UserSummaryView applicant;
 
   @Column(columnDefinition = "TEXT")
   private String applicationExplain;
@@ -20,12 +24,22 @@ public class MerchantApplication extends BaseEntity {
   @Column(name = "handler_id", nullable = false)
   private Long handlerId;
 
+  @Transient private UserSummaryView handler;
+
   public Long getApplicantId() {
     return applicantId;
   }
 
   public void setApplicantId(Long applicantId) {
     this.applicantId = applicantId;
+  }
+
+  public UserSummaryView getApplicant() {
+    return applicant;
+  }
+
+  public void setApplicant(UserSummaryView applicant) {
+    this.applicant = applicant;
   }
 
   public String getApplicationExplain() {
@@ -50,6 +64,14 @@ public class MerchantApplication extends BaseEntity {
 
   public void setHandlerId(Long handlerId) {
     this.handlerId = handlerId;
+  }
+
+  public UserSummaryView getHandler() {
+    return handler;
+  }
+
+  public void setHandler(UserSummaryView handler) {
+    this.handler = handler;
   }
 
   public String getRejectReason() {

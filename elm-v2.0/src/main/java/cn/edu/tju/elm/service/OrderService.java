@@ -4,6 +4,7 @@ import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.repository.OrderRepository;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -16,9 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
   private final OrderRepository orderRepository;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
-  public OrderService(OrderRepository orderRepository) {
+  public OrderService(
+      OrderRepository orderRepository, ResponseCompatibilityEnricher compatibilityEnricher) {
     this.orderRepository = orderRepository;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   public void addOrder(Order order) {
@@ -27,15 +31,23 @@ public class OrderService {
 
   public Order getOrderById(Long id) {
     Optional<Order> orderOptional = orderRepository.findById(id);
-    return orderOptional.map(EntityUtils::filterEntity).orElse(null);
+    Order order = orderOptional.map(EntityUtils::filterEntity).orElse(null);
+    compatibilityEnricher.enrichOrder(order);
+    return order;
   }
 
   public List<Order> getOrdersByCustomerId(Long id) {
-    return EntityUtils.filterEntityList(orderRepository.findAllByCustomerIdWithDetails(id));
+    List<Order> orders =
+        EntityUtils.filterEntityList(orderRepository.findAllByCustomerIdWithDetails(id));
+    compatibilityEnricher.enrichOrders(orders);
+    return orders;
   }
 
   public Page<Order> getOrdersByCustomerId(Long id, Pageable pageable) {
-    return orderRepository.findAllByCustomerId(id, pageable).map(EntityUtils::filterEntity);
+    Page<Order> page =
+        orderRepository.findAllByCustomerId(id, pageable).map(EntityUtils::filterEntity);
+    compatibilityEnricher.enrichOrders(page.getContent());
+    return page;
   }
 
   public void updateOrder(Order order) {
@@ -43,16 +55,24 @@ public class OrderService {
   }
 
   public List<Order> getOrdersByBusinessId(Long businessId) {
-    return EntityUtils.filterEntityList(orderRepository.findAllByBusinessIdWithDetails(businessId));
+    List<Order> orders =
+        EntityUtils.filterEntityList(orderRepository.findAllByBusinessIdWithDetails(businessId));
+    compatibilityEnricher.enrichOrders(orders);
+    return orders;
   }
 
   public Page<Order> getOrdersByBusinessId(Long businessId, Pageable pageable) {
-    return orderRepository.findAllByBusinessId(businessId, pageable).map(EntityUtils::filterEntity);
+    Page<Order> page =
+        orderRepository.findAllByBusinessId(businessId, pageable).map(EntityUtils::filterEntity);
+    compatibilityEnricher.enrichOrders(page.getContent());
+    return page;
   }
 
   public Order getOrderByRequestId(String requestId) {
     Order order = orderRepository.findByRequestId(requestId);
-    return order != null ? EntityUtils.filterEntity(order) : null;
+    Order filtered = order != null ? EntityUtils.filterEntity(order) : null;
+    compatibilityEnricher.enrichOrder(filtered);
+    return filtered;
   }
 
   public boolean isValidStateTransition(Integer from, Integer to) {

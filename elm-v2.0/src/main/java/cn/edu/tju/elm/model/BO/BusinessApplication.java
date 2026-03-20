@@ -1,10 +1,12 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
+import cn.edu.tju.elm.model.VO.UserSummaryView;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 
 @Entity
 public class BusinessApplication extends BaseEntity {
@@ -14,6 +16,8 @@ public class BusinessApplication extends BaseEntity {
 
   @Column(name = "handler_id", nullable = false)
   private Long handlerId;
+
+  @Transient private UserSummaryView handler;
 
   @Column(columnDefinition = "TEXT")
   private String applicationExplain;
@@ -37,6 +41,14 @@ public class BusinessApplication extends BaseEntity {
 
   public void setHandlerId(Long handlerId) {
     this.handlerId = handlerId;
+  }
+
+  public UserSummaryView getHandler() {
+    return handler;
+  }
+
+  public void setHandler(UserSummaryView handler) {
+    this.handler = handler;
   }
 
   public String getApplicationExplain() {

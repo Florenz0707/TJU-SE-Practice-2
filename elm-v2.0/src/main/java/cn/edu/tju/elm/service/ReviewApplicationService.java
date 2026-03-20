@@ -6,6 +6,7 @@ import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,16 +20,19 @@ public class ReviewApplicationService {
   private final OrderService orderService;
   private final IntegrationOutboxService integrationOutboxService;
   private final PointsService pointsService;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public ReviewApplicationService(
       ReviewService reviewService,
       OrderService orderService,
       IntegrationOutboxService integrationOutboxService,
-      PointsService pointsService) {
+      PointsService pointsService,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.reviewService = reviewService;
     this.orderService = orderService;
     this.integrationOutboxService = integrationOutboxService;
     this.pointsService = pointsService;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   @Transactional
@@ -78,6 +82,7 @@ public class ReviewApplicationService {
       log.error("Failed to notify review success for points: {}", e.getMessage());
     }
 
+    compatibilityEnricher.enrichReview(review);
     return HttpResult.success(review);
   }
 

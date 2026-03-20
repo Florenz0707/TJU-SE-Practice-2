@@ -17,6 +17,7 @@ import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,7 @@ public class OrderApplicationService {
   private final PrivateVoucherService privateVoucherService;
   private final WalletRepository walletRepository;
   private final WalletService walletService;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public OrderApplicationService(
       OrderService orderService,
@@ -55,7 +57,8 @@ public class OrderApplicationService {
       PrivateVoucherRepository privateVoucherRepository,
       PrivateVoucherService privateVoucherService,
       WalletRepository walletRepository,
-      WalletService walletService) {
+      WalletService walletService,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.orderService = orderService;
     this.businessService = businessService;
     this.foodService = foodService;
@@ -68,6 +71,7 @@ public class OrderApplicationService {
     this.privateVoucherService = privateVoucherService;
     this.walletRepository = walletRepository;
     this.walletService = walletService;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   @Transactional
@@ -284,6 +288,7 @@ public class OrderApplicationService {
 
     log.info(
         "Order created: orderId={}, userId={}, total={}", order.getId(), currentUserId, totalPrice);
+    compatibilityEnricher.enrichOrder(order);
     return HttpResult.success(order);
   }
 
@@ -341,6 +346,7 @@ public class OrderApplicationService {
           "Order canceled: orderId={}, userId={}, reason=user_request",
           order.getId(),
           currentUserId);
+      compatibilityEnricher.enrichOrder(order);
       return HttpResult.success(order);
     } catch (Exception e) {
       log.error("Failed to cancel order: {}", e.getMessage());
@@ -403,6 +409,7 @@ public class OrderApplicationService {
       }
     }
 
+    compatibilityEnricher.enrichOrder(newOrder);
     return HttpResult.success(newOrder);
   }
 }

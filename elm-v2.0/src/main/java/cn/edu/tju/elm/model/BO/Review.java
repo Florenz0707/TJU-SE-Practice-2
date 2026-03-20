@@ -1,15 +1,19 @@
 package cn.edu.tju.elm.model.BO;
 
 import cn.edu.tju.core.model.BaseEntity;
+import cn.edu.tju.elm.model.VO.UserSummaryView;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Transient;
 
 @Entity
 public class Review extends BaseEntity {
   @Column(name = "user_id", nullable = false)
   private Long customerId;
+
+  @Transient private UserSummaryView customer;
 
   @ManyToOne
   @JoinColumn(name = "business_id", nullable = false)
@@ -34,6 +38,14 @@ public class Review extends BaseEntity {
 
   public void setCustomerId(Long customerId) {
     this.customerId = customerId;
+  }
+
+  public UserSummaryView getCustomer() {
+    return customer;
+  }
+
+  public void setCustomer(UserSummaryView customer) {
+    this.customer = customer;
   }
 
   public Business getBusiness() {

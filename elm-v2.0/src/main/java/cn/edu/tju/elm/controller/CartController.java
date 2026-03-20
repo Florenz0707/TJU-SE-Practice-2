@@ -11,6 +11,7 @@ import cn.edu.tju.elm.service.CartItemService;
 import cn.edu.tju.elm.service.FoodService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,12 +26,17 @@ public class CartController {
   private final UserService userService;
   private final CartItemService cartItemService;
   private final FoodService foodService;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public CartController(
-      UserService userService, CartItemService cartItemService, FoodService foodService) {
+      UserService userService,
+      CartItemService cartItemService,
+      FoodService foodService,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.userService = userService;
     this.cartItemService = cartItemService;
     this.foodService = foodService;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   @PostMapping("/carts")
@@ -60,6 +66,7 @@ public class CartController {
     cart.setBusiness(business);
     cart.setCustomerId(me.getId());
     cartItemService.addCart(cart);
+    compatibilityEnricher.enrichCart(cart);
     return HttpResult.success(cart);
   }
 
@@ -97,6 +104,7 @@ public class CartController {
       cart.setQuantity(newCart.getQuantity());
       EntityUtils.updateEntity(cart);
       cartItemService.updateCart(cart);
+      compatibilityEnricher.enrichCart(cart);
       return HttpResult.success(cart);
     }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
