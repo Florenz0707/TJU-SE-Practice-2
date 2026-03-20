@@ -6,6 +6,7 @@ import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,19 +20,19 @@ public class ReviewApplicationService {
   private final ReviewService reviewService;
   private final OrderService orderService;
   private final IntegrationOutboxService integrationOutboxService;
-  private final PointsService pointsService;
+  private final InternalServiceClient internalServiceClient;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public ReviewApplicationService(
       ReviewService reviewService,
       OrderService orderService,
       IntegrationOutboxService integrationOutboxService,
-      PointsService pointsService,
+      InternalServiceClient internalServiceClient,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.reviewService = reviewService;
     this.orderService = orderService;
     this.integrationOutboxService = integrationOutboxService;
-    this.pointsService = pointsService;
+    this.internalServiceClient = internalServiceClient;
     this.compatibilityEnricher = compatibilityEnricher;
   }
 
@@ -96,7 +97,7 @@ public class ReviewApplicationService {
     }
 
     try {
-      pointsService.notifyReviewDeleted(review.getCustomerId(), reviewId.toString());
+      internalServiceClient.notifyReviewDeleted(review.getCustomerId(), reviewId.toString());
     } catch (Exception e) {
       log.error("Failed to refund points for deleted review: {}", e.getMessage());
     }

@@ -3,7 +3,6 @@ package cn.edu.tju.elm.service;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.elm.constant.OrderState;
-import cn.edu.tju.elm.exception.PointsException;
 import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.Cart;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
@@ -17,6 +16,7 @@ import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
 import cn.edu.tju.elm.service.serviceInterface.WalletService;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.math.BigDecimal;
 import java.util.List;
@@ -37,7 +37,7 @@ public class OrderApplicationService {
   private final AddressService addressService;
   private final CartItemService cartItemService;
   private final OrderDetailetService orderDetailetService;
-  private final PointsService pointsService;
+  private final InternalServiceClient internalServiceClient;
   private final IntegrationOutboxService integrationOutboxService;
   private final PrivateVoucherRepository privateVoucherRepository;
   private final PrivateVoucherService privateVoucherService;
@@ -52,7 +52,7 @@ public class OrderApplicationService {
       AddressService addressService,
       CartItemService cartItemService,
       OrderDetailetService orderDetailetService,
-      PointsService pointsService,
+      InternalServiceClient internalServiceClient,
       IntegrationOutboxService integrationOutboxService,
       PrivateVoucherRepository privateVoucherRepository,
       PrivateVoucherService privateVoucherService,
@@ -65,7 +65,7 @@ public class OrderApplicationService {
     this.addressService = addressService;
     this.cartItemService = cartItemService;
     this.orderDetailetService = orderDetailetService;
-    this.pointsService = pointsService;
+    this.internalServiceClient = internalServiceClient;
     this.integrationOutboxService = integrationOutboxService;
     this.privateVoucherRepository = privateVoucherRepository;
     this.privateVoucherService = privateVoucherService;
@@ -245,11 +245,19 @@ public class OrderApplicationService {
     if (pointsUsed > 0) {
       try {
         pointsTradeNo = "ORDER_" + UUID.randomUUID();
-        pointsService.freezePoints(currentUserId, pointsUsed, pointsTradeNo);
+        java.util.Map<String, Object> freezeResult =
+            internalServiceClient.freezePoints(currentUserId, pointsUsed, pointsTradeNo);
+        if (freezeResult == null) {
+          return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to freeze points");
+        }
         order.setPointsTradeNo(pointsTradeNo);
         orderService.addOrder(order);
-        pointsService.deductPoints(currentUserId, pointsTradeNo, pointsTradeNo);
-      } catch (PointsException e) {
+        Boolean deductSuccess =
+            internalServiceClient.deductPoints(currentUserId, pointsTradeNo, pointsTradeNo);
+        if (!Boolean.TRUE.equals(deductSuccess)) {
+          throw new IllegalStateException("failed to deduct points");
+        }
+      } catch (Exception e) {
         log.error("Failed to deduct points: {}", e.getMessage());
         if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
           userWallet.addBalance(walletPaid);
@@ -319,9 +327,9 @@ public class OrderApplicationService {
         String orderBizId =
             order.getPointsTradeNo() != null ? order.getPointsTradeNo() : "ORDER_" + order.getId();
         boolean refunded =
-            pointsService.refundDeductedPoints(currentUserId, orderBizId, "订单取消返还积分");
+            internalServiceClient.refundDeductedPoints(currentUserId, orderBizId, "订单取消返还积分");
         if (!refunded) {
-          pointsService.rollbackPoints(currentUserId, orderBizId, "订单取消");
+          internalServiceClient.rollbackPoints(currentUserId, orderBizId, "订单取消");
         }
       }
 

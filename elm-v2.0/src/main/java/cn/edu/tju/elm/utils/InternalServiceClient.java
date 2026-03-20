@@ -211,4 +211,49 @@ public class InternalServiceClient {
     }
     return false;
   }
+
+  /** 返还已扣减积分（用于订单取消） */
+  public boolean refundDeductedPoints(Long userId, String orderBizId, String reason) {
+    String url = baseUrl + "/api/inner/points/trade/refund";
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("userId", userId);
+    requestBody.put("orderBizId", orderBizId);
+    requestBody.put("reason", reason != null ? reason : "");
+
+    HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+    try {
+      ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+      if (response.getBody() != null
+          && Boolean.TRUE.equals(((Map<?, ?>) response.getBody()).get("success"))) {
+        Object data = ((Map<?, ?>) response.getBody()).get("data");
+        return Boolean.TRUE.equals(data);
+      }
+    } catch (Exception e) {
+      System.err.println("Failed to refund deducted points: " + e.getMessage());
+    }
+    return false;
+  }
+
+  /** 删除评价后扣除积分 */
+  public boolean notifyReviewDeleted(Long userId, String reviewId) {
+    String url = baseUrl + "/api/inner/points/notify/review-deleted";
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("userId", userId);
+    requestBody.put("reviewId", reviewId);
+
+    HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+    try {
+      ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+      if (response.getBody() != null
+          && Boolean.TRUE.equals(((Map<?, ?>) response.getBody()).get("success"))) {
+        Object data = ((Map<?, ?>) response.getBody()).get("data");
+        return Boolean.TRUE.equals(data);
+      }
+    } catch (Exception e) {
+      System.err.println("Failed to notify review deleted: " + e.getMessage());
+    }
+    return false;
+  }
 }
