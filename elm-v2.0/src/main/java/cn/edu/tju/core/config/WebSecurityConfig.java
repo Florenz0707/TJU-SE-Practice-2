@@ -1,5 +1,6 @@
 package cn.edu.tju.core.config;
 
+import cn.edu.tju.core.observability.RequestContextLoggingFilter;
 import cn.edu.tju.core.security.internal.InternalServiceTokenFilter;
 import cn.edu.tju.core.security.jwt.JWTFilter;
 import cn.edu.tju.core.security.jwt.TokenProvider;
@@ -26,6 +27,15 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
+
+  private final TokenProvider tokenProvider;
+  private final RequestContextLoggingFilter requestContextLoggingFilter;
+
+  public WebSecurityConfig(
+      TokenProvider tokenProvider, RequestContextLoggingFilter requestContextLoggingFilter) {
+    this.tokenProvider = tokenProvider;
+    this.requestContextLoggingFilter = requestContextLoggingFilter;
+  }
 
   @Bean
   public PasswordEncoder passwordEncoder() {
@@ -73,9 +83,7 @@ public class WebSecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-    String token =
-        "ZmQ0ZGI5NjQ0MDQwY2I4MjMxY2Y3ZmI3MjdhN2ZmMjNhODViOTg1ZGE0NTBjMGM4NDA5NzYxMjdjOWMwYWRmZTBlZjlhNGY3ZTg4Y2U3YTE1ODVkZDU5Y2Y3OGYwZWE1NzUzNWQ2YjFjZDc0NGMxZWU2MmQ3MjY1NzJmNTE0MzI=";
-    var jwtTokenFilter = new JWTFilter(new TokenProvider(token, 86400L, 108000L));
+    var jwtTokenFilter = new JWTFilter(tokenProvider);
     var internalServiceTokenFilter = new InternalServiceTokenFilter(internalServiceToken);
 
     httpSecurity.removeConfigurers(DefaultLoginPageConfigurer.class);
@@ -101,10 +109,12 @@ public class WebSecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         // Disable unnecessary headers
         .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
-        // Add internal service token filter before JWT filter
-        .addFilterBefore(internalServiceTokenFilter, UsernamePasswordAuthenticationFilter.class)
-        // Add your custom JWT filter
-        .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
+        // Build request context first for all subsequent logs.
+        .addFilterBefore(requestContextLoggingFilter, UsernamePasswordAuthenticationFilter.class)
+        // Authenticate internal calls before generic JWT handling.
+        .addFilterAfter(internalServiceTokenFilter, RequestContextLoggingFilter.class)
+        // Install JWT-based user context after internal token check.
+        .addFilterAfter(jwtTokenFilter, InternalServiceTokenFilter.class)
         // Disable default login mechanisms
         .formLogin(AbstractHttpConfigurer::disable)
         .httpBasic(AbstractHttpConfigurer::disable)

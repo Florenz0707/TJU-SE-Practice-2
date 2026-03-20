@@ -39,6 +39,20 @@ public class SecurityUtils {
     return Optional.ofNullable(username);
   }
 
+  public static Optional<Long> getCurrentUserId() {
+    final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null) {
+      LOG.debug("no authentication in security context found");
+      return Optional.empty();
+    }
+
+    Object principal = authentication.getPrincipal();
+    if (principal instanceof AuthenticatedUser authenticatedUser) {
+      return Optional.ofNullable(authenticatedUser.getUserId());
+    }
+    return Optional.empty();
+  }
+
   public static String BCryptPasswordEncode(String pass) {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     return encoder.encode(pass);

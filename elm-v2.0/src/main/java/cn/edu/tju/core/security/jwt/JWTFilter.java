@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
@@ -40,6 +41,10 @@ public class JWTFilter extends GenericFilterBean {
     if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
       Authentication authentication = tokenProvider.getAuthentication(jwt);
       SecurityContextHolder.getContext().setAuthentication(authentication);
+      Long userId = tokenProvider.getUserId(jwt);
+      if (userId != null) {
+        MDC.put("userId", String.valueOf(userId));
+      }
       LOG.debug(
           "set Authentication to security context for '{}', uri: {}",
           authentication.getName(),

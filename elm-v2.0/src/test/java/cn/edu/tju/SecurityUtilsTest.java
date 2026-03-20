@@ -2,7 +2,9 @@ package cn.edu.tju;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import cn.edu.tju.core.security.AuthenticatedUser;
 import cn.edu.tju.core.security.SecurityUtils;
+import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,5 +29,25 @@ public class SecurityUtilsTest {
     Optional<String> username = SecurityUtils.getCurrentUsername();
 
     assertThat(username).isEmpty();
+  }
+
+  @Test
+  public void getCurrentUserId() {
+    SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+    var principal = new AuthenticatedUser(1001L, "admin", "N/A", Collections.emptyList());
+    securityContext.setAuthentication(
+        new UsernamePasswordAuthenticationToken(principal, "token", principal.getAuthorities()));
+    SecurityContextHolder.setContext(securityContext);
+
+    Optional<Long> userId = SecurityUtils.getCurrentUserId();
+
+    assertThat(userId).contains(1001L);
+  }
+
+  @Test
+  public void getCurrentUserIdForNoAuthenticationInContext() {
+    Optional<Long> userId = SecurityUtils.getCurrentUserId();
+
+    assertThat(userId).isEmpty();
   }
 }

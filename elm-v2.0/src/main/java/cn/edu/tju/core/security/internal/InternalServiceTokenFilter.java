@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -62,6 +63,7 @@ public class InternalServiceTokenFilter extends GenericFilterBean {
               null,
               Collections.singletonList(new SimpleGrantedAuthority(INTERNAL_SERVICE_ROLE)));
       SecurityContextHolder.getContext().setAuthentication(authentication);
+      MDC.put("userId", "internal-service");
       LOG.debug("Internal service token validated for URI: {}", servletPath);
     }
 

@@ -1,5 +1,6 @@
 package cn.edu.tju.core.security.jwt;
 
+import cn.edu.tju.core.security.AuthenticatedUser;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -25,6 +26,7 @@ public class TokenProvider implements InitializingBean {
   private final Logger log = LoggerFactory.getLogger(TokenProvider.class);
 
   private static final String AUTHORITIES_KEY = "auth";
+  private static final String USER_ID_KEY = "uid";
 
   private final String base64Secret;
   private final long tokenValidityInMilliseconds;
@@ -63,25 +65,66 @@ public class TokenProvider implements InitializingBean {
       validity = new Date(now + this.tokenValidityInMilliseconds);
     }
 
-    return Jwts.builder()
-        .setSubject(authentication.getName())
-        .claim(AUTHORITIES_KEY, authorities)
-        .signWith(key, SignatureAlgorithm.HS512)
-        .setExpiration(validity)
-        .compact();
+    Long userId = extractUserId(authentication);
+
+    JwtBuilder builder =
+        Jwts.builder()
+            .setSubject(authentication.getName())
+            .claim(AUTHORITIES_KEY, authorities)
+            .signWith(key, SignatureAlgorithm.HS512)
+            .setExpiration(validity);
+
+    if (userId != null) {
+      builder.claim(USER_ID_KEY, userId);
+    }
+
+    return builder.compact();
   }
 
   public Authentication getAuthentication(String token) {
-    Claims claims = Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
+    Claims claims = parseClaims(token);
 
     Collection<? extends GrantedAuthority> authorities =
         Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
             .map(SimpleGrantedAuthority::new)
             .collect(Collectors.toList());
 
-    User principal = new User(claims.getSubject(), "", authorities);
+    Long userId = getClaimAsLong(claims, USER_ID_KEY);
+    User principal = new AuthenticatedUser(userId, claims.getSubject(), "", authorities);
 
     return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+  }
+
+  public Long getUserId(String token) {
+    Claims claims = parseClaims(token);
+    return getClaimAsLong(claims, USER_ID_KEY);
+  }
+
+  private Claims parseClaims(String token) {
+    return Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody();
+  }
+
+  private Long getClaimAsLong(Claims claims, String claimName) {
+    Object value = claims.get(claimName);
+    if (value instanceof Number number) {
+      return number.longValue();
+    }
+    if (value instanceof String stringValue) {
+      try {
+        return Long.valueOf(stringValue);
+      } catch (NumberFormatException ex) {
+        log.warn("Unable to parse '{}' claim as Long", claimName);
+      }
+    }
+    return null;
+  }
+
+  private Long extractUserId(Authentication authentication) {
+    Object principal = authentication.getPrincipal();
+    if (principal instanceof AuthenticatedUser authenticatedUser) {
+      return authenticatedUser.getUserId();
+    }
+    return null;
   }
 
   public boolean validateToken(String authToken) {
