@@ -13,10 +13,10 @@
    - 命令: `cd elm-v2.0 && mvn test`
    - 结果: `BUILD SUCCESS`，`Tests run: 15, Failures: 0, Errors: 0`
 3. 独立 points-service 工程编译
-   - 命令: `cd points-service && mvn -DskipTests compile`
+   - 命令: `cd elm-microservice/points-service && mvn -DskipTests compile`
    - 结果: `BUILD SUCCESS`
 4. 独立 points-service 测试框架检查
-   - 命令: `cd points-service && mvn test`
+   - 命令: `cd elm-microservice/points-service && mvn test`
    - 结果: `BUILD SUCCESS`，当前 `No tests to run`
 
 ## 风格检查现状
@@ -25,7 +25,7 @@
    - 命令: `cd elm-v2.0 && mvn -DskipTests checkstyle:check`
    - 结果: 失败（`4116` 项，项目历史存量，不由本次改动引入）
 2. points-service 风格检查
-   - 命令: `cd points-service && mvn -DskipTests checkstyle:check`
+   - 命令: `cd elm-microservice/points-service && mvn -DskipTests checkstyle:check`
    - 结果: 失败（`1077` 项，迁移代码与 `sun_checks` 规则不一致）
 
 ## 待联调验证（需运行环境）

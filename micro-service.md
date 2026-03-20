@@ -16,6 +16,60 @@
 2. 订单完成/评价完成积分发放已改为 Outbox 异步投递
 3. 订单与评价编排已下沉到应用服务（便于后续跨服务编排）
 
+## 1.1 代码组织约定（最新）
+
+1. 单体工程保留在 `elm-v2.0/`
+2. 拆分后的微服务统一放在 `elm-microservice/` 目录下
+3. 当前已落地微服务：`elm-microservice/points-service`
+
+## 1.2 任务进展（截至 2026-03-20）
+
+### 阶段 0（基线）
+
+1. OpenAPI 合同文件已落地（`elm-v2.0/interfaces.openapi.json`）
+2. JWT `uid` claim 与内部 token 过滤已在单体实现
+3. 日志已包含 `traceId/requestId/userId/orderId` 等关键字段
+
+状态：**已完成（满足当前拆分前提）**
+
+### 阶段 1（模型去耦）
+
+1. 积分域已完成 `userId` 去耦，不再强依赖 `User` 实体关联
+2. 订单/评价编排已下沉应用服务，积分发放走 Outbox
+3. DTO 兼容层与主链路 smoke 已完成一轮验证
+
+状态：**已完成（持续回归中）**
+
+### 阶段 2（points-service 拆分）
+
+已完成：
+
+1. 单体端 `InternalServiceClient` 调用路径补全（含 refund/review-deleted）
+2. 单体端内部积分控制器补齐 `/api/inner/points/trade/refund`、`/api/inner/points/notify/review-deleted`
+3. 独立 `points-service` 工程已创建并可编译运行
+4. 积分域核心代码（controller/service/repository/entity/vo）已迁移到 `elm-microservice/points-service`
+
+待完成：
+
+1. 双服务联调（单体 + points-service）业务链路 smoke
+2. Outbox 重试可观测性与失败恢复演练
+3. 规则与接口文档补齐（阶段交付物收口）
+
+状态：**进行中（预计优先完成联调与验收）**
+
+## 1.3 最近计划（未来 3-5 天）
+
+1. 完成阶段2联调与验收：
+   - 订单完成发积分
+   - 评价发积分
+   - 订单取消积分返还/解冻
+   - Outbox 重试与恢复
+2. 将 `points-service` 初始化脚本与运行模板固化到 `elm-microservice/points-service`
+3. 启动阶段3准备：
+   - 梳理 `account-service` 边界与接口契约
+   - 明确钱包/券幂等键与回滚策略
+4. 建立微服务统一质量门禁：使用 `.pre-commit-config.yaml` 作为代码风格与基础校验入口
+
 ---
 
 ## 2. 总体节奏（6 周）

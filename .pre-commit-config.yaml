@@ -26,25 +26,25 @@ repos:
       - id: pretty-format-java
         args: [--autofix]
 
-  # 前端 lint + build 检查（可选）
   - repo: local
     hooks:
-      - id: frontend-lint
-        name: Frontend Lint
-        entry: bash -c "cd elm-frontend && npm run lint --fix && npm run build"
+      - id: oxlint
+        name: oxlint (fast js/ts linter)
+        entry: npx oxlint
         language: system
-        pass_filenames: false
+        files: \.(js|ts|jsx|tsx)$
+        args: ["--fix"]
 
   - repo: local
     hooks:
     -   id: check-secrets
         name: Check for secrets
-        entry: bash -c 'grep -rn --include="*.properties" --include="*.yml" --include="*.yaml" "password\|secret\|key" elm-v2.0/src/main/resources/ | grep -v "# " || true'
+        entry: bash -c 'for d in elm-v2.0/src/main/resources elm-microservice/*/src/main/resources; do [ -d "$d" ] && grep -rn --include="*.properties" --include="*.yml" --include="*.yaml" "password\|secret\|key" "$d" | grep -v "# " || true; done'
         language: system
         pass_filenames: false
     -   id: validate-pom
-        name: Validate Maven POM
-        entry: bash -c 'cd elm-v2.0 && mvn validate'
+        name: Validate Maven POMs
+        entry: bash -c 'set -e; mvn -f elm-v2.0/pom.xml validate; for pom in elm-microservice/*/pom.xml; do [ -f "$pom" ] && mvn -f "$pom" validate; done'
         language: system
         pass_filenames: false
-        files: pom\.xml$
+        files: (^elm-v2\.0/pom\.xml$)|(^elm-microservice/.+/pom\.xml$)

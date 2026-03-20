@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
-    "preview": "vite preview",
-    "lint": "eslint --ext .vue,.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
@@ -20,29 +19,23 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
     "@iconify-json/ep": "^1.2.3",
     "@types/node": "^24.5.2",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
-    "eslint": "9",
-    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-vue": "^10.4.0",
     "globals": "^17.4.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.6",
     "prettier": "^3.6.2",
     "sass": "^1.93.0",
     "typescript": "~5.8.3",
-    "typescript-eslint": "^8.57.1",
     "unplugin-auto-import": "^20.1.0",
     "unplugin-icons": "^22.3.0",
     "unplugin-vue-components": "^29.0.0",
     "vite": "^7.1.6",
-    "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^3.0.7"
   },
   "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
