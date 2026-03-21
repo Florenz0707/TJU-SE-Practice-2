@@ -22,7 +22,7 @@
 2. 拆分后的微服务统一放在 `elm-microservice/` 目录下
 3. 当前已落地微服务：`elm-microservice/points-service`
 
-## 1.2 任务进展（截至 2026-03-20）
+## 1.2 任务进展（截至 2026-03-21）
 
 ### 阶段 0（基线）
 
@@ -61,6 +61,26 @@
 
 状态：**联调已打通，进入验收收口**
 
+### 阶段 3（account-service 拆分）
+
+已完成：
+
+1. `elm-microservice/account-service` 工程骨架与核心域代码迁移完成
+2. 内部接口已覆盖扣款/退款、券核销/回滚、交易查询
+3. 新增订单侧预校验接口：
+   - `GET /api/inner/account/wallet/by-user/{userId}?createIfAbsent=...`
+   - `GET /api/inner/account/voucher/{voucherId}`
+4. 单体 `OrderApplicationService` 本地钱包/券调用已迁移为 `InternalAccountClient` 远程内部调用
+5. 新增与更新单元测试并通过（`account-service` 与 `elm-v2.0`）
+
+待完成：
+
+1. 双服务联调（`elm-v2.0` + `account-service`）执行业务 smoke（下单/取消回滚）
+2. 账户域独立 schema 与配置模板收口
+3. 阶段3 runbook 与补偿演练文档完善
+
+状态：**本地调用迁移已完成，进入联调验收**
+
 ## 1.3 最近计划（未来 3-5 天）
 
 1. 完成阶段2验收收口：
@@ -68,11 +88,13 @@
    - 评价发积分（业务链路）
    - 订单取消积分返还/解冻（业务链路）
    - Outbox 失败恢复演练
-2. 启动阶段3准备（已开始）：
-   - 梳理 `account-service` 边界与接口契约
-   - 明确钱包/券幂等键与回滚策略
-3. 交付 `account-service` 工程骨架到 `elm-microservice/account-service`
-4. 建立微服务统一质量门禁：使用 `.pre-commit-config.yaml` 作为代码风格与基础校验入口
+2. 推进阶段3联调验收：
+   - 启动 `elm-v2.0` + `account-service` 双服务联调
+   - 覆盖下单扣款/核销与取消退款/回滚链路
+3. 启动下一阶段拆分准备（`catalog-service`）：
+   - 盘点库存扣减/回补接口
+   - 明确订单侧库存远程调用改造点
+4. 持续执行统一质量门禁：按 `.pre-commit-config.yaml` 做风格与基础校验
 
 ---
 

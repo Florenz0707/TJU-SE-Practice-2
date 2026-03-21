@@ -4,7 +4,9 @@ import cn.edu.tju.elm.constant.TransactionType;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.model.BO.Transaction;
 import cn.edu.tju.elm.model.BO.Wallet;
+import cn.edu.tju.elm.model.VO.InternalVoucherSnapshotVO;
 import cn.edu.tju.elm.model.VO.TransactionVO;
+import cn.edu.tju.elm.model.VO.WalletVO;
 import cn.edu.tju.elm.repository.PrivateVoucherRepository;
 import cn.edu.tju.elm.repository.TransactionRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
@@ -141,6 +143,29 @@ public class AccountInternalService {
     return transactionRepository
         .findTopByBizIdOrderByCreateTimeDesc(bizId)
         .map(TransactionVO::new)
+        .orElse(null);
+  }
+
+  @Transactional
+  public WalletVO getWalletByUserId(Long userId, boolean createIfAbsent) {
+    if (userId == null) {
+      return null;
+    }
+    Wallet wallet = walletRepository.findByOwnerId(userId).orElse(null);
+    if (wallet == null && createIfAbsent) {
+      wallet = walletRepository.save(Wallet.getNewWallet(userId));
+    }
+    return wallet == null ? null : new WalletVO(wallet);
+  }
+
+  @Transactional(readOnly = true)
+  public InternalVoucherSnapshotVO getVoucherSnapshotById(Long voucherId) {
+    if (voucherId == null) {
+      return null;
+    }
+    return privateVoucherRepository
+        .findById(voucherId)
+        .map(InternalVoucherSnapshotVO::new)
         .orElse(null);
   }
 }

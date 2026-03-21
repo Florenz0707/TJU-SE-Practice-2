@@ -10,17 +10,12 @@ import cn.edu.tju.elm.model.BO.Food;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.OrderDetailet;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
-import cn.edu.tju.elm.model.BO.Wallet;
-import cn.edu.tju.elm.repository.PrivateVoucherRepository;
-import cn.edu.tju.elm.repository.WalletRepository;
-import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
-import cn.edu.tju.elm.service.serviceInterface.WalletService;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalAccountClient;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,12 +32,9 @@ public class OrderApplicationService {
   private final AddressService addressService;
   private final CartItemService cartItemService;
   private final OrderDetailetService orderDetailetService;
+  private final InternalAccountClient internalAccountClient;
   private final InternalServiceClient internalServiceClient;
   private final IntegrationOutboxService integrationOutboxService;
-  private final PrivateVoucherRepository privateVoucherRepository;
-  private final PrivateVoucherService privateVoucherService;
-  private final WalletRepository walletRepository;
-  private final WalletService walletService;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public OrderApplicationService(
@@ -52,12 +44,9 @@ public class OrderApplicationService {
       AddressService addressService,
       CartItemService cartItemService,
       OrderDetailetService orderDetailetService,
+      InternalAccountClient internalAccountClient,
       InternalServiceClient internalServiceClient,
       IntegrationOutboxService integrationOutboxService,
-      PrivateVoucherRepository privateVoucherRepository,
-      PrivateVoucherService privateVoucherService,
-      WalletRepository walletRepository,
-      WalletService walletService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.orderService = orderService;
     this.businessService = businessService;
@@ -65,12 +54,9 @@ public class OrderApplicationService {
     this.addressService = addressService;
     this.cartItemService = cartItemService;
     this.orderDetailetService = orderDetailetService;
+    this.internalAccountClient = internalAccountClient;
     this.internalServiceClient = internalServiceClient;
     this.integrationOutboxService = integrationOutboxService;
-    this.privateVoucherRepository = privateVoucherRepository;
-    this.privateVoucherService = privateVoucherService;
-    this.walletRepository = walletRepository;
-    this.walletService = walletService;
     this.compatibilityEnricher = compatibilityEnricher;
   }
 
@@ -124,32 +110,33 @@ public class OrderApplicationService {
     BigDecimal voucherDiscount = BigDecimal.ZERO;
     PrivateVoucher usedVoucher = null;
     if (order.getUsedVoucher() != null && order.getUsedVoucher().getId() != null) {
-      Optional<PrivateVoucher> voucherOpt =
-          privateVoucherRepository.findById(order.getUsedVoucher().getId());
-      if (voucherOpt.isPresent()) {
-        usedVoucher = voucherOpt.get();
-        if (!currentUserId.equals(usedVoucher.getWallet().getOwnerId())) {
-          return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "Voucher does not belong to you");
-        }
-        if (usedVoucher.getDeleted() != null && usedVoucher.getDeleted()) {
-          return HttpResult.failure(
-              ResultCodeEnum.SERVER_ERROR, "Voucher has been used or expired");
-        }
-        if (usedVoucher.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-          return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Voucher has expired");
-        }
-        if (usedVoucher.getPublicVoucher() != null) {
-          BigDecimal threshold = usedVoucher.getPublicVoucher().getThreshold();
-          if (threshold != null && totalPrice.compareTo(threshold) < 0) {
-            return HttpResult.failure(
-                ResultCodeEnum.SERVER_ERROR, "Order total does not meet voucher threshold");
-          }
-        }
-        voucherDiscount = usedVoucher.getFaceValue();
-        if (voucherDiscount.compareTo(totalPrice) > 0) {
-          voucherDiscount = totalPrice;
-        }
+      InternalAccountClient.VoucherSnapshot voucherSnapshot =
+          internalAccountClient.getVoucherSnapshot(order.getUsedVoucher().getId());
+      if (voucherSnapshot == null) {
+        return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Voucher NOT FOUND");
       }
+      if (!currentUserId.equals(voucherSnapshot.ownerId())) {
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "Voucher does not belong to you");
+      }
+      if (Boolean.TRUE.equals(voucherSnapshot.deleted())) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Voucher has been used or expired");
+      }
+      if (voucherSnapshot.expiryDate() != null
+          && voucherSnapshot.expiryDate().isBefore(java.time.LocalDateTime.now())) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Voucher has expired");
+      }
+      if (voucherSnapshot.threshold() != null
+          && totalPrice.compareTo(voucherSnapshot.threshold()) < 0) {
+        return HttpResult.failure(
+            ResultCodeEnum.SERVER_ERROR, "Order total does not meet voucher threshold");
+      }
+      voucherDiscount =
+          voucherSnapshot.faceValue() != null ? voucherSnapshot.faceValue() : BigDecimal.ZERO;
+      if (voucherDiscount.compareTo(totalPrice) > 0) {
+        voucherDiscount = totalPrice;
+      }
+      usedVoucher = new PrivateVoucher();
+      usedVoucher.setId(voucherSnapshot.voucherId());
     }
 
     BigDecimal pointsDiscount = BigDecimal.ZERO;
@@ -166,25 +153,13 @@ public class OrderApplicationService {
     }
 
     BigDecimal walletPaid = BigDecimal.ZERO;
-    Wallet userWallet = null;
     if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
       walletPaid = order.getWalletPaid();
-
-      Optional<Wallet> walletOpt = walletRepository.findByOwnerId(currentUserId);
-      if (walletOpt.isEmpty()) {
-        try {
-          walletService.createWallet(currentUserId);
-          walletOpt = walletRepository.findByOwnerId(currentUserId);
-          if (walletOpt.isEmpty()) {
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create wallet");
-          }
-        } catch (Exception e) {
-          log.error("Failed to create wallet: {}", e.getMessage());
-          return HttpResult.failure(
-              ResultCodeEnum.SERVER_ERROR, "Failed to create wallet: " + e.getMessage());
-        }
+      InternalAccountClient.WalletSnapshot userWallet =
+          internalAccountClient.getWalletByUserId(currentUserId, true);
+      if (userWallet == null) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to load wallet");
       }
-      userWallet = walletOpt.get();
 
       BigDecimal maxWalletPaid = totalPrice.subtract(voucherDiscount).subtract(pointsDiscount);
       if (walletPaid.compareTo(maxWalletPaid) > 0) {
@@ -192,11 +167,11 @@ public class OrderApplicationService {
             ResultCodeEnum.SERVER_ERROR, "Wallet payment exceeds remaining order total");
       }
 
-      if (userWallet.getBalance().compareTo(walletPaid) < 0) {
+      if (userWallet.balance() == null || userWallet.balance().compareTo(walletPaid) < 0) {
         return HttpResult.failure(
             ResultCodeEnum.SERVER_ERROR,
             "Insufficient wallet balance. Current balance: "
-                + userWallet.getBalance()
+                + userWallet.balance()
                 + ", Required: "
                 + walletPaid);
       }
@@ -223,23 +198,36 @@ public class OrderApplicationService {
     order.setWalletPaid(walletPaid);
     order.setRequestId(requestId);
     String pointsTradeNo = null;
+    String orderBizId = requestId != null ? requestId : "ORDER_" + UUID.randomUUID();
+    String voucherRedeemRequestId = buildInternalRequestId(requestId, "voucher-redeem");
+    String voucherRollbackRequestId = buildInternalRequestId(requestId, "voucher-rollback");
+    String walletDebitRequestId = buildInternalRequestId(requestId, "wallet-debit");
+    String walletRefundRequestId = buildInternalRequestId(requestId, "wallet-refund");
 
     if (usedVoucher != null) {
-      try {
-        privateVoucherService.redeemPrivateVoucher(usedVoucher.getId());
-      } catch (Exception e) {
-        log.error("Failed to redeem voucher: {}", e.getMessage());
-        return HttpResult.failure(
-            ResultCodeEnum.SERVER_ERROR, "Failed to redeem voucher: " + e.getMessage());
+      boolean redeemed =
+          internalAccountClient.redeemVoucher(
+              voucherRedeemRequestId, currentUserId, usedVoucher.getId(), orderBizId);
+      if (!redeemed) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to redeem voucher");
       }
     }
 
-    if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
-      if (!userWallet.decBalance(walletPaid)) {
+    if (walletPaid.compareTo(BigDecimal.ZERO) > 0) {
+      boolean walletDebited =
+          internalAccountClient.debitWallet(
+              walletDebitRequestId, currentUserId, walletPaid, orderBizId, "order wallet payment");
+      if (!walletDebited) {
+        if (usedVoucher != null) {
+          internalAccountClient.rollbackVoucher(
+              voucherRollbackRequestId,
+              currentUserId,
+              usedVoucher.getId(),
+              orderBizId,
+              "wallet debit failed");
+        }
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to deduct wallet balance");
       }
-      EntityUtils.updateEntity(userWallet);
-      walletRepository.save(userWallet);
     }
 
     if (pointsUsed > 0) {
@@ -259,17 +247,21 @@ public class OrderApplicationService {
         }
       } catch (Exception e) {
         log.error("Failed to deduct points: {}", e.getMessage());
-        if (walletPaid.compareTo(BigDecimal.ZERO) > 0 && userWallet != null) {
-          userWallet.addBalance(walletPaid);
-          EntityUtils.updateEntity(userWallet);
-          walletRepository.save(userWallet);
+        if (walletPaid.compareTo(BigDecimal.ZERO) > 0) {
+          internalAccountClient.refundWallet(
+              walletRefundRequestId,
+              currentUserId,
+              walletPaid,
+              orderBizId,
+              "points deduct failed rollback");
         }
         if (usedVoucher != null) {
-          try {
-            privateVoucherService.restoreVoucher(usedVoucher.getId());
-          } catch (Exception ex) {
-            log.error("Failed to restore voucher: {}", ex.getMessage());
-          }
+          internalAccountClient.rollbackVoucher(
+              voucherRollbackRequestId,
+              currentUserId,
+              usedVoucher.getId(),
+              orderBizId,
+              "points deduct failed rollback");
         }
         return HttpResult.failure(
             ResultCodeEnum.SERVER_ERROR, "Failed to deduct points: " + e.getMessage());
@@ -314,12 +306,16 @@ public class OrderApplicationService {
 
     try {
       if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
-        Optional<Wallet> walletOpt = walletRepository.findByOwnerId(currentUserId);
-        if (walletOpt.isPresent()) {
-          Wallet wallet = walletOpt.get();
-          wallet.addBalance(order.getWalletPaid());
-          EntityUtils.updateEntity(wallet);
-          walletRepository.save(wallet);
+        String orderBizId = "ORDER_" + order.getId();
+        boolean walletRefunded =
+            internalAccountClient.refundWallet(
+                "order-cancel-" + order.getId() + "-wallet-refund",
+                currentUserId,
+                order.getWalletPaid(),
+                orderBizId,
+                "order cancel refund");
+        if (!walletRefunded) {
+          return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "取消订单失败: 钱包退款失败");
         }
       }
 
@@ -334,7 +330,16 @@ public class OrderApplicationService {
       }
 
       if (order.getUsedVoucher() != null) {
-        privateVoucherService.restoreVoucher(order.getUsedVoucher().getId());
+        boolean voucherRolledBack =
+            internalAccountClient.rollbackVoucher(
+                "order-cancel-" + order.getId() + "-voucher-rollback",
+                currentUserId,
+                order.getUsedVoucher().getId(),
+                "ORDER_" + order.getId(),
+                "order cancel rollback voucher");
+        if (!voucherRolledBack) {
+          return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "取消订单失败: 优惠券回滚失败");
+        }
       }
 
       List<OrderDetailet> orderDetails =
@@ -419,5 +424,12 @@ public class OrderApplicationService {
 
     compatibilityEnricher.enrichOrder(newOrder);
     return HttpResult.success(newOrder);
+  }
+
+  private String buildInternalRequestId(String requestId, String action) {
+    if (requestId == null || requestId.isEmpty()) {
+      return "order-" + action + "-" + UUID.randomUUID();
+    }
+    return requestId + ":" + action;
   }
 }

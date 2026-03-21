@@ -29,6 +29,10 @@ public class WalletVO implements Serializable {
     return voucher;
   }
 
+  public Long getOwnerId() {
+    return ownerId;
+  }
+
   @Override
   public String toString() {
     return "WalletVO: id="

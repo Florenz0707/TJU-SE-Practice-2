@@ -82,3 +82,7 @@
 2. 阶段3准备已启动：
    - 完成域边界盘点
    - 输出内部接口草案
+3. 订单侧本地调用迁移已完成（2026-03-21）：
+   - 新增 `InternalAccountClient`（`account.service.url` 可配置）
+   - `OrderApplicationService` 已改为通过 `account-service` 内部接口处理券校验/核销回滚、钱包扣款退款
+   - 新增单测 `OrderApplicationServiceTest` 覆盖远程钱包预检与取消回滚调用

@@ -2,7 +2,9 @@ package cn.edu.tju.elm.controller;
 
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
+import cn.edu.tju.elm.model.VO.InternalVoucherSnapshotVO;
 import cn.edu.tju.elm.model.VO.TransactionVO;
+import cn.edu.tju.elm.model.VO.WalletVO;
 import cn.edu.tju.elm.service.AccountInternalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -112,6 +115,34 @@ public class AccountInnerController {
     try {
       TransactionVO transaction = accountInternalService.getTransactionByBizId(bizId);
       return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @GetMapping("/wallet/by-user/{userId}")
+  @Operation(summary = "按用户查询钱包", description = "支持按需自动创建钱包的内部查询接口")
+  public HttpResult<WalletVO> getWalletByUserId(
+      @Parameter(description = "用户ID", required = true) @PathVariable("userId") Long userId,
+      @Parameter(description = "是否不存在时自动创建钱包")
+          @RequestParam(name = "createIfAbsent", defaultValue = "false")
+          boolean createIfAbsent) {
+    try {
+      WalletVO wallet = accountInternalService.getWalletByUserId(userId, createIfAbsent);
+      return HttpResult.success(wallet);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @GetMapping("/voucher/{voucherId}")
+  @Operation(summary = "查询优惠券快照", description = "用于订单服务下单前校验优惠券可用性")
+  public HttpResult<InternalVoucherSnapshotVO> getVoucherSnapshot(
+      @Parameter(description = "私有券ID", required = true) @PathVariable("voucherId")
+          Long voucherId) {
+    try {
+      InternalVoucherSnapshotVO snapshot = accountInternalService.getVoucherSnapshotById(voucherId);
+      return HttpResult.success(snapshot);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }

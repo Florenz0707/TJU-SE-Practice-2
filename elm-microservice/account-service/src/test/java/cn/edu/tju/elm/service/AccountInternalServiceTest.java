@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.model.BO.Transaction;
 import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.repository.PrivateVoucherRepository;
@@ -20,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,5 +73,35 @@ class AccountInternalServiceTest {
     assertNotNull(result);
     assertEquals("req-3", result.getRequestId());
     verify(transactionRepository).save(any(Transaction.class));
+  }
+
+  @Test
+  void getWalletByUserId_shouldCreateWallet_whenMissingAndCreateFlagTrue() {
+    when(walletRepository.findByOwnerId(77L)).thenReturn(Optional.empty());
+    Wallet newWallet = Wallet.getNewWallet(77L);
+    when(walletRepository.save(any(Wallet.class))).thenReturn(newWallet);
+
+    var result = accountInternalService.getWalletByUserId(77L, true);
+
+    assertNotNull(result);
+    assertEquals(77L, result.getOwnerId());
+    verify(walletRepository).save(any(Wallet.class));
+  }
+
+  @Test
+  void getVoucherSnapshotById_shouldReturnSnapshot_whenVoucherExists() {
+    Wallet wallet = Wallet.getNewWallet(9L);
+    PrivateVoucher voucher = Mockito.mock(PrivateVoucher.class);
+    when(voucher.getId()).thenReturn(100L);
+    when(voucher.getWallet()).thenReturn(wallet);
+    when(voucher.getDeleted()).thenReturn(false);
+    when(voucher.getFaceValue()).thenReturn(new BigDecimal("8.8"));
+    when(privateVoucherRepository.findById(100L)).thenReturn(Optional.of(voucher));
+
+    var result = accountInternalService.getVoucherSnapshotById(100L);
+
+    assertNotNull(result);
+    assertEquals(100L, result.getId());
+    assertEquals(9L, result.getOwnerId());
   }
 }
