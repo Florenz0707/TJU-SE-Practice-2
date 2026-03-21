@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.059" tests="6" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="cn.edu.tju.order.service.OrderInternalServiceTest" time="11.123" tests="7" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -53,10 +53,14 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="getOrdersByCustomerId_shouldReturnData" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.044"/>
-  <testcase name="ping_shouldReturnPong" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.002"/>
-  <testcase name="createOrder_shouldReturnData_whenServiceSuccess" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.004"/>
-  <testcase name="cancelOrder_shouldReturnFailure_whenOperatorMissing" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.002"/>
-  <testcase name="getOrderById_shouldReturnFailure_whenMissing" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.002"/>
-  <testcase name="createOrder_shouldReturnFailure_whenItemsEmpty" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.001"/>
+  <testcase name="cancelPaidOrder_shouldThrow_whenNotOwner" classname="cn.edu.tju.order.service.OrderInternalServiceTest" time="11.077">
+    <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+]]></system-err>
+  </testcase>
+  <testcase name="createOrder_shouldReturnExisting_whenRequestIdExists" classname="cn.edu.tju.order.service.OrderInternalServiceTest" time="0.005"/>
+  <testcase name="getOrdersByCustomerId_shouldReturnEmpty_whenNullInput" classname="cn.edu.tju.order.service.OrderInternalServiceTest" time="0.002"/>
+  <testcase name="getOrderById_shouldReturnSnapshot_whenFound" classname="cn.edu.tju.order.service.OrderInternalServiceTest" time="0.001"/>
+  <testcase name="getOrderDetailetsByOrderId_shouldReturnItems" classname="cn.edu.tju.order.service.OrderInternalServiceTest" time="0.003"/>
+  <testcase name="createOrder_shouldSaveOrderAndDetails" classname="cn.edu.tju.order.service.OrderInternalServiceTest" time="0.012"/>
+  <testcase name="cancelPaidOrder_shouldChangeStateToCanceled" classname="cn.edu.tju.order.service.OrderInternalServiceTest" time="0.002"/>
 </testsuite>

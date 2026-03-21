@@ -123,7 +123,7 @@
 2. 推进阶段3剩余收口项（账户域异常补偿与灰度回滚）
 3. 启动阶段5（order-service）拆分准备与边界梳理
 
-状态：**阶段4准备已启动**
+状态：**已完成（双服务联调 + 补偿演练通过）**
 
 ### 阶段 5（order-service 拆分准备）
 
@@ -135,26 +135,31 @@
    - 与 account/catalog/points 继续通过内部 API 协同
 3. 创建 `elm-microservice/order-service` 工程骨架并落地健康接口：
    - `GET /api/inner/order/ping`
+4. `Order + OrderDetailet` 最小可运行集已迁移到 `order-service`（去外部实体耦合）
+5. `order-service` 内部查询接口第一版已落地并通过单测
+6. `order-service` 写接口第一版已落地：
+   - `POST /api/inner/order/create`（按 `requestId` 幂等）
+   - `POST /api/inner/order/{orderId}/cancel`（仅订单所属用户）
+7. `order-service` 创建/取消事务服务已实现并补齐单测覆盖
+8. `order-service` Mockito 测试配置已适配当前环境（`mock-maker-subclass`）
 
 待完成：
 
-1. 迁移 `Order + OrderDetailet` 最小可运行集
-2. 输出阶段5联调 runbook 初稿
-3. 接入账户/目录/积分内部调用并回归下单取消链路
+1. 输出阶段5联调 runbook 初稿并执行首轮双服务 smoke
+2. 将单体下单/取消的本地订单落库调用迁移到 `order-service` 内部写接口
+3. 接入账户/目录/积分内部调用并回归完整下单取消链路
 
 状态：**阶段5准备已启动**
 
 ## 1.3 最近计划（未来 3-5 天）
 
-1. 完成阶段4核心迁移：
-   - 实现库存扣减/回补内部接口（幂等）
-   - 订单侧库存写路径迁移至 `catalog-service`
-2. 执行阶段4双服务联调 smoke：
-   - 下单扣库存
-   - 取消订单回补库存
-3. 推进阶段3收口：
-   - 执行异常补偿演练并固化结果
-   - 收敛配置模板（含 `ACCOUNT_SERVICE_URL`、数据库账号策略）
+1. 推进阶段5订单域迁移：
+   - 迁移单体下单/取消中的订单写入与状态变更到 `order-service`
+   - 补齐内部 DTO 兼容字段与错误码语义
+2. 执行阶段5首轮联调 smoke：
+   - 创建订单（幂等重试）
+   - 取消订单（状态校验与权限校验）
+3. 输出阶段5联调与回滚 runbook 初稿
 4. 持续执行统一质量门禁：按 `.pre-commit-config.yaml` 做风格与基础校验
 
 ---

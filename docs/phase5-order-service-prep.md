@@ -59,7 +59,32 @@
 
 ## 7. 下一步执行项
 
-1. 创建 `elm-microservice/order-service` 工程骨架
-2. 先迁移 `Order` + `OrderDetailet` 最小可运行集与查询接口
-3. 补齐 `order-service` 内部健康检查与基础单测
-4. 输出阶段5联调 runbook 初稿
+1. 将单体下单/取消链路中的订单本地落库调用迁移到 `order-service` 写接口
+2. 接入 account/catalog/points 内部调用客户端并完成端到端回归
+3. 输出并执行阶段5联调 runbook 初稿
+
+## 8. 已交付（2026-03-21）
+
+1. `elm-microservice/order-service` 工程骨架已创建
+2. 最小模型迁移完成（去外部实体耦合）：
+   - `Order`（`businessId/addressId/voucherId`）
+   - `OrderDetailet`（`orderId/foodId/quantity`）
+3. 仓储与内部查询服务已落地：
+   - `OrderRepository`
+   - `OrderDetailetRepository`
+   - `OrderInternalService`
+4. 内部接口第一版：
+   - `GET /api/inner/order/ping`
+   - `GET /api/inner/order/{orderId}`
+   - `GET /api/inner/order/by-request/{requestId}`
+   - `GET /api/inner/order/customer/{customerId}`
+   - `GET /api/inner/order/{orderId}/details`
+5. 单元测试通过：
+   - `OrderInternalServiceTest`
+   - `OrderInnerControllerTest`
+6. 写接口与事务编排第一版已落地：
+   - `POST /api/inner/order/create`（`requestId` 幂等）
+   - `POST /api/inner/order/{orderId}/cancel`（仅订单所属用户）
+7. 测试环境兼容补充：
+   - `src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker`
+   - 使用 `mock-maker-subclass` 规避 inline attach 限制
