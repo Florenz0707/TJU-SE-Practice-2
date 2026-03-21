@@ -49,26 +49,29 @@
 3. 独立 `points-service` 工程已创建并可编译运行
 4. 积分域核心代码（controller/service/repository/entity/vo）已迁移到 `elm-microservice/points-service`
 5. Outbox 可观测/恢复管理接口已落地（summary、dispatch-now、requeue）
+6. 双服务联调完成（2026-03-21）：
+   - `elm-v2.0`（8080）与 `points-service`（8081）同时运行
+   - Outbox 插入 `POINTS_ORDER_SUCCESS` 与 `POINTS_REVIEW_SUCCESS` 事件后均自动转为 `SENT`
 
 待完成：
 
-1. 双服务联调（单体 + points-service）业务链路 smoke
+1. 完整业务链路 smoke（下单/评价/取消从业务 API 端到端）
 2. Outbox 失败恢复演练（结合新管理接口）
 3. 规则与接口文档补齐（阶段交付物收口）
 
-状态：**进行中（预计优先完成联调与验收）**
+状态：**联调已打通，进入验收收口**
 
 ## 1.3 最近计划（未来 3-5 天）
 
-1. 完成阶段2联调与验收：
-   - 订单完成发积分
-   - 评价发积分
-   - 订单取消积分返还/解冻
-   - Outbox 重试与恢复
-2. 将 `points-service` 初始化脚本与运行模板固化到 `elm-microservice/points-service`
-3. 启动阶段3准备：
+1. 完成阶段2验收收口：
+   - 订单完成发积分（业务链路）
+   - 评价发积分（业务链路）
+   - 订单取消积分返还/解冻（业务链路）
+   - Outbox 失败恢复演练
+2. 启动阶段3准备（已开始）：
    - 梳理 `account-service` 边界与接口契约
    - 明确钱包/券幂等键与回滚策略
+3. 交付 `account-service` 工程骨架到 `elm-microservice/account-service`
 4. 建立微服务统一质量门禁：使用 `.pre-commit-config.yaml` 作为代码风格与基础校验入口
 
 ---

@@ -3,6 +3,7 @@
 ## 执行日期
 
 - 2026-03-20
+- 2026-03-21（双服务联调）
 
 ## 已执行并通过
 
@@ -18,6 +19,13 @@
 4. 独立 points-service 测试框架检查
    - 命令: `cd elm-microservice/points-service && mvn test`
    - 结果: `BUILD SUCCESS`，当前 `No tests to run`
+5. 双服务联调（单体 + points-service）
+   - 启动：
+     - `DB_URL=... DB_USERNAME=user DB_PASSWORD=pass@WORD mvn spring-boot:run`（points-service, 8081）
+     - `POINTS_SERVICE_URL=http://localhost:8081/elm DB_URL=... DB_USERNAME=user DB_PASSWORD=pass@WORD mvn spring-boot:run`（elm-v2.0, 8080）
+   - 验证：
+     - 向 `integration_outbox_event` 插入 `POINTS_ORDER_SUCCESS`（id=3）与 `POINTS_REVIEW_SUCCESS`（id=4）
+     - 查询结果：两条事件均转为 `SENT`，`retry_count=0`，`last_error=NULL`
 
 ## 风格检查现状
 
