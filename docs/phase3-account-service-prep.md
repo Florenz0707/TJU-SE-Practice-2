@@ -69,8 +69,10 @@
 ## 6. 已交付准备项
 
 1. `elm-microservice/account-service` 工程骨架已创建（端口 `8082`）
-2. `pom.xml`、`application.properties`、`README.md` 已就位
-3. 可编译验证通过（见下文）
+2. 钱包/交易/券域代码已迁移（controller/service/repository/model/vo/exception/constant）
+3. 内部接口已实现：`/api/inner/account/**`
+4. 单元测试已补齐并通过（`AccountInnerControllerTest`、`AccountInternalServiceTest`）
+5. 可编译与测试验证通过（见下文）
 
 ## 7. 最近执行记录
 
