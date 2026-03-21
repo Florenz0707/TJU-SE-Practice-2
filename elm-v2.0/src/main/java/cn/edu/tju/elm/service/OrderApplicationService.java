@@ -12,10 +12,14 @@ import cn.edu.tju.elm.model.BO.OrderDetailet;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalAccountClient;
+import cn.edu.tju.elm.utils.InternalCatalogClient;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,34 +31,34 @@ public class OrderApplicationService {
   private static final Logger log = LoggerFactory.getLogger(OrderApplicationService.class);
 
   private final OrderService orderService;
-  private final BusinessService businessService;
   private final FoodService foodService;
   private final AddressService addressService;
   private final CartItemService cartItemService;
   private final OrderDetailetService orderDetailetService;
   private final InternalAccountClient internalAccountClient;
+  private final InternalCatalogClient internalCatalogClient;
   private final InternalServiceClient internalServiceClient;
   private final IntegrationOutboxService integrationOutboxService;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public OrderApplicationService(
       OrderService orderService,
-      BusinessService businessService,
       FoodService foodService,
       AddressService addressService,
       CartItemService cartItemService,
       OrderDetailetService orderDetailetService,
       InternalAccountClient internalAccountClient,
+      InternalCatalogClient internalCatalogClient,
       InternalServiceClient internalServiceClient,
       IntegrationOutboxService integrationOutboxService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.orderService = orderService;
-    this.businessService = businessService;
     this.foodService = foodService;
     this.addressService = addressService;
     this.cartItemService = cartItemService;
     this.orderDetailetService = orderDetailetService;
     this.internalAccountClient = internalAccountClient;
+    this.internalCatalogClient = internalCatalogClient;
     this.internalServiceClient = internalServiceClient;
     this.integrationOutboxService = integrationOutboxService;
     this.compatibilityEnricher = compatibilityEnricher;
@@ -75,12 +79,16 @@ public class OrderApplicationService {
     if (order.getDeliveryAddress() == null || order.getDeliveryAddress().getId() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress.Id CANT BE NULL");
 
-    Business business = businessService.getBusinessById(order.getBusiness().getId());
+    InternalCatalogClient.BusinessSnapshot business =
+        internalCatalogClient.getBusinessSnapshot(order.getBusiness().getId());
     if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+    if (Boolean.TRUE.equals(business.deleted())) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Business NOT AVAILABLE");
+    }
 
-    if (business.getOpenTime() != null && business.getCloseTime() != null) {
+    if (business.openTime() != null && business.closeTime() != null) {
       java.time.LocalTime now = java.time.LocalTime.now();
-      if (now.isBefore(business.getOpenTime()) || now.isAfter(business.getCloseTime())) {
+      if (now.isBefore(business.openTime()) || now.isAfter(business.closeTime())) {
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "商家未营业");
       }
     }
@@ -89,21 +97,40 @@ public class OrderApplicationService {
     if (address == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
 
-    List<Cart> cartList = cartItemService.getCart(business.getId(), currentUserId);
+    List<Cart> cartList = cartItemService.getCart(business.businessId(), currentUserId);
     if (cartList.isEmpty())
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
     if (!currentUserId.equals(address.getCustomerId()))
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
+    Map<Long, InternalCatalogClient.FoodSnapshot> foodSnapshots = new HashMap<>();
     BigDecimal totalPrice = BigDecimal.ZERO;
     for (Cart cart : cartList) {
+      if (cart.getFood() == null || cart.getFood().getId() == null) {
+        return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
+      }
+      Long foodId = cart.getFood().getId();
+      InternalCatalogClient.FoodSnapshot foodSnapshot =
+          internalCatalogClient.getFoodSnapshot(foodId);
+      if (foodSnapshot == null) {
+        return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food NOT FOUND");
+      }
+      if (Boolean.TRUE.equals(foodSnapshot.deleted())) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Food NOT AVAILABLE");
+      }
+      if (!Objects.equals(foodSnapshot.businessId(), business.businessId())) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Food DOES NOT BELONG TO Business");
+      }
+      if (foodSnapshot.foodPrice() == null) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "FoodPrice NOT FOUND");
+      }
+      foodSnapshots.put(foodId, foodSnapshot);
       BigDecimal quantity = new BigDecimal(cart.getQuantity());
-      totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
+      totalPrice = totalPrice.add(foodSnapshot.foodPrice().multiply(quantity));
     }
-    if (business.getDeliveryPrice() != null)
-      totalPrice = totalPrice.add(business.getDeliveryPrice());
-    if (business.getStartPrice() != null && totalPrice.compareTo(business.getStartPrice()) < 0)
+    if (business.deliveryPrice() != null) totalPrice = totalPrice.add(business.deliveryPrice());
+    if (business.startPrice() != null && totalPrice.compareTo(business.startPrice()) < 0)
       return HttpResult.failure(
           ResultCodeEnum.SERVER_ERROR, "Order.TotalPrice IS LESS THAN BUSINESS START PRICE");
 
@@ -178,9 +205,13 @@ public class OrderApplicationService {
     }
 
     for (Cart cart : cartList) {
-      if (cart.getFood().getStock() < cart.getQuantity()) {
-        return HttpResult.failure(
-            ResultCodeEnum.SERVER_ERROR, "商品 " + cart.getFood().getFoodName() + " 库存不足");
+      InternalCatalogClient.FoodSnapshot foodSnapshot = foodSnapshots.get(cart.getFood().getId());
+      if (foodSnapshot == null
+          || foodSnapshot.stock() == null
+          || foodSnapshot.stock() < cart.getQuantity()) {
+        String foodName =
+            cart.getFood().getFoodName() != null ? cart.getFood().getFoodName() : "未知商品";
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "商品 " + foodName + " 库存不足");
       }
     }
 
@@ -188,7 +219,7 @@ public class OrderApplicationService {
     order.setOrderTotal(totalPrice);
     order.setOrderState(OrderState.PAID);
     order.setOrderDate(order.getCreateTime());
-    order.setBusiness(business);
+    order.setBusiness(buildBusinessRef(business.businessId()));
     order.setCustomerId(currentUserId);
     order.setDeliveryAddress(address);
     order.setUsedVoucher(usedVoucher);
@@ -272,7 +303,13 @@ public class OrderApplicationService {
 
     for (Cart cart : cartList) {
       Food food = cart.getFood();
-      food.decreaseStock(cart.getQuantity());
+      if (food == null || food.getId() == null) {
+        return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
+      }
+      if (!food.decreaseStock(cart.getQuantity())) {
+        return HttpResult.failure(
+            ResultCodeEnum.SERVER_ERROR, "商品 " + food.getFoodName() + " 库存不足");
+      }
       EntityUtils.updateEntity(food);
       foodService.updateFood(food);
 
@@ -431,5 +468,11 @@ public class OrderApplicationService {
       return "order-" + action + "-" + UUID.randomUUID();
     }
     return requestId + ":" + action;
+  }
+
+  private Business buildBusinessRef(Long businessId) {
+    Business business = new Business();
+    business.setId(businessId);
+    return business;
   }
 }

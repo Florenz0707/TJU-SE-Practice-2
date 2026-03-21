@@ -1,4 +1,9 @@
-cn/edu/tju/core/model/HttpResult.class
-cn/edu/tju/catalog/controller/CatalogInnerController.class
 cn/edu/tju/CatalogServiceApplication.class
+cn/edu/tju/catalog/controller/CatalogInnerController$StockItemRequest.class
+cn/edu/tju/catalog/controller/CatalogInnerController.class
+cn/edu/tju/core/model/HttpResult.class
+cn/edu/tju/catalog/service/CatalogInternalService$StockItemCommand.class
+cn/edu/tju/catalog/repository/StockRequestLogRepository.class
+cn/edu/tju/catalog/model/bo/StockRequestLog.class
 cn/edu/tju/core/model/ResultCodeEnum.class
+cn/edu/tju/catalog/controller/CatalogInnerController$StockOperateRequest.class

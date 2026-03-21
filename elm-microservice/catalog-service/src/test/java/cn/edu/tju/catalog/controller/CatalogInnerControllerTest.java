@@ -11,6 +11,7 @@ import cn.edu.tju.catalog.model.vo.BusinessSnapshotVO;
 import cn.edu.tju.catalog.model.vo.FoodSnapshotVO;
 import cn.edu.tju.catalog.service.CatalogInternalService;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -62,5 +63,48 @@ class CatalogInnerControllerTest {
     assertTrue(result.getSuccess());
     assertEquals(2L, result.getData().getBusinessId());
     assertEquals(9, result.getData().getStock());
+  }
+
+  @Test
+  void reserveStock_shouldReturnSuccess_whenServiceSucceed() {
+    CatalogInnerController.StockOperateRequest request =
+        new CatalogInnerController.StockOperateRequest();
+    request.setRequestId("req-stock");
+    request.setOrderId("ORDER_1");
+    CatalogInnerController.StockItemRequest item = new CatalogInnerController.StockItemRequest();
+    item.setFoodId(8L);
+    item.setQuantity(2);
+    request.setItems(List.of(item));
+    when(catalogInternalService.reserveStock(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.anyList()))
+        .thenReturn(true);
+
+    var result = catalogInnerController.reserveStock(request);
+
+    assertTrue(result.getSuccess());
+    assertTrue(result.getData());
+  }
+
+  @Test
+  void releaseStock_shouldReturnFailure_whenServiceFailed() {
+    CatalogInnerController.StockOperateRequest request =
+        new CatalogInnerController.StockOperateRequest();
+    request.setRequestId("req-stock-release");
+    request.setOrderId("ORDER_2");
+    CatalogInnerController.StockItemRequest item = new CatalogInnerController.StockItemRequest();
+    item.setFoodId(9L);
+    item.setQuantity(1);
+    request.setItems(List.of(item));
+    when(catalogInternalService.releaseStock(
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.any(),
+            org.mockito.ArgumentMatchers.anyList()))
+        .thenReturn(false);
+
+    var result = catalogInnerController.releaseStock(request);
+
+    assertFalse(result.getSuccess());
   }
 }

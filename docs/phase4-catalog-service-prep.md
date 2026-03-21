@@ -82,3 +82,13 @@
 6. 编译与测试验证通过：
    - `mvn -f elm-microservice/catalog-service/pom.xml -DskipTests compile`
    - `mvn -f elm-microservice/catalog-service/pom.xml test`
+7. 订单侧读取链路迁移完成（第一批）：
+   - 新增 `InternalCatalogClient`
+   - `OrderApplicationService` 已改为远程读取商家与菜品快照进行下单校验
+
+## 8. 当前进行中（2026-03-21）
+
+1. 库存写接口第一版已实现（`reserve/release`，按 `requestId` 幂等）
+2. 单体 `InternalCatalogClient` 已补齐库存调用方法（待订单侧接入）
+3. 订单侧库存扣减/回补仍为本地表更新，下一步迁移到 `catalog-service` 内部接口
+4. 完成写路径迁移后执行 `elm-v2.0 + catalog-service` 双服务 smoke（下单/取消）

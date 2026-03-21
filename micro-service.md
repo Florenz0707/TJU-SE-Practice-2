@@ -99,28 +99,32 @@
    - 迁移 `Business/Food` 最小模型、Repository、Service
    - `GET /api/inner/catalog/business/{businessId}`、`GET /api/inner/catalog/food/{foodId}` 已可查询
    - 单元测试通过（`CatalogInternalServiceTest`、`CatalogInnerControllerTest`）
+6. 单体订单读路径已接入 `InternalCatalogClient`：
+   - 商家存在性/营业时间/起送价/配送费改为远程读取
+   - 菜品价格与库存校验改为远程读取
+7. `catalog-service` 库存内部接口第一版已实现（幂等键 `requestId`）：
+   - `POST /api/inner/catalog/stock/reserve`
+   - `POST /api/inner/catalog/stock/release`
 
 待完成：
 
-1. 实现库存扣减/回补内部接口（幂等）
-2. 订单侧接入 `InternalCatalogClient`
-3. 将 `OrderApplicationService` 的商家/菜品读取与库存更新切换到远程调用
+1. 将 `OrderApplicationService` 的库存更新切换到远程调用（扣减/回补）
+2. 完成双服务（`elm-v2.0` + `catalog-service`）库存链路联调 smoke
+3. 完成库存回滚失败场景的补偿演练记录
 
 状态：**阶段4准备已启动**
 
 ## 1.3 最近计划（未来 3-5 天）
 
-1. 完成阶段2验收收口：
-   - 订单完成发积分（业务链路）
-   - 评价发积分（业务链路）
-   - 订单取消积分返还/解冻（业务链路）
-   - Outbox 失败恢复演练
-2. 推进阶段3收口：
+1. 完成阶段4核心迁移：
+   - 实现库存扣减/回补内部接口（幂等）
+   - 订单侧库存写路径迁移至 `catalog-service`
+2. 执行阶段4双服务联调 smoke：
+   - 下单扣库存
+   - 取消订单回补库存
+3. 推进阶段3收口：
    - 执行异常补偿演练并固化结果
    - 收敛配置模板（含 `ACCOUNT_SERVICE_URL`、数据库账号策略）
-3. 启动下一阶段拆分准备（`catalog-service`）：
-   - 创建 `catalog-service` 工程骨架
-   - 优先落地商家/菜品内部查询接口
 4. 持续执行统一质量门禁：按 `.pre-commit-config.yaml` 做风格与基础校验
 
 ---
