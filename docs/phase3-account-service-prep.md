@@ -86,3 +86,17 @@
    - 新增 `InternalAccountClient`（`account.service.url` 可配置）
    - `OrderApplicationService` 已改为通过 `account-service` 内部接口处理券校验/核销回滚、钱包扣款退款
    - 新增单测 `OrderApplicationServiceTest` 覆盖远程钱包预检与取消回滚调用
+4. 双服务联调 smoke 已执行（2026-03-21）：
+   - 启动：
+     - `account-service`（8082，`DB_USERNAME=user`，`DB_PASSWORD=pass@WORD`）
+     - `elm-v2.0`（8080，`ACCOUNT_SERVICE_URL=http://localhost:8082/elm`）
+   - 链路：
+     - 用户创建钱包并充值
+     - 管理员创建公共券，用户领取私有券
+     - 用户下单（带 `X-Request-Id`）使用钱包+优惠券
+     - 用户取消订单
+   - 验证结果：
+     - 订单取消后状态为 `CANCELED(0)`
+     - `GET /api/inner/account/transaction/by-biz/{requestId}` 可查到下单扣款交易
+     - `GET /api/inner/account/transaction/by-biz/ORDER_{orderId}` 可查到取消退款交易
+     - `GET /api/inner/account/voucher/{voucherId}` 在下单后 `deleted=true`，取消后恢复为 `deleted=false`

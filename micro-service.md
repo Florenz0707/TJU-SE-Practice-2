@@ -72,14 +72,37 @@
    - `GET /api/inner/account/voucher/{voucherId}`
 4. 单体 `OrderApplicationService` 本地钱包/券调用已迁移为 `InternalAccountClient` 远程内部调用
 5. 新增与更新单元测试并通过（`account-service` 与 `elm-v2.0`）
+6. 阶段3联调文档已补齐：
+   - `docs/phase3-linkage-runbook.md`
+   - `docs/phase3-smoke-checklist.md`
 
 待完成：
 
-1. 双服务联调（`elm-v2.0` + `account-service`）执行业务 smoke（下单/取消回滚）
-2. 账户域独立 schema 与配置模板收口
-3. 阶段3 runbook 与补偿演练文档完善
+1. 账户域独立 schema 与配置模板收口
+2. 拆分后灰度开关与回滚脚本补齐
+3. 异常补偿演练（account-service 不可达/回滚失败）实操记录
 
-状态：**本地调用迁移已完成，进入联调验收**
+状态：**本地调用迁移 + 双服务 smoke 已完成，进入阶段3收口**
+
+### 阶段 4（catalog-service 拆分准备）
+
+已完成：
+
+1. 输出阶段4拆分准备文档：`docs/phase4-catalog-service-prep.md`
+2. 梳理订单侧与目录域耦合点：
+   - 商家校验（营业时间/起送价/配送费）
+   - 菜品价格与库存读取
+   - 下单扣库存与取消回补库存
+3. 给出 `catalog-service` 内部接口草案（商家查询、菜品查询、库存扣减/回补）
+4. 创建 `elm-microservice/catalog-service` 工程骨架并编译通过
+
+待完成：
+
+1. 迁移 `Business/Food` 最小可运行集
+2. 实现商家/菜品内部查询真实逻辑
+3. 订单侧接入 `InternalCatalogClient`
+
+状态：**阶段4准备已启动**
 
 ## 1.3 最近计划（未来 3-5 天）
 
@@ -88,12 +111,12 @@
    - 评价发积分（业务链路）
    - 订单取消积分返还/解冻（业务链路）
    - Outbox 失败恢复演练
-2. 推进阶段3联调验收：
-   - 启动 `elm-v2.0` + `account-service` 双服务联调
-   - 覆盖下单扣款/核销与取消退款/回滚链路
+2. 推进阶段3收口：
+   - 执行异常补偿演练并固化结果
+   - 收敛配置模板（含 `ACCOUNT_SERVICE_URL`、数据库账号策略）
 3. 启动下一阶段拆分准备（`catalog-service`）：
-   - 盘点库存扣减/回补接口
-   - 明确订单侧库存远程调用改造点
+   - 创建 `catalog-service` 工程骨架
+   - 优先落地商家/菜品内部查询接口
 4. 持续执行统一质量门禁：按 `.pre-commit-config.yaml` 做风格与基础校验
 
 ---
