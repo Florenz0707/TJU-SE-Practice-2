@@ -142,6 +142,7 @@ class OrderApplicationServiceTest {
     var result = orderApplicationService.addOrder(userId, order, "req-reserve-fail");
 
     assertFalse(result.getSuccess());
+    verify(orderService, never()).addOrder(any());
     verify(cartItemService, never()).deleteCart(any());
   }
 

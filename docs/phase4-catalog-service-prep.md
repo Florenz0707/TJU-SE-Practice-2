@@ -92,4 +92,5 @@
 2. 单体 `InternalCatalogClient` 已补齐库存调用方法并接入订单侧
 3. `OrderApplicationService` 已切换库存写路径到远程（reserve/release）
 4. 双服务 smoke 已执行通过（下单扣库存、取消回补、下单幂等）
-5. 下一步补齐异常补偿演练记录（reserve/release 失败场景）
+5. 异常补偿演练已完成并记录：`docs/phase4-compensation-drill.md`
+6. 下一步固化契约与推进阶段5（order-service）拆分准备

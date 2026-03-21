@@ -234,6 +234,12 @@ public class OrderApplicationService {
     String walletRefundRequestId = buildInternalRequestId(requestId, "wallet-refund");
     String stockReserveRequestId = buildInternalRequestId(requestId, "stock-reserve");
     String stockRollbackRequestId = buildInternalRequestId(requestId, "stock-reserve-rollback");
+    List<InternalCatalogClient.StockItem> stockItems =
+        cartList.stream()
+            .map(
+                cart ->
+                    new InternalCatalogClient.StockItem(cart.getFood().getId(), cart.getQuantity()))
+            .collect(Collectors.toList());
 
     if (usedVoucher != null) {
       boolean redeemed =
@@ -259,6 +265,28 @@ public class OrderApplicationService {
         }
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to deduct wallet balance");
       }
+    }
+
+    boolean stockReserved =
+        internalCatalogClient.reserveStock(stockReserveRequestId, orderBizId, stockItems);
+    if (!stockReserved) {
+      if (walletPaid.compareTo(BigDecimal.ZERO) > 0) {
+        internalAccountClient.refundWallet(
+            walletRefundRequestId,
+            currentUserId,
+            walletPaid,
+            orderBizId,
+            "stock reserve failed rollback");
+      }
+      if (usedVoucher != null) {
+        internalAccountClient.rollbackVoucher(
+            voucherRollbackRequestId,
+            currentUserId,
+            usedVoucher.getId(),
+            orderBizId,
+            "stock reserve failed rollback");
+      }
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to reserve stock");
     }
 
     if (pointsUsed > 0) {
@@ -294,42 +322,17 @@ public class OrderApplicationService {
               orderBizId,
               "points deduct failed rollback");
         }
+        internalCatalogClient.releaseStock(stockRollbackRequestId, orderBizId, stockItems);
         return HttpResult.failure(
             ResultCodeEnum.SERVER_ERROR, "Failed to deduct points: " + e.getMessage());
       }
     } else {
-      orderService.addOrder(order);
-    }
-
-    List<InternalCatalogClient.StockItem> stockItems =
-        cartList.stream()
-            .map(
-                cart ->
-                    new InternalCatalogClient.StockItem(cart.getFood().getId(), cart.getQuantity()))
-            .collect(Collectors.toList());
-    boolean stockReserved =
-        internalCatalogClient.reserveStock(stockReserveRequestId, orderBizId, stockItems);
-    if (!stockReserved) {
-      if (walletPaid.compareTo(BigDecimal.ZERO) > 0) {
-        internalAccountClient.refundWallet(
-            walletRefundRequestId,
-            currentUserId,
-            walletPaid,
-            orderBizId,
-            "stock reserve failed rollback");
+      try {
+        orderService.addOrder(order);
+      } catch (Exception e) {
+        internalCatalogClient.releaseStock(stockRollbackRequestId, orderBizId, stockItems);
+        throw e;
       }
-      if (usedVoucher != null) {
-        internalAccountClient.rollbackVoucher(
-            voucherRollbackRequestId,
-            currentUserId,
-            usedVoucher.getId(),
-            orderBizId,
-            "stock reserve failed rollback");
-      }
-      if (pointsUsed > 0 && pointsTradeNo != null) {
-        internalServiceClient.refundDeductedPoints(currentUserId, pointsTradeNo, "库存扣减失败");
-      }
-      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to reserve stock");
     }
 
     try {

@@ -112,14 +112,37 @@
 9. 阶段4联调文档已补齐：
    - `docs/phase4-linkage-runbook.md`
    - `docs/phase4-smoke-checklist.md`
+10. 阶段4异常补偿演练已完成：
+
+- `docs/phase4-compensation-drill.md`
+- 覆盖 `releaseStock` 不可达与目录服务不可达下单场景
 
 待完成：
 
-1. 完成库存回滚失败场景的补偿演练记录
-2. 固化库存接口契约与补偿流程文档（requestId/orderId）
-3. 推进阶段3剩余收口项（账户域异常补偿与灰度回滚）
+1. 固化库存接口契约与补偿流程文档（requestId/orderId）
+2. 推进阶段3剩余收口项（账户域异常补偿与灰度回滚）
+3. 启动阶段5（order-service）拆分准备与边界梳理
 
 状态：**阶段4准备已启动**
+
+### 阶段 5（order-service 拆分准备）
+
+已完成：
+
+1. 输出阶段5拆分准备文档：`docs/phase5-order-service-prep.md`
+2. 明确拆分边界：
+   - 订单/订单明细/购物车/地址/评价归属 `order-service`
+   - 与 account/catalog/points 继续通过内部 API 协同
+3. 创建 `elm-microservice/order-service` 工程骨架并落地健康接口：
+   - `GET /api/inner/order/ping`
+
+待完成：
+
+1. 迁移 `Order + OrderDetailet` 最小可运行集
+2. 输出阶段5联调 runbook 初稿
+3. 接入账户/目录/积分内部调用并回归下单取消链路
+
+状态：**阶段5准备已启动**
 
 ## 1.3 最近计划（未来 3-5 天）
 
