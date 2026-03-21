@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +16,7 @@ import cn.edu.tju.elm.model.BO.Cart;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.model.BO.Food;
 import cn.edu.tju.elm.model.BO.Order;
+import cn.edu.tju.elm.model.BO.OrderDetailet;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.utils.InternalAccountClient;
 import cn.edu.tju.elm.utils.InternalCatalogClient;
@@ -32,7 +34,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class OrderApplicationServiceTest {
   @Mock private OrderService orderService;
-  @Mock private FoodService foodService;
   @Mock private AddressService addressService;
   @Mock private CartItemService cartItemService;
   @Mock private OrderDetailetService orderDetailetService;
@@ -108,6 +109,85 @@ class OrderApplicationServiceTest {
   }
 
   @Test
+  void addOrder_shouldFail_whenReserveStockFailed() {
+    Long userId = 9L;
+    Order order = new Order();
+    order.setBusiness(new Business());
+    order.getBusiness().setId(1L);
+    order.setDeliveryAddress(new DeliveryAddress());
+    order.getDeliveryAddress().setId(2L);
+
+    DeliveryAddress address = new DeliveryAddress();
+    address.setId(2L);
+    address.setCustomerId(userId);
+    Food food = new Food();
+    food.setId(100L);
+    food.setFoodName("rice");
+    Cart cart = new Cart();
+    cart.setFood(food);
+    cart.setQuantity(1);
+
+    when(orderService.getOrderByRequestId("req-reserve-fail")).thenReturn(null);
+    when(internalCatalogClient.getBusinessSnapshot(1L))
+        .thenReturn(
+            new InternalCatalogClient.BusinessSnapshot(
+                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+    when(internalCatalogClient.getFoodSnapshot(100L))
+        .thenReturn(
+            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+    when(addressService.getAddressById(2L)).thenReturn(address);
+    when(cartItemService.getCart(1L, userId)).thenReturn(List.of(cart));
+    when(internalCatalogClient.reserveStock(any(), any(), any())).thenReturn(false);
+
+    var result = orderApplicationService.addOrder(userId, order, "req-reserve-fail");
+
+    assertFalse(result.getSuccess());
+    verify(cartItemService, never()).deleteCart(any());
+  }
+
+  @Test
+  void addOrder_shouldReleaseReservedStock_whenPersistOrderDetailFailed() {
+    Long userId = 9L;
+    Order order = new Order();
+    order.setBusiness(new Business());
+    order.getBusiness().setId(1L);
+    order.setDeliveryAddress(new DeliveryAddress());
+    order.getDeliveryAddress().setId(2L);
+
+    DeliveryAddress address = new DeliveryAddress();
+    address.setId(2L);
+    address.setCustomerId(userId);
+    Food food = new Food();
+    food.setId(100L);
+    food.setFoodName("rice");
+    Cart cart = new Cart();
+    cart.setFood(food);
+    cart.setQuantity(1);
+
+    when(orderService.getOrderByRequestId("req-persist-fail")).thenReturn(null);
+    when(internalCatalogClient.getBusinessSnapshot(1L))
+        .thenReturn(
+            new InternalCatalogClient.BusinessSnapshot(
+                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+    when(internalCatalogClient.getFoodSnapshot(100L))
+        .thenReturn(
+            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+    when(addressService.getAddressById(2L)).thenReturn(address);
+    when(cartItemService.getCart(1L, userId)).thenReturn(List.of(cart));
+    when(internalCatalogClient.reserveStock(any(), any(), any())).thenReturn(true);
+    when(internalCatalogClient.releaseStock(any(), any(), any())).thenReturn(true);
+    doThrow(new RuntimeException("db fail"))
+        .when(orderDetailetService)
+        .addOrderDetailet(org.mockito.ArgumentMatchers.any(OrderDetailet.class));
+
+    var result = orderApplicationService.addOrder(userId, order, "req-persist-fail");
+
+    assertFalse(result.getSuccess());
+    verify(internalCatalogClient)
+        .releaseStock(eq("req-persist-fail:stock-reserve-rollback"), eq("req-persist-fail"), any());
+  }
+
+  @Test
   void cancelOrder_shouldCallAccountRollbackAndRefund() {
     Long userId = 9L;
     Order order = new Order();
@@ -127,6 +207,7 @@ class OrderApplicationServiceTest {
         .thenReturn(true);
     when(internalAccountClient.rollbackVoucher(any(), eq(userId), eq(66L), any(), any()))
         .thenReturn(true);
+    when(internalCatalogClient.releaseStock(any(), any(), any())).thenReturn(true);
 
     var result = orderApplicationService.cancelOrder(userId, 123L);
 
@@ -145,6 +226,29 @@ class OrderApplicationServiceTest {
             eq(66L),
             eq("ORDER_123"),
             eq("order cancel rollback voucher"));
+    verify(internalCatalogClient)
+        .releaseStock(
+            eq("order-cancel-123-stock-release"), eq("ORDER_123"), eq(Collections.emptyList()));
     verify(orderService).updateOrder(order);
+  }
+
+  @Test
+  void cancelOrder_shouldFail_whenReleaseStockFailed() {
+    Long userId = 9L;
+    Order order = new Order();
+    order.setId(124L);
+    order.setCustomerId(userId);
+    order.setOrderState(OrderState.PAID);
+    order.setWalletPaid(BigDecimal.ZERO);
+    order.setPointsUsed(0);
+
+    when(orderService.getOrderById(124L)).thenReturn(order);
+    when(orderDetailetService.getOrderDetailetsByOrderId(124L)).thenReturn(Collections.emptyList());
+    when(internalCatalogClient.releaseStock(any(), any(), any())).thenReturn(false);
+
+    var result = orderApplicationService.cancelOrder(userId, 124L);
+
+    assertFalse(result.getSuccess());
+    verify(orderService, never()).updateOrder(any());
   }
 }

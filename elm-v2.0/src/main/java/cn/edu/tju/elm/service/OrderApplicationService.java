@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,6 @@ public class OrderApplicationService {
   private static final Logger log = LoggerFactory.getLogger(OrderApplicationService.class);
 
   private final OrderService orderService;
-  private final FoodService foodService;
   private final AddressService addressService;
   private final CartItemService cartItemService;
   private final OrderDetailetService orderDetailetService;
@@ -43,7 +43,6 @@ public class OrderApplicationService {
 
   public OrderApplicationService(
       OrderService orderService,
-      FoodService foodService,
       AddressService addressService,
       CartItemService cartItemService,
       OrderDetailetService orderDetailetService,
@@ -53,7 +52,6 @@ public class OrderApplicationService {
       IntegrationOutboxService integrationOutboxService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.orderService = orderService;
-    this.foodService = foodService;
     this.addressService = addressService;
     this.cartItemService = cartItemService;
     this.orderDetailetService = orderDetailetService;
@@ -234,6 +232,8 @@ public class OrderApplicationService {
     String voucherRollbackRequestId = buildInternalRequestId(requestId, "voucher-rollback");
     String walletDebitRequestId = buildInternalRequestId(requestId, "wallet-debit");
     String walletRefundRequestId = buildInternalRequestId(requestId, "wallet-refund");
+    String stockReserveRequestId = buildInternalRequestId(requestId, "stock-reserve");
+    String stockRollbackRequestId = buildInternalRequestId(requestId, "stock-reserve-rollback");
 
     if (usedVoucher != null) {
       boolean redeemed =
@@ -301,26 +301,56 @@ public class OrderApplicationService {
       orderService.addOrder(order);
     }
 
-    for (Cart cart : cartList) {
-      Food food = cart.getFood();
-      if (food == null || food.getId() == null) {
-        return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
+    List<InternalCatalogClient.StockItem> stockItems =
+        cartList.stream()
+            .map(
+                cart ->
+                    new InternalCatalogClient.StockItem(cart.getFood().getId(), cart.getQuantity()))
+            .collect(Collectors.toList());
+    boolean stockReserved =
+        internalCatalogClient.reserveStock(stockReserveRequestId, orderBizId, stockItems);
+    if (!stockReserved) {
+      if (walletPaid.compareTo(BigDecimal.ZERO) > 0) {
+        internalAccountClient.refundWallet(
+            walletRefundRequestId,
+            currentUserId,
+            walletPaid,
+            orderBizId,
+            "stock reserve failed rollback");
       }
-      if (!food.decreaseStock(cart.getQuantity())) {
-        return HttpResult.failure(
-            ResultCodeEnum.SERVER_ERROR, "商品 " + food.getFoodName() + " 库存不足");
+      if (usedVoucher != null) {
+        internalAccountClient.rollbackVoucher(
+            voucherRollbackRequestId,
+            currentUserId,
+            usedVoucher.getId(),
+            orderBizId,
+            "stock reserve failed rollback");
       }
-      EntityUtils.updateEntity(food);
-      foodService.updateFood(food);
+      if (pointsUsed > 0 && pointsTradeNo != null) {
+        internalServiceClient.refundDeductedPoints(currentUserId, pointsTradeNo, "库存扣减失败");
+      }
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to reserve stock");
+    }
 
-      cartItemService.deleteCart(cart);
+    try {
+      for (Cart cart : cartList) {
+        Food food = cart.getFood();
+        if (food == null || food.getId() == null) {
+          throw new IllegalStateException("Food.Id CANT BE NULL");
+        }
 
-      OrderDetailet orderDetailet = new OrderDetailet();
-      EntityUtils.setNewEntity(orderDetailet);
-      orderDetailet.setOrder(order);
-      orderDetailet.setFood(cart.getFood());
-      orderDetailet.setQuantity(cart.getQuantity());
-      orderDetailetService.addOrderDetailet(orderDetailet);
+        cartItemService.deleteCart(cart);
+
+        OrderDetailet orderDetailet = new OrderDetailet();
+        EntityUtils.setNewEntity(orderDetailet);
+        orderDetailet.setOrder(order);
+        orderDetailet.setFood(cart.getFood());
+        orderDetailet.setQuantity(cart.getQuantity());
+        orderDetailetService.addOrderDetailet(orderDetailet);
+      }
+    } catch (Exception e) {
+      internalCatalogClient.releaseStock(stockRollbackRequestId, orderBizId, stockItems);
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to persist order details");
     }
 
     log.info(
@@ -381,11 +411,20 @@ public class OrderApplicationService {
 
       List<OrderDetailet> orderDetails =
           orderDetailetService.getOrderDetailetsByOrderId(order.getId());
-      for (OrderDetailet detail : orderDetails) {
-        Food food = detail.getFood();
-        food.increaseStock(detail.getQuantity());
-        EntityUtils.updateEntity(food);
-        foodService.updateFood(food);
+      List<InternalCatalogClient.StockItem> stockItems =
+          orderDetails.stream()
+              .map(
+                  detail ->
+                      new InternalCatalogClient.StockItem(
+                          detail.getFood().getId(), detail.getQuantity()))
+              .collect(Collectors.toList());
+      boolean stockReleased =
+          internalCatalogClient.releaseStock(
+              "order-cancel-" + order.getId() + "-stock-release",
+              "ORDER_" + order.getId(),
+              stockItems);
+      if (!stockReleased) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "取消订单失败: 库存回补失败");
       }
 
       order.setOrderState(OrderState.CANCELED);

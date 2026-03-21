@@ -89,6 +89,7 @@
 ## 8. 当前进行中（2026-03-21）
 
 1. 库存写接口第一版已实现（`reserve/release`，按 `requestId` 幂等）
-2. 单体 `InternalCatalogClient` 已补齐库存调用方法（待订单侧接入）
-3. 订单侧库存扣减/回补仍为本地表更新，下一步迁移到 `catalog-service` 内部接口
-4. 完成写路径迁移后执行 `elm-v2.0 + catalog-service` 双服务 smoke（下单/取消）
+2. 单体 `InternalCatalogClient` 已补齐库存调用方法并接入订单侧
+3. `OrderApplicationService` 已切换库存写路径到远程（reserve/release）
+4. 双服务 smoke 已执行通过（下单扣库存、取消回补、下单幂等）
+5. 下一步补齐异常补偿演练记录（reserve/release 失败场景）

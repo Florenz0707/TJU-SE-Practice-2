@@ -105,12 +105,19 @@
 7. `catalog-service` 库存内部接口第一版已实现（幂等键 `requestId`）：
    - `POST /api/inner/catalog/stock/reserve`
    - `POST /api/inner/catalog/stock/release`
+8. `OrderApplicationService` 库存写路径已迁移到远程调用：
+   - 下单走 `reserveStock`
+   - 取消订单走 `releaseStock`
+   - 不再本地更新 `Food.stock`
+9. 阶段4联调文档已补齐：
+   - `docs/phase4-linkage-runbook.md`
+   - `docs/phase4-smoke-checklist.md`
 
 待完成：
 
-1. 将 `OrderApplicationService` 的库存更新切换到远程调用（扣减/回补）
-2. 完成双服务（`elm-v2.0` + `catalog-service`）库存链路联调 smoke
-3. 完成库存回滚失败场景的补偿演练记录
+1. 完成库存回滚失败场景的补偿演练记录
+2. 固化库存接口契约与补偿流程文档（requestId/orderId）
+3. 推进阶段3剩余收口项（账户域异常补偿与灰度回滚）
 
 状态：**阶段4准备已启动**
 
