@@ -95,12 +95,16 @@
    - 下单扣库存与取消回补库存
 3. 给出 `catalog-service` 内部接口草案（商家查询、菜品查询、库存扣减/回补）
 4. 创建 `elm-microservice/catalog-service` 工程骨架并编译通过
+5. 完成 `catalog-service` 第一批真实实现：
+   - 迁移 `Business/Food` 最小模型、Repository、Service
+   - `GET /api/inner/catalog/business/{businessId}`、`GET /api/inner/catalog/food/{foodId}` 已可查询
+   - 单元测试通过（`CatalogInternalServiceTest`、`CatalogInnerControllerTest`）
 
 待完成：
 
-1. 迁移 `Business/Food` 最小可运行集
-2. 实现商家/菜品内部查询真实逻辑
-3. 订单侧接入 `InternalCatalogClient`
+1. 实现库存扣减/回补内部接口（幂等）
+2. 订单侧接入 `InternalCatalogClient`
+3. 将 `OrderApplicationService` 的商家/菜品读取与库存更新切换到远程调用
 
 状态：**阶段4准备已启动**
 

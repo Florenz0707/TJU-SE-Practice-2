@@ -72,7 +72,13 @@
 
 1. `elm-microservice/catalog-service` 工程骨架已创建
 2. 基础启动配置已就位（`application.properties`，端口 `8083`）
-3. 内部接口占位已创建：
+3. 内部接口已落地真实查询（第一版）：
    - `GET /api/inner/catalog/business/{businessId}`
    - `GET /api/inner/catalog/food/{foodId}`
-4. 编译验证通过：`mvn -f elm-microservice/catalog-service/pom.xml -DskipTests compile`
+4. `Business/Food` 最小模型、Repository、Service 已迁移到 `catalog-service`
+5. 单元测试已补充并通过：
+   - `CatalogInternalServiceTest`
+   - `CatalogInnerControllerTest`
+6. 编译与测试验证通过：
+   - `mvn -f elm-microservice/catalog-service/pom.xml -DskipTests compile`
+   - `mvn -f elm-microservice/catalog-service/pom.xml test`
