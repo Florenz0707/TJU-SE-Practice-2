@@ -15,4 +15,11 @@ public interface IntegrationOutboxEventRepository
           + " AND e.nextRetryAt <= :now ORDER BY e.createTime ASC")
   List<IntegrationOutboxEvent> findDispatchable(
       @Param("statuses") List<String> statuses, @Param("now") LocalDateTime now, Pageable pageable);
+
+  long countByStatusAndDeletedFalse(String status);
+
+  List<IntegrationOutboxEvent> findTop20ByStatusAndDeletedFalseOrderByUpdateTimeDesc(String status);
+
+  List<IntegrationOutboxEvent> findTop20ByStatusInAndDeletedFalseOrderByCreateTimeAsc(
+      List<String> statuses);
 }

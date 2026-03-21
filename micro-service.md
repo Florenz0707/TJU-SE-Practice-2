@@ -48,11 +48,12 @@
 2. 单体端内部积分控制器补齐 `/api/inner/points/trade/refund`、`/api/inner/points/notify/review-deleted`
 3. 独立 `points-service` 工程已创建并可编译运行
 4. 积分域核心代码（controller/service/repository/entity/vo）已迁移到 `elm-microservice/points-service`
+5. Outbox 可观测/恢复管理接口已落地（summary、dispatch-now、requeue）
 
 待完成：
 
 1. 双服务联调（单体 + points-service）业务链路 smoke
-2. Outbox 重试可观测性与失败恢复演练
+2. Outbox 失败恢复演练（结合新管理接口）
 3. 规则与接口文档补齐（阶段交付物收口）
 
 状态：**进行中（预计优先完成联调与验收）**

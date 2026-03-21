@@ -8,7 +8,10 @@ import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,12 +77,18 @@ public class IntegrationOutboxService {
   @Scheduled(fixedDelayString = "${integration.outbox.dispatch-interval-ms:5000}")
   @Transactional
   public void dispatch() {
+    dispatchBatch();
+  }
+
+  @Transactional
+  public int dispatchBatch() {
     List<IntegrationOutboxEvent> events =
         outboxEventRepository.findDispatchable(
             List.of(IntegrationOutboxEvent.STATUS_PENDING, IntegrationOutboxEvent.STATUS_RETRY),
             LocalDateTime.now(),
             PageRequest.of(0, batchSize));
 
+    int processed = 0;
     for (IntegrationOutboxEvent event : events) {
       try {
         boolean delivered = handleEvent(event);
@@ -95,7 +104,75 @@ public class IntegrationOutboxService {
       } catch (Exception e) {
         markRetry(event, e.getMessage());
       }
+      processed += 1;
     }
+    return processed;
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> getStatusSummary() {
+    Map<String, Object> result = new HashMap<>();
+    long pendingCount =
+        outboxEventRepository.countByStatusAndDeletedFalse(IntegrationOutboxEvent.STATUS_PENDING);
+    long retryCount =
+        outboxEventRepository.countByStatusAndDeletedFalse(IntegrationOutboxEvent.STATUS_RETRY);
+    long sentCount =
+        outboxEventRepository.countByStatusAndDeletedFalse(IntegrationOutboxEvent.STATUS_SENT);
+    long failedCount =
+        outboxEventRepository.countByStatusAndDeletedFalse(IntegrationOutboxEvent.STATUS_FAILED);
+
+    List<IntegrationOutboxEvent> dispatchQueue =
+        outboxEventRepository.findTop20ByStatusInAndDeletedFalseOrderByCreateTimeAsc(
+            List.of(IntegrationOutboxEvent.STATUS_PENDING, IntegrationOutboxEvent.STATUS_RETRY));
+    List<IntegrationOutboxEvent> failedEvents =
+        outboxEventRepository.findTop20ByStatusAndDeletedFalseOrderByUpdateTimeDesc(
+            IntegrationOutboxEvent.STATUS_FAILED);
+
+    result.put("pending", pendingCount);
+    result.put("retry", retryCount);
+    result.put("sent", sentCount);
+    result.put("failed", failedCount);
+    result.put("dispatchQueueTop20", dispatchQueue);
+    result.put("failedTop20", failedEvents);
+    return result;
+  }
+
+  @Transactional
+  public boolean requeueFailedEvent(Long eventId, String reason) {
+    Optional<IntegrationOutboxEvent> eventOpt = outboxEventRepository.findById(eventId);
+    if (eventOpt.isEmpty()) {
+      return false;
+    }
+    IntegrationOutboxEvent event = eventOpt.get();
+    if (event.getDeleted() != null && event.getDeleted()) {
+      return false;
+    }
+    if (!IntegrationOutboxEvent.STATUS_FAILED.equals(event.getStatus())) {
+      return false;
+    }
+    event.setStatus(IntegrationOutboxEvent.STATUS_RETRY);
+    event.setNextRetryAt(LocalDateTime.now());
+    event.setLastError(reason != null && !reason.isEmpty() ? reason : "manual requeue");
+    EntityUtils.updateEntity(event);
+    outboxEventRepository.save(event);
+    return true;
+  }
+
+  @Transactional
+  public int requeueAllFailedEvents(String reason) {
+    List<IntegrationOutboxEvent> failedEvents =
+        outboxEventRepository.findTop20ByStatusAndDeletedFalseOrderByUpdateTimeDesc(
+            IntegrationOutboxEvent.STATUS_FAILED);
+    int requeued = 0;
+    for (IntegrationOutboxEvent event : failedEvents) {
+      event.setStatus(IntegrationOutboxEvent.STATUS_RETRY);
+      event.setNextRetryAt(LocalDateTime.now());
+      event.setLastError(reason != null && !reason.isEmpty() ? reason : "manual batch requeue");
+      EntityUtils.updateEntity(event);
+      outboxEventRepository.save(event);
+      requeued += 1;
+    }
+    return requeued;
   }
 
   private void markRetry(IntegrationOutboxEvent event, String errorMessage) {

@@ -11,7 +11,7 @@
    - 结果: `BUILD SUCCESS`
 2. 单体回归测试（含新增 PointsInnerController 单测）
    - 命令: `cd elm-v2.0 && mvn test`
-   - 结果: `BUILD SUCCESS`，`Tests run: 15, Failures: 0, Errors: 0`
+   - 结果: `BUILD SUCCESS`，`Tests run: 18, Failures: 0, Errors: 0`
 3. 独立 points-service 工程编译
    - 命令: `cd elm-microservice/points-service && mvn -DskipTests compile`
    - 结果: `BUILD SUCCESS`
@@ -40,3 +40,12 @@
 - `POINTS_SERVICE_URL=http://localhost:8081/elm` 启动单体（订单侧）
 - 启动 `points-service`（端口 `8081`，context-path `/elm`）
 - 按上述 4 条业务链路逐条回归
+
+## Outbox 运维接口（新增）
+
+1. 状态总览：`GET /elm/api/integration/outbox/admin/summary`
+2. 手动触发一轮投递：`POST /elm/api/integration/outbox/admin/dispatch-now`
+3. 失败事件重入队（单条）：`POST /elm/api/integration/outbox/admin/requeue/{eventId}`
+4. 失败事件重入队（批量，最多20条）：`POST /elm/api/integration/outbox/admin/requeue/failed`
+
+说明：上述接口要求管理员权限（`ADMIN`/`ROLE_ADMIN`）。
