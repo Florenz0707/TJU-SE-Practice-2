@@ -55,6 +55,20 @@ class OrderInnerControllerTest {
   }
 
   @Test
+  void getOrdersByBusinessId_shouldReturnData() {
+    Order order = new Order();
+    order.setId(2L);
+    order.setBusinessId(20L);
+    when(orderInternalService.getOrdersByBusinessId(20L))
+        .thenReturn(List.of(new OrderSnapshotVO(order)));
+
+    var result = orderInnerController.getOrdersByBusinessId(20L);
+
+    assertTrue(result.getSuccess());
+    assertEquals(1, result.getData().size());
+  }
+
+  @Test
   void createOrder_shouldReturnData_whenServiceSuccess() {
     Order order = new Order();
     order.setId(12L);
@@ -94,6 +108,14 @@ class OrderInnerControllerTest {
   void cancelOrder_shouldReturnFailure_whenOperatorMissing() {
     var result =
         orderInnerController.cancelOrder(1L, new OrderInnerController.CancelOrderRequest());
+    assertFalse(result.getSuccess());
+  }
+
+  @Test
+  void updateOrderState_shouldReturnFailure_whenStateMissing() {
+    var result =
+        orderInnerController.updateOrderState(
+            1L, new OrderInnerController.UpdateOrderStateRequest());
     assertFalse(result.getSuccess());
   }
 }

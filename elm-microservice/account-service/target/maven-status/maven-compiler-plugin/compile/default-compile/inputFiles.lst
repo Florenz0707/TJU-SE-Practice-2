@@ -24,6 +24,7 @@
 /home/florenz/TJU-SE-Practice-2/elm-microservice/account-service/src/main/java/cn/edu/tju/elm/model/BO/Transaction.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/account-service/src/main/java/cn/edu/tju/elm/model/BO/Wallet.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/account-service/src/main/java/cn/edu/tju/elm/model/RECORD/TransactionsRecord.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/account-service/src/main/java/cn/edu/tju/elm/model/VO/InternalVoucherSnapshotVO.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/account-service/src/main/java/cn/edu/tju/elm/model/VO/PrivateVoucherVO.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/account-service/src/main/java/cn/edu/tju/elm/model/VO/PublicVoucherVO.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/account-service/src/main/java/cn/edu/tju/elm/model/VO/TransactionVO.java

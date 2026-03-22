@@ -8,7 +8,6 @@ import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.OrderApplicationService;
-import cn.edu.tju.elm.service.OrderService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,17 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "管理订单", description = "提供对订单的增删改查功能")
 public class OrderController {
   private final UserService userService;
-  private final OrderService orderService;
   private final BusinessService businessService;
   private final OrderApplicationService orderApplicationService;
 
   public OrderController(
       UserService userService,
-      OrderService orderService,
       BusinessService businessService,
       OrderApplicationService orderApplicationService) {
     this.userService = userService;
-    this.orderService = orderService;
     this.businessService = businessService;
     this.orderApplicationService = orderApplicationService;
   }
@@ -66,7 +62,7 @@ public class OrderController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    Order order = orderService.getOrderById(id);
+    Order order = orderApplicationService.getOrderById(id);
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
@@ -96,7 +92,7 @@ public class OrderController {
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     if (isAdmin || me.getId().equals(userId))
-      return HttpResult.success(orderService.getOrdersByCustomerId(userId));
+      return HttpResult.success(orderApplicationService.getOrdersByCustomerId(userId));
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
@@ -124,7 +120,7 @@ public class OrderController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    return HttpResult.success(orderService.getOrdersByCustomerId(me.getId()));
+    return HttpResult.success(orderApplicationService.getOrdersByCustomerId(me.getId()));
   }
 
   @GetMapping("/merchant/my")
@@ -142,7 +138,7 @@ public class OrderController {
     List<Order> myOrders = new ArrayList<>();
 
     for (Business business : myBusinesses) {
-      List<Order> orders = orderService.getOrdersByBusinessId(business.getId());
+      List<Order> orders = orderApplicationService.getOrdersByBusinessId(business.getId());
       myOrders.addAll(orders);
     }
 
@@ -164,7 +160,7 @@ public class OrderController {
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
     if (isAdmin || (isBusiness && me.getId().equals(business.getBusinessOwnerId())))
-      return HttpResult.success(orderService.getOrdersByBusinessId(business.getId()));
+      return HttpResult.success(orderApplicationService.getOrdersByBusinessId(business.getId()));
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }

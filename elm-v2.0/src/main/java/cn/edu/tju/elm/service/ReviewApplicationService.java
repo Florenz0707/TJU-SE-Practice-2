@@ -6,6 +6,7 @@ import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import org.slf4j.Logger;
@@ -18,19 +19,22 @@ public class ReviewApplicationService {
   private static final Logger log = LoggerFactory.getLogger(ReviewApplicationService.class);
 
   private final ReviewService reviewService;
-  private final OrderService orderService;
+  private final OrderApplicationService orderApplicationService;
+  private final InternalOrderClient internalOrderClient;
   private final IntegrationOutboxService integrationOutboxService;
   private final InternalServiceClient internalServiceClient;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public ReviewApplicationService(
       ReviewService reviewService,
-      OrderService orderService,
+      OrderApplicationService orderApplicationService,
+      InternalOrderClient internalOrderClient,
       IntegrationOutboxService integrationOutboxService,
       InternalServiceClient internalServiceClient,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.reviewService = reviewService;
-    this.orderService = orderService;
+    this.orderApplicationService = orderApplicationService;
+    this.internalOrderClient = internalOrderClient;
     this.integrationOutboxService = integrationOutboxService;
     this.internalServiceClient = internalServiceClient;
     this.compatibilityEnricher = compatibilityEnricher;
@@ -38,7 +42,7 @@ public class ReviewApplicationService {
 
   @Transactional
   public HttpResult<Review> addReview(Long currentUserId, Long orderId, Review review) {
-    Order order = orderService.getOrderById(orderId);
+    Order order = orderApplicationService.getOrderById(orderId);
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
     if (!order.getOrderState().equals(OrderState.COMPLETE))
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order.OrderState ERROR");
@@ -68,9 +72,11 @@ public class ReviewApplicationService {
     review.setCustomerId(customerId);
     reviewService.addReview(review);
 
-    order.setOrderState(OrderState.COMMENTED);
-    EntityUtils.updateEntity(order);
-    orderService.updateOrder(order);
+    InternalOrderClient.OrderSnapshot updatedSnapshot =
+        internalOrderClient.updateOrderState(order.getId(), OrderState.COMMENTED);
+    if (updatedSnapshot == null) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to update order state");
+    }
 
     try {
       integrationOutboxService.enqueuePointsReviewSuccess(
@@ -106,9 +112,9 @@ public class ReviewApplicationService {
     reviewService.updateReview(review);
 
     Order order = review.getOrder();
-    order.setOrderState(OrderState.COMPLETE);
-    EntityUtils.updateEntity(order);
-    orderService.updateOrder(order);
+    if (order != null && order.getId() != null) {
+      internalOrderClient.updateOrderState(order.getId(), OrderState.COMPLETE);
+    }
     return HttpResult.success("Delete review successfully.");
   }
 }

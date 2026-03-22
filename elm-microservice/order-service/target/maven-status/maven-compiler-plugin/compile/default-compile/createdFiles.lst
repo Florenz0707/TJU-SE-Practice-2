@@ -1,3 +1,4 @@
+cn/edu/tju/order/controller/OrderInnerController$UpdateOrderStateRequest.class
 cn/edu/tju/order/repository/OrderDetailetRepository.class
 cn/edu/tju/order/service/OrderInternalService.class
 cn/edu/tju/order/controller/OrderInnerController.class

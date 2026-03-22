@@ -65,6 +65,12 @@ class OrderInternalServiceTest {
   }
 
   @Test
+  void getOrdersByBusinessId_shouldReturnEmpty_whenNullInput() {
+    var result = orderInternalService.getOrdersByBusinessId(null);
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
   void createOrder_shouldSaveOrderAndDetails() {
     Order savedOrder = new Order();
     savedOrder.setId(11L);
@@ -150,5 +156,18 @@ class OrderInternalServiceTest {
     when(orderRepository.findById(7L)).thenReturn(Optional.of(order));
 
     assertThrows(IllegalStateException.class, () -> orderInternalService.cancelPaidOrder(7L, 11L));
+  }
+
+  @Test
+  void updateOrderState_shouldUpdate_whenTransitionValid() {
+    Order order = new Order();
+    order.setId(10L);
+    order.setOrderState(OrderState.PAID);
+    when(orderRepository.findById(10L)).thenReturn(Optional.of(order));
+    when(orderRepository.save(order)).thenReturn(order);
+
+    var result = orderInternalService.updateOrderState(10L, OrderState.COMPLETE);
+
+    assertEquals(OrderState.COMPLETE, result.getOrderState());
   }
 }

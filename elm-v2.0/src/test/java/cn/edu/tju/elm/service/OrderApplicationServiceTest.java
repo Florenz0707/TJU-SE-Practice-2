@@ -32,7 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class OrderApplicationServiceTest {
-  @Mock private OrderService orderService;
+  @Mock private BusinessService businessService;
   @Mock private AddressService addressService;
   @Mock private CartItemService cartItemService;
   @Mock private InternalAccountClient internalAccountClient;
@@ -297,5 +297,88 @@ class OrderApplicationServiceTest {
 
     assertFalse(result.getSuccess());
     verify(internalOrderClient, never()).cancelOrder(124L, userId);
+  }
+
+  @Test
+  void updateOrderStatus_shouldUpdateByOwner() {
+    Long userId = 9L;
+    Order request = new Order();
+    request.setId(200L);
+    request.setOrderState(OrderState.COMPLETE);
+
+    Business business = new Business();
+    business.setId(1L);
+    business.setBusinessOwnerId(userId);
+
+    when(internalOrderClient.getOrderById(200L))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                200L,
+                100L,
+                1L,
+                2L,
+                OrderState.DELIVERY,
+                new BigDecimal("30"),
+                null,
+                null,
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                null,
+                "req-state",
+                java.time.LocalDateTime.now()));
+    when(businessService.getBusinessById(1L)).thenReturn(business);
+    when(internalOrderClient.updateOrderState(200L, OrderState.COMPLETE))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                200L,
+                100L,
+                1L,
+                2L,
+                OrderState.COMPLETE,
+                new BigDecimal("30"),
+                null,
+                null,
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                null,
+                "req-state",
+                java.time.LocalDateTime.now()));
+
+    var result = orderApplicationService.updateOrderStatus(userId, false, true, request);
+
+    assertTrue(result.getSuccess());
+    verify(internalOrderClient).updateOrderState(200L, OrderState.COMPLETE);
+  }
+
+  @Test
+  void updateOrderStatus_shouldFail_whenTransitionInvalid() {
+    Long userId = 9L;
+    Order request = new Order();
+    request.setId(201L);
+    request.setOrderState(OrderState.PAID);
+    when(internalOrderClient.getOrderById(201L))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                201L,
+                userId,
+                1L,
+                2L,
+                OrderState.COMPLETE,
+                new BigDecimal("30"),
+                null,
+                null,
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                null,
+                "req-state-2",
+                java.time.LocalDateTime.now()));
+
+    var result = orderApplicationService.updateOrderStatus(userId, false, false, request);
+
+    assertFalse(result.getSuccess());
+    verify(internalOrderClient, never()).updateOrderState(any(), any());
   }
 }

@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderApplicationService {
   private static final Logger log = LoggerFactory.getLogger(OrderApplicationService.class);
 
-  private final OrderService orderService;
+  private final BusinessService businessService;
   private final AddressService addressService;
   private final CartItemService cartItemService;
   private final InternalAccountClient internalAccountClient;
@@ -41,7 +41,7 @@ public class OrderApplicationService {
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public OrderApplicationService(
-      OrderService orderService,
+      BusinessService businessService,
       AddressService addressService,
       CartItemService cartItemService,
       InternalAccountClient internalAccountClient,
@@ -50,7 +50,7 @@ public class OrderApplicationService {
       InternalServiceClient internalServiceClient,
       IntegrationOutboxService integrationOutboxService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
-    this.orderService = orderService;
+    this.businessService = businessService;
     this.addressService = addressService;
     this.cartItemService = cartItemService;
     this.internalAccountClient = internalAccountClient;
@@ -494,7 +494,9 @@ public class OrderApplicationService {
     if (order.getId() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.Id CANT BE NULL");
 
-    Order newOrder = orderService.getOrderById(order.getId());
+    InternalOrderClient.OrderSnapshot currentSnapshot =
+        internalOrderClient.getOrderById(order.getId());
+    Order newOrder = currentSnapshot == null ? null : toOrderRef(currentSnapshot);
     if (newOrder == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
     if (order.getOrderState() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order.OrderState CANT BE NULL");
@@ -502,19 +504,28 @@ public class OrderApplicationService {
     if (!OrderState.isValidOrderState(orderState))
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "OrderState NOT VALID");
 
-    if (!orderService.isValidStateTransition(newOrder.getOrderState(), orderState))
+    if (!isValidStateTransition(newOrder.getOrderState(), orderState))
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "非法的状态转换");
 
+    Business orderBusiness =
+        newOrder.getBusiness() != null && newOrder.getBusiness().getId() != null
+            ? businessService.getBusinessById(newOrder.getBusiness().getId())
+            : null;
     if (!(isAdmin
-        || (isBusiness && currentUserId.equals(newOrder.getBusiness().getBusinessOwnerId()))
+        || (isBusiness
+            && orderBusiness != null
+            && currentUserId.equals(orderBusiness.getBusinessOwnerId()))
         || currentUserId.equals(newOrder.getCustomerId()))) {
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     Integer oldOrderState = newOrder.getOrderState();
-    newOrder.setOrderState(orderState);
-    EntityUtils.updateEntity(newOrder);
-    orderService.updateOrder(newOrder);
+    InternalOrderClient.OrderSnapshot updatedSnapshot =
+        internalOrderClient.updateOrderState(order.getId(), orderState);
+    if (updatedSnapshot == null) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to update order state");
+    }
+    newOrder = toOrderRef(updatedSnapshot);
 
     if (orderState.equals(OrderState.COMPLETE) && !oldOrderState.equals(OrderState.COMPLETE)) {
       try {
@@ -546,11 +557,64 @@ public class OrderApplicationService {
     return HttpResult.success(newOrder);
   }
 
+  @Transactional(readOnly = true)
+  public Order getOrderById(Long id) {
+    if (id == null) {
+      return null;
+    }
+    InternalOrderClient.OrderSnapshot snapshot = internalOrderClient.getOrderById(id);
+    if (snapshot == null) {
+      return null;
+    }
+    Order order = toOrderRef(snapshot);
+    compatibilityEnricher.enrichOrder(order);
+    return order;
+  }
+
+  @Transactional(readOnly = true)
+  public List<Order> getOrdersByCustomerId(Long customerId) {
+    if (customerId == null) {
+      return List.of();
+    }
+    List<Order> orders =
+        internalOrderClient.getOrdersByCustomerId(customerId).stream()
+            .map(this::toOrderRef)
+            .collect(Collectors.toList());
+    compatibilityEnricher.enrichOrders(orders);
+    return orders;
+  }
+
+  @Transactional(readOnly = true)
+  public List<Order> getOrdersByBusinessId(Long businessId) {
+    if (businessId == null) {
+      return List.of();
+    }
+    List<Order> orders =
+        internalOrderClient.getOrdersByBusinessId(businessId).stream()
+            .map(this::toOrderRef)
+            .collect(Collectors.toList());
+    compatibilityEnricher.enrichOrders(orders);
+    return orders;
+  }
+
   private String buildInternalRequestId(String requestId, String action) {
     if (requestId == null || requestId.isEmpty()) {
       return "order-" + action + "-" + UUID.randomUUID();
     }
     return requestId + ":" + action;
+  }
+
+  private boolean isValidStateTransition(Integer from, Integer to) {
+    if (from == null || to == null) {
+      return false;
+    }
+    if (from.equals(OrderState.CANCELED) || from.equals(OrderState.COMMENTED)) {
+      return false;
+    }
+    if (to.equals(OrderState.CANCELED)) {
+      return from.equals(OrderState.PAID);
+    }
+    return to > from;
   }
 
   private Business buildBusinessRef(Long businessId) {

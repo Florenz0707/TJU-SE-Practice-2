@@ -7,13 +7,12 @@ import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.Food;
 import cn.edu.tju.elm.model.BO.Order;
-import cn.edu.tju.elm.model.BO.OrderDetailet;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.FoodService;
-import cn.edu.tju.elm.service.OrderDetailetService;
-import cn.edu.tju.elm.service.OrderService;
+import cn.edu.tju.elm.service.OrderApplicationService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
 import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalOrderClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,20 +28,20 @@ public class FoodController {
   private final UserService userService;
   private final FoodService foodService;
   private final BusinessService businessService;
-  private final OrderService orderService;
-  private final OrderDetailetService orderDetailetService;
+  private final OrderApplicationService orderApplicationService;
+  private final InternalOrderClient internalOrderClient;
 
   public FoodController(
       UserService userService,
       FoodService foodService,
       BusinessService businessService,
-      OrderService orderService,
-      OrderDetailetService orderDetailetService) {
+      OrderApplicationService orderApplicationService,
+      InternalOrderClient internalOrderClient) {
     this.userService = userService;
     this.foodService = foodService;
     this.businessService = businessService;
-    this.orderService = orderService;
-    this.orderDetailetService = orderDetailetService;
+    this.orderApplicationService = orderApplicationService;
+    this.internalOrderClient = internalOrderClient;
   }
 
   @GetMapping("/{id}")
@@ -71,12 +70,20 @@ public class FoodController {
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
       return HttpResult.success(foodService.getFoodsByBusinessId(businessId));
     } else {
-      Order order = orderService.getOrderById(orderId);
+      Order order = orderApplicationService.getOrderById(orderId);
       if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
-      List<OrderDetailet> orderDetailetList =
-          orderDetailetService.getOrderDetailetsByOrderId(orderId);
+      List<InternalOrderClient.OrderDetailSnapshot> orderDetailetList =
+          internalOrderClient.getOrderDetailsByOrderId(orderId);
       List<Food> foodList = new ArrayList<>(orderDetailetList.size());
-      for (OrderDetailet orderDetailet : orderDetailetList) foodList.add(orderDetailet.getFood());
+      for (InternalOrderClient.OrderDetailSnapshot detail : orderDetailetList) {
+        if (detail.foodId() == null) {
+          continue;
+        }
+        Food food = foodService.getFoodById(detail.foodId());
+        if (food != null) {
+          foodList.add(food);
+        }
+      }
       return HttpResult.success(foodList);
     }
   }

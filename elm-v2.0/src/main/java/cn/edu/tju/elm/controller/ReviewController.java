@@ -8,7 +8,7 @@ import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.service.BusinessService;
-import cn.edu.tju.elm.service.OrderService;
+import cn.edu.tju.elm.service.OrderApplicationService;
 import cn.edu.tju.elm.service.ReviewApplicationService;
 import cn.edu.tju.elm.service.ReviewService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
@@ -33,19 +33,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReviewController {
   private final ReviewService reviewService;
   private final BusinessService businessService;
-  private final OrderService orderService;
+  private final OrderApplicationService orderApplicationService;
   private final UserService userService;
   private final ReviewApplicationService reviewApplicationService;
 
   public ReviewController(
       ReviewService reviewService,
       BusinessService businessService,
-      OrderService orderService,
+      OrderApplicationService orderApplicationService,
       UserService userService,
       ReviewApplicationService reviewApplicationService) {
     this.reviewService = reviewService;
     this.businessService = businessService;
-    this.orderService = orderService;
+    this.orderApplicationService = orderApplicationService;
     this.userService = userService;
     this.reviewApplicationService = reviewApplicationService;
   }
@@ -125,7 +125,7 @@ public class ReviewController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    Order order = orderService.getOrderById(orderId);
+    Order order = orderApplicationService.getOrderById(orderId);
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
     Review review = reviewService.getReviewByOrderId(orderId);
     if (review == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");

@@ -106,6 +106,27 @@ public class OrderInternalService {
     return new OrderSnapshotVO(saved);
   }
 
+  @Transactional
+  public OrderSnapshotVO updateOrderState(Long orderId, Integer targetState) {
+    if (orderId == null || targetState == null) {
+      throw new IllegalArgumentException("orderId/orderState CANT BE NULL");
+    }
+    if (!isValidOrderState(targetState)) {
+      throw new IllegalArgumentException("OrderState NOT VALID");
+    }
+    Order order =
+        orderRepository
+            .findById(orderId)
+            .orElseThrow(() -> new IllegalArgumentException("Order NOT FOUND"));
+    if (!isValidStateTransition(order.getOrderState(), targetState)) {
+      throw new IllegalStateException("非法的状态转换");
+    }
+    order.setOrderState(targetState);
+    order.setUpdateTime(LocalDateTime.now());
+    Order saved = orderRepository.save(order);
+    return new OrderSnapshotVO(saved);
+  }
+
   @Transactional(readOnly = true)
   public OrderSnapshotVO getOrderById(Long orderId) {
     if (orderId == null) {
@@ -129,6 +150,16 @@ public class OrderInternalService {
       return List.of();
     }
     return orderRepository.findAllByCustomerId(customerId).stream()
+        .map(OrderSnapshotVO::new)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<OrderSnapshotVO> getOrdersByBusinessId(Long businessId) {
+    if (businessId == null) {
+      return List.of();
+    }
+    return orderRepository.findAllByBusinessId(businessId).stream()
         .map(OrderSnapshotVO::new)
         .toList();
   }
@@ -160,4 +191,21 @@ public class OrderInternalService {
       String pointsTradeNo,
       LocalDateTime orderDate,
       List<OrderItemCommand> items) {}
+
+  private boolean isValidOrderState(Integer orderState) {
+    return orderState >= OrderState.CANCELED && orderState <= OrderState.COMMENTED;
+  }
+
+  private boolean isValidStateTransition(Integer from, Integer to) {
+    if (from == null || to == null) {
+      return false;
+    }
+    if (from.equals(OrderState.CANCELED) || from.equals(OrderState.COMMENTED)) {
+      return false;
+    }
+    if (to.equals(OrderState.CANCELED)) {
+      return from.equals(OrderState.PAID);
+    }
+    return to > from;
+  }
 }

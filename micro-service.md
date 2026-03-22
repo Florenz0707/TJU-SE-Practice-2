@@ -150,12 +150,27 @@
 10. 新增 `InternalOrderClient` 与配置项：
     - `order.service.url=${ORDER_SERVICE_URL:http://localhost:8080/elm}`
 11. 单体订单应用服务迁移单测已通过（`OrderApplicationServiceTest`）
+12. 阶段5基础 smoke 已执行通过（2026-03-22）：
+    - 创建订单幂等
+    - 取消订单状态校验
+    - 取消订单权限校验
+13. 订单读链路迁移第一批已落地：
+    - `OrderController` 查询接口改为 `order-service` 读取
+    - `FoodController` 按订单查菜品改为 `order-service` 明细读取
+    - `ReviewController` 订单存在性校验改为 `order-service` 读取
+    - `order-service` 新增 `GET /api/inner/order/business/{businessId}`
+14. 订单状态写链路继续迁移：
+    - `order-service` 新增 `POST /api/inner/order/{orderId}/state`
+    - 单体 `updateOrderStatus` 与评价链路状态变更已切到 `order-service`
+15. 四服务联调（points/account/catalog/order）已执行通过（2026-03-22）：
+    - 下单（钱包）成功、取消成功、完成态更新成功
+    - Outbox `POINTS_ORDER_SUCCESS` 事件状态 `SENT`
 
 待完成：
 
-1. 执行阶段5首轮双服务 smoke（创建幂等、取消权限与状态）
-2. 迁移订单读取/列表链路到 `order-service`（当前仅写路径完成）
-3. 接入并回归完整下单取消链路（account/catalog/points/order 四服务联调）
+1. 完成订单剩余读链路迁移（分页相关查询）
+2. 补齐 `order-service` 状态流转与评价链路专项测试
+3. 固化四服务联调脚本（可重复执行）
 
 状态：**阶段5准备已启动**
 

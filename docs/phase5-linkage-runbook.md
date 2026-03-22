@@ -37,3 +37,36 @@
 1. 若 `order-service` 写接口异常，切回单体本地 `OrderService + OrderDetailetService` 写路径
 2. 保留 `order-service` 只读查询接口用于并行核对
 3. 回滚后执行最小 smoke：下单、取消、查询订单
+
+## 7. 执行记录（2026-03-22）
+
+1. 执行环境：
+   - `order-service`：`8084`
+   - 请求基地址：`http://localhost:8084/elm/api/inner/order`
+2. 用例结果：
+   - `GET /ping`：成功
+   - `POST /create`：成功，生成 `orderId=1`
+   - 同 `requestId` 重试 `POST /create`：返回同 `orderId=1`（幂等通过）
+   - `POST /{orderId}/cancel`（owner）：成功
+   - 重复取消：失败，消息 `OrderState NOT PAID`
+   - 非 owner 取消：失败，消息 `AUTHORITY LACKED`
+3. 结论：
+   - 阶段5基础 smoke 通过，可继续推进订单读链路迁移与四服务联调
+
+## 8. 四服务联调记录（2026-03-22）
+
+1. 参与服务：
+   - `points-service`（8081）
+   - `account-service`（8082）
+   - `catalog-service`（8083）
+   - `order-service`（8084）
+   - `elm-v2.0`（8080，编排入口）
+2. 执行摘要：
+   - 新建 smoke 用户并完成钱包/地址/购物车准备
+   - 下单（钱包支付）成功：`ORDER1_OK=true`
+   - 取消成功：`CANCEL1_OK=true`
+   - 第二单下单成功：`ORDER2_OK=true`
+   - 更新订单到完成态成功：`COMPLETE_OK=true`
+3. 联调核验：
+   - `account/catalog/order` 取消链路成功闭环
+   - `integration_outbox_event` 新增 `POINTS_ORDER_SUCCESS` 且状态 `SENT`，确认 points 通道联通

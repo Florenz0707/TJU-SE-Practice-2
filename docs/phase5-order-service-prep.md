@@ -94,3 +94,15 @@
    - 取消订单查询明细与状态更新调用切到 `order-service`
 9. 单体迁移回归测试通过：
    - `mvn -f elm-v2.0/pom.xml -Dtest=OrderApplicationServiceTest test`
+10. 订单读链路迁移进行中（已完成第一批）：
+    - `OrderController` 查询接口改走 `OrderApplicationService -> InternalOrderClient`
+    - 新增 `order-service` 商家维度查询接口：`GET /api/inner/order/business/{businessId}`
+    - `FoodController` 按订单查菜品改为读取 `order-service` 明细后回查 `food-service`
+    - `ReviewController` 订单存在性校验改为读取 `order-service`
+11. 订单状态流转链路迁移完成：
+    - `order-service` 新增状态更新内部接口：`POST /api/inner/order/{orderId}/state`
+    - 单体 `OrderApplicationService.updateOrderStatus` 改为远程状态更新
+    - `ReviewApplicationService` 评价/删评触发的订单状态变更改为远程更新
+12. 四服务联调 smoke 已执行（2026-03-22）：
+    - 下单（钱包）成功、取消成功、完成态更新成功
+    - Outbox `POINTS_ORDER_SUCCESS` 状态为 `SENT`

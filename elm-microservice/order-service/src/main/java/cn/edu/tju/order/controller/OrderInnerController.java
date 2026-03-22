@@ -66,6 +66,14 @@ public class OrderInnerController {
     return HttpResult.success(orderInternalService.getOrdersByCustomerId(customerId));
   }
 
+  @GetMapping("/business/{businessId}")
+  @Operation(summary = "按商家查询订单列表", description = "查询指定商家的订单快照列表")
+  public HttpResult<List<OrderSnapshotVO>> getOrdersByBusinessId(
+      @Parameter(description = "商家ID", required = true) @PathVariable("businessId")
+          Long businessId) {
+    return HttpResult.success(orderInternalService.getOrdersByBusinessId(businessId));
+  }
+
   @GetMapping("/{orderId}/details")
   @Operation(summary = "查询订单明细", description = "按订单ID查询订单明细")
   public HttpResult<List<OrderDetailetVO>> getOrderDetailetsByOrderId(
@@ -123,6 +131,23 @@ public class OrderInnerController {
       OrderSnapshotVO canceled =
           orderInternalService.cancelPaidOrder(orderId, request.getOperatorUserId());
       return HttpResult.success(canceled);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @PostMapping("/{orderId}/state")
+  @Operation(summary = "更新订单状态", description = "内部订单状态流转接口")
+  public HttpResult<OrderSnapshotVO> updateOrderState(
+      @Parameter(description = "订单ID", required = true) @PathVariable("orderId") Long orderId,
+      @RequestBody UpdateOrderStateRequest request) {
+    if (request == null || request.getOrderState() == null) {
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OrderState CANT BE NULL");
+    }
+    try {
+      OrderSnapshotVO updated =
+          orderInternalService.updateOrderState(orderId, request.getOrderState());
+      return HttpResult.success(updated);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }
@@ -287,6 +312,18 @@ public class OrderInnerController {
 
     public void setOperatorUserId(Long operatorUserId) {
       this.operatorUserId = operatorUserId;
+    }
+  }
+
+  public static class UpdateOrderStateRequest {
+    private Integer orderState;
+
+    public Integer getOrderState() {
+      return orderState;
+    }
+
+    public void setOrderState(Integer orderState) {
+      this.orderState = orderState;
     }
   }
 }

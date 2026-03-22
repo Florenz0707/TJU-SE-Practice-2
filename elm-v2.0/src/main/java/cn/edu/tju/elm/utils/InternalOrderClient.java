@@ -150,6 +150,14 @@ public class InternalOrderClient {
     }
   }
 
+  public List<OrderSnapshot> getOrdersByCustomerId(Long customerId) {
+    return getOrderList("/api/inner/order/customer/" + customerId);
+  }
+
+  public List<OrderSnapshot> getOrdersByBusinessId(Long businessId) {
+    return getOrderList("/api/inner/order/business/" + businessId);
+  }
+
   public List<OrderDetailSnapshot> getOrderDetailsByOrderId(Long orderId) {
     try {
       Map<?, ?> body = getInternal("/api/inner/order/" + orderId + "/details");
@@ -217,6 +225,43 @@ public class InternalOrderClient {
     } catch (Exception e) {
       System.err.println("Failed to cancel order: " + e.getMessage());
       return null;
+    }
+  }
+
+  public OrderSnapshot updateOrderState(Long orderId, Integer orderState) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("orderState", orderState);
+    try {
+      Map<?, ?> responseBody = postInternal("/api/inner/order/" + orderId + "/state", requestBody);
+      if (!isSuccessResponse(responseBody)) {
+        return null;
+      }
+      return toSnapshot(readMapData(responseBody));
+    } catch (Exception e) {
+      System.err.println("Failed to update order state: " + e.getMessage());
+      return null;
+    }
+  }
+
+  private List<OrderSnapshot> getOrderList(String path) {
+    try {
+      Map<?, ?> body = getInternal(path);
+      if (!isSuccessResponse(body)) {
+        return List.of();
+      }
+      Object data = body.get("data");
+      if (!(data instanceof List<?> list)) {
+        return List.of();
+      }
+      return list.stream()
+          .filter(Map.class::isInstance)
+          .map(Map.class::cast)
+          .map(this::toSnapshot)
+          .filter(snapshot -> snapshot != null)
+          .toList();
+    } catch (Exception e) {
+      System.err.println("Failed to get order list: " + e.getMessage());
+      return List.of();
     }
   }
 
