@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -125,6 +126,62 @@ class OrderApplicationServiceTest {
   }
 
   @Test
+  void addOrder_shouldFail_whenWalletDebitFailed_shouldRollbackVoucher() {
+    Long userId = 9L;
+    Order order = new Order();
+    order.setBusiness(new Business());
+    order.getBusiness().setId(1L);
+    order.setDeliveryAddress(new DeliveryAddress());
+    order.getDeliveryAddress().setId(2L);
+    order.setWalletPaid(new BigDecimal("10"));
+    order.setUsedVoucher(new cn.edu.tju.elm.model.BO.PrivateVoucher());
+    order.getUsedVoucher().setId(66L);
+
+    when(internalOrderClient.getOrderByRequestId("req-wallet-debit-fail")).thenReturn(null);
+    when(internalCatalogClient.getBusinessSnapshot(1L))
+        .thenReturn(
+            new InternalCatalogClient.BusinessSnapshot(
+                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+    when(internalCatalogClient.getFoodSnapshot(100L))
+        .thenReturn(
+            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+    when(internalOrderClient.getAddressById(2L))
+        .thenReturn(
+            new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
+    when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
+        .thenReturn(List.of(new InternalOrderClient.CartSnapshot(12L, 100L, userId, 1L, 1)));
+    when(internalAccountClient.getVoucherSnapshot(66L))
+        .thenReturn(
+            new InternalAccountClient.VoucherSnapshot(
+                66L, userId, false, null, new BigDecimal("5"), BigDecimal.ZERO));
+    when(internalAccountClient.getWalletByUserId(userId, true))
+        .thenReturn(new InternalAccountClient.WalletSnapshot(1L, userId, new BigDecimal("20")));
+    when(internalAccountClient.redeemVoucher(
+            eq("req-wallet-debit-fail:voucher-redeem"), eq(userId), eq(66L), anyString()))
+        .thenReturn(true);
+    when(internalAccountClient.debitWallet(
+            eq("req-wallet-debit-fail:wallet-debit"),
+            eq(userId),
+            eq(new BigDecimal("10")),
+            any(),
+            eq("order wallet payment")))
+        .thenReturn(false);
+
+    var result = orderApplicationService.addOrder(userId, order, "req-wallet-debit-fail");
+
+    assertFalse(result.getSuccess());
+    verify(internalAccountClient)
+        .rollbackVoucher(
+            eq("req-wallet-debit-fail:voucher-rollback"),
+            eq(userId),
+            eq(66L),
+            any(),
+            eq("wallet debit failed"));
+    verify(internalCatalogClient, never()).reserveStock(any(), any(), any());
+    verify(internalOrderClient, never()).createOrder(any());
+  }
+
+  @Test
   void addOrder_shouldSucceed_whenCartCleanupFailedAfterCreate() {
     Long userId = 9L;
     Order order = new Order();
@@ -172,6 +229,65 @@ class OrderApplicationServiceTest {
     verify(internalOrderClient).createOrder(any());
     verify(internalCatalogClient, never())
         .releaseStock(eq("req-create-ok:stock-reserve-rollback"), any(), any());
+  }
+
+  @Test
+  void addOrder_shouldFail_whenPersistOrderThrows_shouldRollbackAll() {
+    Long userId = 9L;
+    Order order = new Order();
+    order.setBusiness(new Business());
+    order.getBusiness().setId(1L);
+    order.setDeliveryAddress(new DeliveryAddress());
+    order.getDeliveryAddress().setId(2L);
+    order.setWalletPaid(new BigDecimal("10"));
+    order.setUsedVoucher(new cn.edu.tju.elm.model.BO.PrivateVoucher());
+    order.getUsedVoucher().setId(66L);
+
+    when(internalOrderClient.getOrderByRequestId("req-persist-fail")).thenReturn(null);
+    when(internalCatalogClient.getBusinessSnapshot(1L))
+        .thenReturn(
+            new InternalCatalogClient.BusinessSnapshot(
+                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+    when(internalCatalogClient.getFoodSnapshot(100L))
+        .thenReturn(
+            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+    when(internalOrderClient.getAddressById(2L))
+        .thenReturn(
+            new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
+    when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
+        .thenReturn(List.of(new InternalOrderClient.CartSnapshot(12L, 100L, userId, 1L, 1)));
+    when(internalAccountClient.getVoucherSnapshot(66L))
+        .thenReturn(
+            new InternalAccountClient.VoucherSnapshot(
+                66L, userId, false, null, new BigDecimal("5"), BigDecimal.ZERO));
+    when(internalAccountClient.getWalletByUserId(userId, true))
+        .thenReturn(new InternalAccountClient.WalletSnapshot(1L, userId, new BigDecimal("20")));
+    when(internalAccountClient.redeemVoucher(any(), eq(userId), eq(66L), any())).thenReturn(true);
+    when(internalAccountClient.debitWallet(
+            any(), eq(userId), eq(new BigDecimal("10")), any(), any()))
+        .thenReturn(true);
+    when(internalCatalogClient.reserveStock(any(), any(), any())).thenReturn(true);
+    doThrow(new RuntimeException("persist failed")).when(internalOrderClient).createOrder(any());
+
+    var result = orderApplicationService.addOrder(userId, order, "req-persist-fail");
+
+    assertFalse(result.getSuccess());
+    verify(internalAccountClient)
+        .refundWallet(
+            eq("req-persist-fail:wallet-refund"),
+            eq(userId),
+            eq(new BigDecimal("10")),
+            any(),
+            eq("order persist failed"));
+    verify(internalAccountClient)
+        .rollbackVoucher(
+            eq("req-persist-fail:voucher-rollback"),
+            eq(userId),
+            eq(66L),
+            any(),
+            eq("order persist failed"));
+    verify(internalCatalogClient)
+        .releaseStock(eq("req-persist-fail:stock-reserve-rollback"), any(), any());
   }
 
   @Test
@@ -240,6 +356,36 @@ class OrderApplicationServiceTest {
         .releaseStock(
             eq("order-cancel-123-stock-release"), eq("ORDER_123"), eq(Collections.emptyList()));
     verify(internalOrderClient).cancelOrder(123L, userId);
+  }
+
+  @Test
+  void cancelOrder_shouldFail_whenWalletRefundThrowsException() {
+    Long userId = 9L;
+    when(internalOrderClient.getOrderById(223L))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                223L,
+                userId,
+                1L,
+                2L,
+                OrderState.PAID,
+                new BigDecimal("30"),
+                null,
+                null,
+                0,
+                BigDecimal.ZERO,
+                new BigDecimal("15"),
+                null,
+                "req-cancel-ex",
+                java.time.LocalDateTime.now()));
+    doThrow(new RuntimeException("wallet timeout"))
+        .when(internalAccountClient)
+        .refundWallet(any(), eq(userId), eq(new BigDecimal("15")), any(), any());
+
+    var result = orderApplicationService.cancelOrder(userId, 223L);
+
+    assertFalse(result.getSuccess());
+    verify(internalOrderClient, never()).cancelOrder(223L, userId);
   }
 
   @Test
@@ -387,5 +533,37 @@ class OrderApplicationServiceTest {
 
     assertFalse(result.getSuccess());
     verify(internalOrderClient, never()).updateOrderState(any(), any());
+  }
+
+  @Test
+  void updateOrderStatus_shouldFail_whenRemoteUpdateReturnsNull() {
+    Long userId = 9L;
+    Order request = new Order();
+    request.setId(301L);
+    request.setOrderState(OrderState.DELIVERY);
+
+    when(internalOrderClient.getOrderById(301L))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                301L,
+                userId,
+                1L,
+                2L,
+                OrderState.PAID,
+                new BigDecimal("30"),
+                null,
+                null,
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                null,
+                "req-state-3",
+                java.time.LocalDateTime.now()));
+    when(internalOrderClient.updateOrderState(301L, OrderState.DELIVERY)).thenReturn(null);
+
+    var result = orderApplicationService.updateOrderStatus(userId, false, false, request);
+
+    assertFalse(result.getSuccess());
+    verify(internalOrderClient).updateOrderState(301L, OrderState.DELIVERY);
   }
 }
