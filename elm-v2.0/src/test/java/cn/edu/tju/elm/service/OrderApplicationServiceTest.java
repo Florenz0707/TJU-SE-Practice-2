@@ -16,10 +16,9 @@ import cn.edu.tju.elm.model.BO.Cart;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.model.BO.Food;
 import cn.edu.tju.elm.model.BO.Order;
-import cn.edu.tju.elm.model.BO.OrderDetailet;
-import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.utils.InternalAccountClient;
 import cn.edu.tju.elm.utils.InternalCatalogClient;
+import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.math.BigDecimal;
@@ -36,9 +35,9 @@ class OrderApplicationServiceTest {
   @Mock private OrderService orderService;
   @Mock private AddressService addressService;
   @Mock private CartItemService cartItemService;
-  @Mock private OrderDetailetService orderDetailetService;
   @Mock private InternalAccountClient internalAccountClient;
   @Mock private InternalCatalogClient internalCatalogClient;
+  @Mock private InternalOrderClient internalOrderClient;
   @Mock private InternalServiceClient internalServiceClient;
   @Mock private IntegrationOutboxService integrationOutboxService;
   @Mock private ResponseCompatibilityEnricher compatibilityEnricher;
@@ -54,7 +53,7 @@ class OrderApplicationServiceTest {
     order.setDeliveryAddress(new DeliveryAddress());
     order.getDeliveryAddress().setId(2L);
 
-    when(orderService.getOrderByRequestId("req-not-found")).thenReturn(null);
+    when(internalOrderClient.getOrderByRequestId("req-not-found")).thenReturn(null);
     when(internalCatalogClient.getBusinessSnapshot(1L)).thenReturn(null);
 
     var result = orderApplicationService.addOrder(userId, order, "req-not-found");
@@ -74,9 +73,6 @@ class OrderApplicationServiceTest {
     order.getDeliveryAddress().setId(2L);
     order.setWalletPaid(new BigDecimal("20"));
 
-    Business business = new Business();
-    business.setId(1L);
-    business.setDeliveryPrice(BigDecimal.ZERO);
     DeliveryAddress address = new DeliveryAddress();
     address.setId(2L);
     address.setCustomerId(userId);
@@ -89,7 +85,7 @@ class OrderApplicationServiceTest {
     cart.setFood(food);
     cart.setQuantity(1);
 
-    when(orderService.getOrderByRequestId("req-1")).thenReturn(null);
+    when(internalOrderClient.getOrderByRequestId("req-1")).thenReturn(null);
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
             new InternalCatalogClient.BusinessSnapshot(
@@ -106,6 +102,7 @@ class OrderApplicationServiceTest {
 
     assertFalse(result.getSuccess());
     verify(internalAccountClient, never()).debitWallet(any(), any(), any(), any(), any());
+    verify(internalOrderClient, never()).createOrder(any());
   }
 
   @Test
@@ -127,7 +124,7 @@ class OrderApplicationServiceTest {
     cart.setFood(food);
     cart.setQuantity(1);
 
-    when(orderService.getOrderByRequestId("req-reserve-fail")).thenReturn(null);
+    when(internalOrderClient.getOrderByRequestId("req-reserve-fail")).thenReturn(null);
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
             new InternalCatalogClient.BusinessSnapshot(
@@ -142,12 +139,12 @@ class OrderApplicationServiceTest {
     var result = orderApplicationService.addOrder(userId, order, "req-reserve-fail");
 
     assertFalse(result.getSuccess());
-    verify(orderService, never()).addOrder(any());
+    verify(internalOrderClient, never()).createOrder(any());
     verify(cartItemService, never()).deleteCart(any());
   }
 
   @Test
-  void addOrder_shouldReleaseReservedStock_whenPersistOrderDetailFailed() {
+  void addOrder_shouldSucceed_whenCartCleanupFailedAfterCreate() {
     Long userId = 9L;
     Order order = new Order();
     order.setBusiness(new Business());
@@ -165,7 +162,7 @@ class OrderApplicationServiceTest {
     cart.setFood(food);
     cart.setQuantity(1);
 
-    when(orderService.getOrderByRequestId("req-persist-fail")).thenReturn(null);
+    when(internalOrderClient.getOrderByRequestId("req-create-ok")).thenReturn(null);
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
             new InternalCatalogClient.BusinessSnapshot(
@@ -176,39 +173,79 @@ class OrderApplicationServiceTest {
     when(addressService.getAddressById(2L)).thenReturn(address);
     when(cartItemService.getCart(1L, userId)).thenReturn(List.of(cart));
     when(internalCatalogClient.reserveStock(any(), any(), any())).thenReturn(true);
-    when(internalCatalogClient.releaseStock(any(), any(), any())).thenReturn(true);
-    doThrow(new RuntimeException("db fail"))
-        .when(orderDetailetService)
-        .addOrderDetailet(org.mockito.ArgumentMatchers.any(OrderDetailet.class));
+    when(internalOrderClient.createOrder(any()))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                1000L,
+                userId,
+                1L,
+                2L,
+                OrderState.PAID,
+                new BigDecimal("30"),
+                null,
+                null,
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                null,
+                "req-create-ok",
+                java.time.LocalDateTime.now()));
+    doThrow(new RuntimeException("cleanup failed"))
+        .when(cartItemService)
+        .deleteCart(any(Cart.class));
 
-    var result = orderApplicationService.addOrder(userId, order, "req-persist-fail");
+    var result = orderApplicationService.addOrder(userId, order, "req-create-ok");
 
-    assertFalse(result.getSuccess());
-    verify(internalCatalogClient)
-        .releaseStock(eq("req-persist-fail:stock-reserve-rollback"), eq("req-persist-fail"), any());
+    assertTrue(result.getSuccess());
+    verify(internalOrderClient).createOrder(any());
+    verify(internalCatalogClient, never())
+        .releaseStock(eq("req-create-ok:stock-reserve-rollback"), any(), any());
   }
 
   @Test
   void cancelOrder_shouldCallAccountRollbackAndRefund() {
     Long userId = 9L;
-    Order order = new Order();
-    order.setId(123L);
-    order.setCustomerId(userId);
-    order.setOrderState(OrderState.PAID);
-    order.setWalletPaid(new BigDecimal("15"));
-    order.setPointsUsed(0);
-    PrivateVoucher usedVoucher = new PrivateVoucher();
-    usedVoucher.setId(66L);
-    order.setUsedVoucher(usedVoucher);
-
-    when(orderService.getOrderById(123L)).thenReturn(order);
-    when(orderDetailetService.getOrderDetailetsByOrderId(123L)).thenReturn(Collections.emptyList());
+    when(internalOrderClient.getOrderById(123L))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                123L,
+                userId,
+                1L,
+                2L,
+                OrderState.PAID,
+                new BigDecimal("30"),
+                66L,
+                new BigDecimal("5"),
+                0,
+                BigDecimal.ZERO,
+                new BigDecimal("15"),
+                null,
+                "req-cancel",
+                java.time.LocalDateTime.now()));
+    when(internalOrderClient.getOrderDetailsByOrderId(123L)).thenReturn(Collections.emptyList());
     when(internalAccountClient.refundWallet(
             any(), eq(userId), eq(new BigDecimal("15")), any(), any()))
         .thenReturn(true);
     when(internalAccountClient.rollbackVoucher(any(), eq(userId), eq(66L), any(), any()))
         .thenReturn(true);
     when(internalCatalogClient.releaseStock(any(), any(), any())).thenReturn(true);
+    when(internalOrderClient.cancelOrder(123L, userId))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                123L,
+                userId,
+                1L,
+                2L,
+                OrderState.CANCELED,
+                new BigDecimal("30"),
+                66L,
+                new BigDecimal("5"),
+                0,
+                BigDecimal.ZERO,
+                new BigDecimal("15"),
+                null,
+                "req-cancel",
+                java.time.LocalDateTime.now()));
 
     var result = orderApplicationService.cancelOrder(userId, 123L);
 
@@ -230,26 +267,35 @@ class OrderApplicationServiceTest {
     verify(internalCatalogClient)
         .releaseStock(
             eq("order-cancel-123-stock-release"), eq("ORDER_123"), eq(Collections.emptyList()));
-    verify(orderService).updateOrder(order);
+    verify(internalOrderClient).cancelOrder(123L, userId);
   }
 
   @Test
   void cancelOrder_shouldFail_whenReleaseStockFailed() {
     Long userId = 9L;
-    Order order = new Order();
-    order.setId(124L);
-    order.setCustomerId(userId);
-    order.setOrderState(OrderState.PAID);
-    order.setWalletPaid(BigDecimal.ZERO);
-    order.setPointsUsed(0);
-
-    when(orderService.getOrderById(124L)).thenReturn(order);
-    when(orderDetailetService.getOrderDetailetsByOrderId(124L)).thenReturn(Collections.emptyList());
+    when(internalOrderClient.getOrderById(124L))
+        .thenReturn(
+            new InternalOrderClient.OrderSnapshot(
+                124L,
+                userId,
+                1L,
+                2L,
+                OrderState.PAID,
+                new BigDecimal("30"),
+                null,
+                null,
+                0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                null,
+                "req-cancel-2",
+                java.time.LocalDateTime.now()));
+    when(internalOrderClient.getOrderDetailsByOrderId(124L)).thenReturn(Collections.emptyList());
     when(internalCatalogClient.releaseStock(any(), any(), any())).thenReturn(false);
 
     var result = orderApplicationService.cancelOrder(userId, 124L);
 
     assertFalse(result.getSuccess());
-    verify(orderService, never()).updateOrder(any());
+    verify(internalOrderClient, never()).cancelOrder(124L, userId);
   }
 }

@@ -142,12 +142,20 @@
    - `POST /api/inner/order/{orderId}/cancel`（仅订单所属用户）
 7. `order-service` 创建/取消事务服务已实现并补齐单测覆盖
 8. `order-service` Mockito 测试配置已适配当前环境（`mock-maker-subclass`）
+9. 单体 `OrderApplicationService` 本地订单写调用已迁移：
+   - 幂等查询改为 `InternalOrderClient.getOrderByRequestId`
+   - 创建订单改为 `InternalOrderClient.createOrder`
+   - 取消订单状态更新改为 `InternalOrderClient.cancelOrder`
+   - 取消库存回补明细改为 `InternalOrderClient.getOrderDetailsByOrderId`
+10. 新增 `InternalOrderClient` 与配置项：
+    - `order.service.url=${ORDER_SERVICE_URL:http://localhost:8080/elm}`
+11. 单体订单应用服务迁移单测已通过（`OrderApplicationServiceTest`）
 
 待完成：
 
-1. 输出阶段5联调 runbook 初稿并执行首轮双服务 smoke
-2. 将单体下单/取消的本地订单落库调用迁移到 `order-service` 内部写接口
-3. 接入账户/目录/积分内部调用并回归完整下单取消链路
+1. 执行阶段5首轮双服务 smoke（创建幂等、取消权限与状态）
+2. 迁移订单读取/列表链路到 `order-service`（当前仅写路径完成）
+3. 接入并回归完整下单取消链路（account/catalog/points/order 四服务联调）
 
 状态：**阶段5准备已启动**
 

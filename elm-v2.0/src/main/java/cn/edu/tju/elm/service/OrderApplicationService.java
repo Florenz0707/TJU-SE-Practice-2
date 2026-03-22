@@ -6,13 +6,12 @@ import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.Cart;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
-import cn.edu.tju.elm.model.BO.Food;
 import cn.edu.tju.elm.model.BO.Order;
-import cn.edu.tju.elm.model.BO.OrderDetailet;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalAccountClient;
 import cn.edu.tju.elm.utils.InternalCatalogClient;
+import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.math.BigDecimal;
@@ -34,9 +33,9 @@ public class OrderApplicationService {
   private final OrderService orderService;
   private final AddressService addressService;
   private final CartItemService cartItemService;
-  private final OrderDetailetService orderDetailetService;
   private final InternalAccountClient internalAccountClient;
   private final InternalCatalogClient internalCatalogClient;
+  private final InternalOrderClient internalOrderClient;
   private final InternalServiceClient internalServiceClient;
   private final IntegrationOutboxService integrationOutboxService;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
@@ -45,18 +44,18 @@ public class OrderApplicationService {
       OrderService orderService,
       AddressService addressService,
       CartItemService cartItemService,
-      OrderDetailetService orderDetailetService,
       InternalAccountClient internalAccountClient,
       InternalCatalogClient internalCatalogClient,
+      InternalOrderClient internalOrderClient,
       InternalServiceClient internalServiceClient,
       IntegrationOutboxService integrationOutboxService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.orderService = orderService;
     this.addressService = addressService;
     this.cartItemService = cartItemService;
-    this.orderDetailetService = orderDetailetService;
     this.internalAccountClient = internalAccountClient;
     this.internalCatalogClient = internalCatalogClient;
+    this.internalOrderClient = internalOrderClient;
     this.internalServiceClient = internalServiceClient;
     this.integrationOutboxService = integrationOutboxService;
     this.compatibilityEnricher = compatibilityEnricher;
@@ -65,8 +64,14 @@ public class OrderApplicationService {
   @Transactional
   public HttpResult<Order> addOrder(Long currentUserId, Order order, String requestId) {
     if (requestId != null) {
-      Order existingOrder = orderService.getOrderByRequestId(requestId);
-      if (existingOrder != null) {
+      InternalOrderClient.OrderSnapshot existingOrderSnapshot =
+          internalOrderClient.getOrderByRequestId(requestId);
+      if (existingOrderSnapshot != null) {
+        Order existingOrder = toOrderRef(existingOrderSnapshot);
+        existingOrder.setBusiness(buildBusinessRef(existingOrderSnapshot.businessId()));
+        existingOrder.setDeliveryAddress(
+            buildAddressRef(existingOrderSnapshot.deliveryAddressId()));
+        compatibilityEnricher.enrichOrder(existingOrder);
         return HttpResult.success(existingOrder);
       }
     }
@@ -225,7 +230,11 @@ public class OrderApplicationService {
     order.setPointsUsed(pointsUsed);
     order.setPointsDiscount(pointsDiscount);
     order.setWalletPaid(walletPaid);
-    order.setRequestId(requestId);
+    String createRequestId =
+        (requestId == null || requestId.isBlank())
+            ? "order-create-" + UUID.randomUUID()
+            : requestId;
+    order.setRequestId(createRequestId);
     String pointsTradeNo = null;
     String orderBizId = requestId != null ? requestId : "ORDER_" + UUID.randomUUID();
     String voucherRedeemRequestId = buildInternalRequestId(requestId, "voucher-redeem");
@@ -234,6 +243,13 @@ public class OrderApplicationService {
     String walletRefundRequestId = buildInternalRequestId(requestId, "wallet-refund");
     String stockReserveRequestId = buildInternalRequestId(requestId, "stock-reserve");
     String stockRollbackRequestId = buildInternalRequestId(requestId, "stock-reserve-rollback");
+    List<InternalOrderClient.OrderItemCommand> orderItems =
+        cartList.stream()
+            .map(
+                cart ->
+                    new InternalOrderClient.OrderItemCommand(
+                        cart.getFood().getId(), cart.getQuantity()))
+            .collect(Collectors.toList());
     List<InternalCatalogClient.StockItem> stockItems =
         cartList.stream()
             .map(
@@ -298,7 +314,6 @@ public class OrderApplicationService {
           return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to freeze points");
         }
         order.setPointsTradeNo(pointsTradeNo);
-        orderService.addOrder(order);
         Boolean deductSuccess =
             internalServiceClient.deductPoints(currentUserId, pointsTradeNo, pointsTradeNo);
         if (!Boolean.TRUE.equals(deductSuccess)) {
@@ -326,34 +341,58 @@ public class OrderApplicationService {
         return HttpResult.failure(
             ResultCodeEnum.SERVER_ERROR, "Failed to deduct points: " + e.getMessage());
       }
-    } else {
-      try {
-        orderService.addOrder(order);
-      } catch (Exception e) {
-        internalCatalogClient.releaseStock(stockRollbackRequestId, orderBizId, stockItems);
-        throw e;
+    }
+
+    try {
+      InternalOrderClient.OrderSnapshot createdOrderSnapshot =
+          internalOrderClient.createOrder(
+              new InternalOrderClient.CreateOrderCommand(
+                  createRequestId,
+                  currentUserId,
+                  business.businessId(),
+                  address.getId(),
+                  totalPrice,
+                  OrderState.PAID,
+                  usedVoucher == null ? null : usedVoucher.getId(),
+                  voucherDiscount,
+                  pointsUsed,
+                  pointsDiscount,
+                  walletPaid,
+                  pointsTradeNo,
+                  order.getOrderDate(),
+                  orderItems));
+      if (createdOrderSnapshot == null || createdOrderSnapshot.id() == null) {
+        throw new IllegalStateException("Failed to persist order");
       }
+      order.setId(createdOrderSnapshot.id());
+      order.setCreateTime(createdOrderSnapshot.orderDate());
+      order.setUpdateTime(createdOrderSnapshot.orderDate());
+    } catch (Exception e) {
+      if (pointsUsed > 0 && pointsTradeNo != null) {
+        internalServiceClient.refundDeductedPoints(currentUserId, pointsTradeNo, "订单创建失败返还积分");
+      }
+      if (walletPaid.compareTo(BigDecimal.ZERO) > 0) {
+        internalAccountClient.refundWallet(
+            walletRefundRequestId, currentUserId, walletPaid, orderBizId, "order persist failed");
+      }
+      if (usedVoucher != null) {
+        internalAccountClient.rollbackVoucher(
+            voucherRollbackRequestId,
+            currentUserId,
+            usedVoucher.getId(),
+            orderBizId,
+            "order persist failed");
+      }
+      internalCatalogClient.releaseStock(stockRollbackRequestId, orderBizId, stockItems);
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to persist order");
     }
 
     try {
       for (Cart cart : cartList) {
-        Food food = cart.getFood();
-        if (food == null || food.getId() == null) {
-          throw new IllegalStateException("Food.Id CANT BE NULL");
-        }
-
         cartItemService.deleteCart(cart);
-
-        OrderDetailet orderDetailet = new OrderDetailet();
-        EntityUtils.setNewEntity(orderDetailet);
-        orderDetailet.setOrder(order);
-        orderDetailet.setFood(cart.getFood());
-        orderDetailet.setQuantity(cart.getQuantity());
-        orderDetailetService.addOrderDetailet(orderDetailet);
       }
     } catch (Exception e) {
-      internalCatalogClient.releaseStock(stockRollbackRequestId, orderBizId, stockItems);
-      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to persist order details");
+      log.warn("Failed to cleanup cart items after order creation: {}", e.getMessage());
     }
 
     log.info(
@@ -364,8 +403,9 @@ public class OrderApplicationService {
 
   @Transactional
   public HttpResult<Order> cancelOrder(Long currentUserId, Long id) {
-    Order order = orderService.getOrderById(id);
-    if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+    InternalOrderClient.OrderSnapshot snapshot = internalOrderClient.getOrderById(id);
+    if (snapshot == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+    Order order = toOrderRef(snapshot);
 
     if (!currentUserId.equals(order.getCustomerId()))
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -412,14 +452,12 @@ public class OrderApplicationService {
         }
       }
 
-      List<OrderDetailet> orderDetails =
-          orderDetailetService.getOrderDetailetsByOrderId(order.getId());
+      List<InternalOrderClient.OrderDetailSnapshot> orderDetails =
+          internalOrderClient.getOrderDetailsByOrderId(order.getId());
       List<InternalCatalogClient.StockItem> stockItems =
           orderDetails.stream()
               .map(
-                  detail ->
-                      new InternalCatalogClient.StockItem(
-                          detail.getFood().getId(), detail.getQuantity()))
+                  detail -> new InternalCatalogClient.StockItem(detail.foodId(), detail.quantity()))
               .collect(Collectors.toList());
       boolean stockReleased =
           internalCatalogClient.releaseStock(
@@ -430,9 +468,12 @@ public class OrderApplicationService {
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "取消订单失败: 库存回补失败");
       }
 
-      order.setOrderState(OrderState.CANCELED);
-      EntityUtils.updateEntity(order);
-      orderService.updateOrder(order);
+      InternalOrderClient.OrderSnapshot canceledSnapshot =
+          internalOrderClient.cancelOrder(order.getId(), currentUserId);
+      if (canceledSnapshot == null) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "取消订单失败: 订单状态更新失败");
+      }
+      order = toOrderRef(canceledSnapshot);
 
       log.warn(
           "Order canceled: orderId={}, userId={}, reason=user_request",
@@ -516,5 +557,34 @@ public class OrderApplicationService {
     Business business = new Business();
     business.setId(businessId);
     return business;
+  }
+
+  private DeliveryAddress buildAddressRef(Long addressId) {
+    DeliveryAddress address = new DeliveryAddress();
+    address.setId(addressId);
+    return address;
+  }
+
+  private Order toOrderRef(InternalOrderClient.OrderSnapshot snapshot) {
+    Order order = new Order();
+    order.setId(snapshot.id());
+    order.setCustomerId(snapshot.customerId());
+    order.setBusiness(buildBusinessRef(snapshot.businessId()));
+    order.setDeliveryAddress(buildAddressRef(snapshot.deliveryAddressId()));
+    order.setOrderState(snapshot.orderState());
+    order.setOrderTotal(snapshot.orderTotal());
+    if (snapshot.voucherId() != null) {
+      PrivateVoucher voucher = new PrivateVoucher();
+      voucher.setId(snapshot.voucherId());
+      order.setUsedVoucher(voucher);
+    }
+    order.setVoucherDiscount(snapshot.voucherDiscount());
+    order.setPointsUsed(snapshot.pointsUsed());
+    order.setPointsDiscount(snapshot.pointsDiscount());
+    order.setWalletPaid(snapshot.walletPaid());
+    order.setPointsTradeNo(snapshot.pointsTradeNo());
+    order.setRequestId(snapshot.requestId());
+    order.setOrderDate(snapshot.orderDate());
+    return order;
   }
 }

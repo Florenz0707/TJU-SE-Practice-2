@@ -88,3 +88,9 @@
 7. 测试环境兼容补充：
    - `src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker`
    - 使用 `mock-maker-subclass` 规避 inline attach 限制
+8. 单体本地调用迁移（写路径）已完成：
+   - 新增 `InternalOrderClient`
+   - 下单幂等查询/创建调用切到 `order-service`
+   - 取消订单查询明细与状态更新调用切到 `order-service`
+9. 单体迁移回归测试通过：
+   - `mvn -f elm-v2.0/pom.xml -Dtest=OrderApplicationServiceTest test`
