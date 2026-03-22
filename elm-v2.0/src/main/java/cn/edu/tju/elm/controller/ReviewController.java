@@ -10,9 +10,9 @@ import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.OrderApplicationService;
 import cn.edu.tju.elm.service.ReviewApplicationService;
-import cn.edu.tju.elm.service.ReviewService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
-import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalOrderClient;
+import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,23 +31,26 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/reviews")
 @Tag(name = "管理评价", description = "提供对订单评价的增删改查功能")
 public class ReviewController {
-  private final ReviewService reviewService;
   private final BusinessService businessService;
   private final OrderApplicationService orderApplicationService;
   private final UserService userService;
   private final ReviewApplicationService reviewApplicationService;
+  private final InternalOrderClient internalOrderClient;
+  private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public ReviewController(
-      ReviewService reviewService,
       BusinessService businessService,
       OrderApplicationService orderApplicationService,
       UserService userService,
-      ReviewApplicationService reviewApplicationService) {
-    this.reviewService = reviewService;
+      ReviewApplicationService reviewApplicationService,
+      InternalOrderClient internalOrderClient,
+      ResponseCompatibilityEnricher compatibilityEnricher) {
     this.businessService = businessService;
     this.orderApplicationService = orderApplicationService;
     this.userService = userService;
     this.reviewApplicationService = reviewApplicationService;
+    this.internalOrderClient = internalOrderClient;
+    this.compatibilityEnricher = compatibilityEnricher;
   }
 
   @PostMapping("/order/{orderId}")
@@ -71,7 +74,9 @@ public class ReviewController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    Review oldReview = reviewService.getReviewById(reviewId);
+    InternalOrderClient.ReviewSnapshot oldReviewSnapshot =
+        internalOrderClient.getReviewById(reviewId);
+    Review oldReview = oldReviewSnapshot == null ? null : toReview(oldReviewSnapshot);
     if (oldReview == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "OldReview NOT FOUND");
     if (review == null
@@ -81,13 +86,17 @@ public class ReviewController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "NewReview CANT BE NULL");
 
     if (me.getId().equals(oldReview.getCustomerId())) {
-      if (review.getStars() != null) oldReview.setStars(review.getStars());
-      if (review.getContent() != null) oldReview.setContent(review.getContent());
-      if (review.getAnonymous() != null) oldReview.setAnonymous(review.getAnonymous());
-
-      EntityUtils.updateEntity(oldReview);
-      reviewService.updateReview(oldReview);
-      return HttpResult.success(oldReview);
+      InternalOrderClient.ReviewSnapshot updatedSnapshot =
+          internalOrderClient.updateReview(
+              reviewId,
+              new InternalOrderClient.UpdateReviewCommand(
+                  review.getStars(), review.getContent(), review.getAnonymous()));
+      if (updatedSnapshot == null) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to update review");
+      }
+      Review updated = toReview(updatedSnapshot);
+      compatibilityEnricher.enrichReview(updated);
+      return HttpResult.success(updated);
     }
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -112,8 +121,12 @@ public class ReviewController {
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
-
-    return HttpResult.success(reviewService.getReviewsByUserId(me.getId()));
+    List<Review> reviews =
+        internalOrderClient.getReviewsByCustomerId(me.getId()).stream()
+            .map(this::toReview)
+            .toList();
+    compatibilityEnricher.enrichReviews(reviews);
+    return HttpResult.success(reviews);
   }
 
   @GetMapping("/order/{orderId}")
@@ -127,13 +140,23 @@ public class ReviewController {
 
     Order order = orderApplicationService.getOrderById(orderId);
     if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
-    Review review = reviewService.getReviewByOrderId(orderId);
+    InternalOrderClient.ReviewSnapshot reviewSnapshot =
+        internalOrderClient.getReviewByOrderId(orderId);
+    Review review = reviewSnapshot == null ? null : toReview(reviewSnapshot);
     if (review == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");
+    compatibilityEnricher.enrichReview(review);
 
     if (me.getId().equals(review.getCustomerId())) return HttpResult.success(review);
 
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
-    if (isBusiness && me.getId().equals(review.getBusiness().getBusinessOwnerId())) {
+    if (isBusiness && review.getBusiness() != null && review.getBusiness().getId() != null) {
+      Business reviewBusiness = businessService.getBusinessById(review.getBusiness().getId());
+      if (reviewBusiness == null) {
+        return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+      }
+      if (!me.getId().equals(reviewBusiness.getBusinessOwnerId())) {
+        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+      }
       if (review.getAnonymous())
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");
       return HttpResult.success(review);
@@ -149,7 +172,11 @@ public class ReviewController {
     Business business = businessService.getBusinessById(businessId);
     if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
-    List<Review> reviewList = reviewService.getReviewsByBusinessId(businessId);
+    List<Review> reviewList =
+        internalOrderClient.getReviewsByBusinessId(businessId).stream()
+            .map(this::toReview)
+            .toList();
+    compatibilityEnricher.enrichReviews(reviewList);
     for (Review review : reviewList) {
       if (review.getAnonymous()) {
         review.setCustomerId(null);
@@ -157,5 +184,21 @@ public class ReviewController {
       }
     }
     return HttpResult.success(reviewList);
+  }
+
+  private Review toReview(InternalOrderClient.ReviewSnapshot snapshot) {
+    Review review = new Review();
+    review.setId(snapshot.id());
+    review.setCustomerId(snapshot.customerId());
+    review.setAnonymous(snapshot.anonymous());
+    review.setStars(snapshot.stars());
+    review.setContent(snapshot.content());
+    Business business = new Business();
+    business.setId(snapshot.businessId());
+    review.setBusiness(business);
+    Order order = new Order();
+    order.setId(snapshot.orderId());
+    review.setOrder(order);
+    return review;
   }
 }

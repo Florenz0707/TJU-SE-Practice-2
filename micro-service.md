@@ -199,24 +199,63 @@
     - `elm-v2.0` `AddressController` 本地调用已切换为 `InternalOrderClient` 远程调用
     - 下单链路地址读取已切换为 `order-service`（`OrderApplicationService`）
     - 地址迁移后四服务 smoke 回归通过（`SMOKE_OK=true`）
+21. 购物车链路已迁移到 `order-service`（2026-03-22）：
+    - `order-service` 新增购物车内部接口：创建/查询/列表/按商家+用户查询/改数量/删除
+      - `POST /api/inner/order/cart`
+      - `GET /api/inner/order/cart/{cartId}`
+      - `GET /api/inner/order/cart/customer/{customerId}`
+      - `GET /api/inner/order/cart/business/{businessId}/customer/{customerId}`
+      - `POST /api/inner/order/cart/{cartId}/quantity`
+      - `DELETE /api/inner/order/cart/{cartId}`
+    - `elm-v2.0` `CartController` 本地购物车调用已切换为 `InternalOrderClient` 远程调用
+    - 下单链路购物车读取与清理已切换为 `order-service`（`OrderApplicationService`）
+    - 迁移测试与风格校验通过：
+      - 新增 `CartControllerTest`，覆盖增删改查与权限边界
+      - `order-service`/`elm-v2.0` 相关单测通过
+      - `pre-commit`（按 `.pre-commit-config.yaml`）通过
+    - 四服务 smoke 回归通过（2026-03-22）：
+      - 执行：`cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env`
+      - 结果：`SMOKE_OK=true`
+      - Outbox `POINTS_ORDER_SUCCESS` 状态 `SENT`
+22. 评价链路已迁移到 `order-service`（2026-03-22）：
+    - `order-service` 新增评价内部接口：创建/查询/列表/更新/删除
+      - `POST /api/inner/order/review`
+      - `GET /api/inner/order/review/{reviewId}`
+      - `GET /api/inner/order/review/order/{orderId}`
+      - `GET /api/inner/order/review/customer/{customerId}`
+      - `GET /api/inner/order/review/business/{businessId}`
+      - `PATCH /api/inner/order/review/{reviewId}`
+      - `DELETE /api/inner/order/review/{reviewId}`
+    - `elm-v2.0` 已切换评价主链路到 `InternalOrderClient`：
+      - `ReviewController` 查询/更新改为 `order-service` 远程调用
+      - `ReviewApplicationService` 新增/删除改为 `order-service` 远程调用
+      - 删评后订单状态回滚仍通过 `order-service` 状态接口完成
+    - 迁移测试与风格校验通过：
+      - 新增 `ReviewInnerControllerTest`、`ReviewInternalServiceTest`
+      - 新增 `ReviewControllerTest`，并更新 `ReviewApplicationServiceTest`
+      - `pre-commit`（按 `.pre-commit-config.yaml`）通过
+    - 四服务 smoke 回归通过（2026-03-22）：
+      - 执行：`cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env`
+      - 结果：`SMOKE_OK=true`
+      - Outbox `POINTS_ORDER_SUCCESS` 状态 `SENT`
 
 待完成：
 
-1. 继续迁移购物车链路到 `order-service`（读写接口与单体调用切换）
-2. 继续迁移评价读写主链路到 `order-service`（含删评回滚场景）
-3. 持续补齐迁移后边界态回归用例（含多角色权限）
+1. 持续补齐迁移后边界态回归用例（含多角色权限）
+2. 完善阶段5联调与回滚 runbook（购物车+评价迁移后版本）
+3. 准备 `account-service` 拆分收口输入（边界清单、联调脚本、回滚检查点）
 
 状态：**阶段5准备已启动**
 
 ## 1.3 最近计划（未来 3-5 天）
 
 1. 推进阶段5订单域迁移收口：
-   - 完成订单剩余分页/聚合查询迁移到 `order-service`
-   - 补齐状态流转与评价链路专项测试
+   - 补齐删评回滚、跨角色权限与边界态专项测试
+   - 完成迁移后 runbook 与回滚脚本核对
 2. 执行四服务脚本化 smoke 常态回归：
    - 使用 `elm-v2.0/scripts/run_four_service_smoke.py`
    - 保持 `.env` 配置化，禁止明文提交敏感项
-3. 完善阶段5联调与回滚 runbook（加入脚本化执行路径）
+3. 启动 `account-service` 拆分准备（接口清单与本地调用迁移草案）
 4. 持续执行统一质量门禁：按 `.pre-commit-config.yaml` 做风格与基础校验
 
 ---

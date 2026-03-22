@@ -102,6 +102,16 @@ public class InternalOrderClient {
     }
   }
 
+  private static Boolean readBoolean(Object value) {
+    if (value == null) {
+      return null;
+    }
+    if (value instanceof Boolean booleanValue) {
+      return booleanValue;
+    }
+    return Boolean.parseBoolean(String.valueOf(value));
+  }
+
   private static BigDecimal readBigDecimal(Object value) {
     if (value == null) {
       return null;
@@ -342,6 +352,151 @@ public class InternalOrderClient {
     }
   }
 
+  public CartSnapshot createCart(CreateCartCommand command) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("foodId", command.foodId());
+    requestBody.put("customerId", command.customerId());
+    requestBody.put("businessId", command.businessId());
+    requestBody.put("quantity", command.quantity());
+    try {
+      Map<?, ?> responseBody = postInternal("/api/inner/order/cart", requestBody);
+      return toCartSnapshot(readMapData(responseBody));
+    } catch (Exception e) {
+      System.err.println("Failed to create cart: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public CartSnapshot getCartById(Long cartId) {
+    try {
+      Map<?, ?> body = getInternal("/api/inner/order/cart/" + cartId);
+      return toCartSnapshot(readMapData(body));
+    } catch (Exception e) {
+      System.err.println("Failed to get cart by id: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public List<CartSnapshot> getCartsByCustomerId(Long customerId) {
+    return getCartList("/api/inner/order/cart/customer/" + customerId);
+  }
+
+  public List<CartSnapshot> getCartsByBusinessAndCustomerId(Long businessId, Long customerId) {
+    return getCartList("/api/inner/order/cart/business/" + businessId + "/customer/" + customerId);
+  }
+
+  public CartSnapshot updateCartQuantity(Long cartId, Integer quantity) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("quantity", quantity);
+    try {
+      Map<?, ?> responseBody =
+          postInternal("/api/inner/order/cart/" + cartId + "/quantity", requestBody);
+      return toCartSnapshot(readMapData(responseBody));
+    } catch (Exception e) {
+      System.err.println("Failed to update cart quantity: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public boolean deleteCart(Long cartId) {
+    try {
+      String path = "/api/inner/order/cart/" + cartId;
+      String url = baseUrl + path;
+      HttpEntity<Void> request = new HttpEntity<>(createHeaders());
+      ResponseEntity<Map> response =
+          restTemplate.exchange(url, HttpMethod.DELETE, request, Map.class);
+      Map<?, ?> body = response.getBody();
+      if (!isSuccessResponse(body)) {
+        return false;
+      }
+      Object data = body == null ? null : body.get("data");
+      if (data instanceof Boolean value) {
+        return value;
+      }
+      return false;
+    } catch (Exception e) {
+      System.err.println("Failed to delete cart: " + e.getMessage());
+      return false;
+    }
+  }
+
+  public ReviewSnapshot createReview(CreateReviewCommand command) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("customerId", command.customerId());
+    requestBody.put("businessId", command.businessId());
+    requestBody.put("orderId", command.orderId());
+    requestBody.put("anonymous", command.anonymous());
+    requestBody.put("stars", command.stars());
+    requestBody.put("content", command.content());
+    try {
+      Map<?, ?> responseBody = postInternal("/api/inner/order/review", requestBody);
+      return toReviewSnapshot(readMapData(responseBody));
+    } catch (Exception e) {
+      System.err.println("Failed to create review: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public ReviewSnapshot updateReview(Long reviewId, UpdateReviewCommand command) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("stars", command.stars());
+    requestBody.put("content", command.content());
+    requestBody.put("anonymous", command.anonymous());
+    try {
+      String path = "/api/inner/order/review/" + reviewId;
+      String url = baseUrl + path;
+      HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+      ResponseEntity<Map> response =
+          restTemplate.exchange(url, HttpMethod.PATCH, request, Map.class);
+      return toReviewSnapshot(readMapData(response.getBody()));
+    } catch (Exception e) {
+      System.err.println("Failed to update review: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public ReviewSnapshot getReviewById(Long reviewId) {
+    try {
+      Map<?, ?> body = getInternal("/api/inner/order/review/" + reviewId);
+      return toReviewSnapshot(readMapData(body));
+    } catch (Exception e) {
+      System.err.println("Failed to get review by id: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public ReviewSnapshot getReviewByOrderId(Long orderId) {
+    try {
+      Map<?, ?> body = getInternal("/api/inner/order/review/order/" + orderId);
+      return toReviewSnapshot(readMapData(body));
+    } catch (Exception e) {
+      System.err.println("Failed to get review by order id: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public List<ReviewSnapshot> getReviewsByCustomerId(Long customerId) {
+    return getReviewList("/api/inner/order/review/customer/" + customerId);
+  }
+
+  public List<ReviewSnapshot> getReviewsByBusinessId(Long businessId) {
+    return getReviewList("/api/inner/order/review/business/" + businessId);
+  }
+
+  public ReviewSnapshot deleteReview(Long reviewId) {
+    try {
+      String path = "/api/inner/order/review/" + reviewId;
+      String url = baseUrl + path;
+      HttpEntity<Void> request = new HttpEntity<>(createHeaders());
+      ResponseEntity<Map> response =
+          restTemplate.exchange(url, HttpMethod.DELETE, request, Map.class);
+      return toReviewSnapshot(readMapData(response.getBody()));
+    } catch (Exception e) {
+      System.err.println("Failed to delete review: " + e.getMessage());
+      return null;
+    }
+  }
+
   private List<OrderSnapshot> getOrderList(String path) {
     try {
       Map<?, ?> body = getInternal(path);
@@ -426,6 +581,76 @@ public class InternalOrderClient {
         data.get("address") == null ? null : String.valueOf(data.get("address")));
   }
 
+  private CartSnapshot toCartSnapshot(Map<?, ?> data) {
+    if (data == null) {
+      return null;
+    }
+    return new CartSnapshot(
+        readLong(data.get("id")),
+        readLong(data.get("foodId")),
+        readLong(data.get("customerId")),
+        readLong(data.get("businessId")),
+        readInteger(data.get("quantity")));
+  }
+
+  private List<CartSnapshot> getCartList(String path) {
+    try {
+      Map<?, ?> body = getInternal(path);
+      if (!isSuccessResponse(body)) {
+        return List.of();
+      }
+      Object data = body.get("data");
+      if (!(data instanceof List<?> list)) {
+        return List.of();
+      }
+      return list.stream()
+          .filter(Map.class::isInstance)
+          .map(Map.class::cast)
+          .map(this::toCartSnapshot)
+          .filter(snapshot -> snapshot != null)
+          .toList();
+    } catch (Exception e) {
+      System.err.println("Failed to get cart list: " + e.getMessage());
+      return List.of();
+    }
+  }
+
+  private ReviewSnapshot toReviewSnapshot(Map<?, ?> data) {
+    if (data == null) {
+      return null;
+    }
+    return new ReviewSnapshot(
+        readLong(data.get("id")),
+        readLong(data.get("customerId")),
+        readLong(data.get("businessId")),
+        readLong(data.get("orderId")),
+        readBoolean(data.get("anonymous")),
+        readInteger(data.get("stars")),
+        data.get("content") == null ? null : String.valueOf(data.get("content")));
+  }
+
+  private List<ReviewSnapshot> getReviewList(String path) {
+    try {
+      Map<?, ?> body = getInternal(path);
+      if (!isSuccessResponse(body)) {
+        return List.of();
+      }
+      Object data = body.get("data");
+      if (!(data instanceof List<?> list)) {
+        return List.of();
+      }
+      return list.stream()
+          .filter(Map.class::isInstance)
+          .map(Map.class::cast)
+          .map(this::toReviewSnapshot)
+          .filter(snapshot -> snapshot != null)
+          .toList();
+    } catch (Exception e) {
+      System.err.println("Failed to get review list: " + e.getMessage());
+      return List.of();
+    }
+  }
+
   public record OrderSnapshot(
       Long id,
       Long customerId,
@@ -457,6 +682,31 @@ public class InternalOrderClient {
 
   public record UpdateAddressCommand(
       Long customerId, String contactName, Integer contactSex, String contactTel, String address) {}
+
+  public record CartSnapshot(
+      Long id, Long foodId, Long customerId, Long businessId, Integer quantity) {}
+
+  public record CreateCartCommand(
+      Long foodId, Long customerId, Long businessId, Integer quantity) {}
+
+  public record ReviewSnapshot(
+      Long id,
+      Long customerId,
+      Long businessId,
+      Long orderId,
+      Boolean anonymous,
+      Integer stars,
+      String content) {}
+
+  public record CreateReviewCommand(
+      Long customerId,
+      Long businessId,
+      Long orderId,
+      Boolean anonymous,
+      Integer stars,
+      String content) {}
+
+  public record UpdateReviewCommand(Integer stars, String content, Boolean anonymous) {}
 
   public record PagedOrderSnapshot(
       List<OrderSnapshot> orders, Long total, Integer page, Integer size) {}

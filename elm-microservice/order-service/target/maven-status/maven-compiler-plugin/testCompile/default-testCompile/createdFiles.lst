@@ -1,4 +1,8 @@
 cn/edu/tju/order/controller/AddressInnerControllerTest.class
 cn/edu/tju/order/controller/OrderInnerControllerTest.class
+cn/edu/tju/order/controller/CartInnerControllerTest.class
 cn/edu/tju/order/service/AddressInternalServiceTest.class
+cn/edu/tju/order/controller/ReviewInnerControllerTest.class
+cn/edu/tju/order/service/ReviewInternalServiceTest.class
+cn/edu/tju/order/service/CartInternalServiceTest.class
 cn/edu/tju/order/service/OrderInternalServiceTest.class

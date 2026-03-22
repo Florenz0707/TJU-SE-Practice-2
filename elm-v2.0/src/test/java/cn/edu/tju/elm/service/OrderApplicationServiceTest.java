@@ -12,9 +12,7 @@ import static org.mockito.Mockito.when;
 
 import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Business;
-import cn.edu.tju.elm.model.BO.Cart;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
-import cn.edu.tju.elm.model.BO.Food;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.utils.InternalAccountClient;
 import cn.edu.tju.elm.utils.InternalCatalogClient;
@@ -34,7 +32,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class OrderApplicationServiceTest {
   @Mock private BusinessService businessService;
-  @Mock private CartItemService cartItemService;
   @Mock private InternalAccountClient internalAccountClient;
   @Mock private InternalCatalogClient internalCatalogClient;
   @Mock private InternalOrderClient internalOrderClient;
@@ -73,18 +70,6 @@ class OrderApplicationServiceTest {
     order.getDeliveryAddress().setId(2L);
     order.setWalletPaid(new BigDecimal("20"));
 
-    DeliveryAddress address = new DeliveryAddress();
-    address.setId(2L);
-    address.setCustomerId(userId);
-    Food food = new Food();
-    food.setId(100L);
-    food.setFoodName("rice");
-    food.setFoodPrice(new BigDecimal("30"));
-    food.setStock(10);
-    Cart cart = new Cart();
-    cart.setFood(food);
-    cart.setQuantity(1);
-
     when(internalOrderClient.getOrderByRequestId("req-1")).thenReturn(null);
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
@@ -96,7 +81,8 @@ class OrderApplicationServiceTest {
     when(internalOrderClient.getAddressById(2L))
         .thenReturn(
             new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
-    when(cartItemService.getCart(1L, userId)).thenReturn(List.of(cart));
+    when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
+        .thenReturn(List.of(new InternalOrderClient.CartSnapshot(11L, 100L, userId, 1L, 1)));
     when(internalAccountClient.getWalletByUserId(userId, true))
         .thenReturn(new InternalAccountClient.WalletSnapshot(1L, userId, new BigDecimal("10")));
 
@@ -116,16 +102,6 @@ class OrderApplicationServiceTest {
     order.setDeliveryAddress(new DeliveryAddress());
     order.getDeliveryAddress().setId(2L);
 
-    DeliveryAddress address = new DeliveryAddress();
-    address.setId(2L);
-    address.setCustomerId(userId);
-    Food food = new Food();
-    food.setId(100L);
-    food.setFoodName("rice");
-    Cart cart = new Cart();
-    cart.setFood(food);
-    cart.setQuantity(1);
-
     when(internalOrderClient.getOrderByRequestId("req-reserve-fail")).thenReturn(null);
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
@@ -137,14 +113,15 @@ class OrderApplicationServiceTest {
     when(internalOrderClient.getAddressById(2L))
         .thenReturn(
             new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
-    when(cartItemService.getCart(1L, userId)).thenReturn(List.of(cart));
+    when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
+        .thenReturn(List.of(new InternalOrderClient.CartSnapshot(12L, 100L, userId, 1L, 1)));
     when(internalCatalogClient.reserveStock(any(), any(), any())).thenReturn(false);
 
     var result = orderApplicationService.addOrder(userId, order, "req-reserve-fail");
 
     assertFalse(result.getSuccess());
     verify(internalOrderClient, never()).createOrder(any());
-    verify(cartItemService, never()).deleteCart(any());
+    verify(internalOrderClient, never()).deleteCart(any());
   }
 
   @Test
@@ -155,16 +132,6 @@ class OrderApplicationServiceTest {
     order.getBusiness().setId(1L);
     order.setDeliveryAddress(new DeliveryAddress());
     order.getDeliveryAddress().setId(2L);
-
-    DeliveryAddress address = new DeliveryAddress();
-    address.setId(2L);
-    address.setCustomerId(userId);
-    Food food = new Food();
-    food.setId(100L);
-    food.setFoodName("rice");
-    Cart cart = new Cart();
-    cart.setFood(food);
-    cart.setQuantity(1);
 
     when(internalOrderClient.getOrderByRequestId("req-create-ok")).thenReturn(null);
     when(internalCatalogClient.getBusinessSnapshot(1L))
@@ -177,7 +144,8 @@ class OrderApplicationServiceTest {
     when(internalOrderClient.getAddressById(2L))
         .thenReturn(
             new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
-    when(cartItemService.getCart(1L, userId)).thenReturn(List.of(cart));
+    when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
+        .thenReturn(List.of(new InternalOrderClient.CartSnapshot(13L, 100L, userId, 1L, 1)));
     when(internalCatalogClient.reserveStock(any(), any(), any())).thenReturn(true);
     when(internalOrderClient.createOrder(any()))
         .thenReturn(
@@ -196,9 +164,7 @@ class OrderApplicationServiceTest {
                 null,
                 "req-create-ok",
                 java.time.LocalDateTime.now()));
-    doThrow(new RuntimeException("cleanup failed"))
-        .when(cartItemService)
-        .deleteCart(any(Cart.class));
+    doThrow(new RuntimeException("cleanup failed")).when(internalOrderClient).deleteCart(13L);
 
     var result = orderApplicationService.addOrder(userId, order, "req-create-ok");
 

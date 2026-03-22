@@ -3,9 +3,9 @@ package cn.edu.tju.elm.service;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.elm.constant.OrderState;
+import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.Review;
-import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReviewApplicationService {
   private static final Logger log = LoggerFactory.getLogger(ReviewApplicationService.class);
 
-  private final ReviewService reviewService;
   private final OrderApplicationService orderApplicationService;
   private final InternalOrderClient internalOrderClient;
   private final IntegrationOutboxService integrationOutboxService;
@@ -26,13 +25,11 @@ public class ReviewApplicationService {
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public ReviewApplicationService(
-      ReviewService reviewService,
       OrderApplicationService orderApplicationService,
       InternalOrderClient internalOrderClient,
       IntegrationOutboxService integrationOutboxService,
       InternalServiceClient internalServiceClient,
       ResponseCompatibilityEnricher compatibilityEnricher) {
-    this.reviewService = reviewService;
     this.orderApplicationService = orderApplicationService;
     this.internalOrderClient = internalOrderClient;
     this.integrationOutboxService = integrationOutboxService;
@@ -47,7 +44,8 @@ public class ReviewApplicationService {
     if (!order.getOrderState().equals(OrderState.COMPLETE))
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Order.OrderState ERROR");
 
-    Review existingReview = reviewService.getReviewByOrderId(orderId);
+    InternalOrderClient.ReviewSnapshot existingReview =
+        internalOrderClient.getReviewByOrderId(orderId);
     if (existingReview != null) return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "订单已评价");
 
     Long customerId = order.getCustomerId();
@@ -66,11 +64,18 @@ public class ReviewApplicationService {
     if (!currentUserId.equals(customerId))
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
 
-    EntityUtils.setNewEntity(review);
-    review.setOrder(order);
-    review.setBusiness(order.getBusiness());
-    review.setCustomerId(customerId);
-    reviewService.addReview(review);
+    InternalOrderClient.ReviewSnapshot createdReview =
+        internalOrderClient.createReview(
+            new InternalOrderClient.CreateReviewCommand(
+                customerId,
+                order.getBusiness().getId(),
+                orderId,
+                review.getAnonymous(),
+                review.getStars(),
+                review.getContent()));
+    if (createdReview == null) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create review");
+    }
 
     InternalOrderClient.OrderSnapshot updatedSnapshot =
         internalOrderClient.updateOrderState(order.getId(), OrderState.COMMENTED);
@@ -80,41 +85,56 @@ public class ReviewApplicationService {
 
     try {
       integrationOutboxService.enqueuePointsReviewSuccess(
-          customerId,
-          review.getId().toString(),
-          null,
-          review.getCreateTime() != null ? review.getCreateTime().toString() : null,
-          "用户发表评价");
+          customerId, createdReview.id().toString(), null, null, "用户发表评价");
     } catch (Exception e) {
       log.error("Failed to notify review success for points: {}", e.getMessage());
     }
 
-    compatibilityEnricher.enrichReview(review);
-    return HttpResult.success(review);
+    Review created = toReview(createdReview);
+    compatibilityEnricher.enrichReview(created);
+    return HttpResult.success(created);
   }
 
   @Transactional
   public HttpResult<String> deleteReview(Long currentUserId, boolean isAdmin, Long reviewId) {
-    Review review = reviewService.getReviewById(reviewId);
-    if (review == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");
+    InternalOrderClient.ReviewSnapshot reviewSnapshot = internalOrderClient.getReviewById(reviewId);
+    if (reviewSnapshot == null)
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Review NOT FOUND");
 
-    if (!(isAdmin || currentUserId.equals(review.getCustomerId()))) {
+    if (!(isAdmin || currentUserId.equals(reviewSnapshot.customerId()))) {
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
     }
 
     try {
-      internalServiceClient.notifyReviewDeleted(review.getCustomerId(), reviewId.toString());
+      internalServiceClient.notifyReviewDeleted(reviewSnapshot.customerId(), reviewId.toString());
     } catch (Exception e) {
       log.error("Failed to refund points for deleted review: {}", e.getMessage());
     }
 
-    EntityUtils.deleteEntity(review);
-    reviewService.updateReview(review);
+    InternalOrderClient.ReviewSnapshot deleted = internalOrderClient.deleteReview(reviewId);
+    if (deleted == null) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to delete review");
+    }
 
-    Order order = review.getOrder();
-    if (order != null && order.getId() != null) {
-      internalOrderClient.updateOrderState(order.getId(), OrderState.COMPLETE);
+    if (deleted.orderId() != null) {
+      internalOrderClient.updateOrderState(deleted.orderId(), OrderState.COMPLETE);
     }
     return HttpResult.success("Delete review successfully.");
+  }
+
+  private Review toReview(InternalOrderClient.ReviewSnapshot snapshot) {
+    Review review = new Review();
+    review.setId(snapshot.id());
+    review.setCustomerId(snapshot.customerId());
+    Business business = new Business();
+    business.setId(snapshot.businessId());
+    review.setBusiness(business);
+    Order order = new Order();
+    order.setId(snapshot.orderId());
+    review.setOrder(order);
+    review.setAnonymous(snapshot.anonymous());
+    review.setStars(snapshot.stars());
+    review.setContent(snapshot.content());
+    return review;
   }
 }

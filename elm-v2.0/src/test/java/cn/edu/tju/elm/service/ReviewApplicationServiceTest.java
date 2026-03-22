@@ -23,7 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewApplicationServiceTest {
-  @Mock private ReviewService reviewService;
   @Mock private OrderApplicationService orderApplicationService;
   @Mock private InternalOrderClient internalOrderClient;
   @Mock private IntegrationOutboxService integrationOutboxService;
@@ -44,7 +43,11 @@ class ReviewApplicationServiceTest {
     business.setId(88L);
     order.setBusiness(business);
     when(orderApplicationService.getOrderById(orderId)).thenReturn(order);
-    when(reviewService.getReviewByOrderId(orderId)).thenReturn(null);
+    when(internalOrderClient.getReviewByOrderId(orderId)).thenReturn(null);
+    when(internalOrderClient.createReview(any()))
+        .thenReturn(
+            new InternalOrderClient.ReviewSnapshot(
+                501L, currentUserId, 88L, orderId, false, 8, "great"));
     when(internalOrderClient.updateOrderState(orderId, OrderState.COMMENTED))
         .thenReturn(
             new InternalOrderClient.OrderSnapshot(
@@ -72,7 +75,7 @@ class ReviewApplicationServiceTest {
     var result = reviewApplicationService.addReview(currentUserId, orderId, review);
 
     assertTrue(result.getSuccess());
-    verify(reviewService).addReview(any(Review.class));
+    verify(internalOrderClient).createReview(any(InternalOrderClient.CreateReviewCommand.class));
     verify(internalOrderClient).updateOrderState(orderId, OrderState.COMMENTED);
     verify(integrationOutboxService)
         .enqueuePointsReviewSuccess(eq(currentUserId), any(), any(), any(), any());
@@ -96,7 +99,7 @@ class ReviewApplicationServiceTest {
     var result = reviewApplicationService.addReview(currentUserId, orderId, review);
 
     assertFalse(result.getSuccess());
-    verify(reviewService, never()).addReview(any());
+    verify(internalOrderClient, never()).createReview(any());
     verify(internalOrderClient, never()).updateOrderState(any(), any());
   }
 
@@ -109,7 +112,7 @@ class ReviewApplicationServiceTest {
     order.setCustomerId(10L);
     order.setOrderState(OrderState.COMPLETE);
     when(orderApplicationService.getOrderById(orderId)).thenReturn(order);
-    when(reviewService.getReviewByOrderId(orderId)).thenReturn(null);
+    when(internalOrderClient.getReviewByOrderId(orderId)).thenReturn(null);
 
     Review review = new Review();
     review.setStars(8);
@@ -119,7 +122,7 @@ class ReviewApplicationServiceTest {
     var result = reviewApplicationService.addReview(currentUserId, orderId, review);
 
     assertFalse(result.getSuccess());
-    verify(reviewService, never()).addReview(any());
+    verify(internalOrderClient, never()).createReview(any());
     verify(internalOrderClient, never()).updateOrderState(any(), any());
   }
 
@@ -130,16 +133,20 @@ class ReviewApplicationServiceTest {
     Review review = new Review();
     review.setId(reviewId);
     review.setCustomerId(currentUserId);
-    Order order = new Order();
-    order.setId(200L);
-    review.setOrder(order);
-    when(reviewService.getReviewById(reviewId)).thenReturn(review);
+    when(internalOrderClient.getReviewById(reviewId))
+        .thenReturn(
+            new InternalOrderClient.ReviewSnapshot(
+                reviewId, currentUserId, 88L, 200L, false, 9, "great"));
+    when(internalOrderClient.deleteReview(reviewId))
+        .thenReturn(
+            new InternalOrderClient.ReviewSnapshot(
+                reviewId, currentUserId, 88L, 200L, false, 9, "great"));
 
     var result = reviewApplicationService.deleteReview(currentUserId, false, reviewId);
 
     assertTrue(result.getSuccess());
     verify(internalServiceClient).notifyReviewDeleted(currentUserId, reviewId.toString());
-    verify(reviewService).updateReview(any(Review.class));
+    verify(internalOrderClient).deleteReview(reviewId);
     verify(internalOrderClient).updateOrderState(200L, OrderState.COMPLETE);
   }
 }

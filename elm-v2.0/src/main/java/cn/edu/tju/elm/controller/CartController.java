@@ -7,10 +7,10 @@ import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.Cart;
 import cn.edu.tju.elm.model.BO.Food;
-import cn.edu.tju.elm.service.CartItemService;
+import cn.edu.tju.elm.service.BusinessService;
 import cn.edu.tju.elm.service.FoodService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
-import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,18 +24,21 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "管理购物车", description = "提供对购物车商品的增删改查功能")
 public class CartController {
   private final UserService userService;
-  private final CartItemService cartItemService;
+  private final InternalOrderClient internalOrderClient;
   private final FoodService foodService;
+  private final BusinessService businessService;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public CartController(
       UserService userService,
-      CartItemService cartItemService,
+      InternalOrderClient internalOrderClient,
       FoodService foodService,
+      BusinessService businessService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.userService = userService;
-    this.cartItemService = cartItemService;
+    this.internalOrderClient = internalOrderClient;
     this.foodService = foodService;
+    this.businessService = businessService;
     this.compatibilityEnricher = compatibilityEnricher;
   }
 
@@ -61,13 +64,16 @@ public class CartController {
     Business business = food.getBusiness();
     if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
-    EntityUtils.setNewEntity(cart);
-    cart.setFood(food);
-    cart.setBusiness(business);
-    cart.setCustomerId(me.getId());
-    cartItemService.addCart(cart);
-    compatibilityEnricher.enrichCart(cart);
-    return HttpResult.success(cart);
+    InternalOrderClient.CartSnapshot created =
+        internalOrderClient.createCart(
+            new InternalOrderClient.CreateCartCommand(
+                food.getId(), me.getId(), business.getId(), cart.getQuantity()));
+    if (created == null) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create cart");
+    }
+    Cart createdCart = toCart(created);
+    compatibilityEnricher.enrichCart(createdCart);
+    return HttpResult.success(createdCart);
   }
 
   @GetMapping("/carts")
@@ -77,7 +83,10 @@ public class CartController {
     if (meOptional.isEmpty())
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
-    return HttpResult.success(cartItemService.getUserCarts(me.getId()));
+    List<Cart> carts =
+        internalOrderClient.getCartsByCustomerId(me.getId()).stream().map(this::toCart).toList();
+    compatibilityEnricher.enrichCarts(carts);
+    return HttpResult.success(carts);
   }
 
   @PatchMapping("/carts/{id}")
@@ -95,17 +104,21 @@ public class CartController {
     if (newCart.getQuantity() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart.Quantity CANT BE NULL");
 
-    Cart cart = cartItemService.getCartById(id);
+    InternalOrderClient.CartSnapshot existing = internalOrderClient.getCartById(id);
+    Cart cart = existing == null ? null : toCart(existing);
     if (cart == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
     Long ownerId = cart.getCustomerId();
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     if (isAdmin || me.getId().equals(ownerId)) {
-      cart.setQuantity(newCart.getQuantity());
-      EntityUtils.updateEntity(cart);
-      cartItemService.updateCart(cart);
-      compatibilityEnricher.enrichCart(cart);
-      return HttpResult.success(cart);
+      InternalOrderClient.CartSnapshot updated =
+          internalOrderClient.updateCartQuantity(id, newCart.getQuantity());
+      if (updated == null) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to update cart");
+      }
+      Cart updatedCart = toCart(updated);
+      compatibilityEnricher.enrichCart(updatedCart);
+      return HttpResult.success(updatedCart);
     }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
@@ -119,14 +132,40 @@ public class CartController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Authority NOT FOUND");
     User me = meOptional.get();
 
-    Cart cart = cartItemService.getCartById(id);
+    InternalOrderClient.CartSnapshot existing = internalOrderClient.getCartById(id);
+    Cart cart = existing == null ? null : toCart(existing);
     if (cart == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Cart NOT FOUND");
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     if (isAdmin || me.getId().equals(cart.getCustomerId())) {
-      cartItemService.deleteCart(cart);
+      boolean deleted = internalOrderClient.deleteCart(id);
+      if (!deleted) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to delete cart");
+      }
       return HttpResult.success("Delete cart successfully.");
     }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
+
+  private Cart toCart(InternalOrderClient.CartSnapshot snapshot) {
+    Cart cart = new Cart();
+    cart.setId(snapshot.id());
+    cart.setCustomerId(snapshot.customerId());
+    cart.setQuantity(snapshot.quantity());
+
+    Food food = foodService.getFoodById(snapshot.foodId());
+    if (food == null) {
+      food = new Food();
+      food.setId(snapshot.foodId());
+    }
+    cart.setFood(food);
+
+    Business business = businessService.getBusinessById(snapshot.businessId());
+    if (business == null) {
+      business = new Business();
+      business.setId(snapshot.businessId());
+    }
+    cart.setBusiness(business);
+    return cart;
   }
 }

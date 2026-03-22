@@ -4,7 +4,6 @@ import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.elm.constant.OrderState;
 import cn.edu.tju.elm.model.BO.Business;
-import cn.edu.tju.elm.model.BO.Cart;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
@@ -31,7 +30,6 @@ public class OrderApplicationService {
   private static final Logger log = LoggerFactory.getLogger(OrderApplicationService.class);
 
   private final BusinessService businessService;
-  private final CartItemService cartItemService;
   private final InternalAccountClient internalAccountClient;
   private final InternalCatalogClient internalCatalogClient;
   private final InternalOrderClient internalOrderClient;
@@ -41,7 +39,6 @@ public class OrderApplicationService {
 
   public OrderApplicationService(
       BusinessService businessService,
-      CartItemService cartItemService,
       InternalAccountClient internalAccountClient,
       InternalCatalogClient internalCatalogClient,
       InternalOrderClient internalOrderClient,
@@ -49,7 +46,6 @@ public class OrderApplicationService {
       IntegrationOutboxService integrationOutboxService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.businessService = businessService;
-    this.cartItemService = cartItemService;
     this.internalAccountClient = internalAccountClient;
     this.internalCatalogClient = internalCatalogClient;
     this.internalOrderClient = internalOrderClient;
@@ -107,7 +103,8 @@ public class OrderApplicationService {
     if (address == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
 
-    List<Cart> cartList = cartItemService.getCart(business.businessId(), currentUserId);
+    List<InternalOrderClient.CartSnapshot> cartList =
+        internalOrderClient.getCartsByBusinessAndCustomerId(business.businessId(), currentUserId);
     if (cartList.isEmpty())
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
 
@@ -116,11 +113,11 @@ public class OrderApplicationService {
 
     Map<Long, InternalCatalogClient.FoodSnapshot> foodSnapshots = new HashMap<>();
     BigDecimal totalPrice = BigDecimal.ZERO;
-    for (Cart cart : cartList) {
-      if (cart.getFood() == null || cart.getFood().getId() == null) {
+    for (InternalOrderClient.CartSnapshot cart : cartList) {
+      if (cart.foodId() == null) {
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Food.Id CANT BE NULL");
       }
-      Long foodId = cart.getFood().getId();
+      Long foodId = cart.foodId();
       InternalCatalogClient.FoodSnapshot foodSnapshot =
           internalCatalogClient.getFoodSnapshot(foodId);
       if (foodSnapshot == null) {
@@ -136,7 +133,7 @@ public class OrderApplicationService {
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "FoodPrice NOT FOUND");
       }
       foodSnapshots.put(foodId, foodSnapshot);
-      BigDecimal quantity = new BigDecimal(cart.getQuantity());
+      BigDecimal quantity = new BigDecimal(cart.quantity());
       totalPrice = totalPrice.add(foodSnapshot.foodPrice().multiply(quantity));
     }
     if (business.deliveryPrice() != null) totalPrice = totalPrice.add(business.deliveryPrice());
@@ -214,13 +211,12 @@ public class OrderApplicationService {
       }
     }
 
-    for (Cart cart : cartList) {
-      InternalCatalogClient.FoodSnapshot foodSnapshot = foodSnapshots.get(cart.getFood().getId());
+    for (InternalOrderClient.CartSnapshot cart : cartList) {
+      InternalCatalogClient.FoodSnapshot foodSnapshot = foodSnapshots.get(cart.foodId());
       if (foodSnapshot == null
           || foodSnapshot.stock() == null
-          || foodSnapshot.stock() < cart.getQuantity()) {
-        String foodName =
-            cart.getFood().getFoodName() != null ? cart.getFood().getFoodName() : "未知商品";
+          || foodSnapshot.stock() < cart.quantity()) {
+        String foodName = cart.foodId() != null ? "商品#" + cart.foodId() : "未知商品";
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "商品 " + foodName + " 库存不足");
       }
     }
@@ -252,16 +248,11 @@ public class OrderApplicationService {
     String stockRollbackRequestId = buildInternalRequestId(requestId, "stock-reserve-rollback");
     List<InternalOrderClient.OrderItemCommand> orderItems =
         cartList.stream()
-            .map(
-                cart ->
-                    new InternalOrderClient.OrderItemCommand(
-                        cart.getFood().getId(), cart.getQuantity()))
+            .map(cart -> new InternalOrderClient.OrderItemCommand(cart.foodId(), cart.quantity()))
             .collect(Collectors.toList());
     List<InternalCatalogClient.StockItem> stockItems =
         cartList.stream()
-            .map(
-                cart ->
-                    new InternalCatalogClient.StockItem(cart.getFood().getId(), cart.getQuantity()))
+            .map(cart -> new InternalCatalogClient.StockItem(cart.foodId(), cart.quantity()))
             .collect(Collectors.toList());
 
     if (usedVoucher != null) {
@@ -395,8 +386,10 @@ public class OrderApplicationService {
     }
 
     try {
-      for (Cart cart : cartList) {
-        cartItemService.deleteCart(cart);
+      for (InternalOrderClient.CartSnapshot cart : cartList) {
+        if (cart.id() != null) {
+          internalOrderClient.deleteCart(cart.id());
+        }
       }
     } catch (Exception e) {
       log.warn("Failed to cleanup cart items after order creation: {}", e.getMessage());
