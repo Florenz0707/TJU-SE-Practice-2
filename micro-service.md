@@ -82,7 +82,7 @@
 2. 拆分后灰度开关与回滚脚本补齐
 3. 异常补偿演练（account-service 不可达/回滚失败）实操记录
 
-状态：**本地调用迁移 + 双服务 smoke 已完成，进入阶段3收口**
+状态：**拆分已完成（本地调用迁移 + 双服务 smoke 已通过），当前进入阶段3收口治理**
 
 ### 阶段 4（catalog-service 拆分准备）
 
@@ -238,12 +238,19 @@
       - 执行：`cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env`
       - 结果：`SMOKE_OK=true`
       - Outbox `POINTS_ORDER_SUCCESS` 状态 `SENT`
+23. 阶段5回归与runbook收口已推进（2026-03-22）：
+    - 新增评价边界态回归测试：
+      - `ReviewApplicationServiceTest`：补充“订单已评价重复提交”“无权限删评”分支
+      - `ReviewControllerTest`：补充“商家查看匿名评价受限/非匿名可见”分支
+    - `docs/phase5-linkage-runbook.md` 已升级为“购物车+评价迁移后版本”
+    - 回归结果：
+      - `mvn -f elm-v2.0/pom.xml -Dtest=ReviewApplicationServiceTest,ReviewControllerTest test` 通过
+      - `cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env` 通过（`SMOKE_OK=true`）
 
 待完成：
 
-1. 持续补齐迁移后边界态回归用例（含多角色权限）
-2. 完善阶段5联调与回滚 runbook（购物车+评价迁移后版本）
-3. 准备 `account-service` 拆分收口输入（边界清单、联调脚本、回滚检查点）
+1. 持续补齐迁移后边界态回归用例（含更多角色组合与异常注入）
+2. 推进 `account-service` 收口治理（边界清单、联调脚本、回滚检查点）
 
 状态：**阶段5准备已启动**
 
@@ -255,7 +262,7 @@
 2. 执行四服务脚本化 smoke 常态回归：
    - 使用 `elm-v2.0/scripts/run_four_service_smoke.py`
    - 保持 `.env` 配置化，禁止明文提交敏感项
-3. 启动 `account-service` 拆分准备（接口清单与本地调用迁移草案）
+3. 完成 `account-service` 拆分后收口项（灰度开关、回滚脚本、异常补偿演练记录）
 4. 持续执行统一质量门禁：按 `.pre-commit-config.yaml` 做风格与基础校验
 
 ---

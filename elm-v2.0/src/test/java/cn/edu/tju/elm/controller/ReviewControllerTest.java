@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.Review;
 import cn.edu.tju.elm.service.BusinessService;
@@ -85,5 +86,47 @@ class ReviewControllerTest {
     var result = reviewController.getReviewByOrderId(3L);
 
     assertFalse(result.getSuccess());
+  }
+
+  @Test
+  void getReviewByOrderId_shouldHideAnonymousReviewFromBusinessOwner() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("BUSINESS"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    Order order = new Order();
+    order.setId(3L);
+    when(orderApplicationService.getOrderById(3L)).thenReturn(order);
+    when(internalOrderClient.getReviewByOrderId(3L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 10L, 2L, 3L, true, 8, "ok"));
+    Business business = new Business();
+    business.setId(2L);
+    business.setBusinessOwnerId(9L);
+    when(businessService.getBusinessById(2L)).thenReturn(business);
+
+    var result = reviewController.getReviewByOrderId(3L);
+
+    assertFalse(result.getSuccess());
+  }
+
+  @Test
+  void getReviewByOrderId_shouldReturnNonAnonymousReviewToBusinessOwner() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("BUSINESS"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    Order order = new Order();
+    order.setId(3L);
+    when(orderApplicationService.getOrderById(3L)).thenReturn(order);
+    when(internalOrderClient.getReviewByOrderId(3L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 10L, 2L, 3L, false, 8, "ok"));
+    Business business = new Business();
+    business.setId(2L);
+    business.setBusinessOwnerId(9L);
+    when(businessService.getBusinessById(2L)).thenReturn(business);
+
+    var result = reviewController.getReviewByOrderId(3L);
+
+    assertTrue(result.getSuccess());
   }
 }

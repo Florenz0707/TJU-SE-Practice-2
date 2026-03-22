@@ -127,6 +127,35 @@ class ReviewApplicationServiceTest {
   }
 
   @Test
+  void addReview_shouldFail_whenOrderAlreadyReviewed() {
+    Long currentUserId = 9L;
+    Long orderId = 100L;
+    Order order = new Order();
+    order.setId(orderId);
+    order.setCustomerId(currentUserId);
+    order.setOrderState(OrderState.COMPLETE);
+    Business business = new Business();
+    business.setId(88L);
+    order.setBusiness(business);
+    when(orderApplicationService.getOrderById(orderId)).thenReturn(order);
+    when(internalOrderClient.getReviewByOrderId(orderId))
+        .thenReturn(
+            new InternalOrderClient.ReviewSnapshot(
+                501L, currentUserId, 88L, orderId, false, 8, "great"));
+
+    Review review = new Review();
+    review.setStars(8);
+    review.setContent("great");
+    review.setAnonymous(false);
+
+    var result = reviewApplicationService.addReview(currentUserId, orderId, review);
+
+    assertFalse(result.getSuccess());
+    verify(internalOrderClient, never()).createReview(any());
+    verify(internalOrderClient, never()).updateOrderState(any(), any());
+  }
+
+  @Test
   void deleteReview_shouldSucceedAndRollbackOrderState() {
     Long currentUserId = 9L;
     Long reviewId = 77L;
@@ -148,5 +177,20 @@ class ReviewApplicationServiceTest {
     verify(internalServiceClient).notifyReviewDeleted(currentUserId, reviewId.toString());
     verify(internalOrderClient).deleteReview(reviewId);
     verify(internalOrderClient).updateOrderState(200L, OrderState.COMPLETE);
+  }
+
+  @Test
+  void deleteReview_shouldFail_whenNotOwnerAndNotAdmin() {
+    Long currentUserId = 9L;
+    Long reviewId = 77L;
+    when(internalOrderClient.getReviewById(reviewId))
+        .thenReturn(
+            new InternalOrderClient.ReviewSnapshot(reviewId, 10L, 88L, 200L, false, 9, "great"));
+
+    var result = reviewApplicationService.deleteReview(currentUserId, false, reviewId);
+
+    assertFalse(result.getSuccess());
+    verify(internalOrderClient, never()).deleteReview(reviewId);
+    verify(internalOrderClient, never()).updateOrderState(any(), any());
   }
 }
