@@ -1,104 +1,130 @@
-# 天津大学软件学院-软件工程（系列）实践项目
+# ELM 微服务实践项目（TJU SE）
 
-## 项目结构
+本仓库当前以 `elm-v2.0` 作为统一入口（外部 API 聚合层），内部通过 RestTemplate 调用 4 个已拆分微服务：`points-service`、`account-service`、`catalog-service`、`order-service`。
 
-- `elm-v2.0/` - 后端服务（Spring Boot + MySQL）
-- `elm-frontend/` - 前端服务（Vue 3 + Vite）
-- `docker-compose.yml` - Docker编排配置
+## 1. 微服务业务调用流程
 
-## 快速开始
+### 1.1 下单链路（创建订单）
 
-### 环境变量配置
+1. 前端调用 `elm-v2.0`：`POST /elm/api/orders`
+2. `elm-v2.0` 校验用户、地址、购物车
+3. `elm-v2.0 -> catalog-service`：查询商家/菜品、预占库存
+4. `elm-v2.0 -> account-service`：扣钱包、核销券
+5. `elm-v2.0 -> points-service`：冻结并扣减积分（如使用积分）
+6. `elm-v2.0 -> order-service`：创建订单主记录和明细
+7. `elm-v2.0 -> order-service`：清理购物车
+8. 返回下单结果给前端
 
-1. 复制环境变量模板：
+### 1.2 取消订单链路
+
+1. 前端调用 `elm-v2.0`：`POST /elm/api/orders/{id}/cancel`
+2. `elm-v2.0 -> account-service`：退款钱包、回滚券
+3. `elm-v2.0 -> points-service`：积分返还/回滚
+4. `elm-v2.0 -> catalog-service`：库存回补
+5. `elm-v2.0 -> order-service`：订单状态改为取消
+6. 返回取消结果
+
+### 1.3 订单完成与评价链路
+
+1. 前端更新订单状态或提交评价到 `elm-v2.0`
+2. `elm-v2.0 -> order-service`：更新订单/评价数据
+3. `elm-v2.0` 写 Outbox 事件（订单完成积分、评价积分）
+4. Outbox 调度后 `elm-v2.0 -> points-service` 发放积分
+
+### 1.4 服务拓扑（逻辑）
+
+```mermaid
+flowchart LR
+  FE[elm-frontend] --> GW[elm-v2.0]
+  GW --> ORD[order-service]
+  GW --> CAT[catalog-service]
+  GW --> ACC[account-service]
+  GW --> PTS[points-service]
+
+  GW --> DB0[(elm)]
+  ORD --> DB1[(elm_order)]
+  CAT --> DB2[(elm_catalog)]
+  ACC --> DB3[(elm_account)]
+  PTS --> DB4[(elm_points)]
+```
+
+## 2. 服务边界（业务职责）
+
+- `elm-v2.0`：外部 API、鉴权上下文、跨域编排、兼容层、Outbox
+- `order-service`：订单、订单明细、地址、购物车、评价
+- `catalog-service`：商家、菜品、库存预占/回补
+- `account-service`：钱包、交易、券核销与回滚
+- `points-service`：积分账户、交易、规则
+
+## 3. 统一 Docker 部署
+
+### 3.1 准备环境变量
+
+复制示例配置：
 
 ```bash
-cp elm-v2.0/.env.example elm-v2.0/.env
+cp .env.example .env
 ```
 
-2. 编辑`.env`文件，配置数据库连接信息：
+按需修改 `.env` 中的敏感信息（数据库密码、内部 token）。
 
-```
-DB_URL=jdbc:mysql://localhost:3306/elm?...
-DB_USERNAME=your_username
-DB_PASSWORD=your_password
-```
-
-## **部署方式：**
-
-### 选项 1：使用Docker Compose（推荐）
-
-启动所有服务（前端、后端、MySQL）：
+### 3.2 一键启动
 
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
-访问应用：
+启动后访问：
 
-- 前端：http://localhost
-- 后端API：http://localhost:8080/elm
-- Swagger文档：http://localhost:8080/elm/swagger-ui/index.html
+- 前端：`http://localhost`
+- 聚合 API：`http://localhost:8080/elm`
+- points-service：`http://localhost:8081/elm`
+- account-service：`http://localhost:8082/elm`
+- catalog-service：`http://localhost:8083/elm`
+- order-service：`http://localhost:8084/elm`
 
-### 选项 2：在 Docker 中构建所有内容（适合CI/CD或无本地环境）
+### 3.3 停止与清理
 
-**如果本地没有开发环境，或者想让 Docker 处理所有编译工作，请运行以下命令：**
-
-```
-docker-compose --profile build up --build -d
-
-```
-
-此命令将激活 `docker-compose.yml` 文件中的 `build` 配置，该配置会使用包含多阶段构建的 Dockerfile 来从源码编译并运行此项目。
-
-### 选项 2：使用本地构建的构件（适合本地开发，速度更快）
-
-**如果本地有jdk-21或者npm环境，可以本地构建对应的部分，使用此方法来快速启动。支持仅本地构建前端或后端**
-
-#### 第 1 步：在本地构建项目
-
-- **后端**：进入 `elm-v2.0` 目录并运行：
-
-  ```
-  mvn package
-
-  ```
-
-  这将在 `elm-v2.0/target/` 目录下生成 `elm-1.0.jar` 文件。
-
-- **前端**：进入 `elm-frontend` 目录并运行：
-
-  ```
-  npm install && npm run build
-
-  ```
-
-  这将在 `elm-frontend/dist/` 目录下生成静态资源文件。
-
-#### 第 2 步：使用 Docker Compose 启动
-
-**构件准备好后，在项目根目录运行以下命令：**
-
-```
-# 全本地构建
-docker-compose --profile local up --build -d
-
-# 仅本地构建后端，使用docker构建前端
-docker-compose --profile build-frontend up --build -d
-
-# 仅本地构建前端，使用docker构建后端
-docker-compose --profile build-backend up --build
-
+```bash
+docker compose down
 ```
 
-## 测试数据：
+如需清理数据库卷：
 
-可使用根目录下`添加数据.apifox-cli.json`，导入Apifox中添加测试用数据。
+```bash
+docker compose down -v
+```
 
-admin用户（密码admin）具有顾客，商家，管理三个身份
+### 3.4 首次启动失败排查（MySQL 未初始化）
 
-user用户（密码password）具有顾客身份
+如果出现“表不存在/服务反复重启”，通常是旧 `mysql-data` 卷导致初始化脚本未重跑。处理方式：
 
-## 前端说明：
+```bash
+docker compose down -v
+docker compose up -d --build
+```
 
-前端实现了桌面端与移动端两套UI，均实现了顾客，商家，管理三种角色的页面。桌面端可通过顶部导航栏切换，移动端可通过我的页面切换。
+说明：
+
+- 当前编排新增了 `mysql-init` 一次性初始化服务，会显式创建 `elm*` schema
+- 各服务 `DB_URL` 也开启了 `createDatabaseIfNotExist=true` 作为兜底
+
+## 4. 部署说明
+
+- 所有服务统一由根目录 `docker-compose.yml` 编排
+- MySQL 使用 `docker/mysql/init/01-create-schemas.sql` 初始化多 schema：
+  - `elm`
+  - `elm_order`
+  - `elm_catalog`
+  - `elm_account`
+  - `elm_points`
+- 微服务容器间调用全部走 Docker 网络服务名（如 `http://order-service:8084/elm`）
+
+## 5. 代码目录
+
+- `elm-v2.0/`：聚合层（对前端开放）
+- `elm-microservice/order-service/`
+- `elm-microservice/catalog-service/`
+- `elm-microservice/account-service/`
+- `elm-microservice/points-service/`
+- `docker-compose.yml`：统一部署入口
