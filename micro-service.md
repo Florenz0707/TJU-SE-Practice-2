@@ -20,9 +20,13 @@
 
 1. 单体工程保留在 `elm-v2.0/`
 2. 拆分后的微服务统一放在 `elm-microservice/` 目录下
-3. 当前已落地微服务：`elm-microservice/points-service`
+3. 当前已落地微服务：
+   - `elm-microservice/points-service`
+   - `elm-microservice/account-service`
+   - `elm-microservice/catalog-service`
+   - `elm-microservice/order-service`
 
-## 1.2 任务进展（截至 2026-03-21）
+## 1.2 任务进展（截至 2026-03-22）
 
 ### 阶段 0（基线）
 
@@ -121,11 +125,10 @@
 
 1. 固化库存接口契约与补偿流程文档（requestId/orderId）
 2. 推进阶段3剩余收口项（账户域异常补偿与灰度回滚）
-3. 启动阶段5（order-service）拆分准备与边界梳理
 
 状态：**已完成（双服务联调 + 补偿演练通过）**
 
-### 阶段 5（order-service 拆分准备）
+### 阶段 5（order-service 拆分推进）
 
 已完成：
 
@@ -252,7 +255,7 @@
 1. 持续补齐迁移后边界态回归用例（含更多角色组合与异常注入）
 2. 推进 `account-service` 收口治理（边界清单、联调脚本、回滚检查点）
 
-状态：**阶段5准备已启动**
+状态：**阶段5迁移进行中（订单/地址/购物车/评价主链路已迁移）**
 
 ## 1.3 最近计划（未来 3-5 天）
 
