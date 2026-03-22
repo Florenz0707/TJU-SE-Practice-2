@@ -31,7 +31,6 @@ public class OrderApplicationService {
   private static final Logger log = LoggerFactory.getLogger(OrderApplicationService.class);
 
   private final BusinessService businessService;
-  private final AddressService addressService;
   private final CartItemService cartItemService;
   private final InternalAccountClient internalAccountClient;
   private final InternalCatalogClient internalCatalogClient;
@@ -42,7 +41,6 @@ public class OrderApplicationService {
 
   public OrderApplicationService(
       BusinessService businessService,
-      AddressService addressService,
       CartItemService cartItemService,
       InternalAccountClient internalAccountClient,
       InternalCatalogClient internalCatalogClient,
@@ -51,7 +49,6 @@ public class OrderApplicationService {
       IntegrationOutboxService integrationOutboxService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.businessService = businessService;
-    this.addressService = addressService;
     this.cartItemService = cartItemService;
     this.internalAccountClient = internalAccountClient;
     this.internalCatalogClient = internalCatalogClient;
@@ -96,7 +93,17 @@ public class OrderApplicationService {
       }
     }
 
-    DeliveryAddress address = addressService.getAddressById(order.getDeliveryAddress().getId());
+    InternalOrderClient.AddressSnapshot addressSnapshot =
+        internalOrderClient.getAddressById(order.getDeliveryAddress().getId());
+    DeliveryAddress address =
+        addressSnapshot == null ? null : buildAddressRef(addressSnapshot.id());
+    if (addressSnapshot != null) {
+      address.setCustomerId(addressSnapshot.customerId());
+      address.setContactName(addressSnapshot.contactName());
+      address.setContactSex(addressSnapshot.contactSex());
+      address.setContactTel(addressSnapshot.contactTel());
+      address.setAddress(addressSnapshot.address());
+    }
     if (address == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
 

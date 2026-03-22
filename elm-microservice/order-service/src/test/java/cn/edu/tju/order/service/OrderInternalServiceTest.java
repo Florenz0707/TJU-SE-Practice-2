@@ -204,4 +204,27 @@ class OrderInternalServiceTest {
 
     assertEquals(OrderState.COMPLETE, result.getOrderState());
   }
+
+  @Test
+  void cancelPaidOrder_shouldThrow_whenOrderNotPaid() {
+    Order order = new Order();
+    order.setId(8L);
+    order.setCustomerId(10L);
+    order.setOrderState(OrderState.COMPLETE);
+    when(orderRepository.findById(8L)).thenReturn(Optional.of(order));
+
+    assertThrows(IllegalStateException.class, () -> orderInternalService.cancelPaidOrder(8L, 10L));
+  }
+
+  @Test
+  void updateOrderState_shouldThrow_whenTransitionInvalid() {
+    Order order = new Order();
+    order.setId(11L);
+    order.setOrderState(OrderState.COMPLETE);
+    when(orderRepository.findById(11L)).thenReturn(Optional.of(order));
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> orderInternalService.updateOrderState(11L, OrderState.PAID));
+  }
 }

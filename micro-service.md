@@ -178,11 +178,33 @@
     - 对外新增分页查询接口：
       - `GET /api/orders/user/my/page?page=&size=`
       - `GET /api/orders/business/{id}/page?page=&size=`
+18. 阶段5测试覆盖补齐（2026-03-22）：
+    - `order-service` 状态流转测试新增非法流转与非PAID取消分支
+    - 新增 `ReviewApplicationServiceTest` 覆盖评价链路状态更新与删评回滚
+    - 新增 `OrderControllerTest` 覆盖分页接口参数校验与商家权限边界
+19. 脚本化四服务 smoke 回归通过（2026-03-22）：
+    - 执行：`cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env`
+    - 结果：`SMOKE_OK=true`
+    - 关键校验：
+      - 下单成功 + 取消成功（`CANCEL1_STATE=0`）
+      - 二次下单成功 + 完成态成功（`COMPLETE2_STATE=4`）
+      - Outbox `POINTS_ORDER_SUCCESS` 状态 `SENT`
+20. 地址链路已迁移到 `order-service`（2026-03-22）：
+    - `order-service` 新增地址内部接口：创建/查询/列表/更新/删除
+      - `POST /api/inner/order/address`
+      - `GET /api/inner/order/address/{addressId}`
+      - `GET /api/inner/order/address/customer/{customerId}`
+      - `PUT /api/inner/order/address/{addressId}`
+      - `DELETE /api/inner/order/address/{addressId}`
+    - `elm-v2.0` `AddressController` 本地调用已切换为 `InternalOrderClient` 远程调用
+    - 下单链路地址读取已切换为 `order-service`（`OrderApplicationService`）
+    - 地址迁移后四服务 smoke 回归通过（`SMOKE_OK=true`）
 
 待完成：
 
-1. 补齐 `order-service` 状态流转与评价链路专项测试
-2. 持续补齐分页与边界态回归用例（含多角色权限）
+1. 继续迁移购物车链路到 `order-service`（读写接口与单体调用切换）
+2. 继续迁移评价读写主链路到 `order-service`（含删评回滚场景）
+3. 持续补齐迁移后边界态回归用例（含多角色权限）
 
 状态：**阶段5准备已启动**
 

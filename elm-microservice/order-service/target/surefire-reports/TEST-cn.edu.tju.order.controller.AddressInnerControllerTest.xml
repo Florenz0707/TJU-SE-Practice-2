@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.038" tests="10" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="cn.edu.tju.order.controller.AddressInnerControllerTest" time="0.032" tests="4" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -54,14 +54,8 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="getOrdersByBusinessIdPage_shouldReturnFailure_whenInvalidPageSize" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.023"/>
-  <testcase name="getOrdersByCustomerId_shouldReturnData" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.002"/>
-  <testcase name="ping_shouldReturnPong" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.001"/>
-  <testcase name="getOrdersByBusinessId_shouldReturnData" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.001"/>
-  <testcase name="createOrder_shouldReturnData_whenServiceSuccess" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.002"/>
-  <testcase name="getOrdersByCustomerIdPage_shouldReturnData" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.001"/>
-  <testcase name="cancelOrder_shouldReturnFailure_whenOperatorMissing" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.001"/>
-  <testcase name="updateOrderState_shouldReturnFailure_whenStateMissing" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.001"/>
-  <testcase name="getOrderById_shouldReturnFailure_whenMissing" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.002"/>
-  <testcase name="createOrder_shouldReturnFailure_whenItemsEmpty" classname="cn.edu.tju.order.controller.OrderInnerControllerTest" time="0.001"/>
+  <testcase name="getAddressById_shouldReturnData" classname="cn.edu.tju.order.controller.AddressInnerControllerTest" time="0.025"/>
+  <testcase name="getAddressesByCustomerId_shouldReturnList" classname="cn.edu.tju.order.controller.AddressInnerControllerTest" time="0.002"/>
+  <testcase name="updateAddress_shouldFailWhenBodyMissing" classname="cn.edu.tju.order.controller.AddressInnerControllerTest" time="0.002"/>
+  <testcase name="createAddress_shouldFailWhenCustomerMissing" classname="cn.edu.tju.order.controller.AddressInnerControllerTest" time="0.001"/>
 </testsuite>

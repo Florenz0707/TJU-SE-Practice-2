@@ -253,6 +253,95 @@ public class InternalOrderClient {
     }
   }
 
+  public AddressSnapshot createAddress(CreateAddressCommand command) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("customerId", command.customerId());
+    requestBody.put("contactName", command.contactName());
+    requestBody.put("contactSex", command.contactSex());
+    requestBody.put("contactTel", command.contactTel());
+    requestBody.put("address", command.address());
+    try {
+      Map<?, ?> responseBody = postInternal("/api/inner/order/address", requestBody);
+      return toAddressSnapshot(readMapData(responseBody));
+    } catch (Exception e) {
+      System.err.println("Failed to create address: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public AddressSnapshot getAddressById(Long addressId) {
+    try {
+      Map<?, ?> body = getInternal("/api/inner/order/address/" + addressId);
+      return toAddressSnapshot(readMapData(body));
+    } catch (Exception e) {
+      System.err.println("Failed to get address by id: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public List<AddressSnapshot> getAddressesByCustomerId(Long customerId) {
+    try {
+      Map<?, ?> body = getInternal("/api/inner/order/address/customer/" + customerId);
+      if (!isSuccessResponse(body)) {
+        return List.of();
+      }
+      Object data = body.get("data");
+      if (!(data instanceof List<?> list)) {
+        return List.of();
+      }
+      return list.stream()
+          .filter(Map.class::isInstance)
+          .map(Map.class::cast)
+          .map(this::toAddressSnapshot)
+          .filter(snapshot -> snapshot != null)
+          .toList();
+    } catch (Exception e) {
+      System.err.println("Failed to get addresses by customer id: " + e.getMessage());
+      return List.of();
+    }
+  }
+
+  public AddressSnapshot updateAddress(Long addressId, UpdateAddressCommand command) {
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("customerId", command.customerId());
+    requestBody.put("contactName", command.contactName());
+    requestBody.put("contactSex", command.contactSex());
+    requestBody.put("contactTel", command.contactTel());
+    requestBody.put("address", command.address());
+    try {
+      String path = "/api/inner/order/address/" + addressId;
+      String url = baseUrl + path;
+      HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+      ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.PUT, request, Map.class);
+      return toAddressSnapshot(readMapData(response.getBody()));
+    } catch (Exception e) {
+      System.err.println("Failed to update address: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public boolean deleteAddress(Long addressId) {
+    try {
+      String path = "/api/inner/order/address/" + addressId;
+      String url = baseUrl + path;
+      HttpEntity<Void> request = new HttpEntity<>(createHeaders());
+      ResponseEntity<Map> response =
+          restTemplate.exchange(url, HttpMethod.DELETE, request, Map.class);
+      Map<?, ?> body = response.getBody();
+      if (!isSuccessResponse(body)) {
+        return false;
+      }
+      Object data = body == null ? null : body.get("data");
+      if (data instanceof Boolean value) {
+        return value;
+      }
+      return false;
+    } catch (Exception e) {
+      System.err.println("Failed to delete address: " + e.getMessage());
+      return false;
+    }
+  }
+
   private List<OrderSnapshot> getOrderList(String path) {
     try {
       Map<?, ?> body = getInternal(path);
@@ -324,6 +413,19 @@ public class InternalOrderClient {
         readDateTime(data.get("orderDate")));
   }
 
+  private AddressSnapshot toAddressSnapshot(Map<?, ?> data) {
+    if (data == null) {
+      return null;
+    }
+    return new AddressSnapshot(
+        readLong(data.get("id")),
+        readLong(data.get("customerId")),
+        data.get("contactName") == null ? null : String.valueOf(data.get("contactName")),
+        readInteger(data.get("contactSex")),
+        data.get("contactTel") == null ? null : String.valueOf(data.get("contactTel")),
+        data.get("address") == null ? null : String.valueOf(data.get("address")));
+  }
+
   public record OrderSnapshot(
       Long id,
       Long customerId,
@@ -341,6 +443,20 @@ public class InternalOrderClient {
       LocalDateTime orderDate) {}
 
   public record OrderDetailSnapshot(Long id, Long orderId, Long foodId, Integer quantity) {}
+
+  public record AddressSnapshot(
+      Long id,
+      Long customerId,
+      String contactName,
+      Integer contactSex,
+      String contactTel,
+      String address) {}
+
+  public record CreateAddressCommand(
+      Long customerId, String contactName, Integer contactSex, String contactTel, String address) {}
+
+  public record UpdateAddressCommand(
+      Long customerId, String contactName, Integer contactSex, String contactTel, String address) {}
 
   public record PagedOrderSnapshot(
       List<OrderSnapshot> orders, Long total, Integer page, Integer size) {}

@@ -5,9 +5,8 @@ import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
-import cn.edu.tju.elm.service.AddressService;
 import cn.edu.tju.elm.utils.AuthorityUtils;
-import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,15 +19,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 @Tag(name = "管理地址", description = "提供对配送地址的增删改查功能")
 public class AddressController {
-  private final AddressService addressService;
+  private final InternalOrderClient internalOrderClient;
   private final UserService userService;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public AddressController(
-      AddressService addressService,
+      InternalOrderClient internalOrderClient,
       UserService userService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
-    this.addressService = addressService;
+    this.internalOrderClient = internalOrderClient;
     this.userService = userService;
     this.compatibilityEnricher = compatibilityEnricher;
   }
@@ -52,12 +51,20 @@ public class AddressController {
     if (address == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
-    address.setCustomerId(me.getId());
-    EntityUtils.setNewEntity(address);
-    addressService.addAddress(address);
-    compatibilityEnricher.enrichAddress(address);
-
-    return HttpResult.success(address);
+    InternalOrderClient.AddressSnapshot created =
+        internalOrderClient.createAddress(
+            new InternalOrderClient.CreateAddressCommand(
+                me.getId(),
+                address.getContactName(),
+                address.getContactSex(),
+                address.getContactTel(),
+                address.getAddress()));
+    if (created == null) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to create address");
+    }
+    DeliveryAddress createdAddress = toAddress(created);
+    compatibilityEnricher.enrichAddress(createdAddress);
+    return HttpResult.success(createdAddress);
   }
 
   @GetMapping("/addresses")
@@ -68,7 +75,11 @@ public class AddressController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    List<DeliveryAddress> myAddresses = addressService.getAddressesByCustomerId(me.getId());
+    List<DeliveryAddress> myAddresses =
+        internalOrderClient.getAddressesByCustomerId(me.getId()).stream()
+            .map(this::toAddress)
+            .toList();
+    compatibilityEnricher.enrichAddresses(myAddresses);
     return HttpResult.success(myAddresses);
   }
 
@@ -85,19 +96,28 @@ public class AddressController {
     if (newAddress == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
-    DeliveryAddress address = addressService.getAddressById(id);
+    InternalOrderClient.AddressSnapshot existing = internalOrderClient.getAddressById(id);
+    DeliveryAddress address = existing == null ? null : toAddress(existing);
     if (address == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
     Long oldCustomerId = address.getCustomerId();
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     if (isAdmin || me.getId().equals(oldCustomerId)) {
-      newAddress.setCustomerId(oldCustomerId);
-      newAddress.setId(null);
-      EntityUtils.substituteEntity(address, newAddress);
-      addressService.updateAddress(address);
-      addressService.updateAddress(newAddress);
-      compatibilityEnricher.enrichAddress(newAddress);
-      return HttpResult.success(newAddress);
+      InternalOrderClient.AddressSnapshot updated =
+          internalOrderClient.updateAddress(
+              id,
+              new InternalOrderClient.UpdateAddressCommand(
+                  oldCustomerId,
+                  newAddress.getContactName(),
+                  newAddress.getContactSex(),
+                  newAddress.getContactTel(),
+                  newAddress.getAddress()));
+      if (updated == null) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to update address");
+      }
+      DeliveryAddress updatedAddress = toAddress(updated);
+      compatibilityEnricher.enrichAddress(updatedAddress);
+      return HttpResult.success(updatedAddress);
     }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
@@ -111,16 +131,30 @@ public class AddressController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    DeliveryAddress address = addressService.getAddressById(id);
+    InternalOrderClient.AddressSnapshot existing = internalOrderClient.getAddressById(id);
+    DeliveryAddress address = existing == null ? null : toAddress(existing);
     if (address == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
     Long customerId = address.getCustomerId();
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     if (isAdmin || me.getId().equals(customerId)) {
-      EntityUtils.deleteEntity(address);
-      addressService.updateAddress(address);
+      boolean deleted = internalOrderClient.deleteAddress(id);
+      if (!deleted) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to delete address");
+      }
       return HttpResult.success("Delete address successfully.");
     }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
+
+  private DeliveryAddress toAddress(InternalOrderClient.AddressSnapshot snapshot) {
+    DeliveryAddress address = new DeliveryAddress();
+    address.setId(snapshot.id());
+    address.setCustomerId(snapshot.customerId());
+    address.setContactName(snapshot.contactName());
+    address.setContactSex(snapshot.contactSex());
+    address.setContactTel(snapshot.contactTel());
+    address.setAddress(snapshot.address());
+    return address;
   }
 }
