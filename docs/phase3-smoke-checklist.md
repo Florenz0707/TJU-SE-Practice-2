@@ -52,4 +52,8 @@
      - `elm-v2.0/scripts/manage_account_gray.py`
      - `elm-v2.0/scripts/rollback_account_gray.py`
    - 脚本可执行验证通过（`--skip-verify`）
-   - 验证下单链路在切换前后无数据不一致
+   - 业务链路级实操（2026-03-22）：
+     - `8082` 基线 smoke：通过（`SMOKE_OK=true`）
+     - 切换异常目标 `8099` 后回滚到 `8082`：smoke 通过（`SMOKE_OK=true`）
+     - 回滚到 `8080`：下单失败（`Failed to load wallet`）
+   - 结论：当前阶段回滚目标应使用上一个可用地址（`ACCOUNT_SERVICE_URL_PREVIOUS`），不建议固定写 `8080`

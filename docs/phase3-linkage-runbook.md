@@ -71,7 +71,7 @@
    - `cd elm-v2.0/scripts && uv run manage_account_gray.py status --env-file .env`
    - `cd elm-v2.0/scripts && uv run manage_account_gray.py switch --env-file .env --mode canary --target-url http://localhost:8082/elm`
 2. 回滚脚本：
-   - `cd elm-v2.0/scripts && uv run rollback_account_gray.py --env-file .env --fallback-url http://localhost:8080/elm`
+   - `cd elm-v2.0/scripts && uv run rollback_account_gray.py --env-file .env`
 3. 切换策略：
    - 优先执行 `status` 探针，确认目标地址内部接口可用
    - 切换后重启 `elm-v2.0` 使新配置生效
@@ -80,6 +80,10 @@
    - `ACCOUNT_SERVICE_URL`
    - `ACCOUNT_SERVICE_URL_PREVIOUS`
    - `ACCOUNT_GRAY_MODE`
+   - `ACCOUNT_SERVICE_ROLLBACK_URL`（可选兜底）
+5. 实操结论（2026-03-22）：
+   - 回滚到 `http://localhost:8080/elm` 会导致下单链路失败（`Failed to load wallet`）
+   - 当前阶段建议回滚到上一个可用地址（通常为 `ACCOUNT_SERVICE_URL_PREVIOUS`，示例 `http://localhost:8082/elm`）
 
 ## 7. 已验证样例（2026-03-21）
 

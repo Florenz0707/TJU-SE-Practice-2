@@ -17,8 +17,8 @@ def parse_args() -> argparse.Namespace:
   parser.add_argument("--env-file", default=".env", help="Path to env file.")
   parser.add_argument(
       "--fallback-url",
-      default="http://localhost:8080/elm",
-      help="Rollback target URL.",
+      default=None,
+      help="Rollback target URL. If omitted, use ACCOUNT_SERVICE_URL_PREVIOUS.",
   )
   parser.add_argument("--probe-user-id", type=int, default=1, help="User id for probe API.")
   parser.add_argument("--timeout", type=int, default=5, help="HTTP timeout in seconds.")
@@ -43,9 +43,13 @@ def main() -> int:
   token = must_env("INTERNAL_SERVICE_TOKEN")
   current_values = dotenv_values(env_file)
   old_url = (current_values.get("ACCOUNT_SERVICE_URL") or "").strip()
-  fallback_url = args.fallback_url.strip()
+  previous_url = (current_values.get("ACCOUNT_SERVICE_URL_PREVIOUS") or "").strip()
+  env_rollback_url = (current_values.get("ACCOUNT_SERVICE_ROLLBACK_URL") or "").strip()
+  fallback_url = (args.fallback_url or "").strip()
   if not fallback_url:
-    raise SwitchError("fallback-url is empty")
+    fallback_url = previous_url or env_rollback_url
+  if not fallback_url:
+    raise SwitchError("No rollback target found (fallback-url / ACCOUNT_SERVICE_URL_PREVIOUS)")
 
   verify_ok = None
   verify_msg = "skipped"
@@ -63,6 +67,7 @@ def main() -> int:
   print("\n=== ACCOUNT ROLLBACK ===")
   print(f"ENV_FILE={env_file}")
   print(f"OLD_URL={old_url}")
+  print(f"PREVIOUS_URL={previous_url}")
   print(f"ROLLBACK_URL={fallback_url}")
   print(f"VERIFY_OK={verify_ok}")
   print(f"VERIFY_MSG={verify_msg}")

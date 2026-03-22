@@ -279,7 +279,13 @@
     - 结果：
       - 服务离线探针可阻断误切换（符合预期）
       - `--skip-verify` 模式演示通过（`SWITCH_OK=true`、`ROLLBACK_OK=true`）
-26. 阶段5业务对账已执行（2026-03-22）：
+26. 阶段3灰度回滚业务链路实操已执行（2026-03-22）：
+    - 基线：`ACCOUNT_SERVICE_URL=http://localhost:8082/elm`，四服务 smoke 通过（`SMOKE_OK=true`）
+    - 演练：切到异常目标 `http://localhost:8099/elm` 后回滚到 `http://localhost:8082/elm`
+      - 四服务 smoke 再次通过（`SMOKE_OK=true`）
+    - 风险识别：回滚到 `http://localhost:8080/elm` 会导致下单失败（`Failed to load wallet`）
+    - 结论：阶段3回滚应优先使用 `ACCOUNT_SERVICE_URL_PREVIOUS`（上一个可用地址）
+27. 阶段5业务对账已执行（2026-03-22）：
     - 范围：`elm_order.orders`、`elm_account.transaction`、`elm.integration_outbox_event`
     - 样本：最近 5 笔订单（`11,10,9,8,7`）
     - 规则：
@@ -292,7 +298,7 @@
 待完成：
 
 1. 持续补齐迁移后边界态回归用例（含更多角色组合与异常注入）
-2. 推进 `account-service` 收口治理（schema收口与业务链路级灰度回滚实操）
+2. 推进 `account-service` 收口治理（schema收口）
 
 状态：**阶段5迁移进行中（订单/地址/购物车/评价主链路已迁移）**
 

@@ -34,8 +34,8 @@ uv run manage_account_gray.py status --env-file .env
 # switch to account-service (canary/full are equivalent at env level)
 uv run manage_account_gray.py switch --env-file .env --mode canary --target-url http://localhost:8082/elm
 
-# rollback to fallback URL (typically monolith internal endpoint)
-uv run rollback_account_gray.py --env-file .env --fallback-url http://localhost:8080/elm
+# rollback to previous URL (ACCOUNT_SERVICE_URL_PREVIOUS)
+uv run rollback_account_gray.py --env-file .env
 ```
 
 ## 5. Useful options
