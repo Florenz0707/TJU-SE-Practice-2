@@ -79,12 +79,22 @@
 6. 阶段3联调文档已补齐：
    - `docs/phase3-linkage-runbook.md`
    - `docs/phase3-smoke-checklist.md`
+7. 阶段3脚本化异常补偿演练已落地并执行（2026-03-22）：
+   - 脚本：`elm-v2.0/scripts/run_phase3_account_drill.py`
+   - 记录：`docs/phase3-compensation-drill.md`
+   - 结果：`DRILL_OK=true`
+8. 阶段3灰度开关与回滚脚本已落地（2026-03-22）：
+   - 灰度切换脚本：`elm-v2.0/scripts/manage_account_gray.py`
+   - 回滚脚本：`elm-v2.0/scripts/rollback_account_gray.py`
+   - 配置项：`ACCOUNT_SERVICE_URL`、`ACCOUNT_SERVICE_URL_PREVIOUS`、`ACCOUNT_GRAY_MODE`
+   - 脚本执行验证：
+     - 探针模式（服务未启动）按预期失败并阻断切换
+     - `--skip-verify` 模式可完成切换/回滚写入（`SWITCH_OK=true`、`ROLLBACK_OK=true`）
 
 待完成：
 
 1. 账户域独立 schema 与配置模板收口
-2. 拆分后灰度开关与回滚脚本补齐
-3. 异常补偿演练（account-service 不可达/回滚失败）实操记录
+2. 灰度开关/回滚业务链路级实操（服务在线探针模式 + 下单一致性核验）
 
 状态：**拆分已完成（本地调用迁移 + 双服务 smoke 已通过），当前进入阶段3收口治理**
 
@@ -249,11 +259,40 @@
     - 回归结果：
       - `mvn -f elm-v2.0/pom.xml -Dtest=ReviewApplicationServiceTest,ReviewControllerTest test` 通过
       - `cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env` 通过（`SMOKE_OK=true`）
+24. 阶段3收口治理已推进（2026-03-22）：
+    - 新增 `account-service` 脚本化补偿演练：
+      - `cd elm-v2.0/scripts && uv run run_phase3_account_drill.py --env-file .env`
+    - 覆盖项：
+      - 钱包扣款幂等、钱包退款幂等
+      - 券回滚失败分支（非法券ID）
+      - account-service 不可达探测
+    - 演练结果：`DRILL_OK=true`
+    - 文档：
+      - `docs/phase3-compensation-drill.md`
+      - `docs/phase3-linkage-runbook.md`
+      - `docs/phase3-smoke-checklist.md`
+25. 阶段3灰度与回滚脚本已补齐（2026-03-22）：
+    - 脚本：
+      - `cd elm-v2.0/scripts && uv run manage_account_gray.py status --env-file .env`
+      - `cd elm-v2.0/scripts && uv run manage_account_gray.py switch --env-file .env --mode canary --target-url http://localhost:8082/elm`
+      - `cd elm-v2.0/scripts && uv run rollback_account_gray.py --env-file .env --fallback-url http://localhost:8080/elm`
+    - 结果：
+      - 服务离线探针可阻断误切换（符合预期）
+      - `--skip-verify` 模式演示通过（`SWITCH_OK=true`、`ROLLBACK_OK=true`）
+26. 阶段5业务对账已执行（2026-03-22）：
+    - 范围：`elm_order.orders`、`elm_account.transaction`、`elm.integration_outbox_event`
+    - 样本：最近 5 笔订单（`11,10,9,8,7`）
+    - 规则：
+      - 扣款交易金额 = `wallet_paid`
+      - 取消单存在 `ORDER_{orderId}` 退款交易，非取消单无退款交易
+      - 完成单存在 `POINTS_ORDER_SUCCESS` 且 `status=SENT`
+    - 结果：`RECON_OK=true`
+    - 记录：`docs/phase5-business-reconciliation.md`
 
 待完成：
 
 1. 持续补齐迁移后边界态回归用例（含更多角色组合与异常注入）
-2. 推进 `account-service` 收口治理（边界清单、联调脚本、回滚检查点）
+2. 推进 `account-service` 收口治理（schema收口与业务链路级灰度回滚实操）
 
 状态：**阶段5迁移进行中（订单/地址/购物车/评价主链路已迁移）**
 

@@ -42,10 +42,14 @@
 
 ## 待补充项
 
-1. 异常补偿演练：
-   - 下单中途 `account-service` 不可达
-   - 取消时券回滚失败
-2. 灰度开关与回滚策略演练：
-   - 配置级开关切回单体本地能力或降级路径
-3. 固化自动化脚本：
-   - 把本次手工 smoke 命令整理为可重复脚本
+1. 异常补偿演练（已补齐脚本与记录，2026-03-22）：
+   - 脚本：`elm-v2.0/scripts/run_phase3_account_drill.py`
+   - 记录：`docs/phase3-compensation-drill.md`
+   - 覆盖：钱包扣款/退款幂等、券回滚失败分支、不可达探测
+   - 最近结果：`DRILL_OK=true`
+2. 灰度开关与回滚策略演练（待业务链路级实操）：
+   - 配置级开关脚本已落地：
+     - `elm-v2.0/scripts/manage_account_gray.py`
+     - `elm-v2.0/scripts/rollback_account_gray.py`
+   - 脚本可执行验证通过（`--skip-verify`）
+   - 验证下单链路在切换前后无数据不一致
