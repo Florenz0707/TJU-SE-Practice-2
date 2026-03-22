@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import cn.edu.tju.order.constant.OrderState;
 import cn.edu.tju.order.model.bo.Order;
 import cn.edu.tju.order.model.vo.OrderSnapshotVO;
+import cn.edu.tju.order.model.vo.PagedOrderSnapshotVO;
 import cn.edu.tju.order.service.OrderInternalService;
 import java.math.BigDecimal;
 import java.util.List;
@@ -66,6 +67,23 @@ class OrderInnerControllerTest {
 
     assertTrue(result.getSuccess());
     assertEquals(1, result.getData().size());
+  }
+
+  @Test
+  void getOrdersByCustomerIdPage_shouldReturnData() {
+    when(orderInternalService.getOrdersByCustomerId(10L, 1, 10))
+        .thenReturn(new PagedOrderSnapshotVO(List.of(), 0, 1, 10));
+
+    var result = orderInnerController.getOrdersByCustomerIdPage(10L, 1, 10);
+
+    assertTrue(result.getSuccess());
+    assertEquals(1, result.getData().getPage());
+  }
+
+  @Test
+  void getOrdersByBusinessIdPage_shouldReturnFailure_whenInvalidPageSize() {
+    var result = orderInnerController.getOrdersByBusinessIdPage(20L, 0, 10);
+    assertFalse(result.getSuccess());
   }
 
   @Test

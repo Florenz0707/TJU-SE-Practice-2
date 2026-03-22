@@ -24,6 +24,7 @@ import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -297,6 +298,41 @@ class OrderApplicationServiceTest {
 
     assertFalse(result.getSuccess());
     verify(internalOrderClient, never()).cancelOrder(124L, userId);
+  }
+
+  @Test
+  void getOrdersByCustomerIdPage_shouldReturnPagedResult() {
+    Long userId = 9L;
+    when(internalOrderClient.getOrdersByCustomerId(userId, 1, 5))
+        .thenReturn(
+            new InternalOrderClient.PagedOrderSnapshot(
+                List.of(
+                    new InternalOrderClient.OrderSnapshot(
+                        1L,
+                        userId,
+                        2L,
+                        3L,
+                        OrderState.PAID,
+                        new BigDecimal("20"),
+                        null,
+                        null,
+                        0,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        null,
+                        "req-page-1",
+                        java.time.LocalDateTime.now())),
+                9L,
+                1,
+                5));
+
+    Map<String, Object> result = orderApplicationService.getOrdersByCustomerId(userId, 1, 5);
+
+    assertTrue(result.containsKey("records"));
+    assertTrue(result.containsKey("total"));
+    assertTrue(result.get("records") instanceof List);
+    assertTrue(((List<?>) result.get("records")).size() == 1);
+    assertTrue(result.get("total").equals(9L));
   }
 
   @Test

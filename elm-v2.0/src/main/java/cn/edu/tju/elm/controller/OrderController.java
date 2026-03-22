@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -123,6 +124,21 @@ public class OrderController {
     return HttpResult.success(orderApplicationService.getOrdersByCustomerId(me.getId()));
   }
 
+  @GetMapping("/user/my/page")
+  @Operation(summary = "分页获取我的订单", description = "分页获取当前用户作为顾客的订单")
+  public HttpResult<Map<String, Object>> getMyOrdersPage(
+      @Parameter(description = "页码(从1开始)", required = true) @RequestParam("page") Integer page,
+      @Parameter(description = "每页数量", required = true) @RequestParam("size") Integer size) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    if (page == null || size == null || page < 1 || size < 1)
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "page/size NOT VALID");
+    User me = meOptional.get();
+    return HttpResult.success(
+        orderApplicationService.getOrdersByCustomerId(me.getId(), page, size));
+  }
+
   @GetMapping("/merchant/my")
   @Operation(summary = "获取商家订单", description = "获取当前商家用户的所有店铺订单")
   public HttpResult<List<Order>> getMerchantOrders() {
@@ -161,6 +177,32 @@ public class OrderController {
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
     if (isAdmin || (isBusiness && me.getId().equals(business.getBusinessOwnerId())))
       return HttpResult.success(orderApplicationService.getOrdersByBusinessId(business.getId()));
+
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
+
+  @GetMapping("/business/{id}/page")
+  @Operation(summary = "分页获取店铺订单", description = "分页查询指定店铺订单")
+  public HttpResult<Map<String, Object>> getOrdersByBusinessIdPage(
+      @Parameter(description = "店铺ID", required = true) @PathVariable Long id,
+      @Parameter(description = "页码(从1开始)", required = true) @RequestParam("page") Integer page,
+      @Parameter(description = "每页数量", required = true) @RequestParam("size") Integer size) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    if (page == null || size == null || page < 1 || size < 1)
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "page/size NOT VALID");
+    User me = meOptional.get();
+
+    Business business = businessService.getBusinessById(id);
+    if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+    if (isAdmin || (isBusiness && me.getId().equals(business.getBusinessOwnerId()))) {
+      return HttpResult.success(
+          orderApplicationService.getOrdersByBusinessId(business.getId(), page, size));
+    }
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }

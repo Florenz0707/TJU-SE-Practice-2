@@ -20,6 +20,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
 class OrderInternalServiceTest {
@@ -68,6 +70,38 @@ class OrderInternalServiceTest {
   void getOrdersByBusinessId_shouldReturnEmpty_whenNullInput() {
     var result = orderInternalService.getOrdersByBusinessId(null);
     assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void getOrdersByCustomerIdPage_shouldReturnPagedData() {
+    Order order = new Order();
+    order.setId(101L);
+    order.setCustomerId(10L);
+    when(orderRepository.findAllByCustomerId(10L, PageRequest.of(0, 5)))
+        .thenReturn(new PageImpl<>(List.of(order), PageRequest.of(0, 5), 7));
+
+    var result = orderInternalService.getOrdersByCustomerId(10L, 1, 5);
+
+    assertEquals(1, result.getOrders().size());
+    assertEquals(7, result.getTotal());
+    assertEquals(1, result.getPage());
+    assertEquals(5, result.getSize());
+  }
+
+  @Test
+  void getOrdersByBusinessIdPage_shouldReturnPagedData() {
+    Order order = new Order();
+    order.setId(202L);
+    order.setBusinessId(20L);
+    when(orderRepository.findAllByBusinessId(20L, PageRequest.of(1, 3)))
+        .thenReturn(new PageImpl<>(List.of(order), PageRequest.of(1, 3), 4));
+
+    var result = orderInternalService.getOrdersByBusinessId(20L, 2, 3);
+
+    assertEquals(1, result.getOrders().size());
+    assertEquals(4, result.getTotal());
+    assertEquals(2, result.getPage());
+    assertEquals(3, result.getSize());
   }
 
   @Test

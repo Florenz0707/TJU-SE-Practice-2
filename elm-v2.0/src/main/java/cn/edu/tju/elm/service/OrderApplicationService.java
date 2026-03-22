@@ -597,6 +597,36 @@ public class OrderApplicationService {
     return orders;
   }
 
+  @Transactional(readOnly = true)
+  public Map<String, Object> getOrdersByCustomerId(Long customerId, int page, int size) {
+    InternalOrderClient.PagedOrderSnapshot pagedSnapshot =
+        internalOrderClient.getOrdersByCustomerId(customerId, page, size);
+    List<Order> orders =
+        pagedSnapshot.orders().stream().map(this::toOrderRef).collect(Collectors.toList());
+    compatibilityEnricher.enrichOrders(orders);
+    Map<String, Object> result = new HashMap<>();
+    result.put("records", orders);
+    result.put("total", pagedSnapshot.total());
+    result.put("page", pagedSnapshot.page());
+    result.put("size", pagedSnapshot.size());
+    return result;
+  }
+
+  @Transactional(readOnly = true)
+  public Map<String, Object> getOrdersByBusinessId(Long businessId, int page, int size) {
+    InternalOrderClient.PagedOrderSnapshot pagedSnapshot =
+        internalOrderClient.getOrdersByBusinessId(businessId, page, size);
+    List<Order> orders =
+        pagedSnapshot.orders().stream().map(this::toOrderRef).collect(Collectors.toList());
+    compatibilityEnricher.enrichOrders(orders);
+    Map<String, Object> result = new HashMap<>();
+    result.put("records", orders);
+    result.put("total", pagedSnapshot.total());
+    result.put("page", pagedSnapshot.page());
+    result.put("size", pagedSnapshot.size());
+    return result;
+  }
+
   private String buildInternalRequestId(String requestId, String action) {
     if (requestId == null || requestId.isEmpty()) {
       return "order-" + action + "-" + UUID.randomUUID();

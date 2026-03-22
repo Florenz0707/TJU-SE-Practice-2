@@ -158,6 +158,16 @@ public class InternalOrderClient {
     return getOrderList("/api/inner/order/business/" + businessId);
   }
 
+  public PagedOrderSnapshot getOrdersByCustomerId(Long customerId, int page, int size) {
+    return getOrderPage(
+        "/api/inner/order/customer/" + customerId + "/page?page=" + page + "&size=" + size);
+  }
+
+  public PagedOrderSnapshot getOrdersByBusinessId(Long businessId, int page, int size) {
+    return getOrderPage(
+        "/api/inner/order/business/" + businessId + "/page?page=" + page + "&size=" + size);
+  }
+
   public List<OrderDetailSnapshot> getOrderDetailsByOrderId(Long orderId) {
     try {
       Map<?, ?> body = getInternal("/api/inner/order/" + orderId + "/details");
@@ -265,6 +275,34 @@ public class InternalOrderClient {
     }
   }
 
+  private PagedOrderSnapshot getOrderPage(String path) {
+    try {
+      Map<?, ?> body = getInternal(path);
+      Map<?, ?> data = readMapData(body);
+      if (data == null) {
+        return new PagedOrderSnapshot(List.of(), 0L, 1, 10);
+      }
+      Object ordersObj = data.get("orders");
+      List<OrderSnapshot> orders =
+          ordersObj instanceof List<?> list
+              ? list.stream()
+                  .filter(Map.class::isInstance)
+                  .map(Map.class::cast)
+                  .map(this::toSnapshot)
+                  .filter(snapshot -> snapshot != null)
+                  .toList()
+              : List.of();
+      Long total = readLong(data.get("total"));
+      Integer page = readInteger(data.get("page"));
+      Integer size = readInteger(data.get("size"));
+      return new PagedOrderSnapshot(
+          orders, total == null ? 0L : total, page == null ? 1 : page, size == null ? 10 : size);
+    } catch (Exception e) {
+      System.err.println("Failed to get order page: " + e.getMessage());
+      return new PagedOrderSnapshot(List.of(), 0L, 1, 10);
+    }
+  }
+
   private OrderSnapshot toSnapshot(Map<?, ?> data) {
     if (data == null) {
       return null;
@@ -303,6 +341,9 @@ public class InternalOrderClient {
       LocalDateTime orderDate) {}
 
   public record OrderDetailSnapshot(Long id, Long orderId, Long foodId, Integer quantity) {}
+
+  public record PagedOrderSnapshot(
+      List<OrderSnapshot> orders, Long total, Integer page, Integer size) {}
 
   public record CreateOrderCommand(
       String requestId,

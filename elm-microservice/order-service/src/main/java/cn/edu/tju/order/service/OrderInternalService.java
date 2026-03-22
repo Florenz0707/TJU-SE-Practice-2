@@ -5,12 +5,15 @@ import cn.edu.tju.order.model.bo.Order;
 import cn.edu.tju.order.model.bo.OrderDetailet;
 import cn.edu.tju.order.model.vo.OrderDetailetVO;
 import cn.edu.tju.order.model.vo.OrderSnapshotVO;
+import cn.edu.tju.order.model.vo.PagedOrderSnapshotVO;
 import cn.edu.tju.order.repository.OrderDetailetRepository;
 import cn.edu.tju.order.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -162,6 +165,34 @@ public class OrderInternalService {
     return orderRepository.findAllByBusinessId(businessId).stream()
         .map(OrderSnapshotVO::new)
         .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public PagedOrderSnapshotVO getOrdersByCustomerId(Long customerId, int page, int size) {
+    if (customerId == null) {
+      return new PagedOrderSnapshotVO(List.of(), 0L, page, size);
+    }
+    Page<Order> orderPage =
+        orderRepository.findAllByCustomerId(customerId, PageRequest.of(page - 1, size));
+    return new PagedOrderSnapshotVO(
+        orderPage.getContent().stream().map(OrderSnapshotVO::new).toList(),
+        orderPage.getTotalElements(),
+        page,
+        size);
+  }
+
+  @Transactional(readOnly = true)
+  public PagedOrderSnapshotVO getOrdersByBusinessId(Long businessId, int page, int size) {
+    if (businessId == null) {
+      return new PagedOrderSnapshotVO(List.of(), 0L, page, size);
+    }
+    Page<Order> orderPage =
+        orderRepository.findAllByBusinessId(businessId, PageRequest.of(page - 1, size));
+    return new PagedOrderSnapshotVO(
+        orderPage.getContent().stream().map(OrderSnapshotVO::new).toList(),
+        orderPage.getTotalElements(),
+        page,
+        size);
   }
 
   @Transactional(readOnly = true)

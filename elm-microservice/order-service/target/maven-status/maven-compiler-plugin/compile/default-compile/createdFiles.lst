@@ -7,6 +7,7 @@ cn/edu/tju/order/repository/OrderRepository.class
 cn/edu/tju/OrderServiceApplication.class
 cn/edu/tju/core/model/HttpResult.class
 cn/edu/tju/core/model/BaseEntity.class
+cn/edu/tju/order/model/vo/PagedOrderSnapshotVO.class
 cn/edu/tju/order/model/bo/OrderDetailet.class
 cn/edu/tju/order/model/vo/OrderDetailetVO.class
 cn/edu/tju/core/model/ResultCodeEnum.class

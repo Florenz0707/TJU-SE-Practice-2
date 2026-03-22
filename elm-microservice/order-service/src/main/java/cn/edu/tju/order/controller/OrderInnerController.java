@@ -4,6 +4,7 @@ import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.order.model.vo.OrderDetailetVO;
 import cn.edu.tju.order.model.vo.OrderSnapshotVO;
+import cn.edu.tju.order.model.vo.PagedOrderSnapshotVO;
 import cn.edu.tju.order.service.OrderInternalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -72,6 +74,30 @@ public class OrderInnerController {
       @Parameter(description = "商家ID", required = true) @PathVariable("businessId")
           Long businessId) {
     return HttpResult.success(orderInternalService.getOrdersByBusinessId(businessId));
+  }
+
+  @GetMapping("/customer/{customerId}/page")
+  @Operation(summary = "按用户分页查询订单", description = "查询指定用户的订单分页结果")
+  public HttpResult<PagedOrderSnapshotVO> getOrdersByCustomerIdPage(
+      @Parameter(description = "用户ID", required = true) @PathVariable("customerId") Long customerId,
+      @Parameter(description = "页码(从1开始)", required = true) @RequestParam("page") Integer page,
+      @Parameter(description = "每页数量", required = true) @RequestParam("size") Integer size) {
+    if (page == null || size == null || page < 1 || size < 1) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "page/size NOT VALID");
+    }
+    return HttpResult.success(orderInternalService.getOrdersByCustomerId(customerId, page, size));
+  }
+
+  @GetMapping("/business/{businessId}/page")
+  @Operation(summary = "按商家分页查询订单", description = "查询指定商家的订单分页结果")
+  public HttpResult<PagedOrderSnapshotVO> getOrdersByBusinessIdPage(
+      @Parameter(description = "商家ID", required = true) @PathVariable("businessId") Long businessId,
+      @Parameter(description = "页码(从1开始)", required = true) @RequestParam("page") Integer page,
+      @Parameter(description = "每页数量", required = true) @RequestParam("size") Integer size) {
+    if (page == null || size == null || page < 1 || size < 1) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "page/size NOT VALID");
+    }
+    return HttpResult.success(orderInternalService.getOrdersByBusinessId(businessId, page, size));
   }
 
   @GetMapping("/{orderId}/details")

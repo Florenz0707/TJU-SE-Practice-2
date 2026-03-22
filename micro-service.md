@@ -170,12 +170,19 @@
     - 入口：`run_four_service_smoke.py`
     - 运行方式：`uv sync && uv run run_four_service_smoke.py`
     - 配置模板：`integration.env.example`（敏感信息通过 `.env` 本地注入）
+17. 订单分页读链路迁移已完成（2026-03-22）：
+    - `order-service` 新增分页内部接口：
+      - `GET /api/inner/order/customer/{customerId}/page?page=&size=`
+      - `GET /api/inner/order/business/{businessId}/page?page=&size=`
+    - `elm-v2.0` 已接入分页查询客户端与应用服务封装
+    - 对外新增分页查询接口：
+      - `GET /api/orders/user/my/page?page=&size=`
+      - `GET /api/orders/business/{id}/page?page=&size=`
 
 待完成：
 
-1. 完成订单剩余读链路迁移（分页相关查询）
-2. 补齐 `order-service` 状态流转与评价链路专项测试
-3. 持续补齐订单剩余读链路迁移后的回归用例（分页与边界态）
+1. 补齐 `order-service` 状态流转与评价链路专项测试
+2. 持续补齐分页与边界态回归用例（含多角色权限）
 
 状态：**阶段5准备已启动**
 

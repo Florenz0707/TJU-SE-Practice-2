@@ -8,6 +8,7 @@
 /home/florenz/TJU-SE-Practice-2/elm-microservice/order-service/src/main/java/cn/edu/tju/order/model/bo/OrderDetailet.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/order-service/src/main/java/cn/edu/tju/order/model/vo/OrderDetailetVO.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/order-service/src/main/java/cn/edu/tju/order/model/vo/OrderSnapshotVO.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/order-service/src/main/java/cn/edu/tju/order/model/vo/PagedOrderSnapshotVO.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/order-service/src/main/java/cn/edu/tju/order/repository/OrderDetailetRepository.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/order-service/src/main/java/cn/edu/tju/order/repository/OrderRepository.java
 /home/florenz/TJU-SE-Practice-2/elm-microservice/order-service/src/main/java/cn/edu/tju/order/service/OrderInternalService.java
