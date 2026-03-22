@@ -57,3 +57,19 @@
      - 切换异常目标 `8099` 后回滚到 `8082`：smoke 通过（`SMOKE_OK=true`）
      - 回滚到 `8080`：下单失败（`Failed to load wallet`）
    - 结论：当前阶段回滚目标应使用上一个可用地址（`ACCOUNT_SERVICE_URL_PREVIOUS`），不建议固定写 `8080`
+   - 在线探针模式实操（2026-03-22）：
+     - 先以 `KEEP_SERVICES_RUNNING=true` 启动四服务并完成 smoke（`SMOKE_OK=true`）
+     - `manage_account_gray.py status`（不使用 `--skip-verify`）返回 `VERIFY_OK=true`
+     - `manage_account_gray.py switch ... --target-url http://localhost:8099/elm` 被探针阻断（预期）
+     - `rollback_account_gray.py --fallback-url http://localhost:8082/elm` 在线探针成功（`VERIFY_OK=true`）
+     - 回滚后 `run_four_service_smoke.py --skip-start` 再次通过（`SMOKE_OK=true`）
+3. schema 收口校验（已执行，2026-03-22）：
+   - 脚本：`cd elm-v2.0/scripts && uv run check_account_schema.py --env-file .env`
+   - 结果：
+     - `MISSING_IN_DB_ACCOUNT=[]`
+     - `ACCOUNT_SCHEMA_OK=true`
+   - 说明：
+     - `DB_MAIN` 中仍有同名历史表，当前作为回滚兜底保留，不影响 `DB_ACCOUNT` 独立 schema 可用性
+4. 配置模板标准化（已完成，2026-03-22）：
+   - 文档：`docs/phase3-config-template.md`
+   - `.env` 模板：`elm-v2.0/scripts/integration.env.example`

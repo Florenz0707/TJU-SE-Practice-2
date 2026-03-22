@@ -4,7 +4,7 @@
 
 1. 启动 `account-service`（端口 `8082`）
    - `cd elm-microservice/account-service`
-   - `DB_URL='jdbc:mysql://localhost:3306/elm?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true' DB_USERNAME='user' DB_PASSWORD='pass@WORD' mvn spring-boot:run`
+   - `DB_URL='jdbc:mysql://localhost:3306/elm_account?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true' DB_USERNAME='user' DB_PASSWORD='pass@WORD' mvn spring-boot:run`
 2. 启动单体 `elm-v2.0`（端口 `8080`，指向 `account-service`）
    - `cd elm-v2.0`
    - `DB_USERNAME='user' DB_PASSWORD='pass@WORD' ACCOUNT_SERVICE_URL='http://localhost:8082/elm' POINTS_SERVICE_URL='http://localhost:8080/elm' mvn spring-boot:run`
@@ -84,8 +84,23 @@
 5. 实操结论（2026-03-22）：
    - 回滚到 `http://localhost:8080/elm` 会导致下单链路失败（`Failed to load wallet`）
    - 当前阶段建议回滚到上一个可用地址（通常为 `ACCOUNT_SERVICE_URL_PREVIOUS`，示例 `http://localhost:8082/elm`）
+6. schema 收口校验（2026-03-22）：
+   - `cd elm-v2.0/scripts && uv run check_account_schema.py --env-file .env`
+   - 通过标准：`ACCOUNT_SCHEMA_OK=true`
+7. 在线探针模式实操（2026-03-22）：
+   - `cd elm-v2.0/scripts && KEEP_SERVICES_RUNNING=true uv run run_four_service_smoke.py --env-file .env`
+   - `cd elm-v2.0/scripts && uv run manage_account_gray.py status --env-file .env --probe-user-id 34`
+   - `cd elm-v2.0/scripts && uv run manage_account_gray.py switch --env-file .env --mode canary --target-url http://localhost:8099/elm --probe-user-id 34`
+   - `cd elm-v2.0/scripts && uv run rollback_account_gray.py --env-file .env --fallback-url http://localhost:8082/elm --probe-user-id 34`
+   - `cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env --skip-start`
+   - 结果：
+     - `status` 在线探针成功（`VERIFY_OK=true`）
+     - 非法目标地址切换被阻断（符合预期）
+     - 回滚与复验 smoke 均成功（`SMOKE_OK=true`）
+8. 配置模板（2026-03-22）：
+   - `docs/phase3-config-template.md`
 
-## 7. 已验证样例（2026-03-21）
+## 8. 已验证样例（2026-03-21）
 
 1. `REQ_ID=smoke-order-1774103637`
 2. `ORDER_ID=3`

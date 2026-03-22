@@ -90,11 +90,26 @@
    - 脚本执行验证：
      - 探针模式（服务未启动）按预期失败并阻断切换
      - `--skip-verify` 模式可完成切换/回滚写入（`SWITCH_OK=true`、`ROLLBACK_OK=true`）
+9. 阶段3 schema 收口校验已完成（2026-03-22）：
+   - 脚本：`cd elm-v2.0/scripts && uv run check_account_schema.py --env-file .env`
+   - 结果：
+     - `DB_ACCOUNT=elm_account`
+     - `MISSING_IN_DB_ACCOUNT=[]`
+     - `ACCOUNT_SCHEMA_OK=true`
+   - 备注：`DB_MAIN` 中同名历史表仍保留作为回滚兜底
+10. 阶段3配置模板标准化已完成（2026-03-22）：
+
+- 模板文档：`docs/phase3-config-template.md`
+- `.env` 模板：`elm-v2.0/scripts/integration.env.example`
+- 已统一关键配置键：
+  - `ACCOUNT_SERVICE_URL`
+  - `ACCOUNT_SERVICE_URL_PREVIOUS`
+  - `ACCOUNT_SERVICE_ROLLBACK_URL`
+  - `ACCOUNT_GRAY_MODE`
 
 待完成：
 
-1. 账户域独立 schema 与配置模板收口
-2. 灰度开关/回滚业务链路级实操（服务在线探针模式 + 下单一致性核验）
+1. 账户域配置模板在不同机器环境的落地验证（可选）
 
 状态：**拆分已完成（本地调用迁移 + 双服务 smoke 已通过），当前进入阶段3收口治理**
 
@@ -285,7 +300,20 @@
       - 四服务 smoke 再次通过（`SMOKE_OK=true`）
     - 风险识别：回滚到 `http://localhost:8080/elm` 会导致下单失败（`Failed to load wallet`）
     - 结论：阶段3回滚应优先使用 `ACCOUNT_SERVICE_URL_PREVIOUS`（上一个可用地址）
-27. 阶段5业务对账已执行（2026-03-22）：
+27. 阶段3 schema 收口已完成（2026-03-22）：
+    - `account-service` 默认数据源已对齐 `elm_account`
+    - phase3 runbook 中 `account-service` 启动示例已改为 `DB_URL=.../elm_account`
+    - 自动化校验脚本已落地并执行通过（`ACCOUNT_SCHEMA_OK=true`）
+28. 阶段3灰度回滚在线探针实操已完成（2026-03-22）：
+    - 以 `KEEP_SERVICES_RUNNING=true` 启动四服务后执行在线探针验证
+    - `manage_account_gray.py status` 返回 `VERIFY_OK=true`
+    - 切换到非法目标 `8099` 被探针阻断（符合预期）
+    - 回滚到 `8082` 后 `--skip-start` smoke 复验通过（`SMOKE_OK=true`）
+29. 阶段3配置模板标准化收口已完成（2026-03-22）：
+    - 新增配置模板文档：`docs/phase3-config-template.md`
+    - 更新脚本模板：`elm-v2.0/scripts/integration.env.example`
+    - 修正脚本说明：`elm-v2.0/scripts/README.md`
+30. 阶段5业务对账已执行（2026-03-22）：
     - 范围：`elm_order.orders`、`elm_account.transaction`、`elm.integration_outbox_event`
     - 样本：最近 5 笔订单（`11,10,9,8,7`）
     - 规则：
@@ -298,7 +326,7 @@
 待完成：
 
 1. 持续补齐迁移后边界态回归用例（含更多角色组合与异常注入）
-2. 推进 `account-service` 收口治理（schema收口）
+2. 推进 `account-service` 收口治理（跨机器落地验证，可选）
 
 状态：**阶段5迁移进行中（订单/地址/购物车/评价主链路已迁移）**
 

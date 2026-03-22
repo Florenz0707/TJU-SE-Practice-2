@@ -23,7 +23,14 @@ cd elm-v2.0/scripts
 uv run run_phase3_account_drill.py --env-file .env
 ```
 
-## 4. Account gray switch and rollback
+## 4. Check account schema
+
+```bash
+cd elm-v2.0/scripts
+uv run check_account_schema.py --env-file .env
+```
+
+## 5. Account gray switch and rollback
 
 ```bash
 cd elm-v2.0/scripts
@@ -38,7 +45,7 @@ uv run manage_account_gray.py switch --env-file .env --mode canary --target-url 
 uv run rollback_account_gray.py --env-file .env
 ```
 
-## 5. Useful options
+## 6. Useful options
 
 ```bash
 # use a custom env file
@@ -51,15 +58,18 @@ uv run run_four_service_smoke.py --skip-start
 uv run run_phase3_account_drill.py --skip-start
 
 # skip probe before switch (not recommended)
-uv run manage_account_gray.py switch --mode rollback --skip-verify
+uv run manage_account_gray.py switch --mode canary --target-url http://localhost:8082/elm --skip-verify
+
+# skip probe before rollback (not recommended)
+uv run rollback_account_gray.py --skip-verify
 ```
 
-## 6. Output and logs
+## 7. Output and logs
 
 - script log output: terminal
 - service logs: `elm-v2.0/scripts/logs/*.log`
 
-## 7. Security notes
+## 8. Security notes
 
 - keep secrets only in `elm-v2.0/scripts/.env` (already git-ignored)
 - do not commit real DB credentials or internal token

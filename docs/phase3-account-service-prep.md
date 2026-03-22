@@ -88,7 +88,7 @@
    - 新增单测 `OrderApplicationServiceTest` 覆盖远程钱包预检与取消回滚调用
 4. 双服务联调 smoke 已执行（2026-03-21）：
    - 启动：
-     - `account-service`（8082，`DB_USERNAME=user`，`DB_PASSWORD=pass@WORD`）
+     - `account-service`（8082，`DB_URL=.../elm_account`，`DB_USERNAME=user`，`DB_PASSWORD=pass@WORD`）
      - `elm-v2.0`（8080，`ACCOUNT_SERVICE_URL=http://localhost:8082/elm`）
    - 链路：
      - 用户创建钱包并充值
