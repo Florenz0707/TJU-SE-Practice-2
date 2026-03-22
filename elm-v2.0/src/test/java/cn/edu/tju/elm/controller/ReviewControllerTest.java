@@ -1,6 +1,8 @@
 package cn.edu.tju.elm.controller;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -73,6 +75,43 @@ class ReviewControllerTest {
   }
 
   @Test
+  void updateReview_shouldUpdateWhenOwner() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(internalOrderClient.getReviewById(1L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 9L, 2L, 3L, false, 8, "old"));
+    when(internalOrderClient.updateReview(any(), any()))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 9L, 2L, 3L, false, 10, "new"));
+
+    Review update = new Review();
+    update.setStars(10);
+    update.setContent("new");
+
+    var result = reviewController.updateReview(1L, update);
+
+    assertTrue(result.getSuccess());
+    verify(internalOrderClient).updateReview(any(), any());
+    verify(compatibilityEnricher).enrichReview(any(Review.class));
+  }
+
+  @Test
+  void updateReview_shouldFailWhenPayloadEmpty() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(internalOrderClient.getReviewById(1L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 9L, 2L, 3L, false, 8, "old"));
+
+    var result = reviewController.updateReview(1L, new Review());
+
+    assertFalse(result.getSuccess());
+    verify(internalOrderClient, never()).updateReview(any(), any());
+  }
+
+  @Test
   void getReviewByOrderId_shouldFailWhenReviewNotFound() {
     User me = new User();
     me.setId(9L);
@@ -128,5 +167,50 @@ class ReviewControllerTest {
     var result = reviewController.getReviewByOrderId(3L);
 
     assertTrue(result.getSuccess());
+  }
+
+  @Test
+  void getReviewByOrderId_shouldFailWhenBusinessUserIsNotOwner() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("BUSINESS"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    Order order = new Order();
+    order.setId(3L);
+    when(orderApplicationService.getOrderById(3L)).thenReturn(order);
+    when(internalOrderClient.getReviewByOrderId(3L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 10L, 2L, 3L, false, 8, "ok"));
+    Business business = new Business();
+    business.setId(2L);
+    business.setBusinessOwnerId(11L);
+    when(businessService.getBusinessById(2L)).thenReturn(business);
+
+    var result = reviewController.getReviewByOrderId(3L);
+
+    assertFalse(result.getSuccess());
+  }
+
+  @Test
+  void getReviewsByBusinessId_shouldHideAnonymousFields() {
+    Business business = new Business();
+    business.setId(2L);
+    when(businessService.getBusinessById(2L)).thenReturn(business);
+    when(internalOrderClient.getReviewsByBusinessId(2L))
+        .thenReturn(
+            List.of(
+                new InternalOrderClient.ReviewSnapshot(1L, 10L, 2L, 3L, true, 8, "anon"),
+                new InternalOrderClient.ReviewSnapshot(2L, 11L, 2L, 4L, false, 9, "named")));
+
+    var result = reviewController.getReviewsByBusinessId(2L);
+
+    assertTrue(result.getSuccess());
+    assertNotNull(result.getData());
+    Review anonymousReview = result.getData().get(0);
+    Review normalReview = result.getData().get(1);
+    assertNull(anonymousReview.getCustomerId());
+    assertNull(anonymousReview.getOrder());
+    assertNotNull(normalReview.getCustomerId());
+    assertNotNull(normalReview.getOrder());
+    verify(compatibilityEnricher).enrichReviews(any());
   }
 }

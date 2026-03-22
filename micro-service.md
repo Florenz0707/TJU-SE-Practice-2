@@ -322,10 +322,26 @@
       - 完成单存在 `POINTS_ORDER_SUCCESS` 且 `status=SENT`
     - 结果：`RECON_OK=true`
     - 记录：`docs/phase5-business-reconciliation.md`
+31. 阶段5边界回归测试（多角色权限 + 异常注入）已补齐并通过（2026-03-22）：
+    - 新增 `ReviewControllerTest` 用例：
+      - 评价更新（本人成功）
+      - 空更新载荷拦截
+      - 商家非店主查看评价拒绝
+      - 匿名评价字段脱敏（`customerId/order` 置空）
+    - 新增 `CartControllerTest` 用例：
+      - 管理员可更新/删除非本人购物车项
+      - 远程更新返回 `null` 的失败分支
+      - 远程删除返回 `false` 的失败分支
+    - 新增 `OrderControllerTest` 用例：
+      - 管理员查询商家分页订单成功
+      - 商家不存在分支拦截
+    - 验证结果：
+      - `mvn -f elm-v2.0/pom.xml -Dtest=ReviewControllerTest,CartControllerTest,OrderControllerTest test` 通过（22/22）
+      - `uv run pre-commit run --files ...` 通过（按 `.pre-commit-config.yaml`）
 
 待完成：
 
-1. 持续补齐迁移后边界态回归用例（含更多角色组合与异常注入）
+1. 持续补齐迁移后边界态回归用例（扩展到应用服务层与跨服务失败注入）
 2. 推进 `account-service` 收口治理（跨机器落地验证，可选）
 
 状态：**阶段5迁移进行中（订单/地址/购物车/评价主链路已迁移）**
@@ -333,7 +349,7 @@
 ## 1.3 最近计划（未来 3-5 天）
 
 1. 推进阶段5订单域迁移收口：
-   - 补齐删评回滚、跨角色权限与边界态专项测试
+   - 扩展应用服务层异常注入与跨服务失败恢复回归
    - 完成迁移后 runbook 与回滚脚本核对
 2. 执行四服务脚本化 smoke 常态回归：
    - 使用 `elm-v2.0/scripts/run_four_service_smoke.py`

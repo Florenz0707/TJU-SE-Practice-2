@@ -135,4 +135,79 @@ class CartControllerTest {
     assertTrue(result.getSuccess());
     verify(internalOrderClient).deleteCart(100L);
   }
+
+  @Test
+  void updateCartItem_shouldAllowAdminOnNonOwnedCart() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("ADMIN"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(internalOrderClient.getCartById(100L))
+        .thenReturn(new InternalOrderClient.CartSnapshot(100L, 1L, 10L, 2L, 1));
+    when(internalOrderClient.updateCartQuantity(100L, 5))
+        .thenReturn(new InternalOrderClient.CartSnapshot(100L, 1L, 10L, 2L, 5));
+
+    Food food = new Food();
+    food.setId(1L);
+    when(foodService.getFoodById(1L)).thenReturn(food);
+    Business business = new Business();
+    business.setId(2L);
+    when(businessService.getBusinessById(2L)).thenReturn(business);
+
+    Cart request = new Cart();
+    request.setQuantity(5);
+
+    var result = cartController.updateCartItem(100L, request);
+
+    assertTrue(result.getSuccess());
+    verify(internalOrderClient).updateCartQuantity(100L, 5);
+  }
+
+  @Test
+  void updateCartItem_shouldFailWhenRemoteUpdateReturnsNull() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(internalOrderClient.getCartById(100L))
+        .thenReturn(new InternalOrderClient.CartSnapshot(100L, 1L, 9L, 2L, 1));
+    when(internalOrderClient.updateCartQuantity(100L, 5)).thenReturn(null);
+
+    Food food = new Food();
+    food.setId(1L);
+    when(foodService.getFoodById(1L)).thenReturn(food);
+    Business business = new Business();
+    business.setId(2L);
+    when(businessService.getBusinessById(2L)).thenReturn(business);
+
+    Cart request = new Cart();
+    request.setQuantity(5);
+
+    var result = cartController.updateCartItem(100L, request);
+
+    assertFalse(result.getSuccess());
+  }
+
+  @Test
+  void deleteCartItem_shouldFailWhenRemoteDeleteReturnsFalse() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("ADMIN"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(internalOrderClient.getCartById(100L))
+        .thenReturn(new InternalOrderClient.CartSnapshot(100L, 1L, 10L, 2L, 1));
+    when(internalOrderClient.deleteCart(100L)).thenReturn(false);
+
+    Food food = new Food();
+    food.setId(1L);
+    when(foodService.getFoodById(1L)).thenReturn(food);
+    Business business = new Business();
+    business.setId(2L);
+    when(businessService.getBusinessById(2L)).thenReturn(business);
+
+    var result = cartController.deleteCartItem(100L);
+
+    assertFalse(result.getSuccess());
+    verify(internalOrderClient).deleteCart(100L);
+  }
 }

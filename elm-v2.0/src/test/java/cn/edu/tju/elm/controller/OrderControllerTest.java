@@ -92,4 +92,37 @@ class OrderControllerTest {
     assertTrue(result.getSuccess());
     verify(orderApplicationService).getOrdersByBusinessId(100L, 1, 10);
   }
+
+  @Test
+  void getOrdersByBusinessIdPage_shouldReturnDataForAdmin() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("ADMIN"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    Business business = new Business();
+    business.setId(100L);
+    business.setBusinessOwnerId(10L);
+    when(businessService.getBusinessById(100L)).thenReturn(business);
+    when(orderApplicationService.getOrdersByBusinessId(100L, 1, 10))
+        .thenReturn(Map.of("records", java.util.List.of(), "total", 0L, "page", 1, "size", 10));
+
+    var result = orderController.getOrdersByBusinessIdPage(100L, 1, 10);
+
+    assertTrue(result.getSuccess());
+    verify(orderApplicationService).getOrdersByBusinessId(100L, 1, 10);
+  }
+
+  @Test
+  void getOrdersByBusinessIdPage_shouldFailWhenBusinessNotFound() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("ADMIN"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(businessService.getBusinessById(100L)).thenReturn(null);
+
+    var result = orderController.getOrdersByBusinessIdPage(100L, 1, 10);
+
+    assertFalse(result.getSuccess());
+    verify(orderApplicationService, never()).getOrdersByBusinessId(100L, 1, 10);
+  }
 }
