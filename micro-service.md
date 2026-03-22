@@ -165,24 +165,29 @@
 15. 四服务联调（points/account/catalog/order）已执行通过（2026-03-22）：
     - 下单（钱包）成功、取消成功、完成态更新成功
     - Outbox `POINTS_ORDER_SUCCESS` 事件状态 `SENT`
+16. 四服务联调命令已固化为脚本（2026-03-22）：
+    - 目录：`elm-v2.0/scripts/`
+    - 入口：`run_four_service_smoke.py`
+    - 运行方式：`uv sync && uv run run_four_service_smoke.py`
+    - 配置模板：`integration.env.example`（敏感信息通过 `.env` 本地注入）
 
 待完成：
 
 1. 完成订单剩余读链路迁移（分页相关查询）
 2. 补齐 `order-service` 状态流转与评价链路专项测试
-3. 固化四服务联调脚本（可重复执行）
+3. 持续补齐订单剩余读链路迁移后的回归用例（分页与边界态）
 
 状态：**阶段5准备已启动**
 
 ## 1.3 最近计划（未来 3-5 天）
 
-1. 推进阶段5订单域迁移：
-   - 迁移单体下单/取消中的订单写入与状态变更到 `order-service`
-   - 补齐内部 DTO 兼容字段与错误码语义
-2. 执行阶段5首轮联调 smoke：
-   - 创建订单（幂等重试）
-   - 取消订单（状态校验与权限校验）
-3. 输出阶段5联调与回滚 runbook 初稿
+1. 推进阶段5订单域迁移收口：
+   - 完成订单剩余分页/聚合查询迁移到 `order-service`
+   - 补齐状态流转与评价链路专项测试
+2. 执行四服务脚本化 smoke 常态回归：
+   - 使用 `elm-v2.0/scripts/run_four_service_smoke.py`
+   - 保持 `.env` 配置化，禁止明文提交敏感项
+3. 完善阶段5联调与回滚 runbook（加入脚本化执行路径）
 4. 持续执行统一质量门禁：按 `.pre-commit-config.yaml` 做风格与基础校验
 
 ---
