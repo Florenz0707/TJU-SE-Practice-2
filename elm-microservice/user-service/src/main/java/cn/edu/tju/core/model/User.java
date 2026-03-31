@@ -1,6 +1,7 @@
 package cn.edu.tju.core.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -27,7 +28,7 @@ public class User extends BaseEntity {
   @Size(min = 1, max = 100)
   private String username;
 
-  @JsonIgnore
+  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
   @Column(name = "PASSWORD", length = 100)
   @NotNull
   @Size(min = 1, max = 100)

@@ -44,7 +44,7 @@ bash scripts/run-local-cloud.sh
 启动业务服务与聚合层：
 
 ```bash
-bash scripts/run-local-backend.sh
+bash scripts/run-local-backend-cloud.sh
 ```
 
 停止：
@@ -65,9 +65,15 @@ bash scripts/stop-local-cloud.sh
 启动前需要保证 `account-service`、`points-service`、`business-service`、`food-service`、`cart-service`、`order-service`、`address-service`、`user-service` 已经可达。
 
 ```bash
-cp .env.example .env
-mvn spring-boot:run
+export JAVA_HOME=/root/workspace/TJU-SE-Practice-2/.tools/jdk-21
+export PATH="$JAVA_HOME/bin:/root/workspace/TJU-SE-Practice-2/.tools/apache-maven-3.9.9/bin:$PATH"
+mvn -Dmaven.test.skip=true -Dspring-boot.run.profiles=local,cloud spring-boot:run
 ```
+
+说明：
+
+- 本仓库当前在容器外联调时应优先复用 `.tools/jdk-21` 和 `.tools/apache-maven-3.9.9`
+- `mvn spring-boot:run` 默认会走测试编译；若只是恢复联调环境，建议加 `-Dmaven.test.skip=true`
 
 ## 联调与 Smoke
 
@@ -91,6 +97,12 @@ uv run run_four_service_smoke.py --env-file .env
 
 - 仅对已启动环境做联调验证：`uv run run_four_service_smoke.py --env-file .env --skip-start`
 - 执行账户灰度演练：`uv run run_phase3_account_drill.py --env-file .env`
+
+## 近期验证结论
+
+- 2026-03-31 已在非 compose 本地直跑模式下验证通过：注册、登录、`/api/wallet/my/topup`、下单、取消、完成、评价增删查、我的订单查询
+- 聚合层 `/api/wallet` 已与 `account-service` 资金源收敛；钱包充值后可直接通过 `/api/orders` 完成支付
+- 新注册用户在当前链路下默认已存在钱包，通常表现为 `walletId=userId`
 
 ## 环境变量
 

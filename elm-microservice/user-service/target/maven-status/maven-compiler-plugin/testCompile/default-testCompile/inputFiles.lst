@@ -1,0 +1,5 @@
+/root/workspace/TJU-SE-Practice-2/elm-microservice/user-service/src/test/java/cn/edu/tju/core/security/controller/AuthenticationRestControllerTest.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/user-service/src/test/java/cn/edu/tju/core/security/controller/UserRestControllerTest.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/user-service/src/test/java/cn/edu/tju/core/security/jwt/JWTFilterTest.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/user-service/src/test/java/cn/edu/tju/core/security/jwt/TokenProviderTest.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/user-service/src/test/java/cn/edu/tju/core/security/service/UserDomainServiceTest.java

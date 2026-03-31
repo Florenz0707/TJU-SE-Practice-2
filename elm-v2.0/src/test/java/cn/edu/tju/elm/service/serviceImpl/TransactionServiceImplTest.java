@@ -2,114 +2,81 @@ package cn.edu.tju.elm.service.serviceImpl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import cn.edu.tju.elm.constant.TransactionType;
 import cn.edu.tju.elm.exception.TransactionException;
-import cn.edu.tju.elm.model.BO.Transaction;
-import cn.edu.tju.elm.model.BO.Wallet;
-import cn.edu.tju.elm.repository.TransactionRepository;
-import cn.edu.tju.elm.repository.WalletRepository;
-import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
-import cn.edu.tju.elm.service.serviceInterface.PublicVoucherService;
+import cn.edu.tju.elm.model.RECORD.TransactionsRecord;
+import cn.edu.tju.elm.model.VO.TransactionVO;
+import cn.edu.tju.elm.utils.InternalAccountClient;
 import java.math.BigDecimal;
-import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class TransactionServiceImplTest {
 
-  @Mock private WalletRepository walletRepository;
-
-  @Mock private TransactionRepository transactionRepository;
-
-  @Mock private PublicVoucherService publicVoucherService;
-
-  @Mock private PrivateVoucherService privateVoucherService;
+  @Mock private InternalAccountClient internalAccountClient;
 
   private TransactionServiceImpl transactionService;
 
   @BeforeEach
   public void setUp() {
-    transactionService =
-        new TransactionServiceImpl(
-            walletRepository, transactionRepository, publicVoucherService, privateVoucherService);
+    transactionService = new TransactionServiceImpl(internalAccountClient);
   }
 
   @Test
   public void testCreatePaymentAndFinish() throws Exception {
-    // 准备 payer (outWallet) 和 receiver (inWallet)
-    Wallet outWallet = Wallet.getNewWallet(1001L);
-    // 反射或直接设置初始余额（Wallet 默认值为 0），此处通过 addBalance 增加
-    outWallet.addBalance(new BigDecimal("100.00"));
-
-    Wallet inWallet = Wallet.getNewWallet(1002L);
-    inWallet.addBalance(new BigDecimal("10.00"));
-
+    BigDecimal amount = new BigDecimal("50.00");
     Long inWalletId = 10L;
     Long outWalletId = 20L;
 
-    // 模拟 repository 返回
-    when(walletRepository.findById(eq(inWalletId))).thenReturn(Optional.of(inWallet));
-    when(walletRepository.findById(eq(outWalletId))).thenReturn(Optional.of(outWallet));
+    TransactionVO created = new TransactionVO();
+    created.setId(1L);
+    created.setAmount(amount);
+    created.setType(TransactionType.PAYMENT);
+    created.setInWalletId(inWalletId);
+    created.setOutWalletId(outWalletId);
+    created.setFinished(false);
 
-    // capture saved transaction
-    ArgumentCaptor<Transaction> txCaptor = ArgumentCaptor.forClass(Transaction.class);
-    when(transactionRepository.save(txCaptor.capture()))
-        .thenAnswer(invocation -> invocation.getArgument(0));
+    TransactionVO finished = new TransactionVO();
+    finished.setId(1L);
+    finished.setAmount(amount);
+    finished.setType(TransactionType.PAYMENT);
+    finished.setInWalletId(inWalletId);
+    finished.setOutWalletId(outWalletId);
+    finished.setFinished(true);
 
-    // 创建 payment 交易
-    BigDecimal amount = new BigDecimal("50.00");
+    when(internalAccountClient.createTransaction(amount, TransactionType.PAYMENT, inWalletId, outWalletId))
+        .thenReturn(created);
+    when(internalAccountClient.finishTransaction(1L, 999L, true)).thenReturn(finished);
+
     var txVo =
         transactionService.createTransaction(
             amount, TransactionType.PAYMENT, inWalletId, outWalletId);
+    var finishedTx = transactionService.finishTransaction(1L, 999L, true);
+
     assertThat(txVo).isNotNull();
+    assertThat(finishedTx.getFinished()).isTrue();
 
-    // 验证付款方余额减少
-    assertThat(outWallet.getBalance()).isEqualByComparingTo(new BigDecimal("50.00"));
-
-    // 模拟根据 id 查找 transaction（这里用任意 id，返回捕获到的 transaction 对象）
-    Transaction saved = txCaptor.getValue();
-    // 假设 id 为 1
-    saved.setId(1L);
-    when(transactionRepository.findById(eq(1L))).thenReturn(Optional.of(saved));
-
-    // 完成交易（入账给收款方）
-    var finished = transactionService.finishTransaction(1L, 999L, true);
-
-    // 收款方余额增加
-    assertThat(inWallet.getBalance()).isEqualByComparingTo(new BigDecimal("60.00"));
-    assertThat(finished.getFinished()).isTrue();
-
-    verify(walletRepository, atLeastOnce()).save(any(Wallet.class));
-    verify(transactionRepository, atLeastOnce()).save(any(Transaction.class));
+    verify(internalAccountClient).createTransaction(amount, TransactionType.PAYMENT, inWalletId, outWalletId);
+    verify(internalAccountClient).finishTransaction(1L, 999L, true);
   }
 
   @Test
   public void testCreatePayment_insufficientBalance_throws() {
-    Wallet outWallet = Wallet.getNewWallet(1003L);
-    outWallet.addBalance(new BigDecimal("10.00"));
-
-    Wallet inWallet = Wallet.getNewWallet(1004L);
-
     Long inWalletId = 30L;
     Long outWalletId = 40L;
 
-    when(walletRepository.findById(eq(inWalletId))).thenReturn(Optional.of(inWallet));
-    when(walletRepository.findById(eq(outWalletId))).thenReturn(Optional.of(outWallet));
-
     BigDecimal amount = new BigDecimal("50.00");
+    when(internalAccountClient.createTransaction(amount, TransactionType.PAYMENT, inWalletId, outWalletId))
+      .thenThrow(new IllegalStateException(TransactionException.BALANCE_NOT_ENOUGH));
+
     assertThrows(
         TransactionException.class,
         () ->
@@ -118,57 +85,19 @@ public class TransactionServiceImplTest {
   }
 
   @Test
-  public void concurrencySimulation_multiplePayments_reduceBalanceAtomically() throws Exception {
-    // 该测试为示例，模拟多线程环境下并发调用 createTransaction
-    Wallet outWallet = Wallet.getNewWallet(1005L);
-    outWallet.addBalance(new BigDecimal("1000.00"));
+  public void getTransactionsByWalletId_delegatesToInternalClient() {
+    TransactionVO inTx = new TransactionVO();
+    inTx.setId(1L);
+    TransactionVO outTx = new TransactionVO();
+    outTx.setId(2L);
+    TransactionsRecord record = new TransactionsRecord(List.of(inTx), List.of(outTx));
 
-    Wallet inWallet = Wallet.getNewWallet(1006L);
+    when(internalAccountClient.getTransactionsByWalletId(eq(200L))).thenReturn(record);
 
-    Long inWalletId = 100L;
-    Long outWalletId = 200L;
+    TransactionsRecord result = transactionService.getTransactionsByWalletId(200L);
 
-    // 对 findById 的并发访问返回同一实例（注意：真实环境应使用 DB 锁）
-    when(walletRepository.findById(eq(inWalletId))).thenReturn(Optional.of(inWallet));
-    when(walletRepository.findById(eq(outWalletId))).thenReturn(Optional.of(outWallet));
-
-    when(transactionRepository.save(any(Transaction.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
-
-    int threads = 10;
-    BigDecimal each = new BigDecimal("50.00");
-    ExecutorService es = Executors.newFixedThreadPool(threads);
-    CountDownLatch start = new CountDownLatch(1);
-    CountDownLatch done = new CountDownLatch(threads);
-    AtomicInteger failures = new AtomicInteger(0);
-
-    for (int i = 0; i < threads; i++) {
-      es.submit(
-          () -> {
-            try {
-              start.await();
-              try {
-                transactionService.createTransaction(
-                    each, TransactionType.PAYMENT, inWalletId, outWalletId);
-              } catch (Exception e) {
-                failures.incrementAndGet();
-              }
-            } catch (InterruptedException ignored) {
-            } finally {
-              done.countDown();
-            }
-          });
-    }
-
-    // 开始并发
-    start.countDown();
-    done.await();
-    es.shutdown();
-
-    // 期望总扣款 = threads * each
-    BigDecimal expected =
-        new BigDecimal("1000.00").subtract(each.multiply(new BigDecimal(threads)));
-    assertThat(outWallet.getBalance()).isEqualByComparingTo(expected);
-    // failures 表示并发过程中的异常数量（理论上应为0），考虑到非事务性并发风险，此测试更多用于说明并发影响
+    assertThat(result.inTransactions()).hasSize(1);
+    assertThat(result.outTransactions()).hasSize(1);
+    verify(internalAccountClient).getTransactionsByWalletId(200L);
   }
 }

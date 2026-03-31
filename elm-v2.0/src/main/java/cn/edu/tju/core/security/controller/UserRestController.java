@@ -52,9 +52,11 @@ public class UserRestController {
 
     if (userService.getUserWithUsername(user.getUsername()) != null)
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Username ALREADY EXISTS");
-    userService.addUser(user);
+    User createdUser = userService.addUser(user);
+    if (createdUser == null)
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "CREATE USER FAILED");
 
-    return HttpResult.success(user);
+    return HttpResult.success(createdUser);
   }
 
   @GetMapping("/user")
@@ -108,9 +110,11 @@ public class UserRestController {
     if (userService.getUserWithUsername(person.getUsername()) != null)
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Username ALREADY EXISTS");
 
-    userService.addPerson(person);
+    Person createdPerson = userService.addPerson(person);
+    if (createdPerson == null)
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "CREATE PERSON FAILED");
 
-    return HttpResult.success(person);
+    return HttpResult.success(createdPerson);
   }
 
   @GetMapping("/users")

@@ -11,6 +11,9 @@ public class TransactionVO implements Serializable {
   private Long inWalletId;
   private Long outWalletId;
   private Boolean finished;
+  private String requestId;
+  private String bizId;
+  private String reason;
 
   public TransactionVO() {}
 
@@ -48,6 +51,18 @@ public class TransactionVO implements Serializable {
     return finished;
   }
 
+  public String getRequestId() {
+    return requestId;
+  }
+
+  public String getBizId() {
+    return bizId;
+  }
+
+  public String getReason() {
+    return reason;
+  }
+
   public void setId(Long id) {
     this.id = id;
   }
@@ -72,6 +87,18 @@ public class TransactionVO implements Serializable {
     this.finished = finished;
   }
 
+  public void setRequestId(String requestId) {
+    this.requestId = requestId;
+  }
+
+  public void setBizId(String bizId) {
+    this.bizId = bizId;
+  }
+
+  public void setReason(String reason) {
+    this.reason = reason;
+  }
+
   @Override
   public String toString() {
     return "TransactionVO: id="
@@ -85,6 +112,12 @@ public class TransactionVO implements Serializable {
         + ", outWalletId="
         + outWalletId
         + ", finished="
-        + finished;
+        + finished
+        + ", requestId="
+        + requestId
+        + ", bizId="
+        + bizId
+        + ", reason="
+        + reason;
   }
 }

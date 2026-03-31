@@ -24,12 +24,12 @@ public class UserService {
     return SecurityUtils.getCurrentUsername().map(internalUserClient::getUserByUsername);
   }
 
-  public void addUser(User user) {
-    internalUserClient.createUser(user);
+  public User addUser(User user) {
+    return internalUserClient.createUser(user);
   }
 
-  public void addPerson(Person person) {
-    internalUserClient.createPerson(person);
+  public Person addPerson(Person person) {
+    return internalUserClient.createPerson(person);
   }
 
   public void updateUser(User user) {

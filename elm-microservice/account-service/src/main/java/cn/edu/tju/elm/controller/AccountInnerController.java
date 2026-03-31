@@ -2,6 +2,7 @@ package cn.edu.tju.elm.controller;
 
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
+import cn.edu.tju.elm.model.RECORD.TransactionsRecord;
 import cn.edu.tju.elm.model.VO.InternalVoucherSnapshotVO;
 import cn.edu.tju.elm.model.VO.TransactionVO;
 import cn.edu.tju.elm.model.VO.WalletVO;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.math.BigDecimal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -135,6 +137,137 @@ public class AccountInnerController {
     }
   }
 
+  @PostMapping("/wallet")
+  @Operation(summary = "内部创建钱包", description = "按用户ID创建钱包")
+  public HttpResult<WalletVO> createWallet(
+      @Parameter(description = "创建钱包请求", required = true) @RequestBody WalletUserRequest request) {
+    try {
+      WalletVO wallet = accountInternalService.createWallet(request.getUserId());
+      return HttpResult.success(wallet);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @GetMapping("/wallet/{walletId}")
+  @Operation(summary = "内部查询钱包", description = "按钱包ID查询钱包")
+  public HttpResult<WalletVO> getWalletById(
+      @Parameter(description = "钱包ID", required = true) @PathVariable("walletId") Long walletId,
+      @Parameter(description = "操作人用户ID", required = true) @RequestParam("operatorId") Long operatorId,
+      @Parameter(description = "是否管理员") @RequestParam(name = "isAdmin", defaultValue = "false")
+          boolean isAdmin) {
+    try {
+      WalletVO wallet = accountInternalService.getWalletById(walletId, operatorId, isAdmin);
+      return HttpResult.success(wallet);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @GetMapping("/wallet/owner/{walletId}")
+  @Operation(summary = "内部查询钱包所有者", description = "按钱包ID查询所有者")
+  public HttpResult<Long> getWalletOwnerById(
+      @Parameter(description = "钱包ID", required = true) @PathVariable("walletId") Long walletId) {
+    try {
+      Long ownerId = accountInternalService.getWalletOwnerIdById(walletId);
+      return HttpResult.success(ownerId);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @PostMapping("/wallet/voucher")
+  @Operation(summary = "内部发券到钱包", description = "向指定钱包添加券余额")
+  public HttpResult<String> addVoucher(
+      @Parameter(description = "发券请求", required = true) @RequestBody WalletVoucherRequest request) {
+    try {
+      accountInternalService.addVoucher(request.getWalletId(), request.getAmount());
+      return HttpResult.success("Add voucher successfully");
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @PostMapping("/wallet/topup")
+  @Operation(summary = "内部钱包充值", description = "按用户ID执行钱包充值")
+  public HttpResult<TransactionVO> topupWallet(
+      @Parameter(description = "钱包金额操作请求", required = true) @RequestBody WalletAmountRequest request) {
+    try {
+      TransactionVO transaction =
+          accountInternalService.topupWallet(request.getUserId(), request.getAmount());
+      return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @PostMapping("/wallet/withdraw")
+  @Operation(summary = "内部钱包提现", description = "按用户ID执行钱包提现")
+  public HttpResult<TransactionVO> withdrawFromWallet(
+      @Parameter(description = "钱包金额操作请求", required = true) @RequestBody WalletAmountRequest request) {
+    try {
+      TransactionVO transaction =
+          accountInternalService.withdrawFromWallet(request.getUserId(), request.getAmount());
+      return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @GetMapping("/transaction/{id}")
+  @Operation(summary = "内部查询交易", description = "按交易ID查询交易")
+  public HttpResult<TransactionVO> getTransactionById(
+      @Parameter(description = "交易ID", required = true) @PathVariable("id") Long id) {
+    try {
+      TransactionVO transaction = accountInternalService.getTransactionById(id);
+      return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @GetMapping("/transaction/list/{walletId}")
+  @Operation(summary = "内部查询钱包交易列表", description = "按钱包ID查询交易列表")
+  public HttpResult<TransactionsRecord> getTransactionsByWalletId(
+      @Parameter(description = "钱包ID", required = true) @PathVariable("walletId") Long walletId) {
+    try {
+      TransactionsRecord transactions = accountInternalService.getTransactionsByWalletId(walletId);
+      return HttpResult.success(transactions);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @PostMapping("/transaction")
+  @Operation(summary = "内部创建交易", description = "内部创建充值、提现或支付交易")
+  public HttpResult<TransactionVO> createTransaction(
+      @Parameter(description = "内部交易请求", required = true) @RequestBody
+          InternalTransactionRequest request) {
+    try {
+      TransactionVO transaction =
+          accountInternalService.createTransaction(
+              request.getAmount(), request.getType(), request.getInWalletId(), request.getOutWalletId());
+      return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  @PatchMapping("/transaction/finished")
+  @Operation(summary = "内部完成交易", description = "内部标记交易完成")
+  public HttpResult<TransactionVO> finishTransaction(
+      @Parameter(description = "完成交易请求", required = true) @RequestBody
+          FinishTransactionRequest request) {
+    try {
+      TransactionVO transaction =
+          accountInternalService.finishTransaction(
+              request.getId(), request.getOperatorId(), request.isAdmin());
+      return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
   @GetMapping("/voucher/{voucherId}")
   @Operation(summary = "查询优惠券快照", description = "用于订单服务下单前校验优惠券可用性")
   public HttpResult<InternalVoucherSnapshotVO> getVoucherSnapshot(
@@ -197,6 +330,120 @@ public class AccountInnerController {
   }
 
   public static class WalletRefundRequest extends WalletDebitRequest {}
+
+  public static class WalletUserRequest {
+    private Long userId;
+
+    public Long getUserId() {
+      return userId;
+    }
+
+    public void setUserId(Long userId) {
+      this.userId = userId;
+    }
+  }
+
+  public static class WalletAmountRequest extends WalletUserRequest {
+    private BigDecimal amount;
+
+    public BigDecimal getAmount() {
+      return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+      this.amount = amount;
+    }
+  }
+
+  public static class WalletVoucherRequest {
+    private Long walletId;
+    private BigDecimal amount;
+
+    public Long getWalletId() {
+      return walletId;
+    }
+
+    public void setWalletId(Long walletId) {
+      this.walletId = walletId;
+    }
+
+    public BigDecimal getAmount() {
+      return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+      this.amount = amount;
+    }
+  }
+
+  public static class InternalTransactionRequest {
+    private BigDecimal amount;
+    private Integer type;
+    private Long inWalletId;
+    private Long outWalletId;
+
+    public BigDecimal getAmount() {
+      return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+      this.amount = amount;
+    }
+
+    public Integer getType() {
+      return type;
+    }
+
+    public void setType(Integer type) {
+      this.type = type;
+    }
+
+    public Long getInWalletId() {
+      return inWalletId;
+    }
+
+    public void setInWalletId(Long inWalletId) {
+      this.inWalletId = inWalletId;
+    }
+
+    public Long getOutWalletId() {
+      return outWalletId;
+    }
+
+    public void setOutWalletId(Long outWalletId) {
+      this.outWalletId = outWalletId;
+    }
+  }
+
+  public static class FinishTransactionRequest {
+    private Long id;
+    private Long operatorId;
+    private boolean isAdmin;
+
+    public Long getId() {
+      return id;
+    }
+
+    public void setId(Long id) {
+      this.id = id;
+    }
+
+    public Long getOperatorId() {
+      return operatorId;
+    }
+
+    public void setOperatorId(Long operatorId) {
+      this.operatorId = operatorId;
+    }
+
+    public boolean isAdmin() {
+      return isAdmin;
+    }
+
+    public void setAdmin(boolean admin) {
+      isAdmin = admin;
+    }
+  }
 
   public static class VoucherRedeemRequest {
     private String requestId;

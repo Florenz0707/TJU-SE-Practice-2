@@ -124,12 +124,30 @@ cp .env.example .env
 
 按需修改 `.env` 中的敏感信息（数据库密码、内部 token）。
 
+执行 `docker compose` 前请先确认 Docker Engine 和 Compose 插件可用。
+
+如果你当前是在 VS Code dev container 或普通容器里开发，`docker` 命令很可能不可用，或者没有挂载宿主机 Docker Socket。这种情况下需要回到宿主机终端执行下面的 compose 命令，而不是在开发容器内部执行。
+
 ### 3.2 启动整套容器服务
 
 ```bash
 cp .env.example .env
 docker compose up -d --build
 ```
+
+如果第一次全量启动时 `config-server`、`discovery-server` 或下游业务服务出现连锁重启，优先改用分阶段启动，避免仅靠 `depends_on: service_started` 带来的启动竞态：
+
+```bash
+docker compose up -d --build mysql mysql-init config-server
+docker compose up -d --build discovery-server-a discovery-server-b
+docker compose up -d --build points-service account-service business-service-a business-service-b food-service-a food-service-b cart-service-a cart-service-b order-service-a order-service-b address-service user-service elm-v2 gateway-service frontend
+```
+
+推荐在每一阶段之间检查：
+
+- `http://localhost:8888/actuator/health`
+- `http://localhost:8761`
+- `http://localhost:8090/actuator/health`
 
 启动后访问：
 
@@ -150,15 +168,55 @@ docker compose up -d --build
 说明：
 
 - 根目录 `docker-compose.yml` 默认启动前端、后端、数据库和 Spring Cloud 治理组件
-- 当前环境的推荐部署方式只有 Docker Compose；不要在宿主机直接安装或运行 JDK、Maven、pnpm
+- 课程验收或一键演示时优先使用 Docker Compose；日常开发和排障也支持仓库自带工具链的本地直跑模式
 - `elm-v1.0` 是历史代码，不参与当前部署、联调和验收
 - 前端容器优先通过 `http://localhost` 访问，由 Nginx 转发到 `gateway-service`
 
-### 3.3 联调运行顺序（推荐）
+### 3.3 本地直跑（不使用 Docker Compose）
+
+适用于当前容器内开发、单服务重启和链路排障。
+
+1. 启动配置中心、注册中心、网关：
+
+```bash
+bash scripts/run-local-cloud.sh
+```
+
+2. 启动业务服务与聚合层：
+
+```bash
+bash scripts/run-local-backend-cloud.sh
+```
+
+3. 如需单独启动或重启聚合层：
+
+```bash
+cd elm-v2.0
+export JAVA_HOME=/root/workspace/TJU-SE-Practice-2/.tools/jdk-21
+export PATH="$JAVA_HOME/bin:/root/workspace/TJU-SE-Practice-2/.tools/apache-maven-3.9.9/bin:$PATH"
+mvn -Dmaven.test.skip=true -Dspring-boot.run.profiles=local,cloud spring-boot:run
+```
+
+4. 停止本地直跑服务：
+
+```bash
+bash scripts/stop-local-backend.sh
+bash scripts/stop-local-cloud.sh
+```
+
+5. 当前推荐验证入口：
+
+- 网关：`http://localhost:8090`
+- 聚合层 Swagger：`http://localhost:8080/swagger-ui/index.html`
+- 前端开发环境：`elm-frontend`
+
+### 3.4 联调运行顺序（推荐）
 
 建议按下面顺序做新版方案联调：
 
 1. 启动后端编排：`docker compose up -d --build`
+  - 若在 dev container 中执行提示 `docker: command not found`，说明当前环境不具备 Docker 运行条件，需要切回宿主机终端执行
+  - 若一次性全量启动后出现配置中心或注册中心未就绪导致的级联失败，按 3.2 的分阶段方式重试
 2. 检查关键入口：
   - `http://localhost:8888`
   - `http://localhost:8761`
@@ -179,7 +237,7 @@ docker compose up -d --build
 - 若只排查聚合层，可临时直接访问 `http://localhost:8080/elm`
 - `run_four_service_smoke.py` 主要验证后端主链路，不负责前端页面回归
 
-### 3.4 停止与清理
+### 3.5 停止与清理
 
 ```bash
 docker compose down
@@ -191,7 +249,7 @@ docker compose down
 docker compose down -v
 ```
 
-### 3.5 首次启动失败排查（MySQL 未初始化）
+### 3.6 首次启动失败排查（MySQL 未初始化）
 
 如果出现“表不存在/服务反复重启”，通常是旧 `mysql-data` 卷导致初始化脚本未重跑。处理方式：
 
@@ -206,7 +264,32 @@ docker compose up -d --build
 - 各服务 `DB_URL` 也开启了 `createDatabaseIfNotExist=true` 作为兜底
 - 容器内服务默认通过 `config-server + discovery-server` 获取配置并注册到 Eureka，`gateway-service` 与 `elm-v2.0` 通过逻辑服务名访问下游集群
 
-## 4. 部署说明
+## 4. 最新验证结论（2026-03-31）
+
+本地直跑模式下，已完成一轮只走标准聚合接口的真实回归：
+
+- 注册、登录成功
+- `GET /api/wallet/my`、`POST /api/wallet/my/topup` 成功
+- 购物车、地址、下单、取消、完成成功
+- 评价新增、查询、删除成功
+- `GET /api/orders/user/my` 返回正确订单列表
+
+本轮回归同时确认：
+
+- `elm-v2.0` 的钱包与交易实现已收口到 `account-service`
+- `/api/wallet` 与 `/api/orders` 已使用同一资金源
+- 不再需要通过 `/services/account/api/wallet/*` 直通充值来绕过聚合层
+
+后端自动化测试与覆盖空白的最新盘点见：`docs/backend-test-baseline.md`
+
+常用验证命令：
+
+- 前端测试：`pnpm --dir elm-frontend test:run`
+- 前端测试 + 构建：`pnpm --dir . run test:frontend:all`
+- 前端构建：`pnpm --dir elm-frontend build`
+- 网关 API 冒烟：`pnpm --dir . run smoke:gateway-api`
+
+## 5. 部署说明
 
 - 所有服务统一由根目录 `docker-compose.yml` 编排
 - 编排包含 `config-server`、`discovery-server`、`gateway-service`，用于配置中心、服务注册发现和统一入口

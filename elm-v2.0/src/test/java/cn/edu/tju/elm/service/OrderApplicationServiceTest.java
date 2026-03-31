@@ -16,6 +16,7 @@ import cn.edu.tju.elm.model.BO.Business;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.utils.InternalAccountClient;
+import cn.edu.tju.elm.utils.InternalAddressClient;
 import cn.edu.tju.elm.utils.InternalCatalogClient;
 import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.InternalServiceClient;
@@ -34,6 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class OrderApplicationServiceTest {
   @Mock private BusinessService businessService;
   @Mock private InternalAccountClient internalAccountClient;
+    @Mock private InternalAddressClient internalAddressClient;
   @Mock private InternalCatalogClient internalCatalogClient;
   @Mock private InternalOrderClient internalOrderClient;
   @Mock private InternalServiceClient internalServiceClient;
@@ -57,7 +59,7 @@ class OrderApplicationServiceTest {
     var result = orderApplicationService.addOrder(userId, order, "req-not-found");
 
     assertFalse(result.getSuccess());
-    verify(internalOrderClient, never()).getAddressById(any());
+    verify(internalAddressClient, never()).getAddressById(any());
     verify(internalAccountClient, never()).getWalletByUserId(any(), anyBoolean());
   }
 
@@ -79,9 +81,9 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
             new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
-    when(internalOrderClient.getAddressById(2L))
+    when(internalAddressClient.getAddressById(2L))
         .thenReturn(
-            new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
+            new InternalAddressClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
     when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
         .thenReturn(List.of(new InternalOrderClient.CartSnapshot(11L, 100L, userId, 1L, 1)));
     when(internalAccountClient.getWalletByUserId(userId, true))
@@ -111,9 +113,9 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
             new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
-    when(internalOrderClient.getAddressById(2L))
+    when(internalAddressClient.getAddressById(2L))
         .thenReturn(
-            new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
+            new InternalAddressClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
     when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
         .thenReturn(List.of(new InternalOrderClient.CartSnapshot(12L, 100L, userId, 1L, 1)));
     when(internalCatalogClient.reserveStock(any(), any(), any())).thenReturn(false);
@@ -145,9 +147,9 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
             new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
-    when(internalOrderClient.getAddressById(2L))
+    when(internalAddressClient.getAddressById(2L))
         .thenReturn(
-            new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
+            new InternalAddressClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
     when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
         .thenReturn(List.of(new InternalOrderClient.CartSnapshot(12L, 100L, userId, 1L, 1)));
     when(internalAccountClient.getVoucherSnapshot(66L))
@@ -198,9 +200,9 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
             new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
-    when(internalOrderClient.getAddressById(2L))
+    when(internalAddressClient.getAddressById(2L))
         .thenReturn(
-            new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
+            new InternalAddressClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
     when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
         .thenReturn(List.of(new InternalOrderClient.CartSnapshot(13L, 100L, userId, 1L, 1)));
     when(internalCatalogClient.reserveStock(any(), any(), any())).thenReturn(true);
@@ -251,9 +253,9 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
             new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
-    when(internalOrderClient.getAddressById(2L))
+    when(internalAddressClient.getAddressById(2L))
         .thenReturn(
-            new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
+            new InternalAddressClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
     when(internalOrderClient.getCartsByBusinessAndCustomerId(1L, userId))
         .thenReturn(List.of(new InternalOrderClient.CartSnapshot(12L, 100L, userId, 1L, 1)));
     when(internalAccountClient.getVoucherSnapshot(66L))

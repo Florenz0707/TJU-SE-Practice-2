@@ -105,7 +105,7 @@ public class InternalUserClient {
 
   public User createUser(User user) {
     try {
-      Map<?, ?> body = postInternal("/api/inner/users", user);
+      Map<?, ?> body = postInternal("/api/inner/users", toInternalUserPayload(user));
       return toUser(readMapData(body));
     } catch (Exception e) {
       System.err.println("Failed to create user: " + e.getMessage());
@@ -115,7 +115,7 @@ public class InternalUserClient {
 
   public Person createPerson(Person person) {
     try {
-      Map<?, ?> body = postInternal("/api/inner/persons", person);
+      Map<?, ?> body = postInternal("/api/inner/persons", toInternalUserPayload(person));
       User user = toUser(readMapData(body));
       return user instanceof Person result ? result : null;
     } catch (Exception e) {
@@ -126,7 +126,7 @@ public class InternalUserClient {
 
   public User updateUser(User user) {
     try {
-      Map<?, ?> body = putInternal("/api/inner/users/" + user.getId(), user);
+      Map<?, ?> body = putInternal("/api/inner/users/" + user.getId(), toInternalUserPayload(user));
       return toUser(readMapData(body));
     } catch (Exception e) {
       System.err.println("Failed to update user: " + e.getMessage());
@@ -157,6 +157,27 @@ public class InternalUserClient {
     HttpEntity<Object> request = new HttpEntity<>(requestBody, createInternalHeaders());
     ResponseEntity<Map> response = restTemplate.exchange(baseUrl + path, HttpMethod.PUT, request, Map.class);
     return response.getBody();
+  }
+
+  private Map<String, Object> toInternalUserPayload(User user) {
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("id", user.getId());
+    payload.put("username", user.getUsername());
+    payload.put("password", user.getPassword());
+    payload.put("activated", user.isActivated());
+    payload.put("deleted", user.getDeleted());
+    payload.put("createTime", user.getCreateTime());
+    payload.put("updateTime", user.getUpdateTime());
+    payload.put("authorities", user.getAuthorities());
+    if (user instanceof Person person) {
+      payload.put("firstName", person.getFirstName());
+      payload.put("lastName", person.getLastName());
+      payload.put("email", person.getEmail());
+      payload.put("phone", person.getPhone());
+      payload.put("gender", person.getGender());
+      payload.put("photo", person.getPhoto());
+    }
+    return payload;
   }
 
   private boolean isSuccessResponse(Map<?, ?> body) {

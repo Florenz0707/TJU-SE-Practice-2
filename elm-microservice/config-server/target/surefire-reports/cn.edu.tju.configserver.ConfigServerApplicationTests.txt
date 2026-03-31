@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: cn.edu.tju.configserver.ConfigServerApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.319 s -- in cn.edu.tju.configserver.ConfigServerApplicationTests

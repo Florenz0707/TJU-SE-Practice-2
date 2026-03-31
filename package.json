@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "test:frontend:all": "cd elm-frontend && pnpm test:run && pnpm build",
+    "test:frontend": "cd elm-frontend && pnpm test:run",
+    "build:frontend": "cd elm-frontend && pnpm build",
+    "smoke:gateway-api": "node elm-v2.0/scripts/run_gateway_api_smoke.mjs"
+  },
   "devDependencies": {
     "oxlint": "^1.56.0"
   }

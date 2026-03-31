@@ -10,7 +10,7 @@ export function useWebSocket(url: string) {
   const message: Ref<unknown> = ref(null);
   const error: Ref<Event | null> = ref(null);
 
-  let reconnectTimer: number | null = null;
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const reconnectInterval = 5000; // Reconnect every 5 seconds
 
   const connect = () => {

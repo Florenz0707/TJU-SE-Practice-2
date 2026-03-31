@@ -13,9 +13,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest
+@SpringBootTest(
+    properties = {
+      "spring.cloud.config.enabled=false",
+      "spring.cloud.config.import-check.enabled=false",
+      "eureka.client.enabled=false"
+    })
+@ActiveProfiles("local")
 public class PrivateVoucherClaimIntegrationTest {
 
   @Autowired private UserRepository userRepository;

@@ -32,26 +32,68 @@
 
 ## 4. 执行步骤
 
-1. 启动整套容器环境：`docker compose up -d --build`
-2. 可选检查网关与聚合层：
+### 4.1 Docker Compose 模式
+
+1. 先确认当前终端具备 Docker 运行条件：
+   - `docker compose version`
+   - 如果你当前在 dev container 中开发，出现 `docker: command not found` 或无法连接 daemon，说明必须切回宿主机终端执行 compose
+2. 启动整套容器环境：`docker compose up -d --build`
+   - 如果首次一键启动后出现配置中心、注册中心或下游服务级联重启，改用分阶段启动：
+   - `docker compose up -d --build mysql mysql-init config-server`
+   - `docker compose up -d --build discovery-server-a discovery-server-b`
+   - `docker compose up -d --build points-service account-service business-service-a business-service-b food-service-a food-service-b cart-service-a cart-service-b order-service-a order-service-b address-service user-service elm-v2 gateway-service frontend`
+   - 每阶段完成后分别检查 `http://localhost:8888/actuator/health`、`http://localhost:8761`、`http://localhost:8090/actuator/health`
+3. 可选检查网关与聚合层：
    - 网关：`http://localhost:8090/actuator/health`
    - 前端：`http://localhost`
    - 聚合层：`http://localhost:8080/swagger-ui/index.html`
-3. 执行脚本化联调：
+4. 执行脚本化联调：
    - `cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env --skip-start`
-4. 校验订单链路：
+5. 校验订单链路：
    - 下单成功、取消成功、完成态更新成功
-5. 校验购物车链路：
+6. 校验购物车链路：
    - 下单前购物车读取成功
    - 下单后购物车清理成功（无遗留脏数据）
-6. 校验评价链路：
+7. 校验评价链路：
    - 评价新增后订单状态从 `COMPLETE` 迁移到 `COMMENTED`
    - 删评后订单状态回滚到 `COMPLETE`
-7. 校验 outbox：
+8. 校验 outbox：
    - `POINTS_ORDER_SUCCESS` 事件状态应为 `SENT`
-8. 前端联调直接访问容器化入口：
+9. 前端联调直接访问容器化入口：
    - 前端默认通过 Nginx 转发到 `gateway-service`
    - 浏览器访问 `http://localhost`
+
+### 4.2 本地直跑模式（不使用 Docker Compose）
+
+1. 启动配置中心、注册中心、网关：
+   - `bash scripts/run-local-cloud.sh`
+2. 启动业务服务与聚合层：
+   - `bash scripts/run-local-backend-cloud.sh`
+3. 检查关键健康接口：
+   - `http://localhost:8090/actuator/health`
+   - `http://localhost:8080/elm/actuator/health`
+4. 若只需要单独重启聚合层，使用仓库自带工具链：
+   - `cd elm-v2.0`
+   - `export JAVA_HOME=/root/workspace/TJU-SE-Practice-2/.tools/jdk-21`
+   - `export PATH="$JAVA_HOME/bin:/root/workspace/TJU-SE-Practice-2/.tools/apache-maven-3.9.9/bin:$PATH"`
+   - `mvn -Dmaven.test.skip=true -Dspring-boot.run.profiles=local,cloud spring-boot:run`
+5. 若需要快速重复执行纯 API 冒烟，不依赖数据库直连脚本：
+   - `node elm-v2.0/scripts/run_gateway_api_smoke.mjs`
+   - 可选：`node elm-v2.0/scripts/run_gateway_api_smoke.mjs --env-file elm-v2.0/scripts/gateway-api-smoke.env`
+   - 默认走 `http://localhost:8090`，覆盖注册、登录、钱包充值、地址、购物车、下单、取消、完成、评价、订单查询
+6. 通过网关 `http://localhost:8090` 做主链路验证，优先验证：
+   - `POST /api/persons`
+   - `POST /api/auth`
+   - `GET /api/wallet/my`
+   - `POST /api/wallet/my/topup`
+   - `POST /api/addresses`
+   - `POST /api/carts`
+   - `POST /api/orders`
+   - `POST /api/orders/{id}/cancel`
+   - `PATCH /api/orders`
+   - `POST /api/reviews/order/{orderId}`
+   - `DELETE /api/reviews/{reviewId}`
+   - `GET /api/orders/user/my`
 
 ## 5. 验收标准
 
@@ -61,6 +103,7 @@
 4. 购物车与地址远程调用稳定，无本地仓储兜底依赖
 5. 通过网关访问时主链路无额外 5xx
 6. `integration_outbox_event` 中 `POINTS_ORDER_SUCCESS` 为 `SENT`
+7. 聚合层 `/api/wallet` 与 `/api/orders` 使用同一账户资金源，不需要再绕过 `/services/account/*` 直充
 
 ## 6. 回滚策略
 
@@ -117,3 +160,80 @@
    - `OUTBOX_STATUS=SENT`
 3. 结论：
    - 阶段5迁移链路可继续推进边界态回归与回滚脚本核对
+
+## 10. 本地直跑复验（2026-03-31）
+
+1. 运行方式：
+   - 不使用 `docker compose`
+   - 使用 `scripts/run-local-cloud.sh`、`scripts/run-local-backend-cloud.sh`
+   - 单独重启 `elm-v2.0` 时使用仓库内 `.tools/jdk-21` 与 `.tools/apache-maven-3.9.9`
+2. 关键修复：
+   - 用户注册内部调用已显式透传 `password`，避免注册成功但实际无法登录
+   - 聚合层 `WalletServiceImpl`、`TransactionServiceImpl` 已改为通过 `InternalAccountClient` 调用 `account-service`
+   - `/api/wallet/my/topup` 后可直接 `/api/orders` 下单，不再需要走 `/services/account/api/wallet/*` 绕过
+3. 实际样本：
+   - 用户：`wallet_smoke_1774945185`
+   - `userId=37`
+   - `walletId=37`
+   - 商家：`businessId=1`
+   - 菜品：`foodId=1`
+4. 验证结果：
+   - 钱包初始余额：`0.0`
+   - 聚合层充值 `100.00` 成功，余额变为 `100.0`
+   - 首单 `walletPaid=28.00` 创建成功，取消后订单状态为 `0`，余额回到 `100.0`
+   - 第二单 `walletPaid=28.00` 创建成功，完成后订单状态为 `4`
+   - 评价新增、查询、删除成功
+   - `GET /api/orders/user/my` 返回 `2` 条订单
+   - 最终钱包余额为 `72.0`
+5. 结论：
+   - 非 compose 本地直跑下，登录、地址、购物车、钱包、下单、取消、完成、评价主链路已闭环
+   - 当前最可信入口仍是网关 `http://localhost:8090`
+
+## 11. 本地直跑复验补充（2026-03-31，扩展验证）
+
+1. 本轮新增验证范围：
+   - 在同一套本地直跑服务上，同时完成新增自动化测试后的真实 API 冒烟回归
+   - 验证注册、登录、钱包、地址、购物车、下单、取消、完成、评价、订单查询链路未因测试补充和前端改动回退
+2. 实际样本：
+   - 用户：`smoke_1774954930140`
+   - `userId=39`
+   - `walletId=38`
+   - `addressId=10`
+   - `order1Id=8`
+   - `order2Id=9`
+   - `reviewId=4`
+3. 验证结果：
+   - 注册和登录成功
+   - 钱包初始余额：`0`
+   - `POST /api/wallet/my/topup` 充值 `100` 成功，余额变为 `100`
+   - 首单创建后状态为 `1`，取消后状态为 `0`
+   - 第二单创建成功，`PATCH /api/orders` 后状态为 `4`
+   - 评价新增、按订单查询、删除均成功
+   - `GET /api/orders/user/my` 返回 `2` 条订单
+   - 最终钱包余额为 `72`
+4. 结论：
+   - 新增 `user-service/address-service/cart-service` 控制器测试以及前端 `Vitest` 测试后，真实业务链路仍保持可用
+   - 当前本地非 compose 方案已同时具备自动化测试基线和真实主链路回归结果
+
+## 12. 可重复执行的网关 API 冒烟脚本（2026-03-31）
+
+1. 脚本位置：
+   - `elm-v2.0/scripts/run_gateway_api_smoke.mjs`
+   - 环境模板：`elm-v2.0/scripts/gateway-api-smoke.env.example`
+   - 根级快捷入口：`pnpm --dir . run smoke:gateway-api`
+2. 默认行为：
+   - 默认网关地址：`http://localhost:8090`
+   - 自动创建新用户并完成注册、登录、钱包充值、地址新增、购物车新增、两次下单、首单取消、第二单完成、评价增删查、我的订单查询
+3. 最近一次执行样本：
+   - 用户：`smoke_1774955296733`
+   - `userId=40`
+   - `order1Id=10`
+   - `order2Id=11`
+   - `reviewId=5`
+4. 最近一次执行结果：
+   - `cancel1State=0`
+   - `complete2State=4`
+   - `orderCount=2`
+   - `walletFinal=72`
+5. 结论：
+   - 该脚本可作为当前本地非 compose 方案的标准快速冒烟入口

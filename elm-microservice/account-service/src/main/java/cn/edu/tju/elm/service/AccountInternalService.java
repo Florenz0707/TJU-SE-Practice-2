@@ -7,12 +7,15 @@ import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.model.VO.InternalVoucherSnapshotVO;
 import cn.edu.tju.elm.model.VO.TransactionVO;
 import cn.edu.tju.elm.model.VO.WalletVO;
+import cn.edu.tju.elm.service.serviceInterface.TransactionService;
+import cn.edu.tju.elm.service.serviceInterface.WalletService;
 import cn.edu.tju.elm.repository.PrivateVoucherRepository;
 import cn.edu.tju.elm.repository.TransactionRepository;
 import cn.edu.tju.elm.repository.WalletRepository;
 import cn.edu.tju.elm.service.serviceInterface.PrivateVoucherService;
 import cn.edu.tju.elm.utils.EntityUtils;
 import java.math.BigDecimal;
+import cn.edu.tju.elm.model.RECORD.TransactionsRecord;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +26,99 @@ public class AccountInternalService {
   private final TransactionRepository transactionRepository;
   private final PrivateVoucherRepository privateVoucherRepository;
   private final PrivateVoucherService privateVoucherService;
+  private final WalletService walletService;
+  private final TransactionService transactionService;
 
   public AccountInternalService(
       WalletRepository walletRepository,
       TransactionRepository transactionRepository,
       PrivateVoucherRepository privateVoucherRepository,
-      PrivateVoucherService privateVoucherService) {
+      PrivateVoucherService privateVoucherService,
+      WalletService walletService,
+      TransactionService transactionService) {
     this.walletRepository = walletRepository;
     this.transactionRepository = transactionRepository;
     this.privateVoucherRepository = privateVoucherRepository;
     this.privateVoucherService = privateVoucherService;
+    this.walletService = walletService;
+    this.transactionService = transactionService;
+  }
+
+  @Transactional
+  public WalletVO createWallet(Long userId) {
+    if (userId == null) {
+      return null;
+    }
+    return walletService.createWallet(userId);
+  }
+
+  @Transactional(readOnly = true)
+  public WalletVO getWalletById(Long walletId, Long operatorId, boolean isAdmin) {
+    if (walletId == null || operatorId == null) {
+      return null;
+    }
+    return walletService.getWalletById(walletId, operatorId, isAdmin);
+  }
+
+  @Transactional(readOnly = true)
+  public Long getWalletOwnerIdById(Long walletId) {
+    if (walletId == null) {
+      return null;
+    }
+    return walletService.getWalletOwnerIdById(walletId);
+  }
+
+  @Transactional
+  public void addVoucher(Long walletId, BigDecimal amount) {
+    walletService.addVoucher(walletId, amount);
+  }
+
+  @Transactional
+  public TransactionVO topupWallet(Long userId, BigDecimal amount) {
+    WalletVO wallet = walletService.getWalletByOwnerId(userId);
+    if (wallet == null) {
+      return null;
+    }
+    return transactionService.createTransaction(amount, TransactionType.TOP_UP, wallet.getId(), null);
+  }
+
+  @Transactional
+  public TransactionVO withdrawFromWallet(Long userId, BigDecimal amount) {
+    WalletVO wallet = walletService.getWalletByOwnerId(userId);
+    if (wallet == null) {
+      return null;
+    }
+    return transactionService.createTransaction(amount, TransactionType.WITHDRAW, null, wallet.getId());
+  }
+
+  @Transactional(readOnly = true)
+  public TransactionVO getTransactionById(Long transactionId) {
+    if (transactionId == null) {
+      return null;
+    }
+    return transactionService.getTransactionById(transactionId);
+  }
+
+  @Transactional(readOnly = true)
+  public TransactionsRecord getTransactionsByWalletId(Long walletId) {
+    if (walletId == null) {
+      return null;
+    }
+    return transactionService.getTransactionsByWalletId(walletId);
+  }
+
+  @Transactional
+  public TransactionVO createTransaction(
+      BigDecimal amount, Integer type, Long inWalletId, Long outWalletId) {
+    return transactionService.createTransaction(amount, type, inWalletId, outWalletId);
+  }
+
+  @Transactional
+  public TransactionVO finishTransaction(Long id, Long operatorId, boolean isAdmin) {
+    if (id == null || operatorId == null) {
+      return null;
+    }
+    return transactionService.finishTransaction(id, operatorId, isAdmin);
   }
 
   @Transactional

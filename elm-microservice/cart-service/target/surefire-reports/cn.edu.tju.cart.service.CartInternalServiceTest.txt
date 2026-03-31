@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: cn.edu.tju.cart.service.CartInternalServiceTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.023 s -- in cn.edu.tju.cart.service.CartInternalServiceTest

@@ -1,6 +1,7 @@
 cn/edu/tju/elm/controller/PrivateVoucherController.class
 cn/edu/tju/elm/service/serviceInterface/TransactionService.class
 cn/edu/tju/elm/exception/TransactionException.class
+cn/edu/tju/elm/controller/AccountInnerController$FinishTransactionRequest.class
 cn/edu/tju/elm/service/serviceImpl/WalletServiceImpl.class
 cn/edu/tju/elm/service/AccountInternalService.class
 cn/edu/tju/AccountServiceApplication.class
@@ -11,6 +12,7 @@ cn/edu/tju/elm/repository/PublicVoucherRepository.class
 cn/edu/tju/elm/model/VO/PublicVoucherVO.class
 cn/edu/tju/elm/model/BO/PublicVoucher.class
 cn/edu/tju/core/config/WebSecurityConfig.class
+cn/edu/tju/elm/controller/AccountInnerController$InternalTransactionRequest.class
 cn/edu/tju/elm/model/VO/TransactionVO.class
 cn/edu/tju/elm/exception/PrivateVoucherException.class
 cn/edu/tju/elm/repository/TransactionRepository.class
@@ -23,9 +25,12 @@ cn/edu/tju/elm/model/VO/InternalVoucherSnapshotVO.class
 cn/edu/tju/core/security/SecurityUtils.class
 cn/edu/tju/elm/repository/PrivateVoucherRepository.class
 cn/edu/tju/core/security/jwt/TokenProvider.class
+cn/edu/tju/elm/controller/AccountInnerController$WalletUserRequest.class
 cn/edu/tju/elm/service/serviceImpl/PublicVoucherServiceImpl.class
+cn/edu/tju/elm/controller/AccountInnerController$WalletVoucherRequest.class
 cn/edu/tju/elm/model/RECORD/TransactionsRecord.class
 cn/edu/tju/elm/controller/AccountInnerController$WalletDebitRequest.class
+cn/edu/tju/elm/controller/AccountInnerController$WalletAmountRequest.class
 cn/edu/tju/elm/controller/AccountInnerController$VoucherRedeemRequest.class
 cn/edu/tju/core/model/ResultCodeEnum.class
 cn/edu/tju/elm/controller/AccountInnerController$WalletRefundRequest.class

@@ -17,6 +17,13 @@ public class WalletVO implements Serializable {
     ownerId = wallet.getOwnerId();
   }
 
+  public WalletVO(Long id, BigDecimal balance, BigDecimal voucher, Long ownerId) {
+    this.id = id;
+    this.balance = balance;
+    this.voucher = voucher;
+    this.ownerId = ownerId;
+  }
+
   public Long getId() {
     return id;
   }
@@ -27,6 +34,10 @@ public class WalletVO implements Serializable {
 
   public BigDecimal getVoucher() {
     return voucher;
+  }
+
+  public Long getOwnerId() {
+    return ownerId;
   }
 
   @Override
