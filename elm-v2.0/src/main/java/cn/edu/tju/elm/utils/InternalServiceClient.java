@@ -19,9 +19,10 @@ public class InternalServiceClient {
   private final String internalServiceToken;
 
   public InternalServiceClient(
+      RestTemplate restTemplate,
       @Value("${points.service.url:http://localhost:8080/elm}") String pointsServiceUrl,
       @Value("${internal.service.token}") String internalServiceToken) {
-    this.restTemplate = new RestTemplate();
+    this.restTemplate = restTemplate;
     this.baseUrl =
         pointsServiceUrl.endsWith("/")
             ? pointsServiceUrl.substring(0, pointsServiceUrl.length() - 1)

@@ -9,11 +9,13 @@ import cn.edu.tju.elm.model.BO.Order;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.utils.EntityUtils;
 import cn.edu.tju.elm.utils.InternalAccountClient;
+import cn.edu.tju.elm.utils.InternalAddressClient;
 import cn.edu.tju.elm.utils.InternalCatalogClient;
 import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.InternalServiceClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +30,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderApplicationService {
   private static final Logger log = LoggerFactory.getLogger(OrderApplicationService.class);
+  private static final ZoneId BUSINESS_TIME_ZONE = ZoneId.of("Asia/Shanghai");
 
   private final BusinessService businessService;
   private final InternalAccountClient internalAccountClient;
+  private final InternalAddressClient internalAddressClient;
   private final InternalCatalogClient internalCatalogClient;
   private final InternalOrderClient internalOrderClient;
   private final InternalServiceClient internalServiceClient;
@@ -40,6 +44,7 @@ public class OrderApplicationService {
   public OrderApplicationService(
       BusinessService businessService,
       InternalAccountClient internalAccountClient,
+      InternalAddressClient internalAddressClient,
       InternalCatalogClient internalCatalogClient,
       InternalOrderClient internalOrderClient,
       InternalServiceClient internalServiceClient,
@@ -47,6 +52,7 @@ public class OrderApplicationService {
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.businessService = businessService;
     this.internalAccountClient = internalAccountClient;
+    this.internalAddressClient = internalAddressClient;
     this.internalCatalogClient = internalCatalogClient;
     this.internalOrderClient = internalOrderClient;
     this.internalServiceClient = internalServiceClient;
@@ -83,14 +89,14 @@ public class OrderApplicationService {
     }
 
     if (business.openTime() != null && business.closeTime() != null) {
-      java.time.LocalTime now = java.time.LocalTime.now();
+      java.time.LocalTime now = java.time.LocalTime.now(BUSINESS_TIME_ZONE);
       if (now.isBefore(business.openTime()) || now.isAfter(business.closeTime())) {
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "商家未营业");
       }
     }
 
-    InternalOrderClient.AddressSnapshot addressSnapshot =
-        internalOrderClient.getAddressById(order.getDeliveryAddress().getId());
+    InternalAddressClient.AddressSnapshot addressSnapshot =
+      internalAddressClient.getAddressById(order.getDeliveryAddress().getId());
     DeliveryAddress address =
         addressSnapshot == null ? null : buildAddressRef(addressSnapshot.id());
     if (addressSnapshot != null) {
@@ -648,12 +654,34 @@ public class OrderApplicationService {
   }
 
   private Business buildBusinessRef(Long businessId) {
-    Business business = new Business();
+    if (businessId == null) {
+      return null;
+    }
+    Business business = businessService.getBusinessById(businessId);
+    if (business != null) {
+      return business;
+    }
+    business = new Business();
     business.setId(businessId);
     return business;
   }
 
   private DeliveryAddress buildAddressRef(Long addressId) {
+    if (addressId == null) {
+      return null;
+    }
+    InternalAddressClient.AddressSnapshot snapshot = internalAddressClient.getAddressById(addressId);
+    if (snapshot != null) {
+      DeliveryAddress address = new DeliveryAddress();
+      address.setId(snapshot.id());
+      address.setCustomerId(snapshot.customerId());
+      address.setContactName(snapshot.contactName());
+      address.setContactSex(snapshot.contactSex());
+      address.setContactTel(snapshot.contactTel());
+      address.setAddress(snapshot.address());
+      return address;
+    }
+
     DeliveryAddress address = new DeliveryAddress();
     address.setId(addressId);
     return address;

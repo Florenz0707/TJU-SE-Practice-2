@@ -6,6 +6,7 @@ import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.service.UserService;
 import cn.edu.tju.elm.model.BO.DeliveryAddress;
 import cn.edu.tju.elm.utils.AuthorityUtils;
+import cn.edu.tju.elm.utils.InternalAddressClient;
 import cn.edu.tju.elm.utils.InternalOrderClient;
 import cn.edu.tju.elm.utils.ResponseCompatibilityEnricher;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,15 +20,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 @Tag(name = "管理地址", description = "提供对配送地址的增删改查功能")
 public class AddressController {
-  private final InternalOrderClient internalOrderClient;
+  private final InternalAddressClient internalAddressClient;
   private final UserService userService;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public AddressController(
-      InternalOrderClient internalOrderClient,
+      InternalAddressClient internalAddressClient,
       UserService userService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
-    this.internalOrderClient = internalOrderClient;
+    this.internalAddressClient = internalAddressClient;
     this.userService = userService;
     this.compatibilityEnricher = compatibilityEnricher;
   }
@@ -51,9 +52,9 @@ public class AddressController {
     if (address == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
-    InternalOrderClient.AddressSnapshot created =
-        internalOrderClient.createAddress(
-            new InternalOrderClient.CreateAddressCommand(
+    InternalAddressClient.AddressSnapshot created =
+      internalAddressClient.createAddress(
+        new InternalAddressClient.CreateAddressCommand(
                 me.getId(),
                 address.getContactName(),
                 address.getContactSex(),
@@ -76,7 +77,7 @@ public class AddressController {
     User me = meOptional.get();
 
     List<DeliveryAddress> myAddresses =
-        internalOrderClient.getAddressesByCustomerId(me.getId()).stream()
+      internalAddressClient.getAddressesByCustomerId(me.getId()).stream()
             .map(this::toAddress)
             .toList();
     compatibilityEnricher.enrichAddresses(myAddresses);
@@ -96,17 +97,17 @@ public class AddressController {
     if (newAddress == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address CANT BE NULL");
 
-    InternalOrderClient.AddressSnapshot existing = internalOrderClient.getAddressById(id);
+    InternalAddressClient.AddressSnapshot existing = internalAddressClient.getAddressById(id);
     DeliveryAddress address = existing == null ? null : toAddress(existing);
     if (address == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
     Long oldCustomerId = address.getCustomerId();
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     if (isAdmin || me.getId().equals(oldCustomerId)) {
-      InternalOrderClient.AddressSnapshot updated =
-          internalOrderClient.updateAddress(
+        InternalAddressClient.AddressSnapshot updated =
+          internalAddressClient.updateAddress(
               id,
-              new InternalOrderClient.UpdateAddressCommand(
+            new InternalAddressClient.UpdateAddressCommand(
                   oldCustomerId,
                   newAddress.getContactName(),
                   newAddress.getContactSex(),
@@ -131,14 +132,14 @@ public class AddressController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    InternalOrderClient.AddressSnapshot existing = internalOrderClient.getAddressById(id);
+    InternalAddressClient.AddressSnapshot existing = internalAddressClient.getAddressById(id);
     DeliveryAddress address = existing == null ? null : toAddress(existing);
     if (address == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Address NOT FOUND");
     Long customerId = address.getCustomerId();
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     if (isAdmin || me.getId().equals(customerId)) {
-      boolean deleted = internalOrderClient.deleteAddress(id);
+      boolean deleted = internalAddressClient.deleteAddress(id);
       if (!deleted) {
         return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to delete address");
       }
@@ -147,7 +148,7 @@ public class AddressController {
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
 
-  private DeliveryAddress toAddress(InternalOrderClient.AddressSnapshot snapshot) {
+  private DeliveryAddress toAddress(InternalAddressClient.AddressSnapshot snapshot) {
     DeliveryAddress address = new DeliveryAddress();
     address.setId(snapshot.id());
     address.setCustomerId(snapshot.customerId());

@@ -1,0 +1,17 @@
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/FoodServiceApplication.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/core/model/BaseEntity.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/core/model/HttpResult.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/core/model/ResultCodeEnum.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/client/BusinessLookupClient.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/client/BusinessServiceFeignClient.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/client/BusinessServiceFeignConfiguration.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/client/BusinessServiceFeignFallbackFactory.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/client/HttpClientConfig.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/config/FoodDataInitializer.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/controller/FoodInnerController.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/model/bo/Food.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/model/bo/StockRequestLog.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/model/vo/FoodSnapshotVO.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/repository/FoodRepository.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/repository/StockRequestLogRepository.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/food-service/src/main/java/cn/edu/tju/food/service/FoodInternalService.java

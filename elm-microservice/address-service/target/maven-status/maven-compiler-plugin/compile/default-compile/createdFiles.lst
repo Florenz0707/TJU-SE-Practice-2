@@ -1,0 +1,12 @@
+cn/edu/tju/address/model/bo/DeliveryAddress.class
+cn/edu/tju/address/service/AddressInternalService$UpdateAddressCommand.class
+cn/edu/tju/address/controller/AddressInnerController.class
+cn/edu/tju/AddressServiceApplication.class
+cn/edu/tju/address/repository/DeliveryAddressRepository.class
+cn/edu/tju/core/model/HttpResult.class
+cn/edu/tju/core/model/BaseEntity.class
+cn/edu/tju/address/controller/AddressInnerController$AddressUpsertRequest.class
+cn/edu/tju/core/model/ResultCodeEnum.class
+cn/edu/tju/address/model/vo/DeliveryAddressSnapshotVO.class
+cn/edu/tju/address/service/AddressInternalService.class
+cn/edu/tju/address/service/AddressInternalService$CreateAddressCommand.class

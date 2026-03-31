@@ -20,12 +20,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ResponseCompatibilityEnricherTest {
 
   @Mock private UserService userService;
+  @Mock private InternalCatalogClient internalCatalogClient;
+  @Mock private InternalAddressClient internalAddressClient;
+  @Mock private InternalOrderClient internalOrderClient;
 
   private ResponseCompatibilityEnricher compatibilityEnricher;
 
   @BeforeEach
   void setUp() {
-    compatibilityEnricher = new ResponseCompatibilityEnricher(userService);
+    compatibilityEnricher =
+      new ResponseCompatibilityEnricher(
+        userService, internalCatalogClient, internalAddressClient, internalOrderClient);
   }
 
   @Test

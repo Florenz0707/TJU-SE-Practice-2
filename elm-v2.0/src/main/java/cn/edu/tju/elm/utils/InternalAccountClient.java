@@ -20,9 +20,10 @@ public class InternalAccountClient {
   private final String internalServiceToken;
 
   public InternalAccountClient(
+      RestTemplate restTemplate,
       @Value("${account.service.url:http://localhost:8080/elm}") String accountServiceUrl,
       @Value("${internal.service.token}") String internalServiceToken) {
-    this.restTemplate = new RestTemplate();
+    this.restTemplate = restTemplate;
     this.baseUrl =
         accountServiceUrl.endsWith("/")
             ? accountServiceUrl.substring(0, accountServiceUrl.length() - 1)

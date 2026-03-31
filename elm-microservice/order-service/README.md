@@ -21,11 +21,17 @@
 
 ```bash
 # 在仓库根目录执行
-docker compose up -d --build order-service
+docker compose up -d --build order-service-a order-service-b
 ```
 
-默认端口：`8084`
+默认端口：`8084`、`8184`
 默认上下文：`/elm`
+
+如只需联调一个实例，也可以单独启动：
+
+```bash
+docker compose up -d --build order-service-a
+```
 
 ## 运行配置
 

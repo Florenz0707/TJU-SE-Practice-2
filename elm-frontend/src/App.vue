@@ -1,9 +1,11 @@
 <template>
   <router-view />
+  <ServiceDegradeNotice />
 </template>
 
 <script setup lang="ts">
 import { watch } from "vue";
+import ServiceDegradeNotice from "./components/ServiceDegradeNotice.vue";
 import { useCartStore, type AnimationOrigin } from "./store/cart";
 
 const cartStore = useCartStore();

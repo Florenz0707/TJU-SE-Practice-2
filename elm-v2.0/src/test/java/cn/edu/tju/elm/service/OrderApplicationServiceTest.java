@@ -75,10 +75,10 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
             new InternalCatalogClient.BusinessSnapshot(
-                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+                1L, null, null, null, null, null, null, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null));
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
-            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+            new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
     when(internalOrderClient.getAddressById(2L))
         .thenReturn(
             new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
@@ -107,10 +107,10 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
             new InternalCatalogClient.BusinessSnapshot(
-                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+                1L, null, null, null, null, null, null, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null));
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
-            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+            new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
     when(internalOrderClient.getAddressById(2L))
         .thenReturn(
             new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
@@ -141,10 +141,10 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
             new InternalCatalogClient.BusinessSnapshot(
-                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+                1L, null, null, null, null, null, null, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null));
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
-            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+            new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
     when(internalOrderClient.getAddressById(2L))
         .thenReturn(
             new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
@@ -194,10 +194,10 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
             new InternalCatalogClient.BusinessSnapshot(
-                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+                1L, null, null, null, null, null, null, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null));
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
-            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+            new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
     when(internalOrderClient.getAddressById(2L))
         .thenReturn(
             new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));
@@ -247,10 +247,10 @@ class OrderApplicationServiceTest {
     when(internalCatalogClient.getBusinessSnapshot(1L))
         .thenReturn(
             new InternalCatalogClient.BusinessSnapshot(
-                1L, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null));
+                1L, null, null, null, null, null, null, false, BigDecimal.ZERO, BigDecimal.ZERO, null, null, null));
     when(internalCatalogClient.getFoodSnapshot(100L))
         .thenReturn(
-            new InternalCatalogClient.FoodSnapshot(100L, 1L, false, new BigDecimal("30"), 10));
+            new InternalCatalogClient.FoodSnapshot(100L, null, null, null, 1L, false, new BigDecimal("30"), 10, null));
     when(internalOrderClient.getAddressById(2L))
         .thenReturn(
             new InternalOrderClient.AddressSnapshot(2L, userId, "n", 1, "18800000000", "addr"));

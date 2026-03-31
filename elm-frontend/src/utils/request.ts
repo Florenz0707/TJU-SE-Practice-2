@@ -2,6 +2,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { ElMessage } from "element-plus";
 import { useAuthStore } from "../store/auth";
 import { refreshToken as apiRefreshToken } from "../api/auth";
+import { hideServiceDegrade, showServiceDegrade } from "./serviceDegrade";
 
 // Module-level variable to hold the token
 let authToken: string | null = null;
@@ -60,6 +61,7 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 // Response interceptor for handling responses globally
 service.interceptors.response.use(
   (response) => {
+    hideServiceDegrade();
     const res = response.data;
     // Check if the response is a standard HttpResult wrapper
     if (typeof res === "object" && res !== null && "success" in res) {
@@ -135,6 +137,22 @@ service.interceptors.response.use(
     // For all other errors, just display a generic error message
     console.error("Response Error:", error);
     if (error.response?.status !== 401) {
+      const statusCode = error.response?.status ?? null;
+      if (statusCode === null || statusCode >= 500) {
+        showServiceDegrade({
+          message:
+            statusCode === null
+              ? "网络连接失败，系统已切换到降级提示。"
+              : "后端服务暂时不可用，系统已切换到降级提示。",
+          detail:
+            (error.response?.data as { message?: string })?.message ||
+            error.message ||
+            "请求没有拿到可用响应，请稍后重试。",
+          statusCode,
+          requestUrl: originalRequest?.url || "",
+        });
+      }
+
       ElMessage({
         message:
           (error.response?.data as { message?: string })?.message ||

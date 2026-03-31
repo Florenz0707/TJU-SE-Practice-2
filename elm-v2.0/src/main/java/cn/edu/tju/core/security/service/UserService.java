@@ -1,9 +1,9 @@
 package cn.edu.tju.core.security.service;
 
+import cn.edu.tju.core.model.Person;
 import cn.edu.tju.core.model.User;
 import cn.edu.tju.core.security.SecurityUtils;
-import cn.edu.tju.core.security.repository.UserRepository;
-import cn.edu.tju.elm.utils.EntityUtils;
+import cn.edu.tju.elm.utils.InternalUserClient;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -13,42 +13,42 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UserService {
 
-  private final UserRepository userRepository;
+  private final InternalUserClient internalUserClient;
 
-  public UserService(UserRepository userRepository) {
-    this.userRepository = userRepository;
+  public UserService(InternalUserClient internalUserClient) {
+    this.internalUserClient = internalUserClient;
   }
 
   @Transactional(readOnly = true)
   public Optional<User> getUserWithAuthorities() {
-    return SecurityUtils.getCurrentUsername()
-        .flatMap(userRepository::getUserWithAuthoritiesByUsername);
+    return SecurityUtils.getCurrentUsername().map(internalUserClient::getUserByUsername);
   }
 
   public void addUser(User user) {
-    userRepository.save(user);
+    internalUserClient.createUser(user);
+  }
+
+  public void addPerson(Person person) {
+    internalUserClient.createPerson(person);
   }
 
   public void updateUser(User user) {
-    userRepository.save(user);
+    internalUserClient.updateUser(user);
   }
 
   public User getUserById(Long id) {
-    Optional<User> userOptional = userRepository.findById(id);
-    return userOptional.map(EntityUtils::filterEntity).orElse(null);
+    return internalUserClient.getUserById(id);
   }
 
   public List<User> getUsers() {
-    return EntityUtils.filterEntityList(userRepository.findAll());
+    return internalUserClient.getUsers();
   }
 
   public User getUserWithAuthoritiesByUsername(String username) {
-    Optional<User> userOptional = userRepository.getUserWithAuthoritiesByUsername(username);
-    return userOptional.map(EntityUtils::filterEntity).orElse(null);
+    return internalUserClient.getUserByUsername(username);
   }
 
   public User getUserWithUsername(String username) {
-    Optional<User> userOptional = userRepository.getUserByUsername(username);
-    return userOptional.map(EntityUtils::filterEntity).orElse(null);
+    return internalUserClient.getUserByUsername(username);
   }
 }

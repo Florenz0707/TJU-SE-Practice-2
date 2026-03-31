@@ -18,17 +18,24 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class InternalCatalogClient {
   private final RestTemplate restTemplate;
-  private final String baseUrl;
+  private final String businessBaseUrl;
+  private final String foodBaseUrl;
   private final String internalServiceToken;
 
   public InternalCatalogClient(
-      @Value("${catalog.service.url:http://localhost:8080/elm}") String catalogServiceUrl,
+      RestTemplate restTemplate,
+      @Value("${business.service.url:http://localhost:8083/elm}") String businessServiceUrl,
+      @Value("${food.service.url:http://localhost:8087/elm}") String foodServiceUrl,
       @Value("${internal.service.token}") String internalServiceToken) {
-    this.restTemplate = new RestTemplate();
-    this.baseUrl =
-        catalogServiceUrl.endsWith("/")
-            ? catalogServiceUrl.substring(0, catalogServiceUrl.length() - 1)
-            : catalogServiceUrl;
+    this.restTemplate = restTemplate;
+    this.businessBaseUrl =
+        businessServiceUrl.endsWith("/")
+            ? businessServiceUrl.substring(0, businessServiceUrl.length() - 1)
+            : businessServiceUrl;
+    this.foodBaseUrl =
+        foodServiceUrl.endsWith("/")
+            ? foodServiceUrl.substring(0, foodServiceUrl.length() - 1)
+            : foodServiceUrl;
     this.internalServiceToken = internalServiceToken;
   }
 
@@ -39,14 +46,14 @@ public class InternalCatalogClient {
     return headers;
   }
 
-  private Map<?, ?> getInternal(String path) {
+  private Map<?, ?> getInternal(String baseUrl, String path) {
     String url = baseUrl + path;
     HttpEntity<Void> request = new HttpEntity<>(createHeaders());
     ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
     return response.getBody();
   }
 
-  private Map<?, ?> postInternal(String path, Map<String, Object> requestBody) {
+  private Map<?, ?> postInternal(String baseUrl, String path, Map<String, Object> requestBody) {
     String url = baseUrl + path;
     HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
     ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
@@ -66,6 +73,17 @@ public class InternalCatalogClient {
       return map;
     }
     return null;
+  }
+
+  private List<?> readListData(Map<?, ?> body) {
+    if (!isSuccessResponse(body)) {
+      return List.of();
+    }
+    Object data = body.get("data");
+    if (data instanceof List<?> list) {
+      return list;
+    }
+    return List.of();
   }
 
   private static Long readLong(Object value) {
@@ -140,18 +158,29 @@ public class InternalCatalogClient {
     }
   }
 
+  private static String readString(Object value) {
+    return value == null ? null : String.valueOf(value);
+  }
+
   public BusinessSnapshot getBusinessSnapshot(Long businessId) {
     try {
-      Map<?, ?> body = getInternal("/api/inner/catalog/business/" + businessId);
+      Map<?, ?> body = getInternal(businessBaseUrl, "/api/inner/business/" + businessId);
       Map<?, ?> data = readMapData(body);
       if (data == null) {
         return null;
       }
       return new BusinessSnapshot(
           readLong(data.get("id")),
+          readString(data.get("businessName")),
+          readLong(data.get("businessOwnerId")),
+          readString(data.get("businessAddress")),
+          readString(data.get("businessExplain")),
+          readString(data.get("businessImg")),
+          readInteger(data.get("orderTypeId")),
           readBoolean(data.get("deleted")),
           readBigDecimal(data.get("startPrice")),
           readBigDecimal(data.get("deliveryPrice")),
+          readString(data.get("remarks")),
           readLocalTime(data.get("openTime")),
           readLocalTime(data.get("closeTime")));
     } catch (Exception e) {
@@ -160,31 +189,89 @@ public class InternalCatalogClient {
     }
   }
 
+  public List<BusinessSnapshot> getBusinessSnapshots() {
+    try {
+      Map<?, ?> body = getInternal(businessBaseUrl, "/api/inner/business");
+      return readListData(body).stream()
+          .filter(Map.class::isInstance)
+          .map(Map.class::cast)
+          .map(
+              data ->
+                  new BusinessSnapshot(
+                      readLong(data.get("id")),
+                      readString(data.get("businessName")),
+                      readLong(data.get("businessOwnerId")),
+                      readString(data.get("businessAddress")),
+                      readString(data.get("businessExplain")),
+                      readString(data.get("businessImg")),
+                      readInteger(data.get("orderTypeId")),
+                      readBoolean(data.get("deleted")),
+                      readBigDecimal(data.get("startPrice")),
+                      readBigDecimal(data.get("deliveryPrice")),
+                      readString(data.get("remarks")),
+                      readLocalTime(data.get("openTime")),
+                      readLocalTime(data.get("closeTime"))))
+          .toList();
+    } catch (Exception e) {
+      System.err.println("Failed to get business snapshots: " + e.getMessage());
+      return List.of();
+    }
+  }
+
   public FoodSnapshot getFoodSnapshot(Long foodId) {
     try {
-      Map<?, ?> body = getInternal("/api/inner/catalog/food/" + foodId);
+      Map<?, ?> body = getInternal(foodBaseUrl, "/api/inner/food/" + foodId);
       Map<?, ?> data = readMapData(body);
       if (data == null) {
         return null;
       }
       return new FoodSnapshot(
           readLong(data.get("id")),
+          readString(data.get("foodName")),
+          readString(data.get("foodExplain")),
+          readString(data.get("foodImg")),
           readLong(data.get("businessId")),
           readBoolean(data.get("deleted")),
           readBigDecimal(data.get("foodPrice")),
-          readInteger(data.get("stock")));
+          readInteger(data.get("stock")),
+          readString(data.get("remarks")));
     } catch (Exception e) {
       System.err.println("Failed to get food snapshot: " + e.getMessage());
       return null;
     }
   }
 
+  public List<FoodSnapshot> getFoodSnapshotsByBusinessId(Long businessId) {
+    try {
+      Map<?, ?> body = getInternal(foodBaseUrl, "/api/inner/food?businessId=" + businessId);
+      return readListData(body).stream()
+          .filter(Map.class::isInstance)
+          .map(Map.class::cast)
+          .map(
+              data ->
+                  new FoodSnapshot(
+                      readLong(data.get("id")),
+                      readString(data.get("foodName")),
+                      readString(data.get("foodExplain")),
+                      readString(data.get("foodImg")),
+                      readLong(data.get("businessId")),
+                      readBoolean(data.get("deleted")),
+                      readBigDecimal(data.get("foodPrice")),
+                      readInteger(data.get("stock")),
+                      readString(data.get("remarks"))))
+          .toList();
+    } catch (Exception e) {
+      System.err.println("Failed to get food snapshots by businessId: " + e.getMessage());
+      return List.of();
+    }
+  }
+
   public boolean reserveStock(String requestId, String orderId, List<StockItem> items) {
-    return adjustStock("/api/inner/catalog/stock/reserve", requestId, orderId, items);
+    return adjustStock("/api/inner/food/stock/reserve", requestId, orderId, items);
   }
 
   public boolean releaseStock(String requestId, String orderId, List<StockItem> items) {
-    return adjustStock("/api/inner/catalog/stock/release", requestId, orderId, items);
+    return adjustStock("/api/inner/food/stock/release", requestId, orderId, items);
   }
 
   private boolean adjustStock(
@@ -194,7 +281,7 @@ public class InternalCatalogClient {
     requestBody.put("orderId", orderId);
     requestBody.put("items", items);
     try {
-      Map<?, ?> responseBody = postInternal(path, requestBody);
+      Map<?, ?> responseBody = postInternal(foodBaseUrl, path, requestBody);
       if (!isSuccessResponse(responseBody)) {
         return false;
       }
@@ -208,14 +295,29 @@ public class InternalCatalogClient {
 
   public record BusinessSnapshot(
       Long businessId,
+      String businessName,
+      Long businessOwnerId,
+      String businessAddress,
+      String businessExplain,
+      String businessImg,
+      Integer orderTypeId,
       Boolean deleted,
       BigDecimal startPrice,
       BigDecimal deliveryPrice,
+      String remarks,
       LocalTime openTime,
       LocalTime closeTime) {}
 
   public record FoodSnapshot(
-      Long foodId, Long businessId, Boolean deleted, BigDecimal foodPrice, Integer stock) {}
+      Long foodId,
+      String foodName,
+      String foodExplain,
+      String foodImg,
+      Long businessId,
+      Boolean deleted,
+      BigDecimal foodPrice,
+      Integer stock,
+      String remarks) {}
 
   public record StockItem(Long foodId, Integer quantity) {}
 }

@@ -12,7 +12,7 @@
 ## 2. 核心链路 Smoke
 
 1. 用户登录，拿 JWT：
-   - `POST /elm/api/auth`（`user/password`）
+   - `POST /elm/api/auth`（`user/123456`）
 2. 钱包准备：
    - `POST /elm/api/wallet`（若已存在可忽略失败）
    - `POST /elm/api/wallet/my/topup`

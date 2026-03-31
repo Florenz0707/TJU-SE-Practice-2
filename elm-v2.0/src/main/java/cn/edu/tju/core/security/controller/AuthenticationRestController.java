@@ -1,8 +1,8 @@
 package cn.edu.tju.core.security.controller;
 
 import cn.edu.tju.core.security.controller.dto.LoginDto;
+import cn.edu.tju.elm.utils.InternalUserClient;
 import cn.edu.tju.core.security.jwt.JWTFilter;
-import cn.edu.tju.core.security.jwt.TokenProvider;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,10 +11,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,14 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "管理认证", description = "提供基于JWT的身份认证和令牌管理功能")
 public class AuthenticationRestController {
 
-  private final TokenProvider tokenProvider;
-
-  private final AuthenticationManagerBuilder authenticationManagerBuilder;
+  private final InternalUserClient internalUserClient;
 
   public AuthenticationRestController(
-      TokenProvider tokenProvider, AuthenticationManagerBuilder authenticationManagerBuilder) {
-    this.tokenProvider = tokenProvider;
-    this.authenticationManagerBuilder = authenticationManagerBuilder;
+      InternalUserClient internalUserClient) {
+    this.internalUserClient = internalUserClient;
   }
 
   @PostMapping("/auth") /*authenticate*/
@@ -41,20 +34,19 @@ public class AuthenticationRestController {
   public ResponseEntity<JWTToken> authorize(
       @Parameter(description = "登录信息", required = true) @Valid @RequestBody LoginDto loginDto) {
 
-    UsernamePasswordAuthenticationToken authenticationToken =
-        new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
-
-    Authentication authentication =
-        authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-    SecurityContextHolder.getContext().setAuthentication(authentication);
-
-    boolean rememberMe = (loginDto.isRememberMe() != null && loginDto.isRememberMe());
-    String jwt = tokenProvider.createToken(authentication, rememberMe);
+    InternalUserClient.AuthResult authResult = internalUserClient.authenticate(loginDto);
+    if (authResult == null || authResult.token() == null) {
+      return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+    }
 
     HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
+    httpHeaders.add(
+        JWTFilter.AUTHORIZATION_HEADER,
+        authResult.authorizationHeader() == null
+            ? "Bearer " + authResult.token()
+            : authResult.authorizationHeader());
 
-    return new ResponseEntity<>(new JWTToken(jwt), httpHeaders, HttpStatus.OK);
+    return new ResponseEntity<>(new JWTToken(authResult.token()), httpHeaders, HttpStatus.OK);
   }
 
   /** Object to return as body in JWT Authentication. */

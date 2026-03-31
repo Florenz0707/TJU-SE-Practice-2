@@ -28,3 +28,8 @@ hs_err_pid*
 ./history
 
 node_modules/
+
+.localdb
+.m2
+.run
+.tools

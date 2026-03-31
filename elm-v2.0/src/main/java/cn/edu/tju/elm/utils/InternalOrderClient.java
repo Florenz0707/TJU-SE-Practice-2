@@ -19,16 +19,23 @@ import org.springframework.web.client.RestTemplate;
 public class InternalOrderClient {
   private final RestTemplate restTemplate;
   private final String baseUrl;
+  private final String cartBaseUrl;
   private final String internalServiceToken;
 
   public InternalOrderClient(
+      RestTemplate restTemplate,
       @Value("${order.service.url:http://localhost:8080/elm}") String orderServiceUrl,
+      @Value("${cart.service.url:http://localhost:8089/elm}") String cartServiceUrl,
       @Value("${internal.service.token}") String internalServiceToken) {
-    this.restTemplate = new RestTemplate();
+    this.restTemplate = restTemplate;
     this.baseUrl =
         orderServiceUrl.endsWith("/")
             ? orderServiceUrl.substring(0, orderServiceUrl.length() - 1)
             : orderServiceUrl;
+    this.cartBaseUrl =
+        cartServiceUrl.endsWith("/")
+            ? cartServiceUrl.substring(0, cartServiceUrl.length() - 1)
+            : cartServiceUrl;
     this.internalServiceToken = internalServiceToken;
   }
 
@@ -46,8 +53,22 @@ public class InternalOrderClient {
     return response.getBody();
   }
 
+  private Map<?, ?> getCartInternal(String path) {
+    String url = cartBaseUrl + path;
+    HttpEntity<Void> request = new HttpEntity<>(createHeaders());
+    ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
+    return response.getBody();
+  }
+
   private Map<?, ?> postInternal(String path, Map<String, Object> requestBody) {
     String url = baseUrl + path;
+    HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
+    ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+    return response.getBody();
+  }
+
+  private Map<?, ?> postCartInternal(String path, Map<String, Object> requestBody) {
+    String url = cartBaseUrl + path;
     HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, createHeaders());
     ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
     return response.getBody();
@@ -359,7 +380,7 @@ public class InternalOrderClient {
     requestBody.put("businessId", command.businessId());
     requestBody.put("quantity", command.quantity());
     try {
-      Map<?, ?> responseBody = postInternal("/api/inner/order/cart", requestBody);
+      Map<?, ?> responseBody = postCartInternal("/api/inner/cart", requestBody);
       return toCartSnapshot(readMapData(responseBody));
     } catch (Exception e) {
       System.err.println("Failed to create cart: " + e.getMessage());
@@ -369,7 +390,7 @@ public class InternalOrderClient {
 
   public CartSnapshot getCartById(Long cartId) {
     try {
-      Map<?, ?> body = getInternal("/api/inner/order/cart/" + cartId);
+      Map<?, ?> body = getCartInternal("/api/inner/cart/" + cartId);
       return toCartSnapshot(readMapData(body));
     } catch (Exception e) {
       System.err.println("Failed to get cart by id: " + e.getMessage());
@@ -378,19 +399,18 @@ public class InternalOrderClient {
   }
 
   public List<CartSnapshot> getCartsByCustomerId(Long customerId) {
-    return getCartList("/api/inner/order/cart/customer/" + customerId);
+    return getCartList("/api/inner/cart/customer/" + customerId);
   }
 
   public List<CartSnapshot> getCartsByBusinessAndCustomerId(Long businessId, Long customerId) {
-    return getCartList("/api/inner/order/cart/business/" + businessId + "/customer/" + customerId);
+    return getCartList("/api/inner/cart/business/" + businessId + "/customer/" + customerId);
   }
 
   public CartSnapshot updateCartQuantity(Long cartId, Integer quantity) {
     Map<String, Object> requestBody = new HashMap<>();
     requestBody.put("quantity", quantity);
     try {
-      Map<?, ?> responseBody =
-          postInternal("/api/inner/order/cart/" + cartId + "/quantity", requestBody);
+      Map<?, ?> responseBody = postCartInternal("/api/inner/cart/" + cartId + "/quantity", requestBody);
       return toCartSnapshot(readMapData(responseBody));
     } catch (Exception e) {
       System.err.println("Failed to update cart quantity: " + e.getMessage());
@@ -400,8 +420,8 @@ public class InternalOrderClient {
 
   public boolean deleteCart(Long cartId) {
     try {
-      String path = "/api/inner/order/cart/" + cartId;
-      String url = baseUrl + path;
+      String path = "/api/inner/cart/" + cartId;
+      String url = cartBaseUrl + path;
       HttpEntity<Void> request = new HttpEntity<>(createHeaders());
       ResponseEntity<Map> response =
           restTemplate.exchange(url, HttpMethod.DELETE, request, Map.class);
@@ -595,7 +615,7 @@ public class InternalOrderClient {
 
   private List<CartSnapshot> getCartList(String path) {
     try {
-      Map<?, ?> body = getInternal(path);
+      Map<?, ?> body = getCartInternal(path);
       if (!isSuccessResponse(body)) {
         return List.of();
       }

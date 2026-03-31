@@ -6,6 +6,7 @@ import cn.edu.tju.core.security.jwt.JWTFilter;
 import cn.edu.tju.core.security.jwt.TokenProvider;
 import java.util.Arrays;
 import java.util.Collections;
+import org.springframework.http.HttpMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -99,6 +100,10 @@ public class WebSecurityConfig {
                 requests
                     .requestMatchers(permitUrlArr)
                     .permitAll()
+              .requestMatchers(HttpMethod.GET, "/api/businesses", "/api/businesses/**")
+              .permitAll()
+              .requestMatchers(HttpMethod.GET, "/api/foods", "/api/foods/**")
+              .permitAll()
                     // 内部接口需要内部服务Token或JWT认证
                     .requestMatchers("/api/inner/**")
                     .hasAnyAuthority("INTERNAL_SERVICE", "ROLE_USER", "ROLE_ADMIN")

@@ -1,3 +1,5 @@
+x-eureka-server-url: &eureka_server_url http://discovery-server-a:8761/eureka,http://discovery-server-b:8761/eureka
+
 services:
   mysql:
     image: mysql:8.0
@@ -29,13 +31,73 @@ services:
       [
         "sh",
         "-c",
-        "mysql -hmysql -uroot -p$${DB_PASSWORD} -e \"CREATE DATABASE IF NOT EXISTS elm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_points CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_account CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_catalog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_order CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"",
+        "mysql -hmysql -uroot -p$${DB_PASSWORD} -e \"CREATE DATABASE IF NOT EXISTS elm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_points CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_account CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_catalog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_cart CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_order CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_address CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"",
       ]
     environment:
       DB_PASSWORD: ${DB_PASSWORD:-root}
     restart: "no"
     networks:
       - elm-network
+
+  config-server:
+    build:
+      context: ./elm-microservice/config-server
+      dockerfile: Dockerfile
+    container_name: config-server
+    restart: unless-stopped
+    environment:
+      CONFIG_REPO_PATH: /config-repo
+    volumes:
+      - ./spring-cloud-config-repo:/config-repo:ro
+    ports:
+      - "8888:8888"
+    networks:
+      - elm-network
+
+  discovery-server-a:
+    build:
+      context: ./elm-microservice/discovery-server
+      dockerfile: Dockerfile
+    container_name: discovery-server-a
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_started
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_HOSTNAME: discovery-server-a
+      EUREKA_REGISTER_WITH_EUREKA: "true"
+      EUREKA_FETCH_REGISTRY: "true"
+      EUREKA_DEFAULT_ZONE: http://discovery-server-b:8761/eureka
+    ports:
+      - "8761:8761"
+    networks:
+      elm-network:
+        aliases:
+          - discovery-server
+
+  discovery-server-b:
+    build:
+      context: ./elm-microservice/discovery-server
+      dockerfile: Dockerfile
+    container_name: discovery-server-b
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_started
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_HOSTNAME: discovery-server-b
+      EUREKA_REGISTER_WITH_EUREKA: "true"
+      EUREKA_FETCH_REGISTRY: "true"
+      EUREKA_DEFAULT_ZONE: http://discovery-server-a:8761/eureka
+      SERVER_PORT: 8761
+    ports:
+      - "8762:8761"
+    networks:
+      elm-network:
+        aliases:
+          - discovery-server
 
   points-service:
     build:
@@ -46,15 +108,22 @@ services:
     depends_on:
       mysql-init:
         condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_points?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=points-service-8081"]
     ports:
       - "8081:8081"
     networks:
-      - elm-network
+      elm-network:
+        aliases:
+          - points-service
 
   account-service:
     build:
@@ -65,51 +134,295 @@ services:
     depends_on:
       mysql-init:
         condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_account?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=account-service-8082"]
     ports:
       - "8082:8082"
     networks:
-      - elm-network
+      elm-network:
+        aliases:
+          - account-service
 
-  catalog-service:
+  business-service-a:
     build:
-      context: ./elm-microservice/catalog-service
+      context: ./elm-microservice/business-service
       dockerfile: Dockerfile
-    container_name: catalog-service
+    container_name: business-service-a
     restart: unless-stopped
     depends_on:
       mysql-init:
         condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=business-service-8083"]
     ports:
       - "8083:8083"
     networks:
-      - elm-network
+      elm-network:
+        aliases:
+          - business-service
 
-  order-service:
+  business-service-b:
     build:
-      context: ./elm-microservice/order-service
+      context: ./elm-microservice/business-service
       dockerfile: Dockerfile
-    container_name: order-service
+    container_name: business-service-b
     restart: unless-stopped
     depends_on:
       mysql-init:
         condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=business-service-8183"]
+    ports:
+      - "8183:8083"
+    networks:
+      elm-network:
+        aliases:
+          - business-service
+
+  food-service-a:
+    build:
+      context: ./elm-microservice/food-service
+      dockerfile: Dockerfile
+    container_name: food-service-a
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      business-service-a:
+        condition: service_started
+      business-service-b:
+        condition: service_started
+      discovery-server-a:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      BUSINESS_SERVICE_URL: http://business-service:8083/elm
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=food-service-8087"]
+    ports:
+      - "8087:8087"
+    networks:
+      elm-network:
+        aliases:
+          - food-service
+
+  food-service-b:
+    build:
+      context: ./elm-microservice/food-service
+      dockerfile: Dockerfile
+    container_name: food-service-b
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      business-service-a:
+        condition: service_started
+      business-service-b:
+        condition: service_started
+      discovery-server-a:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      BUSINESS_SERVICE_URL: http://business-service:8083/elm
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=food-service-8187"]
+    ports:
+      - "8187:8087"
+    networks:
+      elm-network:
+        aliases:
+          - food-service
+
+  cart-service-a:
+    build:
+      context: ./elm-microservice/cart-service
+      dockerfile: Dockerfile
+    container_name: cart-service-a
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_cart?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=cart-service-8089"]
+    ports:
+      - "8089:8089"
+    networks:
+      elm-network:
+        aliases:
+          - cart-service
+
+  cart-service-b:
+    build:
+      context: ./elm-microservice/cart-service
+      dockerfile: Dockerfile
+    container_name: cart-service-b
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_cart?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=cart-service-8189"]
+    ports:
+      - "8189:8089"
+    networks:
+      elm-network:
+        aliases:
+          - cart-service
+
+  order-service-a:
+    build:
+      context: ./elm-microservice/order-service
+      dockerfile: Dockerfile
+    container_name: order-service-a
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=order-service-8084"]
     ports:
       - "8084:8084"
     networks:
-      - elm-network
+      elm-network:
+        aliases:
+          - order-service
+
+  order-service-b:
+    build:
+      context: ./elm-microservice/order-service
+      dockerfile: Dockerfile
+    container_name: order-service-b
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=order-service-8184"]
+    ports:
+      - "8184:8084"
+    networks:
+      elm-network:
+        aliases:
+          - order-service
+
+  address-service:
+    build:
+      context: ./elm-microservice/address-service
+      dockerfile: Dockerfile
+    container_name: address-service
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      discovery-server-a:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_address?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=address-service-8085"]
+    ports:
+      - "8085:8085"
+    networks:
+      elm-network:
+        aliases:
+          - address-service
+
+  user-service:
+    build:
+      context: ./elm-microservice/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      account-service:
+        condition: service_started
+      discovery-server-a:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      ACCOUNT_SERVICE_URL: http://account-service:8082/elm
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=user-service-8086"]
+    ports:
+      - "8086:8086"
+    networks:
+      elm-network:
+        aliases:
+          - user-service
 
   elm-v2:
     build:
@@ -120,36 +433,101 @@ services:
     depends_on:
       mysql-init:
         condition: service_completed_successfully
+      config-server:
+        condition: service_started
+      discovery-server-a:
+        condition: service_started
       points-service:
         condition: service_started
       account-service:
         condition: service_started
-      catalog-service:
+      business-service-a:
         condition: service_started
-      order-service:
+      business-service-b:
+        condition: service_started
+      food-service-a:
+        condition: service_started
+      food-service-b:
+        condition: service_started
+      cart-service-a:
+        condition: service_started
+      cart-service-b:
+        condition: service_started
+      order-service-a:
+        condition: service_started
+      order-service-b:
+        condition: service_started
+      address-service:
+        condition: service_started
+      user-service:
         condition: service_started
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
       POINTS_SERVICE_URL: http://points-service:8081/elm
       ACCOUNT_SERVICE_URL: http://account-service:8082/elm
-      CATALOG_SERVICE_URL: http://catalog-service:8083/elm
+      USER_SERVICE_URL: http://user-service:8086/elm
+      BUSINESS_SERVICE_URL: http://business-service:8083/elm
+      FOOD_SERVICE_URL: http://food-service:8087/elm
+      CART_SERVICE_URL: http://cart-service:8089/elm
       ORDER_SERVICE_URL: http://order-service:8084/elm
+      ADDRESS_SERVICE_URL: http://address-service:8085/elm
+    command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=elm-8080"]
     ports:
       - "8080:8080"
     networks:
-      - elm-network
+      elm-network:
+        aliases:
+          - elm-v2
+
+  gateway-service:
+    build:
+      context: ./elm-microservice/gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_started
+      discovery-server-a:
+        condition: service_started
+      elm-v2:
+        condition: service_started
+    environment:
+      CONFIG_SERVER_URL: http://config-server:8888
+      EUREKA_SERVER_URL: *eureka_server_url
+      CONFIG_REFRESH_TOKEN: ${CONFIG_REFRESH_TOKEN:-refresh-bus-secret-token-2026}
+      ELM_SERVICE_URL: http://elm-v2:8080
+      POINTS_SERVICE_URL: http://points-service:8081
+      ACCOUNT_SERVICE_URL: http://account-service:8082
+      BUSINESS_SERVICE_URL: http://business-service:8083
+      FOOD_SERVICE_URL: http://food-service:8087
+      CART_SERVICE_URL: http://cart-service:8089
+      ORDER_SERVICE_URL: http://order-service:8084
+      ADDRESS_SERVICE_URL: http://address-service:8085
+      USER_SERVICE_URL: http://user-service:8086
+    ports:
+      - "8090:8090"
+    networks:
+      elm-network:
+        aliases:
+          - gateway-service
 
   frontend:
+    profiles:
+      - frontend
     build:
       context: ./elm-frontend
       dockerfile: Dockerfile
     container_name: elm-frontend
     restart: unless-stopped
     depends_on:
-      - elm-v2
+      gateway-service:
+        condition: service_started
     ports:
       - "80:80"
     networks:

@@ -1,0 +1,97 @@
+spring:
+  application:
+    name: gateway-service
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          routes:
+            - id: elm-context-pass-through
+              uri: ${ELM_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/elm/**
+            - id: elm-api
+              uri: ${ELM_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/api/**
+              filters:
+                - RewritePath=/api/(?<segment>.*), /elm/api/${segment}
+            - id: elm-openapi
+              uri: ${ELM_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/v3/api-docs,/v3/api-docs/**,/swagger-ui.html,/swagger-ui/**
+              filters:
+                - PrefixPath=/elm
+            - id: points-service-direct
+              uri: ${POINTS_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/services/points/**
+              filters:
+                - RewritePath=/services/points/(?<segment>.*), /elm/${segment}
+            - id: account-service-direct
+              uri: ${ACCOUNT_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/services/account/**
+              filters:
+                - RewritePath=/services/account/(?<segment>.*), /elm/${segment}
+            - id: business-service-direct
+              uri: ${BUSINESS_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/services/business/**
+              filters:
+                - RewritePath=/services/business/(?<segment>.*), /elm/${segment}
+            - id: food-service-direct
+              uri: ${FOOD_SERVICE_URL:http://localhost:8087}
+              predicates:
+                - Path=/services/food/**
+              filters:
+                - RewritePath=/services/food/(?<segment>.*), /elm/${segment}
+            - id: cart-service-direct
+              uri: ${CART_SERVICE_URL:http://localhost:8089}
+              predicates:
+                - Path=/services/cart/**
+              filters:
+                - RewritePath=/services/cart/(?<segment>.*), /elm/${segment}
+            - id: order-service-direct
+              uri: ${ORDER_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/services/order/**
+              filters:
+                - RewritePath=/services/order/(?<segment>.*), /elm/${segment}
+            - id: address-service-direct
+              uri: ${ADDRESS_SERVICE_URL:http://localhost:8085}
+              predicates:
+                - Path=/services/address/**
+              filters:
+                - RewritePath=/services/address/(?<segment>.*), /elm/${segment}
+            - id: user-service-direct
+              uri: ${USER_SERVICE_URL:http://localhost:8086}
+              predicates:
+                - Path=/services/user/**
+              filters:
+                - RewritePath=/services/user/(?<segment>.*), /elm/${segment}
+
+server:
+  port: 8090
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,refresh
+  endpoint:
+    health:
+      show-details: always

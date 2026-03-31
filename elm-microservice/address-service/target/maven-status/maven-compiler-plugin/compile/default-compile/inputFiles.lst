@@ -1,0 +1,9 @@
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/AddressServiceApplication.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/address/controller/AddressInnerController.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/address/model/bo/DeliveryAddress.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/address/model/vo/DeliveryAddressSnapshotVO.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/address/repository/DeliveryAddressRepository.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/address/service/AddressInternalService.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/core/model/BaseEntity.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/core/model/HttpResult.java
+/root/workspace/TJU-SE-Practice-2/elm-microservice/address-service/src/main/java/cn/edu/tju/core/model/ResultCodeEnum.java
