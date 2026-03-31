@@ -376,6 +376,37 @@ pnpm build
 - 前端构建成功。
 - 产物已输出到 `elm-frontend/dist/`。
 
+### 5.3 容器化部署验证
+
+已统一采用根目录 `docker-compose.yml` 作为当前项目部署入口，覆盖 MySQL、Config Server、双 Eureka、Gateway、聚合层 `elm-v2.0`、各业务微服务以及新版前端 `elm-frontend`。
+
+部署原则：
+
+- 当前环境不再依赖宿主机安装 JDK、Maven、pnpm。
+- 所有构建与运行均通过 Docker 镜像完成。
+- `elm-v1.0` 为历史代码，明确不纳入当前验收与部署方案。
+
+部署命令：
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+```
+
+访问入口：
+
+- 前端：`http://localhost`
+- Gateway：`http://localhost:8090`
+- 聚合层：`http://localhost:8080/elm`
+- Config Server：`http://localhost:8888`
+- Eureka：`http://localhost:8761`
+
+说明：
+
+- 前端容器通过 Nginx 代理统一转发到 `gateway-service`，避免宿主机单独安装 Node 或 pnpm。
+- 各 Spring Boot 服务通过各自 Dockerfile 进行多阶段构建，运行时仅保留 JRE 镜像。
+- 容器网络内部统一使用服务名通信，并与 Eureka 注册名保持一致。
+
 ## 6. 验收结论
 
 按照课程验收清单，本仓现在可以给出如下结论：

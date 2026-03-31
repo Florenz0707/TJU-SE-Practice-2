@@ -32,11 +32,10 @@
 
 ## 4. 执行步骤
 
-1. 启动环境，二选一：
-   - 容器模式：`docker compose up -d --build`
-   - 本地云模式：先 `bash scripts/run-local-cloud.sh`，再 `bash scripts/run-local-backend.sh`
+1. 启动整套容器环境：`docker compose up -d --build`
 2. 可选检查网关与聚合层：
    - 网关：`http://localhost:8090/actuator/health`
+   - 前端：`http://localhost`
    - 聚合层：`http://localhost:8080/swagger-ui/index.html`
 3. 执行脚本化联调：
    - `cd elm-v2.0/scripts && uv run run_four_service_smoke.py --env-file .env --skip-start`
@@ -50,9 +49,9 @@
    - 删评后订单状态回滚到 `COMPLETE`
 7. 校验 outbox：
    - `POINTS_ORDER_SUCCESS` 事件状态应为 `SENT`
-8. 如需前端联调，再在根目录执行：
-   - `cd elm-frontend && pnpm install && pnpm dev --host 0.0.0.0`
-   - 前端默认通过 Vite 代理访问 `http://localhost:8090`
+8. 前端联调直接访问容器化入口：
+   - 前端默认通过 Nginx 转发到 `gateway-service`
+   - 浏览器访问 `http://localhost`
 
 ## 5. 验收标准
 

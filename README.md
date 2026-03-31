@@ -124,14 +124,16 @@ cp .env.example .env
 
 按需修改 `.env` 中的敏感信息（数据库密码、内部 token）。
 
-### 3.2 启动后端服务
+### 3.2 启动整套容器服务
 
 ```bash
+cp .env.example .env
 docker compose up -d --build
 ```
 
 启动后访问：
 
+- 前端：`http://localhost`
 - 配置中心：`http://localhost:8888`
 - 注册中心：`http://localhost:8761`
 - Spring Cloud Gateway：`http://localhost:8090`
@@ -147,9 +149,10 @@ docker compose up -d --build
 
 说明：
 
-- 根目录 `docker-compose.yml` 默认启动后端、数据库和 Spring Cloud 治理组件
-- 前端开发联调优先通过 `http://localhost:8090` 访问网关，再由网关转发到 `elm-v2.0` 或各个下游服务
-- `frontend` 已放入可选 profile，便于先完成后端联调
+- 根目录 `docker-compose.yml` 默认启动前端、后端、数据库和 Spring Cloud 治理组件
+- 当前环境的推荐部署方式只有 Docker Compose；不要在宿主机直接安装或运行 JDK、Maven、pnpm
+- `elm-v1.0` 是历史代码，不参与当前部署、联调和验收
+- 前端容器优先通过 `http://localhost` 访问，由 Nginx 转发到 `gateway-service`
 
 ### 3.3 联调运行顺序（推荐）
 
@@ -166,27 +169,17 @@ docker compose up -d --build
   - `cp integration.env.example .env`
   - `uv sync`
   - `uv run run_four_service_smoke.py --env-file .env --skip-start`
-4. 如需前端联调：
-  - `cd elm-frontend && pnpm install && pnpm dev --host 0.0.0.0`
-  - 浏览器访问 Vite 地址，前端会通过代理访问 `http://localhost:8090`
+4. 前端联调：
+  - 直接访问 `http://localhost`
+  - 前端容器会通过 Nginx 代理访问 `http://gateway-service:8090`
 
 说明：
 
-- 前端联调优先走网关 `8090`，这样更接近容器部署与课程验收入口
+- 前端联调优先走容器入口 `http://localhost`，这样更接近课程验收时的完整部署入口
 - 若只排查聚合层，可临时直接访问 `http://localhost:8080/elm`
 - `run_four_service_smoke.py` 主要验证后端主链路，不负责前端页面回归
 
-### 3.4 如需同时启动前端
-
-```bash
-docker compose --profile frontend up -d --build
-```
-
-启动后可访问：
-
-- 前端：`http://localhost`
-
-### 3.5 停止与清理
+### 3.4 停止与清理
 
 ```bash
 docker compose down
@@ -198,7 +191,7 @@ docker compose down
 docker compose down -v
 ```
 
-### 3.6 首次启动失败排查（MySQL 未初始化）
+### 3.5 首次启动失败排查（MySQL 未初始化）
 
 如果出现“表不存在/服务反复重启”，通常是旧 `mysql-data` 卷导致初始化脚本未重跑。处理方式：
 
@@ -241,162 +234,9 @@ docker compose up -d --build
 - `elm-microservice/points-service/`
 - `docker-compose.yml`：统一部署入口
 
-## 6. 无 Docker 的本地后端运行
+## 6. 部署约束
 
-当当前环境无法使用 Docker 时，可以直接运行后端服务。
-
-### 6.1 方案说明
-
-- 使用工作区内的 JDK 21 和 Maven 3.9.x
-- 使用 Spring Boot `local` profile
-- 使用 H2 文件数据库替代 MySQL，数据库文件保存在 `.localdb/`
-- 启动脚本位于 `scripts/run-local-backend.sh`
-
-### 6.2 启动步骤
-
-先准备工作区运行时：
-
-```bash
-mkdir -p .tools .m2 .localdb .logs .run
-```
-
-随后安装 JDK 和 Maven 到 `.tools/`，建议按“基础设施 -> 业务服务”顺序执行：
-
-```bash
-bash scripts/run-local-cloud.sh
-bash scripts/run-local-backend.sh
-```
-
-其中：
-
-- `run-local-cloud.sh` 启动 `config-server`、`discovery-server`、`gateway-service`
-- `run-local-backend.sh` 启动 `points/account/business/food/cart/order/address/user/elm-v2`
-
-只需要业务服务时，也可以单独执行：
-
-```bash
-bash scripts/run-local-backend.sh
-```
-
-停止服务：
-
-```bash
-bash scripts/stop-local-backend.sh
-bash scripts/stop-local-cloud.sh
-```
-
-## 7. 本地前端运行
-
-前端当前通过 Vite 代理访问后端，开发环境默认代理到本地 Spring Cloud Gateway `http://localhost:8090`。
-
-```bash
-cd elm-frontend
-corepack enable
-corepack prepare pnpm@10.32.1 --activate
-pnpm install
-pnpm dev --host 0.0.0.0
-```
-
-联调前建议先确认：
-
-- `gateway-service` 已监听 `8090`
-- `elm-v2` 已监听 `8080`
-- `user-service`、`address-service`、`cart-service`、`order-service` 至少各有一个实例已启动
-
-默认访问地址：
-
-- `http://localhost:5173`
-
-如果 `5173` 已被占用，Vite 会自动切换到下一个可用端口，例如 `5174`。
-
-## 8. Spring Cloud 治理组件起步
-
-当前仓库已新增 3 个渐进接入模块：
-
-- `elm-microservice/config-server/`：配置中心，端口 `8888`
-- `elm-microservice/discovery-server/`：Eureka 注册中心，端口 `8761`
-- `elm-microservice/gateway-service/`：网关，端口 `8090`
-
-本地配置仓库目录：
-
-- `spring-cloud-config-repo/`
-
-启动治理组件：
-
-```bash
-bash scripts/run-local-cloud.sh
-```
-
-停止治理组件：
-
-```bash
-bash scripts/stop-local-cloud.sh
-```
-
-当前网关是渐进接入方式：
-
-- `/api/**` 转发到现有 `elm-v2.0`
-- `/elm/**` 保持直通现有聚合服务
-- `/services/points/**`、`/services/account/**`、`/services/business/**`、`/services/food/**`、`/services/cart/**`、`/services/order/**`、`/services/address/**`、`/services/user/**` 可直接转发到对应微服务
-
-这意味着你可以先保留现有 `elm-v2.0` 聚合层，后续再逐步把前端入口和服务调用切到真正的 Spring Cloud 治理链路上。
-
-## 9. Spring Cloud 客户端接入
-
-当前已给下列业务服务补充 `config client + eureka client` 的接入能力，并保留 `local` 直跑模式：
-
-- `elm-v2.0`
-- `business-service`
-- `food-service`
-- `cart-service`
-- `order-service`
-- `address-service`
-- `account-service`
-- `points-service`
-
-其中 `elm-v2.0` 已改为使用 Spring 容器提供的 `RestTemplate`，可在 `cloud` profile 下通过服务名访问下游服务，并由 Spring Cloud LoadBalancer 对集群实例进行负载均衡。
-
-## 10. 本地高可用集群运行
-
-启动顺序建议：
-
-```bash
-bash scripts/run-local-cloud.sh
-bash scripts/run-local-backend-cloud.sh
-```
-
-停止后端：
-
-```bash
-bash scripts/stop-local-backend.sh
-```
-
-当前本地高可用实例布局：
-
-- `business-service-a`: `8083`
-- `business-service-b`: `8183`
-- `food-service-a`: `8087`
-- `food-service-b`: `8187`
-- `cart-service-a`: `8089`
-- `cart-service-b`: `8189`
-- `order-service-a`: `8084`
-- `order-service-b`: `8184`
-- `address-service`: `8085`
-- `user-service`: `8086`
-- `account-service`: `8082`
-- `points-service`: `8081`
-- `elm-v2.0`: `8080`
-
-按课程要求映射：
-
-- 商家：由 `business-service` 双实例集群承载
-- 食品：由 `food-service` 双实例集群承载
-- 购物车：由 `cart-service` 双实例集群承载
-- 订单：由 `order-service` 双实例集群承载
-- 送货地址：由单实例 `address-service` 承载
-- 用户：由单实例 `user-service` 承载，`elm-v2.0` 保留兼容入口
-
-本地无 Docker 的云模式说明：
-
-- `business-service` 和 `food-service` 当前共用 `.localdb/elm_catalog`，脚本已改为顺序启动以规避 H2 启动期的文件锁竞争
-- 生产或容器化场景下建议继续使用 MySQL，以获得更稳定的多实例共享存储行为
+- 当前仓库的标准部署方式是根目录 `docker compose up -d --build`
+- 当前环境禁止通过宿主机直接安装或运行 JDK、Maven、pnpm
+- `scripts/run-local-*.sh` 仅保留为历史调试脚本，不属于当前容器化部署方案
+- `elm-v1.0` 为过时版本，当前实施、联调与验收全部忽略

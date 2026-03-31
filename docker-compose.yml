@@ -518,8 +518,6 @@ services:
           - gateway-service
 
   frontend:
-    profiles:
-      - frontend
     build:
       context: ./elm-frontend
       dockerfile: Dockerfile
