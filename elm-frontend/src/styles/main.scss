@@ -1,6 +1,6 @@
-@use 'variables' as *;
-@use 'element-plus' as *;
-@use 'layouts' as *;
+@use "variables" as *;
+@use "element-plus" as *;
+@use "layouts" as *;
 
 // -----------------------------------------------------------------------------
 // Global Styles & Resets
@@ -29,14 +29,25 @@ body {
 }
 
 // Typography
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: $font-family-headings;
   font-weight: $fw-bold;
 }
 
-h1 { font-size: $fs-h1; }
-h2 { font-size: $fs-h2; }
-h3 { font-size: $fs-h3; }
+h1 {
+  font-size: $fs-h1;
+}
+h2 {
+  font-size: $fs-h2;
+}
+h3 {
+  font-size: $fs-h3;
+}
 
 p {
   font-size: $fs-body;

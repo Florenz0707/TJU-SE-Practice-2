@@ -23,7 +23,7 @@
             <name>阿里云中央仓库</name>
             <url>https://maven.aliyun.com/repository/central</url>
         </mirror>
-        
+
         <!-- 阿里云公共仓库（包含Spring等常用库） -->
         <mirror>
             <id>aliyun-public</id>
@@ -31,7 +31,7 @@
             <name>阿里云公共仓库</name>
             <url>https://maven.aliyun.com/repository/public</url>
         </mirror>
-        
+
         <!-- 阿里云Spring仓库 -->
         <mirror>
             <id>aliyun-spring</id>
@@ -72,4 +72,3 @@ mvn clean install
 mvn package
 java -jar ./target/elmboot-0.0.1-SNAPSHOT.jar
 ```
-

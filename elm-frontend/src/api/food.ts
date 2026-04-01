@@ -1,5 +1,10 @@
-import request from '../utils/request';
-import type { Food, HttpResultFood, HttpResultListFood, HttpResultEmpty } from './types';
+import request from "../utils/request";
+import type {
+  Food,
+  HttpResultFood,
+  HttpResultListFood,
+  HttpResultEmpty,
+} from "./types";
 
 // The request body for creating a food is a specific DTO, not the full Food object.
 // It requires the business to be an object with just an ID.
@@ -21,8 +26,11 @@ export interface FoodCreationDto {
  * @returns {Promise<HttpResultListFood>}
  * @see {@link openapi.json} - operationId: "getAllFoods"
  */
-export const getAllFoods = (params?: { business?: number; order?: number }): Promise<HttpResultListFood> => {
-  return request.get('/foods', { params });
+export const getAllFoods = (params?: {
+  business?: number;
+  order?: number;
+}): Promise<HttpResultListFood> => {
+  return request.get("/foods", { params });
 };
 
 /**
@@ -32,7 +40,7 @@ export const getAllFoods = (params?: { business?: number; order?: number }): Pro
  * @see {@link openapi.json} - operationId: "addFood"
  */
 export const addFood = (data: FoodCreationDto): Promise<HttpResultFood> => {
-  return request.post('/foods', data);
+  return request.post("/foods", data);
 };
 
 /**

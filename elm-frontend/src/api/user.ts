@@ -1,4 +1,4 @@
-import request from '../utils/request';
+import request from "../utils/request";
 import type {
   Person,
   LoginDto,
@@ -7,8 +7,7 @@ import type {
   HttpResultPerson,
   HttpResultEmpty,
   HttpResultString,
-  User,
-} from './types';
+} from "./types";
 
 /**
  * @description Creates a new user account with a password.
@@ -17,7 +16,7 @@ import type {
  * @see {@link openapi.json} - operationId: "createUser"
  */
 export function createUser(data: LoginDto): Promise<HttpResultUser> {
-  return request.post('/users', data);
+  return request.post("/persons", data);
 }
 
 /**
@@ -27,7 +26,7 @@ export function createUser(data: LoginDto): Promise<HttpResultUser> {
  * @see {@link openapi.json} - operationId: "addPerson"
  */
 export function addPerson(data: Person): Promise<HttpResultPerson> {
-  return request.post('/persons', data);
+  return request.post("/persons", data);
 }
 
 /**
@@ -37,7 +36,7 @@ export function addPerson(data: Person): Promise<HttpResultPerson> {
  * @see {@link openapi.json} - operationId: "updateUserPassword"
  */
 export function updateUserPassword(data: LoginDto): Promise<HttpResultString> {
-  return request.post('/password', data);
+  return request.post("/password", data);
 }
 
 /**
@@ -46,16 +45,16 @@ export function updateUserPassword(data: LoginDto): Promise<HttpResultString> {
  * @see {@link openapi.json} - operationId: "getAllUsers"
  */
 export const getAllUsers = (): Promise<HttpResultListUser> => {
-  return request.get('/users');
+  return request.get("/users");
 };
 
 /**
  * @description Gets the currently logged-in user's information.
- * @returns {Promise<User>}
+ * @returns {Promise<HttpResultUser>}
  * @see {@link openapi.json} - operationId: "getActualUser"
  */
-export const getActualUser = (): Promise<User> => {
-  return request.get('/user');
+export const getActualUser = (): Promise<HttpResultUser> => {
+  return request.get("/user");
 };
 
 /**
@@ -75,7 +74,10 @@ export const getUserById = (id: number): Promise<HttpResultUser> => {
  * @returns {Promise<HttpResultUser>}
  * @see {@link openapi.json} - operationId: "updateUser"
  */
-export const updateUser = (id: number, data: Person): Promise<HttpResultUser> => {
+export const updateUser = (
+  id: number,
+  data: Person,
+): Promise<HttpResultUser> => {
   return request.put(`/users/${id}`, data);
 };
 

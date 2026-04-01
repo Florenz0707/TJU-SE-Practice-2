@@ -1,10 +1,50 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+  # 通用基础检查
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-added-large-files
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+
+  # 前端 prettier（格式化 Vue / JS / TS / CSS / JSON / Markdown）
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        files: \.(js|ts|vue|css|scss|json|md)$
+        exclude: |
+          (^|/)(node_modules|dist)/
+
+  # Java 代码格式化（google-java-format）
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.14.0
+    hooks:
+      - id: pretty-format-java
+        args: [--autofix]
+
+  - repo: local
+    hooks:
+      - id: oxlint
+        name: oxlint (fast js/ts linter)
+        entry: npx oxlint
+        language: system
+        files: \.(js|ts|jsx|tsx)$
+        args: ["--fix"]
+
+  - repo: local
+    hooks:
+    -   id: check-secrets
+        name: Check for secrets
+        entry: bash -c 'for d in elm-v2.0/src/main/resources elm-microservice/*/src/main/resources; do [ -d "$d" ] && grep -rn --include="*.properties" --include="*.yml" --include="*.yaml" "password\|secret\|key" "$d" | grep -v "# " || true; done'
+        language: system
+        pass_filenames: false
+    -   id: validate-pom
+        name: Validate Maven POMs
+        entry: bash -c 'set -e; mvn -f elm-v2.0/pom.xml validate; for pom in elm-microservice/*/pom.xml; do [ -f "$pom" ] && mvn -f "$pom" validate; done'
+        language: system
+        pass_filenames: false
+        files: (^elm-v2\.0/pom\.xml$)|(^elm-microservice/.+/pom\.xml$)

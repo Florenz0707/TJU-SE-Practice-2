@@ -1,0 +1,7 @@
+ignoredBuiltDependencies:
+  - '@parcel/watcher'
+  - typings-global
+  - vue-demi
+
+onlyBuiltDependencies:
+  - esbuild

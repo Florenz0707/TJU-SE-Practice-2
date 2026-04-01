@@ -1,23 +1,60 @@
 ## 项目介绍
 
-- elm-v2 项目仅包含后端代码，包括与认证相关的全部代码和与业务相关的接口代码和业务对象代码。
+- elm-v2.0 后端服务，基于Spring Boot 3.5.4 + MySQL 8.0
+- 包含认证、业务接口、积分系统、优惠券系统、钱包系统等完整功能
+- 前端代码位于 `../elm-frontend` 目录
 
-- 需要补充后端各层代码，方可通过测试。
+## 快速开始
 
-## 项目启动
+### Docker部署（推荐）
 
-- 当前项目仅依赖 jdk(version>=17) 即可正常运行。
-- Build : mvn package
-- Run: java -jar target/myapp-1.0.jar （windows上将/换成\）
+在项目根目录执行：
 
-## 数据库相关
+```bash
+docker-compose up -d
+```
 
-- 当前数据库使用内置h2，无需额外安装数据库。数据库控制台可通过下列地址访问（项目启动后）
-  - http://localhost:8080/h2-console/
+### 本地开发
 
-- 可以通过修改 pom.xml 和 application.properties ，换成 PostgreSQL 或 MySQL 。
+1. 配置MySQL数据库：
 
-- ORM 采用 spring jpa，可以换成 MyBatis 。
+```sql
+CREATE DATABASE elm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+2. 配置环境变量：
+
+```bash
+cp .env.example .env
+# 编辑.env文件，设置数据库连接
+```
+
+3. 启动应用：
+
+```bash
+mvn spring-boot:run
+```
+
+或打包后运行：
+
+```bash
+mvn package
+java -jar target/elm-1.0.jar
+```
+
+## 环境变量
+
+通过`.env`文件配置：
+
+- `DB_URL` - 数据库连接URL
+- `DB_USERNAME` - 数据库用户名
+- `DB_PASSWORD` - 数据库密码
+
+## 数据库
+
+- 使用MySQL 8.0
+- Hibernate自动创建表结构（ddl-auto=update）
+- 无需手动执行SQL脚本
 
 ## 接口及测试
 

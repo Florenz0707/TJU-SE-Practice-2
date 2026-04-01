@@ -14,15 +14,15 @@
 	    <association property="business" javaType="Business"
 	         select="com.neusoft.elmboot.mapper.BusinessMapper.getBusinessById" column="businessId"/>
 	    <collection property="list" ofType="OrderDetailet"
-	         select="com.neusoft.elmboot.mapper.OrderDetailetMapper.listOrderDetailetByOrderId" column="orderId"/>     
+	         select="com.neusoft.elmboot.mapper.OrderDetailetMapper.listOrderDetailetByOrderId" column="orderId"/>
 	</resultMap>
 
 	<select id="getOrdersById" parameterType="Integer" resultMap="ordersResultMap">
 	    select * from orders where orderId=#{orderId}
 	</select>
-	
+
 	<select id="listOrdersByUserId" parameterType="String" resultMap="ordersResultMap">
 	    select * from orders where userId=#{userId} order by orderId
 	</select>
 
-</mapper>    
+</mapper>

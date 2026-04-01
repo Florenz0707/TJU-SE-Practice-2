@@ -1,10 +1,9 @@
 package com.neusoft.elmboot.service;
 
-import java.util.List;
-
 import com.neusoft.elmboot.po.Food;
+import java.util.List;
 
 public interface FoodService {
 
-    public List<Food> listFoodByBusinessId(Integer businessId);
+  public List<Food> listFoodByBusinessId(Integer businessId);
 }

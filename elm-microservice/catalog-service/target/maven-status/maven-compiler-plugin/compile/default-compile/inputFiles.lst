@@ -1,0 +1,14 @@
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/CatalogServiceApplication.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/controller/CatalogInnerController.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/model/bo/Business.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/model/bo/Food.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/model/bo/StockRequestLog.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/model/vo/BusinessSnapshotVO.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/model/vo/FoodSnapshotVO.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/repository/BusinessRepository.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/repository/FoodRepository.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/repository/StockRequestLogRepository.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/catalog/service/CatalogInternalService.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/core/model/BaseEntity.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/core/model/HttpResult.java
+/home/florenz/TJU-SE-Practice-2/elm-microservice/catalog-service/src/main/java/cn/edu/tju/core/model/ResultCodeEnum.java

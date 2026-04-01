@@ -1,3 +1,9 @@
-/target
-/.idea
-.history
+target/
+.idea/
+.vscode/
+.env
+scripts/.env
+scripts/.venv/
+scripts/.python-version
+scripts/logs/
+scripts/.pytest_cache/

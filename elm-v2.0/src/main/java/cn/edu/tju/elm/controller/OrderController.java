@@ -1,160 +1,209 @@
 package cn.edu.tju.elm.controller;
 
-import cn.edu.tju.core.model.Authority;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.User;
-import cn.edu.tju.elm.model.*;
-import cn.edu.tju.elm.service.*;
 import cn.edu.tju.core.security.service.UserService;
+import cn.edu.tju.elm.model.BO.Business;
+import cn.edu.tju.elm.model.BO.Order;
+import cn.edu.tju.elm.service.BusinessService;
+import cn.edu.tju.elm.service.OrderApplicationService;
+import cn.edu.tju.elm.utils.AuthorityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/orders")
-@Tag(name = "管理订单", description = "对订单进行增删改查")
+@Tag(name = "管理订单", description = "提供对订单的增删改查功能")
 public class OrderController {
-    @Autowired
-    private UserService userService;
+  private final UserService userService;
+  private final BusinessService businessService;
+  private final OrderApplicationService orderApplicationService;
 
-    @Autowired
-    private OrderService orderService;
+  public OrderController(
+      UserService userService,
+      BusinessService businessService,
+      OrderApplicationService orderApplicationService) {
+    this.userService = userService;
+    this.businessService = businessService;
+    this.orderApplicationService = orderApplicationService;
+  }
 
-    @Autowired
-    private BusinessService businessService;
+  @PostMapping(value = "")
+  @Operation(summary = "创建订单", description = "顾客创建新订单，支持优惠券、积分和钱包支付")
+  public HttpResult<Order> addOrders(
+      @Parameter(description = "订单信息", required = true) @RequestBody Order order,
+      @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    return orderApplicationService.addOrder(meOptional.get().getId(), order, requestId);
+  }
 
-    @Autowired
-    private AddressService addressService;
+  @GetMapping("/{id}")
+  @Operation(summary = "根据ID获取订单", description = "通过订单ID查询订单详细信息")
+  public HttpResult<Order> getOrderById(
+      @Parameter(description = "订单ID", required = true) @PathVariable Long id) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
 
-    @Autowired
-    private CartItemService cartItemService;
+    Order order = orderApplicationService.getOrderById(id);
+    if (order == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
 
-    @Autowired
-    private OrderDetailetService orderDetailetService;
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    if (isAdmin || me.getId().equals(order.getCustomerId())) return HttpResult.success(order);
 
-    @PostMapping(value = "")
-    public HttpResult<Order> addOrders(@RequestBody Order order) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
 
-        if (order.getBusiness() == null || order.getBusiness().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business.Id CANT BE NULL");
-        if (order.getCustomer() == null || order.getCustomer().getId() == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer.Id CANT BE NULL");
-        if (order.getDeliveryAddress() == null || order.getDeliveryAddress().getId() == null) {
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress.Id CANT BE NULL");
-        }
+  @PostMapping("/{id}/cancel")
+  @Operation(summary = "取消订单", description = "取消已支付订单，退还钱包余额、解冻积分、恢复优惠券")
+  public HttpResult<Order> cancelOrder(
+      @Parameter(description = "订单ID", required = true) @PathVariable Long id) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    return orderApplicationService.cancelOrder(meOptional.get().getId(), id);
+  }
 
-        Business business = businessService.getBusinessById(order.getBusiness().getId());
-        if (business == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
-        User customer = userService.getUserById(order.getCustomer().getId());
-        if (customer == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Customer NOT FOUND");
-        DeliveryAddress address = addressService.getAddressById(order.getDeliveryAddress().getId());
-        if (address == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "DeliveryAddress NOT FOUND");
+  @GetMapping("")
+  @Operation(summary = "根据用户ID获取订单列表", description = "查询指定用户的所有订单")
+  public HttpResult<List<Order>> listOrdersByUserId(
+      @Parameter(description = "用户ID", required = true) @RequestParam Long userId) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
 
-        List<Cart> cartList = cartItemService.getCart(business.getId(), customer.getId());
-        if (cartList.isEmpty())
-            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Customer's Cart IS EMPTY");
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    if (isAdmin || me.getId().equals(userId))
+      return HttpResult.success(orderApplicationService.getOrdersByCustomerId(userId));
 
-        if (me.equals(customer) && me.equals(address.getCustomer())) {
-            // TODO: Complete Order info and OrderDetailet with cart(customer_id, business_id)
-            // TODO: Await to be tested
-            BigDecimal totalPrice = new BigDecimal(0);
-            for (Cart cart : cartList) {
-                BigDecimal quantity = new BigDecimal(cart.getQuantity());
-                totalPrice = totalPrice.add(cart.getFood().getFoodPrice().multiply(quantity));
-            }
-            order.setOrderTotal(totalPrice);
-            order.setOrderState(0);
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
 
-            order.setBusiness(business);
-            order.setCustomer(customer);
-            order.setDeliveryAddress(address);
+  @PatchMapping("")
+  @Operation(summary = "更新订单状态", description = "更新订单状态，订单完成时自动发放积分")
+  public HttpResult<Order> updateOrderStatus(
+      @Parameter(description = "包含订单ID和新状态的订单对象", required = true) @RequestBody Order order) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+    return orderApplicationService.updateOrderStatus(
+        me.getId(),
+        AuthorityUtils.hasAuthority(me, "ADMIN"),
+        AuthorityUtils.hasAuthority(me, "BUSINESS"),
+        order);
+  }
 
-            LocalDateTime now = LocalDateTime.now();
-            order.setCreateTime(now);
-            order.setUpdateTime(now);
-            order.setOrderDate(now);
-            order.setCreator(me.getId());
-            order.setUpdater(me.getId());
-            order.setDeleted(false);
+  @GetMapping("/user/my")
+  @Operation(summary = "获取我的订单", description = "获取当前用户作为顾客的所有订单")
+  public HttpResult<List<Order>> getMyOrders() {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
 
-            orderService.addOrder(order);
-            for (Cart cart : cartList) {
-                OrderDetailet orderDetailet = new OrderDetailet();
-                orderDetailet.setCreateTime(now);
-                orderDetailet.setUpdateTime(now);
-                orderDetailet.setCreator(me.getId());
-                orderDetailet.setUpdater(me.getId());
-                orderDetailet.setDeleted(false);
-                orderDetailet.setOrder(order);
-                orderDetailet.setFood(cart.getFood());
-                orderDetailet.setQuantity(cart.getQuantity());
-                orderDetailetService.addOrderDetailet(orderDetailet);
+    return HttpResult.success(orderApplicationService.getOrdersByCustomerId(me.getId()));
+  }
 
-                cart.setDeleted(true);
-                cartItemService.updateCart(cart);
-            }
-            return HttpResult.success(order);
-        }
+  @GetMapping("/user/my/page")
+  @Operation(summary = "分页获取我的订单", description = "分页获取当前用户作为顾客的订单")
+  public HttpResult<Map<String, Object>> getMyOrdersPage(
+      @Parameter(description = "页码(从1开始)", required = true) @RequestParam("page") Integer page,
+      @Parameter(description = "每页数量", required = true) @RequestParam("size") Integer size) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    if (page == null || size == null || page < 1 || size < 1)
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "page/size NOT VALID");
+    User me = meOptional.get();
+    return HttpResult.success(
+        orderApplicationService.getOrdersByCustomerId(me.getId(), page, size));
+  }
 
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  @GetMapping("/merchant/my")
+  @Operation(summary = "获取商家订单", description = "获取当前商家用户的所有店铺订单")
+  public HttpResult<List<Order>> getMerchantOrders() {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
+
+    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+    if (!isBusiness) return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+
+    List<Business> myBusinesses = businessService.getBusinessByOwnerId(me.getId());
+    List<Order> myOrders = new ArrayList<>();
+
+    for (Business business : myBusinesses) {
+      List<Order> orders = orderApplicationService.getOrdersByBusinessId(business.getId());
+      myOrders.addAll(orders);
     }
 
-    @GetMapping("/{id}")
-    public HttpResult<Order> getOrderById(@PathVariable Long id) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
+    return HttpResult.success(myOrders);
+  }
 
-        Order order = orderService.getOrderById(id);
-        if (order == null)
-            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+  @GetMapping("/business/{id}")
+  @Operation(summary = "根据店铺ID获取订单", description = "查询指定店铺的所有订单")
+  public HttpResult<List<Order>> getOrdersByBusinessId(
+      @Parameter(description = "店铺ID", required = true) @PathVariable Long id) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    User me = meOptional.get();
 
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
-        if (isAdmin || order.getCustomer().equals(me))
-            return HttpResult.success(order);
+    Business business = businessService.getBusinessById(id);
+    if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
 
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+    if (isAdmin || (isBusiness && me.getId().equals(business.getBusinessOwnerId())))
+      return HttpResult.success(orderApplicationService.getOrdersByBusinessId(business.getId()));
+
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
+
+  @GetMapping("/business/{id}/page")
+  @Operation(summary = "分页获取店铺订单", description = "分页查询指定店铺订单")
+  public HttpResult<Map<String, Object>> getOrdersByBusinessIdPage(
+      @Parameter(description = "店铺ID", required = true) @PathVariable Long id,
+      @Parameter(description = "页码(从1开始)", required = true) @RequestParam("page") Integer page,
+      @Parameter(description = "每页数量", required = true) @RequestParam("size") Integer size) {
+    Optional<User> meOptional = userService.getUserWithAuthorities();
+    if (meOptional.isEmpty())
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+    if (page == null || size == null || page < 1 || size < 1)
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "page/size NOT VALID");
+    User me = meOptional.get();
+
+    Business business = businessService.getBusinessById(id);
+    if (business == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Business NOT FOUND");
+
+    boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
+    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+    if (isAdmin || (isBusiness && me.getId().equals(business.getBusinessOwnerId()))) {
+      return HttpResult.success(
+          orderApplicationService.getOrdersByBusinessId(business.getId(), page, size));
     }
 
-//    Version of returning HttpResult
-    @GetMapping("")
-    public HttpResult<List<Order>> listOrdersByUserId(@RequestParam Long userId) {
-        Optional<User> meOptional = userService.getUserWithAuthorities();
-        if (meOptional.isEmpty()) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
-        User me = meOptional.get();
-
-        User user = userService.getUserById(userId);
-        if (user == null) return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
-
-        boolean isAdmin = false;
-        for (Authority authority : me.getAuthorities()) {
-            if (authority.getName().equals("ADMIN")) {
-                isAdmin = true;
-                break;
-            }
-        }
-        if (isAdmin || me.equals(user)) {
-            return HttpResult.success(orderService.getOrdersByCustomerId(userId));
-        }
-
-        return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
-    }
+    return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+  }
 }

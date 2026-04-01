@@ -6,27 +6,30 @@
       :prop="column.prop"
       :label="column.label"
       :width="column.width"
-    />
-    <el-table-column label="Actions" v-if="$slots.actions">
-      <template #default="scope">
-        <slot name="actions" :row="scope.row"></slot>
+      :formatter="column.formatter"
+    >
+      <template v-if="column.slot" #default="scope">
+        <slot :name="column.slot" :row="scope.row"></slot>
       </template>
     </el-table-column>
   </el-table>
 </template>
 
 <script setup lang="ts">
-import type { PropType } from 'vue';
+import type { PropType } from "vue";
 
 interface Column {
   prop: string;
   label: string;
   width?: string | number;
+  slot?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formatter?: (...args: any[]) => string;
 }
 
 defineProps({
   data: {
-    type: Array as PropType<any[]>,
+    type: Array as PropType<unknown[]>,
     required: true,
   },
   columns: {

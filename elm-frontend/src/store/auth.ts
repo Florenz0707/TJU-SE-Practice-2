@@ -1,38 +1,46 @@
-import { defineStore } from 'pinia';
-import { login as apiLogin } from '../api/auth';
-import { getActualUser } from '../api/user';
-import { setRequestToken } from '../utils/request';
-import type { User, LoginDto } from '../api/types';
+import { defineStore } from "pinia";
+import { login as apiLogin } from "../api/auth";
+import { getActualUser } from "../api/user";
+import { setRequestToken } from "../utils/request";
+import type { User, LoginDto, JWTToken } from "../api/types";
 
 // Define the state shape with types
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: User | null;
 }
 
-const AUTH_TOKEN_KEY = 'authToken';
+const AUTH_TOKEN_KEY = "authToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+const USER_KEY = "user";
 
-export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({
-    token: localStorage.getItem(AUTH_TOKEN_KEY),
-    user: null,
-  }),
+export const useAuthStore = defineStore("auth", {
+  state: (): AuthState => {
+    // Retrieve the user from localStorage and parse it
+    const storedUser = localStorage.getItem(USER_KEY);
+    return {
+      token: localStorage.getItem(AUTH_TOKEN_KEY),
+      refreshToken: localStorage.getItem(REFRESH_TOKEN_KEY),
+      user: storedUser ? JSON.parse(storedUser) : null,
+    };
+  },
 
   getters: {
     isLoggedIn: (state): boolean => !!state.token,
     userRoles: (state): string[] => {
       if (!state.user?.authorities) {
-        return ['GUEST'];
+        return ["GUEST"];
       }
       const roleMap: { [key: string]: string } = {
-        USER: 'CUSTOMER',
-        BUSINESS: 'MERCHANT',
-        ADMIN: 'ADMIN',
+        USER: "CUSTOMER",
+        BUSINESS: "MERCHANT",
+        ADMIN: "ADMIN",
       };
       const roles = state.user.authorities
-        .map(auth => roleMap[auth.name] || auth.name)
+        .map((auth) => roleMap[auth.name] || auth.name)
         .filter(Boolean);
-      return roles.length > 0 ? roles : ['GUEST'];
+      return roles.length > 0 ? roles : ["GUEST"];
     },
   },
 
@@ -41,19 +49,15 @@ export const useAuthStore = defineStore('auth', {
      * User login
      * @param {LoginDto} credentials
      */
-    async login(credentials: LoginDto): Promise<void> {
+    async login(credentials: LoginDto): Promise<string[]> {
       try {
         const response = await apiLogin(credentials);
-        this.token = response.id_token;
-        localStorage.setItem(AUTH_TOKEN_KEY, this.token);
-        setRequestToken(this.token); // Set token for axios
+        this.setTokens(response);
         await this.fetchUserInfo();
+        return this.userRoles;
       } catch (error) {
-        console.error('Login failed:', error);
-        this.token = null;
-        this.user = null;
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        setRequestToken(null); // Clear token for axios
+        console.error("Login failed:", error);
+        this.logout();
         throw error; // Re-throw the error to be handled by the component
       }
     },
@@ -64,17 +68,12 @@ export const useAuthStore = defineStore('auth', {
     async fetchUserInfo(): Promise<void> {
       if (!this.token) return;
       try {
-        // The /api/user endpoint returns the User object directly, not wrapped in HttpResult.
         const userInfo = await getActualUser();
-        this.user = userInfo;
+        this.setUser(userInfo.data); // Use the setUser action to ensure data is saved
       } catch (error) {
-        console.error('Failed to fetch user info:', error);
-        this.token = null;
-        this.user = null;
-        localStorage.removeItem(AUTH_TOKEN_KEY);
-        setRequestToken(null); // Clear token for axios
-        // Re-throw the error so the calling component knows the login failed.
-        throw new Error('Failed to fetch user info');
+        console.error("Failed to fetch user info:", error);
+        this.logout();
+        throw new Error("Failed to fetch user info");
       }
     },
 
@@ -84,20 +83,24 @@ export const useAuthStore = defineStore('auth', {
      */
     logout(): void {
       this.token = null;
+      this.refreshToken = null;
       this.user = null;
       localStorage.removeItem(AUTH_TOKEN_KEY);
-      setRequestToken(null); // Clear token for axios
-      // Here you might also want to clear other stores, e.g., cart
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY); // Clear the user from storage
+      setRequestToken(null);
     },
 
     /**
-     * Set new access token (e.g., for token refresh if implemented)
-     * @param {string} newToken
+     * Set new tokens
+     * @param {JWTToken} tokens
      */
-    setToken(newToken: string) {
-      this.token = newToken;
-      localStorage.setItem(AUTH_TOKEN_KEY, newToken);
-      setRequestToken(newToken); // Also update the token for axios
+    setTokens(tokens: JWTToken) {
+      this.token = tokens.id_token;
+      this.refreshToken = tokens.refresh_token;
+      localStorage.setItem(AUTH_TOKEN_KEY, this.token);
+      localStorage.setItem(REFRESH_TOKEN_KEY, this.refreshToken);
+      setRequestToken(this.token); // Also update the token for axios
     },
 
     /**
@@ -106,6 +109,8 @@ export const useAuthStore = defineStore('auth', {
      */
     setUser(newUser: User) {
       this.user = newUser;
+      // Also save the user to localStorage
+      localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     },
   },
 });

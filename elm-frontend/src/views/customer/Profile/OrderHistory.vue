@@ -1,27 +1,48 @@
 <template>
   <div>
-    <h2>Order History</h2>
-    <el-table :data="orders" stripe v-loading="loading">
-      <el-table-column prop="id" label="Order ID" width="100" />
-      <el-table-column prop="business.businessName" label="Restaurant" />
-      <el-table-column prop="orderDate" label="Date">
+    <h2>订单历史</h2>
+    <el-table v-loading="loading" :data="orders" stripe>
+      <el-table-column prop="id" label="订单ID" width="100" />
+      <el-table-column prop="business.businessName" label="餐厅" />
+      <el-table-column prop="orderDate" label="日期">
         <template #default="{ row }">
           {{ new Date(row.orderDate).toLocaleDateString() }}
         </template>
       </el-table-column>
-      <el-table-column prop="orderTotal" label="Total">
+      <el-table-column prop="orderTotal" label="总价">
         <template #default="{ row }">
-          ${{ row.orderTotal.toFixed(2) }}
+          ¥{{ row.orderTotal.toFixed(2) }}
         </template>
       </el-table-column>
-      <el-table-column prop="orderState" label="Status">
+      <el-table-column prop="orderState" label="状态">
         <template #default="{ row }">
-          <el-tag :type="getStatusType(row.orderState)">{{ getStatusText(row.orderState) }}</el-tag>
+          <el-tag
+            :type="getOrderStatusInfo(row.orderState as OrderStatus).type"
+            >{{
+              getOrderStatusInfo(row.orderState as OrderStatus).text
+            }}</el-tag
+          >
         </template>
       </el-table-column>
-      <el-table-column label="Actions">
+      <el-table-column label="操作">
         <template #default="{ row }">
-          <el-button size="small" @click="viewOrderDetails(row.id)">View Details</el-button>
+          <el-button size="small" @click="viewOrderDetails(row.id)"
+            >查看详情</el-button
+          >
+          <el-button
+            v-if="row.orderState === OrderStatusEnum.PAID"
+            size="small"
+            type="danger"
+            @click="handleCancelOrder(row)"
+            >取消订单</el-button
+          >
+          <el-button
+            v-if="row.orderState === OrderStatusEnum.COMPLETE"
+            size="small"
+            type="primary"
+            @click="goToReview(row.id)"
+            >评价</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
@@ -29,11 +50,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { getCurrentUserOrders } from '../../../api/order';
-import type { Order } from '../../../api/types';
-import { ElMessage } from 'element-plus';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { getMyOrdersCustomer, updateOrderStatus } from "../../../api/order";
+import type { Order, OrderStatus } from "../../../api/types";
+import {
+  getOrderStatusInfo,
+  OrderStatus as OrderStatusEnum,
+} from "../../../api/types";
+import { ElMessage } from "element-plus";
 
 const router = useRouter();
 const orders = ref<Order[]>([]);
@@ -42,39 +67,61 @@ const loading = ref(false);
 const fetchOrders = async () => {
   loading.value = true;
   try {
-    const res = await getCurrentUserOrders();
+    const res = await getMyOrdersCustomer();
     if (res.success) {
-      orders.value = res.data;
+      orders.value = res.data.sort((a, b) => {
+        if (a.createTime && b.createTime) {
+          return (
+            new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+          );
+        }
+        return 0;
+      });
     } else {
       throw new Error(res.message);
     }
-  } catch (error: any) {
-    ElMessage.error(error.message || 'Failed to fetch order history');
+  } catch (error: unknown) {
+    ElMessage.error(
+      (error instanceof Error ? error.message : String(error)) ||
+        "获取订单历史失败",
+    );
   } finally {
     loading.value = false;
   }
 };
 
-const getStatusType = (state: number) => {
-  // Assuming 1: Placed, 2: Preparing, 3: Delivering, 4: Delivered, 5: Cancelled
-  if (state === 4) return 'success';
-  if (state === 5) return 'danger';
-  return 'primary';
-};
-
-const getStatusText = (state: number) => {
-  const statuses: { [key: number]: string } = {
-    1: 'Placed',
-    2: 'Preparing',
-    3: 'Out for Delivery',
-    4: 'Delivered',
-    5: 'Cancelled',
-  };
-  return statuses[state] || 'Unknown';
-};
-
 const viewOrderDetails = (id: number) => {
-  router.push({ name: 'OrderDetail', params: { id } });
+  router.push({ name: "OrderDetail", params: { id } });
+};
+
+const goToReview = (id: number) => {
+  router.push({ name: "SubmitReview", params: { orderId: id } });
+};
+
+const handleCancelOrder = async (order: Order) => {
+  const orderId = order.id;
+  if (!orderId) {
+    ElMessage.error("无法取消没有ID的订单");
+    return;
+  }
+  loading.value = true;
+  try {
+    const response = await updateOrderStatus({
+      id: orderId,
+      orderState: OrderStatusEnum.CANCELED,
+    });
+    if (response.success) {
+      ElMessage.success("订单已成功取消");
+      await fetchOrders(); // Re-fetch orders to ensure data consistency
+    } else {
+      ElMessage.error(response.message || "取消订单失败");
+    }
+  } catch (error) {
+    console.error("Failed to cancel order:", error);
+    ElMessage.error("取消订单失败，请稍后重试");
+  } finally {
+    loading.value = false;
+  }
 };
 
 onMounted(fetchOrders);
