@@ -33,3 +33,4 @@ node_modules/
 .m2
 .run
 .tools
+.logs

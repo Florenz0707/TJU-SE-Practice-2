@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.elm.model.BO.PrivateVoucher;
 import cn.edu.tju.elm.model.BO.Wallet;
 import cn.edu.tju.elm.model.VO.InternalVoucherSnapshotVO;
@@ -63,6 +64,26 @@ class AccountInnerControllerTest {
     var result = accountInnerController.walletDebit(request);
 
     assertFalse(result.getSuccess());
+    assertEquals(ResultCodeEnum.SERVER_ERROR.getCode(), result.getCode());
+    assertEquals("wallet debit failed", result.getMessage());
+  }
+
+  @Test
+  void walletDebit_shouldReturnFailure_whenServiceThrows() {
+    AccountInnerController.WalletDebitRequest request =
+        new AccountInnerController.WalletDebitRequest();
+    request.setRequestId("req-throw");
+    request.setUserId(10L);
+    request.setAmount(new BigDecimal("99.00"));
+
+    when(accountInternalService.walletDebit("req-throw", 10L, new BigDecimal("99.00"), null, null))
+        .thenThrow(new RuntimeException("wallet timeout"));
+
+    var result = accountInnerController.walletDebit(request);
+
+    assertFalse(result.getSuccess());
+    assertEquals(ResultCodeEnum.SERVER_ERROR.getCode(), result.getCode());
+    assertEquals("wallet timeout", result.getMessage());
   }
 
   @Test
@@ -83,6 +104,77 @@ class AccountInnerControllerTest {
     assertTrue(result.getSuccess());
     assertTrue(result.getData());
     verify(accountInternalService).rollbackVoucher("req-3", 9L, 100L, "ORD_9", "cancel");
+  }
+
+  @Test
+  void rollbackVoucher_shouldReturnFalse_whenServiceReturnsFalse() {
+    AccountInnerController.VoucherRollbackRequest request =
+        new AccountInnerController.VoucherRollbackRequest();
+    request.setRequestId("req-4");
+    request.setUserId(9L);
+    request.setVoucherId(100L);
+
+    when(accountInternalService.rollbackVoucher("req-4", 9L, 100L, null, null)).thenReturn(false);
+
+    var result = accountInnerController.rollbackVoucher(request);
+
+    assertTrue(result.getSuccess());
+    assertFalse(result.getData());
+  }
+
+  @Test
+  void rollbackVoucher_shouldReturnFailure_whenServiceThrows() {
+    AccountInnerController.VoucherRollbackRequest request =
+        new AccountInnerController.VoucherRollbackRequest();
+    request.setRequestId("req-5");
+    request.setUserId(9L);
+    request.setVoucherId(100L);
+
+    when(accountInternalService.rollbackVoucher("req-5", 9L, 100L, null, null))
+        .thenThrow(new RuntimeException("restore failed"));
+
+    var result = accountInnerController.rollbackVoucher(request);
+
+    assertFalse(result.getSuccess());
+    assertEquals(ResultCodeEnum.SERVER_ERROR.getCode(), result.getCode());
+    assertEquals("restore failed", result.getMessage());
+  }
+
+  @Test
+  void walletRefund_shouldReturnFailure_whenServiceReturnsNull() {
+    AccountInnerController.WalletRefundRequest request =
+        new AccountInnerController.WalletRefundRequest();
+    request.setRequestId("refund-1");
+    request.setUserId(9L);
+    request.setAmount(new BigDecimal("8.8"));
+
+    when(accountInternalService.walletRefund("refund-1", 9L, new BigDecimal("8.8"), null, null))
+        .thenReturn(null);
+
+    var result = accountInnerController.walletRefund(request);
+
+    assertFalse(result.getSuccess());
+    assertEquals(ResultCodeEnum.SERVER_ERROR.getCode(), result.getCode());
+    assertEquals("wallet refund failed", result.getMessage());
+  }
+
+  @Test
+  void redeemVoucher_shouldReturnFailure_whenServiceThrows() {
+    AccountInnerController.VoucherRedeemRequest request =
+        new AccountInnerController.VoucherRedeemRequest();
+    request.setRequestId("redeem-1");
+    request.setUserId(9L);
+    request.setVoucherId(88L);
+    request.setOrderId("ORD_9");
+
+    when(accountInternalService.redeemVoucher("redeem-1", 9L, 88L, "ORD_9"))
+        .thenThrow(new RuntimeException("redeem failed"));
+
+    var result = accountInnerController.redeemVoucher(request);
+
+    assertFalse(result.getSuccess());
+    assertEquals(ResultCodeEnum.SERVER_ERROR.getCode(), result.getCode());
+    assertEquals("redeem failed", result.getMessage());
   }
 
   @Test

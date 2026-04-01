@@ -10,10 +10,12 @@
 
 ```properties
 # Internal service token for inter-service communication
-internal.service.token=internal-service-secret-token-2024
+internal.service.token=${INTERNAL_SERVICE_TOKEN}
 ```
 
 **重要**：在生产环境中，请使用强密码并妥善保管此Token。
+
+本地开发如果使用 `local` profile，可在 `application-local.properties` 中单独提供仅限本机使用的兜底值，不要把固定默认值留在主配置中。
 
 ## 调用方式
 
@@ -364,10 +366,12 @@ public class ReviewService {
 ### 使用 curl 测试内部接口
 
 ```bash
+export INTERNAL_SERVICE_TOKEN="your-real-internal-service-token"
+
 # 订单完成通知
 curl -X POST http://localhost:8080/elm/api/inner/points/notify/order-success \
   -H "Content-Type: application/json" \
-  -H "X-Internal-Service-Token: internal-service-secret-token-2024" \
+    -H "X-Internal-Service-Token: ${INTERNAL_SERVICE_TOKEN}" \
   -d '{
     "userId": 1,
     "bizId": "ORD_TEST_001",
@@ -379,7 +383,7 @@ curl -X POST http://localhost:8080/elm/api/inner/points/notify/order-success \
 # 评价完成通知
 curl -X POST http://localhost:8080/elm/api/inner/points/notify/review-success \
   -H "Content-Type: application/json" \
-  -H "X-Internal-Service-Token: internal-service-secret-token-2024" \
+    -H "X-Internal-Service-Token: ${INTERNAL_SERVICE_TOKEN}" \
   -d '{
     "userId": 1,
     "bizId": "REV_TEST_001",
@@ -393,7 +397,8 @@ curl -X POST http://localhost:8080/elm/api/inner/points/notify/review-success \
 
 1. **401 Unauthorized**：
    - 检查请求头中是否包含 `X-Internal-Service-Token`
-   - 验证Token是否与配置中的Token一致
+    - 验证 Token 是否与配置中的 Token 一致
+    - Compose 验收环境下必须显式配置 `INTERNAL_SERVICE_TOKEN`，不再允许依赖固定默认值
 
 2. **500 Internal Server Error**：
    - 检查积分规则是否已配置

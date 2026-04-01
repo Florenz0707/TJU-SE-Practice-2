@@ -1,1 +1,3 @@
+cn/edu/tju/food/service/FoodInternalServiceConcurrencyIntegrationTest.class
 cn/edu/tju/food/service/FoodInternalServiceTest.class
+cn/edu/tju/food/controller/FoodInnerControllerTest.class

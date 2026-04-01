@@ -51,6 +51,11 @@ services:
       - ./spring-cloud-config-repo:/config-repo:ro
     ports:
       - "8888:8888"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8888/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     networks:
       - elm-network
 
@@ -62,7 +67,7 @@ services:
     restart: unless-stopped
     depends_on:
       config-server:
-        condition: service_started
+        condition: service_healthy
     environment:
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_HOSTNAME: discovery-server-a
@@ -71,6 +76,11 @@ services:
       EUREKA_DEFAULT_ZONE: http://discovery-server-b:8761/eureka
     ports:
       - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8761/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -84,7 +94,7 @@ services:
     restart: unless-stopped
     depends_on:
       config-server:
-        condition: service_started
+        condition: service_healthy
     environment:
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_HOSTNAME: discovery-server-b
@@ -94,6 +104,11 @@ services:
       SERVER_PORT: 8761
     ports:
       - "8762:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8761/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -109,17 +124,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_points?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=points-service-8081"]
     ports:
       - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -135,17 +155,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_account?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=account-service-8082"]
     ports:
       - "8082:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -161,17 +186,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=business-service-8083"]
     ports:
       - "8083:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -187,17 +217,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=business-service-8183"]
     ports:
       - "8183:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -213,11 +248,11 @@ services:
       mysql-init:
         condition: service_completed_successfully
       business-service-a:
-        condition: service_started
+        condition: service_healthy
       business-service-b:
-        condition: service_started
+        condition: service_healthy
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
@@ -225,10 +260,15 @@ services:
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
       BUSINESS_SERVICE_URL: http://business-service:8083/elm
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=food-service-8087"]
     ports:
       - "8087:8087"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8087/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -244,11 +284,11 @@ services:
       mysql-init:
         condition: service_completed_successfully
       business-service-a:
-        condition: service_started
+        condition: service_healthy
       business-service-b:
-        condition: service_started
+        condition: service_healthy
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
@@ -256,10 +296,15 @@ services:
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
       BUSINESS_SERVICE_URL: http://business-service:8083/elm
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=food-service-8187"]
     ports:
       - "8187:8087"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8087/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -275,17 +320,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_cart?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=cart-service-8089"]
     ports:
       - "8089:8089"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8089/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -301,17 +351,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_cart?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=cart-service-8189"]
     ports:
       - "8189:8089"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8089/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -327,17 +382,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=order-service-8084"]
     ports:
       - "8084:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -353,17 +413,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=order-service-8184"]
     ports:
       - "8184:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -379,17 +444,22 @@ services:
       mysql-init:
         condition: service_completed_successfully
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm_address?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=address-service-8085"]
     ports:
       - "8085:8085"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8085/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -405,9 +475,9 @@ services:
       mysql-init:
         condition: service_completed_successfully
       account-service:
-        condition: service_started
+        condition: service_healthy
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
@@ -415,10 +485,15 @@ services:
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
       ACCOUNT_SERVICE_URL: http://account-service:8082/elm
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=user-service-8086"]
     ports:
       - "8086:8086"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8086/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -434,40 +509,40 @@ services:
       mysql-init:
         condition: service_completed_successfully
       config-server:
-        condition: service_started
+        condition: service_healthy
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
       points-service:
-        condition: service_started
+        condition: service_healthy
       account-service:
-        condition: service_started
+        condition: service_healthy
       business-service-a:
-        condition: service_started
+        condition: service_healthy
       business-service-b:
-        condition: service_started
+        condition: service_healthy
       food-service-a:
-        condition: service_started
+        condition: service_healthy
       food-service-b:
-        condition: service_started
+        condition: service_healthy
       cart-service-a:
-        condition: service_started
+        condition: service_healthy
       cart-service-b:
-        condition: service_started
+        condition: service_healthy
       order-service-a:
-        condition: service_started
+        condition: service_healthy
       order-service-b:
-        condition: service_started
+        condition: service_healthy
       address-service:
-        condition: service_started
+        condition: service_healthy
       user-service:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_URL: jdbc:mysql://mysql:3306/elm?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${DB_USERNAME:-root}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Set INTERNAL_SERVICE_TOKEN in .env before docker compose up}
       POINTS_SERVICE_URL: http://points-service:8081/elm
       ACCOUNT_SERVICE_URL: http://account-service:8082/elm
       USER_SERVICE_URL: http://user-service:8086/elm
@@ -479,6 +554,11 @@ services:
     command: ["--spring.profiles.active=cloud", "--eureka.instance.instance-id=elm-8080"]
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -492,26 +572,31 @@ services:
     restart: unless-stopped
     depends_on:
       config-server:
-        condition: service_started
+        condition: service_healthy
       discovery-server-a:
-        condition: service_started
+        condition: service_healthy
       elm-v2:
-        condition: service_started
+        condition: service_healthy
     environment:
       CONFIG_SERVER_URL: http://config-server:8888
       EUREKA_SERVER_URL: *eureka_server_url
-      CONFIG_REFRESH_TOKEN: ${CONFIG_REFRESH_TOKEN:-refresh-bus-secret-token-2026}
-      ELM_SERVICE_URL: http://elm-v2:8080
-      POINTS_SERVICE_URL: http://points-service:8081
-      ACCOUNT_SERVICE_URL: http://account-service:8082
-      BUSINESS_SERVICE_URL: http://business-service:8083
-      FOOD_SERVICE_URL: http://food-service:8087
-      CART_SERVICE_URL: http://cart-service:8089
-      ORDER_SERVICE_URL: http://order-service:8084
-      ADDRESS_SERVICE_URL: http://address-service:8085
-      USER_SERVICE_URL: http://user-service:8086
+      CONFIG_REFRESH_TOKEN: ${CONFIG_REFRESH_TOKEN:?Set CONFIG_REFRESH_TOKEN in .env before docker compose up}
+      ELM_SERVICE_URL: lb://elm
+      POINTS_SERVICE_URL: lb://points-service
+      ACCOUNT_SERVICE_URL: lb://account-service
+      BUSINESS_SERVICE_URL: lb://business-service
+      FOOD_SERVICE_URL: lb://food-service
+      CART_SERVICE_URL: lb://cart-service
+      ORDER_SERVICE_URL: lb://order-service
+      ADDRESS_SERVICE_URL: lb://address-service
+      USER_SERVICE_URL: lb://user-service
     ports:
       - "8090:8090"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8090/actuator/health | grep '\"status\":\"UP\"' >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
     networks:
       elm-network:
         aliases:
@@ -525,7 +610,7 @@ services:
     restart: unless-stopped
     depends_on:
       gateway-service:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "80:80"
     networks:

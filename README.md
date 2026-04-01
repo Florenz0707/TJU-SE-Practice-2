@@ -2,6 +2,42 @@
 
 本仓库当前以 `elm-v2.0` 作为统一入口（外部 API 聚合层），内部通过 RestTemplate 调用 8 个已拆分微服务：`points-service`、`account-service`、`business-service`、`food-service`、`cart-service`、`order-service`、`address-service`、`user-service`。
 
+## 文档入口
+
+- 微服务完整实现说明：`docs/microservice-implementation-guide.md`
+- 微服务验收答辩提纲：`docs/microservice-acceptance-defense.md`
+- 微服务验收收口清单：`docs/microservice-acceptance-todo.md`
+- 配置刷新失败恢复说明：`docs/config-refresh-recovery.md`
+- 后端测试基线：`docs/backend-test-baseline.md`
+
+## 模块文档索引
+
+### 前端与入口
+
+- `elm-frontend/README.md`：前端运行方式、代理口径和测试基线
+- `elm-v2.0/README.md`：聚合层说明与本地运行方式
+
+### 云治理层
+
+- `elm-microservice/gateway-service/README.md`：网关路由、配置刷新与服务发现口径
+- `elm-microservice/config-server/README.md`：配置中心说明
+- `elm-microservice/discovery-server/README.md`：Eureka 注册发现说明
+
+### 业务微服务
+
+- `elm-microservice/account-service/README.md`：钱包、交易、券域
+- `elm-microservice/points-service/README.md`：积分域
+- `elm-microservice/business-service/README.md`：商家域
+- `elm-microservice/food-service/README.md`：菜品与库存域
+- `elm-microservice/cart-service/README.md`：购物车域
+- `elm-microservice/order-service/README.md`：订单与评价域
+- `elm-microservice/address-service/README.md`：地址域
+- `elm-microservice/user-service/README.md`：用户与认证域
+
+### 历史与中间态模块
+
+- `elm-microservice/catalog-service/README.md`：目录域合并服务的历史中间态说明
+
 ## 1. 微服务业务调用流程
 
 ### 1.0 课程目标拆分与当前渐进实现
@@ -49,6 +85,9 @@
 - 根目录 `docker-compose.yml` 已升级为 Spring Cloud 容器编排，包含 `config-server`、`discovery-server`、`gateway-service` 与 4 个双实例业务服务集群
 - 当前“本地云模式”和“容器 compose 模式”在服务拆分目标上已经对齐：`business`、`food`、`cart`、`order` 为双实例，`address`、`user` 为单实例
 - 运行态核验仍建议以 Eureka 注册结果为准；本地已验证双实例注册：`business-service-8083/8183`、`food-service-8087/8187`、`cart-service-8089/8189`、`order-service-8084/8184`
+- 2026-03-31 已进一步收口 compose 启动链：`config-server`、`discovery-server`、`elm-v2`、`gateway-service` 增加了健康检查，关键依赖已从 `service_started` 收紧到 `service_healthy`
+- 2026-03-31 已进一步收口 Gateway 直通路由：在 compose 场景下，`/services/*` 与 `/api/*` 相关上游已统一切到 `lb://service-id`，不再依赖固定容器地址，从而让网关层本身也体现服务发现与负载均衡
+- 2026-03-31 已进一步收口内部鉴权策略：compose 验收环境不再为 `INTERNAL_SERVICE_TOKEN` 和 `CONFIG_REFRESH_TOKEN` 提供固定默认值，必须在 `.env` 中显式配置
 
 ### 1.1 下单链路（创建订单）
 
@@ -124,6 +163,8 @@ cp .env.example .env
 
 按需修改 `.env` 中的敏感信息（数据库密码、内部 token）。
 
+注意：compose 验收口径下，`INTERNAL_SERVICE_TOKEN` 与 `CONFIG_REFRESH_TOKEN` 必须显式填写；仓库已不再为这两个内部凭据提供固定默认值回退。
+
 执行 `docker compose` 前请先确认 Docker Engine 和 Compose 插件可用。
 
 如果你当前是在 VS Code dev container 或普通容器里开发，`docker` 命令很可能不可用，或者没有挂载宿主机 Docker Socket。这种情况下需要回到宿主机终端执行下面的 compose 命令，而不是在开发容器内部执行。
@@ -135,7 +176,12 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-如果第一次全量启动时 `config-server`、`discovery-server` 或下游业务服务出现连锁重启，优先改用分阶段启动，避免仅靠 `depends_on: service_started` 带来的启动竞态：
+首次执行前至少应修改：
+
+- `INTERNAL_SERVICE_TOKEN`
+- `CONFIG_REFRESH_TOKEN`
+
+如果第一次全量启动时宿主机资源较紧张，仍然可以改用分阶段启动；不过当前 compose 已为核心治理链路补上健康检查与 `service_healthy` 依赖，冷启动稳定性已经明显优于此前版本：
 
 ```bash
 docker compose up -d --build mysql mysql-init config-server

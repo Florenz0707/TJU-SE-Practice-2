@@ -117,7 +117,11 @@ public class ReviewApplicationService {
     }
 
     if (deleted.orderId() != null) {
-      internalOrderClient.updateOrderState(deleted.orderId(), OrderState.COMPLETE);
+      InternalOrderClient.OrderSnapshot rollbackSnapshot =
+          internalOrderClient.updateOrderState(deleted.orderId(), OrderState.COMPLETE);
+      if (rollbackSnapshot == null) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to rollback order state");
+      }
     }
     return HttpResult.success("Delete review successfully.");
   }

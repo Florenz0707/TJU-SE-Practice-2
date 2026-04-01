@@ -80,6 +80,10 @@ spring:
 server:
   port: 8090
 
+config:
+  refresh:
+    token: ${CONFIG_REFRESH_TOKEN}
+
 eureka:
   client:
     service-url:

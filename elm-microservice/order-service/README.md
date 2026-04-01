@@ -5,15 +5,14 @@
 `order-service` 只负责订单域核心数据，不直接处理资金/积分/库存扣减策略。
 
 - 订单主表、订单明细
-- 地址
-- 购物车
 - 评价
 - 内部接口前缀：`/elm/api/inner/order/**`
 
 ## 与其他服务关系
 
 - 被 `elm-v2.0` 调用（RestTemplate）
-- 典型调用点：创建/取消订单、状态推进、地址/购物车/评价读写
+- 典型调用点：创建/取消订单、状态推进、评价读写
+- 地址域和购物车域已经分别拆到 `address-service` 与 `cart-service`，本服务不再承载这两块数据
 
 ## Docker 部署（统一方式）
 
@@ -38,6 +37,13 @@ docker compose up -d --build order-service-a
 - `DB_URL`（建议指向 `elm_order`）
 - `DB_USERNAME`
 - `DB_PASSWORD`
+- `INTERNAL_SERVICE_TOKEN`
+
+## 当前实现说明
+
+- 当前服务以双实例方式运行：`8084` / `8184`
+- `elm-v2.0` 会通过内部接口创建订单快照、取消订单、推进状态，并在评价链路中读取和回写订单数据
+- 自动化测试已覆盖 requestId 幂等、取消订单、状态流转和内部 controller 基础分支
 
 ## 单独构建镜像
 

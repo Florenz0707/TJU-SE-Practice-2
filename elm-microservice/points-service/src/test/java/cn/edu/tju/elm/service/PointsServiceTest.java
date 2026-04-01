@@ -3,6 +3,7 @@ package cn.edu.tju.elm.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -120,6 +121,48 @@ class PointsServiceTest {
     assertThat(refundBatch.getPoints()).isEqualTo(30);
     assertThat(refundBatch.getAvailablePoints()).isEqualTo(30);
     assertThat(refundBatch.getRecord()).isSameAs(refundRecord);
+  }
+
+  @Test
+  void refundDeductedPointsReturnsTrueWithoutDuplicatingRefundWhenAlreadyRefunded() {
+    PointsAccount account = PointsAccount.createNewAccount(3004L);
+    account.setTotalPoints(20);
+
+    PointsRecord consumeRecord =
+        PointsRecord.createRecord(3004L, PointsRecordType.CONSUME, 30, "ORDER_10", "ORDER", "积分抵扣订单");
+    PointsRecord existingRefund =
+        PointsRecord.createRecord(3004L, PointsRecordType.EARN, 30, "REFUND_ORDER_10", "ORDER", "订单取消返还积分");
+
+    when(pointsAccountRepository.findByUserId(3004L)).thenReturn(Optional.of(account));
+    when(pointsRecordRepository.findTopByUserIdAndTypeAndBizIdOrderByRecordTimeDesc(
+            3004L, PointsRecordType.CONSUME, "ORDER_10"))
+        .thenReturn(Optional.of(consumeRecord));
+    when(pointsRecordRepository.findTopByUserIdAndTypeAndBizIdOrderByRecordTimeDesc(
+            3004L, PointsRecordType.EARN, "REFUND_ORDER_10"))
+        .thenReturn(Optional.of(existingRefund));
+
+    boolean refunded = pointsService.refundDeductedPoints(3004L, "ORDER_10", "订单取消返还积分");
+
+    assertThat(refunded).isTrue();
+    assertThat(account.getTotalPoints()).isEqualTo(20);
+    verify(pointsAccountRepository, never()).save(any(PointsAccount.class));
+    verify(pointsRecordRepository, never()).save(any(PointsRecord.class));
+    verify(pointsBatchRepository, never()).save(any(PointsBatch.class));
+  }
+
+  @Test
+  void rollbackPointsThrowsWhenFrozenBatchesAreMissing() {
+    PointsAccount account = PointsAccount.createNewAccount(4005L);
+    account.setTotalPoints(80);
+    account.setFrozenPoints(20);
+
+    when(pointsAccountRepository.findByUserId(4005L)).thenReturn(Optional.of(account));
+    when(pointsBatchRepository.findFrozenBatchesByUserIdAndTempOrderId(4005L, "TMP-ORDER-3"))
+        .thenReturn(List.of());
+
+    assertThatThrownBy(() -> pointsService.rollbackPoints(4005L, "TMP-ORDER-3", "订单取消"))
+        .isInstanceOf(PointsException.class)
+        .hasMessage(PointsException.ROLLBACK_FAILED);
   }
 
   @Test

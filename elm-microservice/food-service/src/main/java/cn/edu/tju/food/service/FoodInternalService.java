@@ -71,7 +71,7 @@ public class FoodInternalService {
 
     Map<Long, Food> foodMap = new HashMap<>();
     for (StockItemCommand item : items) {
-      Food food = foodRepository.findById(item.foodId()).orElse(null);
+      Food food = foodRepository.findByIdForUpdate(item.foodId()).orElse(null);
       if (food == null || Boolean.TRUE.equals(food.getDeleted()) || item.quantity() == null) {
         return false;
       }

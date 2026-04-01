@@ -30,7 +30,7 @@ public class ConfigRefreshController {
   public ConfigRefreshController(
       ReactiveDiscoveryClient discoveryClient,
       WebClient.Builder webClientBuilder,
-      @Value("${config.refresh.token:refresh-bus-secret-token-2026}") String refreshToken) {
+      @Value("${config.refresh.token}") String refreshToken) {
     this.discoveryClient = discoveryClient;
     this.webClient = webClientBuilder.build();
     this.refreshToken = refreshToken;
@@ -56,12 +56,23 @@ public class ConfigRefreshController {
               "targetCount", results.size(),
               "successCount", successCount,
               "results", results));
-        });
+      })
+      .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
+        "success", false,
+        "message", "service discovery unavailable",
+        "error", error.getClass().getSimpleName() + ": " + error.getMessage()))));
   }
 
   private Flux<Map<String, Object>> refreshServiceInstances(String serviceId) {
     return discoveryClient.getInstances(serviceId)
-        .flatMap(instance -> refreshInstance(serviceId, instance));
+      .flatMap(instance -> refreshInstance(serviceId, instance))
+      .onErrorResume(error -> Flux.just(buildResult(
+        serviceId,
+        null,
+        "discovery://" + serviceId + "/instances",
+        false,
+        0,
+        error.getClass().getSimpleName() + ": " + error.getMessage())));
   }
 
   private Mono<Map<String, Object>> refreshInstance(String serviceId, ServiceInstance instance) {
@@ -70,11 +81,11 @@ public class ConfigRefreshController {
         .uri(refreshEndpoint)
         .retrieve()
         .bodyToMono(List.class)
-        .map(changedKeys -> buildResult(serviceId, instance.getInstanceId(), refreshEndpoint, true, changedKeys.size(), null))
+        .map(changedKeys -> buildResult(serviceId, instance.getInstanceId(), refreshEndpoint.toString(), true, changedKeys.size(), null))
         .onErrorResume(error -> Mono.just(buildResult(
             serviceId,
             instance.getInstanceId(),
-            refreshEndpoint,
+            refreshEndpoint.toString(),
             false,
             0,
             error.getClass().getSimpleName() + ": " + error.getMessage())));
@@ -83,14 +94,14 @@ public class ConfigRefreshController {
   private Map<String, Object> buildResult(
       String serviceId,
       String instanceId,
-      URI refreshEndpoint,
+      String refreshEndpoint,
       boolean success,
       int changedKeyCount,
       String errorMessage) {
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("serviceId", serviceId);
     result.put("instanceId", instanceId);
-    result.put("endpoint", refreshEndpoint.toString());
+    result.put("endpoint", refreshEndpoint);
     result.put("success", success);
     result.put("changedKeyCount", changedKeyCount);
     if (errorMessage != null) {

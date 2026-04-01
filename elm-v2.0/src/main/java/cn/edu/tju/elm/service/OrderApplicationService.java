@@ -315,7 +315,7 @@ public class OrderApplicationService {
         java.util.Map<String, Object> freezeResult =
             internalServiceClient.freezePoints(currentUserId, pointsUsed, pointsTradeNo);
         if (freezeResult == null) {
-          return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "Failed to freeze points");
+          throw new IllegalStateException("Failed to freeze points");
         }
         order.setPointsTradeNo(pointsTradeNo);
         Boolean deductSuccess =

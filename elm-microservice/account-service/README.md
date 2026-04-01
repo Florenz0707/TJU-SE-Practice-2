@@ -13,6 +13,7 @@
 
 - 被 `elm-v2.0` 调用（RestTemplate）
 - 典型调用点：下单扣款、取消退款、券核销/回滚
+- 内部接口统一受 `X-Internal-Service-Token` 保护，`/api/inner/account/**` 缺失或错误 token 会返回 `401`
 
 ## Docker 部署（统一方式）
 
@@ -32,6 +33,12 @@ docker compose up -d --build account-service
 - `DB_USERNAME`
 - `DB_PASSWORD`
 - `INTERNAL_SERVICE_TOKEN`
+
+## 当前实现说明
+
+- 当前服务已经纳入根目录 Spring Cloud 运行拓扑，由 `config-server` 下发配置、向 Eureka 注册
+- 对外演示优先通过 `gateway-service -> elm-v2.0` 完成，不建议直接让前端访问本服务
+- 自动化测试已覆盖账户内部接口和内部 token 过滤链的核心路径
 
 ## 单独构建镜像
 

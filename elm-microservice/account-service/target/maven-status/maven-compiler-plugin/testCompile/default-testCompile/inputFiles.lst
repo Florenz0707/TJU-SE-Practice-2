@@ -1,2 +1,3 @@
+/root/workspace/TJU-SE-Practice-2/elm-microservice/account-service/src/test/java/cn/edu/tju/elm/controller/AccountInnerControllerSecurityTest.java
 /root/workspace/TJU-SE-Practice-2/elm-microservice/account-service/src/test/java/cn/edu/tju/elm/controller/AccountInnerControllerTest.java
 /root/workspace/TJU-SE-Practice-2/elm-microservice/account-service/src/test/java/cn/edu/tju/elm/service/AccountInternalServiceTest.java

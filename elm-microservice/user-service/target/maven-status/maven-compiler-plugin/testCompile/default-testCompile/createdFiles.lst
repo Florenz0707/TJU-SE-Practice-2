@@ -3,3 +3,4 @@ cn/edu/tju/core/security/jwt/JWTFilterTest.class
 cn/edu/tju/core/security/service/UserDomainServiceTest.class
 cn/edu/tju/core/security/jwt/TokenProviderTest.class
 cn/edu/tju/core/security/controller/AuthenticationRestControllerTest.class
+cn/edu/tju/core/security/controller/UserInnerControllerTest.class

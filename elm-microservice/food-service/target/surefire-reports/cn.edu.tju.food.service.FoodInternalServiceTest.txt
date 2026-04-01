@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: cn.edu.tju.food.service.FoodInternalServiceTest
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.981 s -- in cn.edu.tju.food.service.FoodInternalServiceTest
+Tests run: 17, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.248 s -- in cn.edu.tju.food.service.FoodInternalServiceTest

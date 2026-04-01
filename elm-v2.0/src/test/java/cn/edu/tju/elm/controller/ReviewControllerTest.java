@@ -1,9 +1,12 @@
 package cn.edu.tju.elm.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -40,6 +43,35 @@ class ReviewControllerTest {
   @InjectMocks private ReviewController reviewController;
 
   @Test
+  void addReview_shouldFailWhenNoAuthority() {
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.empty());
+
+    var result = reviewController.addReview(3L, new Review());
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY NOT FOUND", result.getMessage());
+    verify(reviewApplicationService, never()).addReview(any(), any(), any());
+  }
+
+  @Test
+  void addReview_shouldDelegateWhenAuthorized() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+
+    Review review = new Review();
+    review.setId(1L);
+    when(reviewApplicationService.addReview(9L, 3L, review))
+        .thenReturn(cn.edu.tju.core.model.HttpResult.success(review));
+
+    var result = reviewController.addReview(3L, review);
+
+    assertTrue(result.getSuccess());
+    verify(reviewApplicationService).addReview(9L, 3L, review);
+  }
+
+  @Test
   void getReviewsByUserId_shouldReadFromInternalOrderClient() {
     User me = new User();
     me.setId(9L);
@@ -54,6 +86,43 @@ class ReviewControllerTest {
     assertTrue(result.getSuccess());
     verify(internalOrderClient).getReviewsByCustomerId(9L);
     verify(compatibilityEnricher).enrichReviews(any());
+  }
+
+  @Test
+  void getReviewsByUserId_shouldFailWhenNoAuthority() {
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.empty());
+
+    var result = reviewController.getReviewsByUserId();
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY NOT FOUND", result.getMessage());
+    verify(internalOrderClient, never()).getReviewsByCustomerId(any());
+  }
+
+  @Test
+  void updateReview_shouldFailWhenNoAuthority() {
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.empty());
+
+    var result = reviewController.updateReview(1L, new Review());
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY NOT FOUND", result.getMessage());
+    verify(internalOrderClient, never()).getReviewById(1L);
+  }
+
+  @Test
+  void updateReview_shouldFailWhenOldReviewNotFound() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(internalOrderClient.getReviewById(1L)).thenReturn(null);
+
+    var result = reviewController.updateReview(1L, new Review());
+
+    assertFalse(result.getSuccess());
+    assertEquals("OldReview NOT FOUND", result.getMessage());
+    verify(internalOrderClient, never()).updateReview(any(), any());
   }
 
   @Test
@@ -97,6 +166,25 @@ class ReviewControllerTest {
   }
 
   @Test
+  void updateReview_shouldFailWhenInternalUpdateReturnsNull() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(internalOrderClient.getReviewById(1L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 9L, 2L, 3L, false, 8, "old"));
+    when(internalOrderClient.updateReview(any(), any())).thenReturn(null);
+
+    Review update = new Review();
+    update.setContent("new");
+
+    var result = reviewController.updateReview(1L, update);
+
+    assertFalse(result.getSuccess());
+    assertEquals("Failed to update review", result.getMessage());
+  }
+
+  @Test
   void updateReview_shouldFailWhenPayloadEmpty() {
     User me = new User();
     me.setId(9L);
@@ -125,6 +213,87 @@ class ReviewControllerTest {
     var result = reviewController.getReviewByOrderId(3L);
 
     assertFalse(result.getSuccess());
+  }
+
+  @Test
+  void getReviewByOrderId_shouldFailWhenNoAuthority() {
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.empty());
+
+    var result = reviewController.getReviewByOrderId(3L);
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY NOT FOUND", result.getMessage());
+    verify(orderApplicationService, never()).getOrderById(3L);
+  }
+
+  @Test
+  void getReviewByOrderId_shouldFailWhenOrderNotFound() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(orderApplicationService.getOrderById(3L)).thenReturn(null);
+
+    var result = reviewController.getReviewByOrderId(3L);
+
+    assertFalse(result.getSuccess());
+    assertEquals("Order NOT FOUND", result.getMessage());
+    verify(internalOrderClient, never()).getReviewByOrderId(3L);
+  }
+
+  @Test
+  void getReviewByOrderId_shouldReturnReviewToOwner() {
+    User me = new User();
+    me.setId(10L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    Order order = new Order();
+    order.setId(3L);
+    when(orderApplicationService.getOrderById(3L)).thenReturn(order);
+    when(internalOrderClient.getReviewByOrderId(3L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 10L, 2L, 3L, true, 8, "ok"));
+
+    var result = reviewController.getReviewByOrderId(3L);
+
+    assertTrue(result.getSuccess());
+    verify(compatibilityEnricher).enrichReview(any(Review.class));
+  }
+
+  @Test
+  void getReviewByOrderId_shouldFailWhenBusinessNotFound() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("BUSINESS"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    Order order = new Order();
+    order.setId(3L);
+    when(orderApplicationService.getOrderById(3L)).thenReturn(order);
+    when(internalOrderClient.getReviewByOrderId(3L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 10L, 2L, 3L, false, 8, "ok"));
+    when(businessService.getBusinessById(2L)).thenReturn(null);
+
+    var result = reviewController.getReviewByOrderId(3L);
+
+    assertFalse(result.getSuccess());
+    assertEquals("Business NOT FOUND", result.getMessage());
+  }
+
+  @Test
+  void getReviewByOrderId_shouldFailWhenNonBusinessNonOwnerUser() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    Order order = new Order();
+    order.setId(3L);
+    when(orderApplicationService.getOrderById(3L)).thenReturn(order);
+    when(internalOrderClient.getReviewByOrderId(3L))
+        .thenReturn(new InternalOrderClient.ReviewSnapshot(1L, 10L, 2L, 3L, false, 8, "ok"));
+
+    var result = reviewController.getReviewByOrderId(3L);
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY LACKED", result.getMessage());
   }
 
   @Test
@@ -212,5 +381,42 @@ class ReviewControllerTest {
     assertNotNull(normalReview.getCustomerId());
     assertNotNull(normalReview.getOrder());
     verify(compatibilityEnricher).enrichReviews(any());
+  }
+
+  @Test
+  void getReviewsByBusinessId_shouldFailWhenBusinessNotFound() {
+    when(businessService.getBusinessById(2L)).thenReturn(null);
+
+    var result = reviewController.getReviewsByBusinessId(2L);
+
+    assertFalse(result.getSuccess());
+    assertEquals("Business NOT FOUND", result.getMessage());
+    verify(internalOrderClient, never()).getReviewsByBusinessId(2L);
+  }
+
+  @Test
+  void deleteReview_shouldFailWhenNoAuthority() {
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.empty());
+
+    var result = reviewController.deleteReview(1L);
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY NOT FOUND", result.getMessage());
+    verify(reviewApplicationService, never()).deleteReview(anyLong(), anyBoolean(), anyLong());
+  }
+
+  @Test
+  void deleteReview_shouldPassAdminFlag() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("ADMIN"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+    when(reviewApplicationService.deleteReview(9L, true, 1L))
+        .thenReturn(cn.edu.tju.core.model.HttpResult.success("ok"));
+
+    var result = reviewController.deleteReview(1L);
+
+    assertTrue(result.getSuccess());
+    verify(reviewApplicationService).deleteReview(9L, true, 1L);
   }
 }

@@ -162,6 +162,12 @@
 - 各服务通过 `spring.config.import=optional:configserver:...` 接入配置中心。
 - 公共管理端点暴露策略已统一下发到配置仓。
 
+等价性说明：
+
+- 当前配置仓采用 `native` 模式，而不是远程 Git。
+- 这不影响“集中配置管理”的课程目标，因为服务仍然是统一从 Config Server 获取外部配置。
+- 对课程验收来说，核心能力是“配置集中托管 + 可统一刷新”，这两点当前都已经具备。
+
 ### 2.9 Bus 配置广播
 
 要求：实现配置变更后的分布式刷新广播。
@@ -181,6 +187,7 @@
 - 通过请求头 `X-Config-Refresh-Token` 控制内部调用权限。
 - 通过 `ReactiveDiscoveryClient` 获取所有注册实例，并向各实例广播 `POST /actuator/refresh`。
 - 所有云端服务已通过共享配置暴露 `refresh` 端点。
+- 如果个别实例刷新失败，可以按实例重试或重启，已有明确的人工兜底步骤，见 `docs/config-refresh-recovery.md`。
 
 等价性说明：
 
@@ -191,7 +198,7 @@
 
 ```bash
 curl -X POST http://localhost:8090/internal/config/refresh \
-  -H 'X-Config-Refresh-Token: refresh-bus-secret-token-2026'
+  -H 'X-Config-Refresh-Token: <CONFIG_REFRESH_TOKEN>'
 ```
 
 ## 3. 前端验收项

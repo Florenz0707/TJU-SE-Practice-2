@@ -1,5 +1,6 @@
 package cn.edu.tju.elm.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
@@ -251,6 +252,44 @@ class OrderControllerTest {
   }
 
   @Test
+  void updateOrderStatus_shouldPassAdminFlags() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("ADMIN"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+
+    Order request = new Order();
+    request.setId(301L);
+    request.setOrderState(4);
+    when(orderApplicationService.updateOrderStatus(9L, true, false, request))
+        .thenReturn(cn.edu.tju.core.model.HttpResult.success(request));
+
+    var result = orderController.updateOrderStatus(request);
+
+    assertTrue(result.getSuccess());
+    verify(orderApplicationService).updateOrderStatus(9L, true, false, request);
+  }
+
+  @Test
+  void updateOrderStatus_shouldPassUserFlags() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+
+    Order request = new Order();
+    request.setId(302L);
+    request.setOrderState(2);
+    when(orderApplicationService.updateOrderStatus(9L, false, false, request))
+        .thenReturn(cn.edu.tju.core.model.HttpResult.success(request));
+
+    var result = orderController.updateOrderStatus(request);
+
+    assertTrue(result.getSuccess());
+    verify(orderApplicationService).updateOrderStatus(9L, false, false, request);
+  }
+
+  @Test
   void updateOrderStatus_shouldFailWhenNoAuthority() {
     when(userService.getUserWithAuthorities()).thenReturn(Optional.empty());
 
@@ -291,5 +330,88 @@ class OrderControllerTest {
 
     assertTrue(result.getSuccess());
     verify(orderApplicationService).cancelOrder(9L, 400L);
+  }
+
+  @Test
+  void addOrders_shouldFailWhenNoAuthority() {
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.empty());
+
+    var result = orderController.addOrders(new Order(), "req-add-no-auth");
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY NOT FOUND", result.getMessage());
+    verify(orderApplicationService, never()).addOrder(9L, new Order(), "req-add-no-auth");
+  }
+
+  @Test
+  void getMerchantOrders_shouldFailWhenNotBusinessUser() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+
+    var result = orderController.getMerchantOrders();
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY LACKED", result.getMessage());
+    verify(businessService, never()).getBusinessByOwnerId(me.getId());
+  }
+
+  @Test
+  void getMerchantOrders_shouldAggregateOrdersAcrossBusinesses() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("BUSINESS"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+
+    Business businessA = new Business();
+    businessA.setId(100L);
+    Business businessB = new Business();
+    businessB.setId(101L);
+    when(businessService.getBusinessByOwnerId(9L)).thenReturn(java.util.List.of(businessA, businessB));
+
+    Order orderA = new Order();
+    orderA.setId(1L);
+    Order orderB = new Order();
+    orderB.setId(2L);
+    when(orderApplicationService.getOrdersByBusinessId(100L)).thenReturn(java.util.List.of(orderA));
+    when(orderApplicationService.getOrdersByBusinessId(101L)).thenReturn(java.util.List.of(orderB));
+
+    var result = orderController.getMerchantOrders();
+
+    assertTrue(result.getSuccess());
+    assertEquals(2, result.getData().size());
+    verify(orderApplicationService).getOrdersByBusinessId(100L);
+    verify(orderApplicationService).getOrdersByBusinessId(101L);
+  }
+
+  @Test
+  void getOrdersByBusinessId_shouldFailWhenNoAuthority() {
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.empty());
+
+    var result = orderController.getOrdersByBusinessId(100L);
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY NOT FOUND", result.getMessage());
+    verify(businessService, never()).getBusinessById(100L);
+  }
+
+  @Test
+  void getOrdersByBusinessId_shouldFailWhenBusinessUserIsNotOwner() {
+    User me = new User();
+    me.setId(9L);
+    me.setAuthorities(AuthorityUtils.getAuthoritySet("BUSINESS"));
+    when(userService.getUserWithAuthorities()).thenReturn(Optional.of(me));
+
+    Business business = new Business();
+    business.setId(100L);
+    business.setBusinessOwnerId(10L);
+    when(businessService.getBusinessById(100L)).thenReturn(business);
+
+    var result = orderController.getOrdersByBusinessId(100L);
+
+    assertFalse(result.getSuccess());
+    assertEquals("AUTHORITY LACKED", result.getMessage());
+    verify(orderApplicationService, never()).getOrdersByBusinessId(100L);
   }
 }

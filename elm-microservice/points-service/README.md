@@ -13,6 +13,7 @@
 
 - 被 `elm-v2.0` 调用（RestTemplate）
 - 典型调用点：下单扣积分、取消返还积分、订单完成/评价积分发放
+- 内部接口统一受 `X-Internal-Service-Token` 保护
 
 ## Docker 部署（统一方式）
 
@@ -32,6 +33,12 @@ docker compose up -d --build points-service
 - `DB_USERNAME`
 - `DB_PASSWORD`
 - `INTERNAL_SERVICE_TOKEN`
+
+## 当前实现说明
+
+- 当前积分链路支持冻结、扣减、回滚、已扣积分返还，以及订单完成/评价完成后的积分发放
+- `elm-v2.0` 通过内部调用编排本服务，不直接把积分逻辑暴露给前端
+- 自动化测试已覆盖账户自动创建、FIFO 冻结、退款幂等和冻结批次缺失时的失败分支
 
 ## 单独构建镜像
 
