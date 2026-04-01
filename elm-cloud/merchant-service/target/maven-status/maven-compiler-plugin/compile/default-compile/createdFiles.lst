@@ -1,0 +1,8 @@
+cn\edu\tju\merchant\model\Merchant.class
+cn\edu\tju\merchant\Application.class
+cn\edu\tju\merchant\service\impl\MerchantInternalServiceImpl.class
+cn\edu\tju\elm\config\RestTemplateConfig.class
+cn\edu\tju\merchant\repository\MerchantRepository.class
+cn\edu\tju\core\model\BaseEntity.class
+cn\edu\tju\merchant\service\MerchantInternalService.class
+cn\edu\tju\merchant\controller\MerchantInnerController.class

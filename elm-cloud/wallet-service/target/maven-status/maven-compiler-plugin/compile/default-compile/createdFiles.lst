@@ -1,0 +1,14 @@
+cn\edu\tju\wallet\Application.class
+cn\edu\tju\wallet\model\PrivateVoucher.class
+cn\edu\tju\wallet\model\Wallet.class
+cn\edu\tju\wallet\model\Transaction.class
+cn\edu\tju\wallet\service\impl\WalletInternalServiceImpl.class
+cn\edu\tju\wallet\repository\WalletRepository.class
+cn\edu\tju\wallet\controller\WalletInnerController.class
+cn\edu\tju\wallet\model\PublicVoucher.class
+cn\edu\tju\wallet\utils\EntityUtils.class
+cn\edu\tju\core\model\HttpResult.class
+cn\edu\tju\core\model\ResultCodeEnum.class
+cn\edu\tju\wallet\model\PublicVoucherVO.class
+cn\edu\tju\core\model\BaseEntity.class
+cn\edu\tju\wallet\service\WalletInternalService.class

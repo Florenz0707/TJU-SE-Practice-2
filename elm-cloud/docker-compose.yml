@@ -1,0 +1,154 @@
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: elm
+      MYSQL_USER: elm
+      MYSQL_PASSWORD: elm
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - 3306:3306
+    networks:
+      - elm-network
+
+  eureka-server:
+    build:
+      context: .
+      dockerfile: ./eureka-server/Dockerfile
+    ports:
+      - 8761:8761
+    depends_on:
+      - mysql
+    networks:
+      - elm-network
+
+  config-server:
+    build:
+      context: .
+      dockerfile: ./config-server/Dockerfile
+    ports:
+      - 8888:8888
+    depends_on:
+      - eureka-server
+    networks:
+      - elm-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./gateway/Dockerfile
+    ports:
+      - 8080:8080
+    depends_on:
+      - eureka-server
+      - config-server
+    networks:
+      - elm-network
+
+  merchant-service:
+    build:
+      context: .
+      dockerfile: ./merchant-service/Dockerfile
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - elm-network
+
+  product-service:
+    build:
+      context: .
+      dockerfile: ./product-service/Dockerfile
+    environment:
+      - SPRING_PROFILES_ACTIVE=local
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - elm-network
+
+  cart-service:
+    build:
+      context: .
+      dockerfile: ./cart-service/Dockerfile
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - elm-network
+
+  order-service:
+    build:
+      context: .
+      dockerfile: ./order-service/Dockerfile
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - elm-network
+
+  address-service:
+    build:
+      context: .
+      dockerfile: ./address-service/Dockerfile
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - elm-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - elm-network
+
+  points-service:
+    build:
+      context: .
+      dockerfile: ./points-service/Dockerfile
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - elm-network
+
+  wallet-service:
+    build:
+      context: .
+      dockerfile: ./wallet-service/Dockerfile
+    depends_on:
+      - eureka-server
+      - mysql
+    networks:
+      - elm-network
+
+  frontend:
+    build:
+      context: ./elm-frontend
+      dockerfile: Dockerfile
+    container_name: elm-frontend-1
+    restart: unless-stopped
+    depends_on:
+      - gateway
+    ports:
+      - "80:80"
+    networks:
+      - elm-network
+
+volumes:
+  mysql-data:
+
+networks:
+  elm-network:
+    driver: bridge

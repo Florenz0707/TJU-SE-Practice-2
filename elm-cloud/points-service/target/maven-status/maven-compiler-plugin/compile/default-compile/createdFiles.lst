@@ -1,0 +1,7 @@
+cn\edu\tju\points\repository\PointsRepository.class
+cn\edu\tju\points\service\impl\PointsInternalServiceImpl.class
+cn\edu\tju\core\model\BaseEntity.class
+cn\edu\tju\points\controller\PointsInnerController.class
+cn\edu\tju\PointsServiceApplication.class
+cn\edu\tju\points\model\PointsAccount.class
+cn\edu\tju\points\service\PointsInternalService.class

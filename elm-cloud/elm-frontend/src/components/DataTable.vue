@@ -1,0 +1,44 @@
+<template>
+  <el-table :data="data" stripe style="width: 100%">
+    <el-table-column
+      v-for="column in columns"
+      :key="column.prop"
+      :prop="column.prop"
+      :label="column.label"
+      :width="column.width"
+      :formatter="column.formatter"
+    >
+      <template v-if="column.slot" #default="scope">
+        <slot :name="column.slot" :row="scope.row"></slot>
+      </template>
+    </el-table-column>
+  </el-table>
+</template>
+
+<script setup lang="ts">
+import type { PropType } from "vue";
+
+interface Column {
+  prop: string;
+  label: string;
+  width?: string | number;
+  slot?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formatter?: (...args: any[]) => string;
+}
+
+defineProps({
+  data: {
+    type: Array as PropType<unknown[]>,
+    required: true,
+  },
+  columns: {
+    type: Array as PropType<Column[]>,
+    required: true,
+  },
+});
+</script>
+
+<style scoped>
+/* Scoped styles for the DataTable component */
+</style>

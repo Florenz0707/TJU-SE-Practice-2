@@ -1,0 +1,9 @@
+cn\edu\tju\cart\service\impl\CartInternalServiceImpl.class
+cn\edu\tju\cart\controller\CartInnerController.class
+cn\edu\tju\cart\model\CartItem.class
+cn\edu\tju\elm\config\RestTemplateConfig.class
+cn\edu\tju\cart\Application.class
+cn\edu\tju\cart\repository\CartRepository.class
+cn\edu\tju\core\model\BaseEntity.class
+cn\edu\tju\cart\model\Cart.class
+cn\edu\tju\cart\service\CartInternalService.class

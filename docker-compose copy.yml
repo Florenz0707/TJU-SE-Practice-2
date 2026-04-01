@@ -1,0 +1,163 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: elm-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: elm
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - elm-network
+
+  mysql-init:
+    image: mysql:8.0
+    container_name: elm-mysql-init
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command:
+      [
+        "sh",
+        "-c",
+        "mysql -hmysql -uroot -p$${DB_PASSWORD} -e \"CREATE DATABASE IF NOT EXISTS elm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_points CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_account CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_catalog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE IF NOT EXISTS elm_order CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"",
+      ]
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+    restart: "no"
+    networks:
+      - elm-network
+
+  points-service:
+    build:
+      context: ./elm-microservice/points-service
+      dockerfile: Dockerfile
+    container_name: points-service
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_points?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    ports:
+      - "8081:8081"
+    networks:
+      - elm-network
+
+  account-service:
+    build:
+      context: ./elm-microservice/account-service
+      dockerfile: Dockerfile
+    container_name: account-service
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_account?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+    ports:
+      - "8082:8082"
+    networks:
+      - elm-network
+
+  catalog-service:
+    build:
+      context: ./elm-microservice/catalog-service
+      dockerfile: Dockerfile
+    container_name: catalog-service
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_catalog?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+    ports:
+      - "8083:8083"
+    networks:
+      - elm-network
+
+  order-service:
+    build:
+      context: ./elm-microservice/order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm_order?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+    ports:
+      - "8084:8084"
+    networks:
+      - elm-network
+
+  elm-v2:
+    build:
+      context: ./elm-v2.0
+      dockerfile: Dockerfile
+    container_name: elm-v2
+    restart: unless-stopped
+    depends_on:
+      mysql-init:
+        condition: service_completed_successfully
+      points-service:
+        condition: service_started
+      account-service:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/elm?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-internal-service-secret-token-2024}
+      POINTS_SERVICE_URL: http://points-service:8081/elm
+      ACCOUNT_SERVICE_URL: http://account-service:8082/elm
+      CATALOG_SERVICE_URL: http://catalog-service:8083/elm
+      ORDER_SERVICE_URL: http://order-service:8084/elm
+    ports:
+      - "8080:8080"
+    networks:
+      - elm-network
+
+  frontend:
+    build:
+      context: ./elm-frontend
+      dockerfile: Dockerfile
+    container_name: elm-frontend
+    restart: unless-stopped
+    depends_on:
+      - elm-v2
+    ports:
+      - "80:80"
+    networks:
+      - elm-network
+
+networks:
+  elm-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
