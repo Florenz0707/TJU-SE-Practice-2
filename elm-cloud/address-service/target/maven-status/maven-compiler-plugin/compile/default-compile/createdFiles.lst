@@ -1,0 +1,11 @@
+cn\edu\tju\address\Application.class
+cn\edu\tju\elm\utils\JwtUtils.class
+cn\edu\tju\address\service\impl\AddressInternalServiceImpl.class
+cn\edu\tju\core\model\HttpResult.class
+cn\edu\tju\core\model\ResultCodeEnum.class
+cn\edu\tju\address\model\DeliveryAddress.class
+cn\edu\tju\core\model\BaseEntity.class
+cn\edu\tju\address\repository\DeliveryAddressRepository.class
+cn\edu\tju\address\service\AddressInternalService.class
+cn\edu\tju\address\controller\AddressController.class
+cn\edu\tju\address\controller\AddressInnerController.class
