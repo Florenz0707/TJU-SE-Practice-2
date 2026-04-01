@@ -1,6 +1,6 @@
 package cn.edu.tju.merchant.model;
 
-import cn.edu.tju.core.model.BaseEntity;
+import cn.edu.tju.merchant.model.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;

@@ -1,4 +1,10 @@
 package cn.edu.tju.merchant.controller;
+import cn.edu.tju.merchant.service.UserService;
+
+import cn.edu.tju.merchant.util.AuthorityUtils;
+
+import cn.edu.tju.merchant.model.User;
+
 
 import cn.edu.tju.merchant.model.Merchant;
 import cn.edu.tju.merchant.service.MerchantInternalService;

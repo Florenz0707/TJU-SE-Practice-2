@@ -4,7 +4,7 @@ import cn.edu.tju.address.model.DeliveryAddress;
 import cn.edu.tju.address.repository.DeliveryAddressRepository;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
-import cn.edu.tju.elm.utils.JwtUtils;
+import cn.edu.tju.address.util.JwtUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
