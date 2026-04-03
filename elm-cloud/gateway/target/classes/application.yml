@@ -17,7 +17,7 @@ spring:
         - id: wallet-service
           uri: lb://wallet-service
           predicates:
-            - Path=/elm/api/wallet/**, /elm/api/transactions/**, /elm/api/vouchers/**
+            - Path=/elm/api/wallet/**, /elm/api/transactions/**, /elm/api/vouchers/**, /elm/api/transaction/**, /elm/api/publicVoucher/**, /elm/api/privateVoucher/**
 
         - id: order-service
           uri: lb://order-service

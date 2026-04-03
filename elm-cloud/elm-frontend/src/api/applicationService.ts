@@ -3,9 +3,9 @@ import type { Business, BusinessApplication } from "./types";
 
 // The application state enum based on the user's clarification
 export const ApplicationState = {
-  UNDISPOSED: 0,
-  APPROVED: 1,
-  REJECTED: 2,
+  UNDISPOSED: 1,
+  APPROVED: 2,
+  REJECTED: 3,
 } as const;
 
 export type ApplicationState =

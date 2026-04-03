@@ -1,108 +1,57 @@
-# 本地运行指南（elm-cloud）
+﻿# 本地运行指南（elm-cloud）
 
-本文档给出在本地使用 Docker Compose 启动 `elm-cloud` 微服务的步骤（PowerShell）。
+本文档指导在本地使用 Docker Compose 快速启动 elm-cloud 下的所有微服务、前端和数据库。
 
-> 说明：此说明假设你已在本机安装并能运行 Docker Desktop（Docker Engine + Compose v2+），并且在仓库根目录为 `d:\partical\TJU-SE-Practice=2`。
+## 1. 准备条件
 
-## 1. 目录与前置条件
+- 请确保本机已安装并能运行 **Docker Desktop**（或 Docker Engine + Compose v2+）。
+- 所有操作均在 elm-cloud 服务目录下进行。
 
-- 项目根目录（示例）：
-  - `d:\partical\TJU-SE-Practice=2`（仓库根）
-  - `elm-cloud`（本模块）
-  - `elm-frontend`（可选前端项目，若希望通过 docker-compose 启动前端，需要把前端服务片段加入 compose）
+## 2. 快速启动（一键运行所有功能）
 
-## 2. 快速启动（建议先单模块验证）
+目前所有后端微服务（包括 gateway、merchant-service、user-service 等），以及前端应用（frontend）和数据库环境（mysql），都已统一配置在了 elm-cloud/docker-compose.yml 中。实际构建代码均与当前配置完全匹配，支持直接启动。
 
-1) 先在 repo 根打开 PowerShell：
+1) **进入** elm-cloud **目录**：
+   `powershell
+   cd elm-cloud
+   `
 
-```powershell
-cd 'd:\partical\TJU-SE-Practice=2'
-```
+2) **构建并后台运行所有容器**：
+   `powershell
+   docker-compose up -d --build
+   `
+   > **注：** 首次启动时，为了拉取基础镜像并进行 Java Maven 包和前端 Node 环境的构建，可能会消耗较长的时间，请耐心等待。
 
-2) 单模块构建（验证 address-service）：
+## 3. 访问系统与管理员账号
 
-```powershell
-# 仅构建 address-service 镜像（使用 elm-cloud/docker-compose.yml 的 build 配置）
-docker compose -f .\elm-cloud\docker-compose.yml build address-service
-```
+服务成功启动后即可在本地访问：
 
-如果构建成功，继续构建其它服务或直接启动全部。
+- **前端系统入口**：直接在浏览器访问 [http://localhost](http://localhost) （由于前端容器映射到了外部 80 端口）。
+- **管理员账号（Admin）**：
+  数据库初始脚本 docker/mysql/init/01-create-schemas.sql 中已为您预置了具备高级管理权限的账号，用于审核商家申请和管理配置系统：
+  - **账号用户名**：dmin
+  - **登录密码**：password
 
-3) 启动全部（首次可能需要较长时间）：
+*(注：系统中的其它注册用户或演示账号，如无单独说明均可用相同的方式进行登录注册测试)*
 
-```powershell
-# 在仓库根执行，强制构建并后台运行
-docker compose -f .\elm-cloud\docker-compose.yml up --build -d
-```
+## 4. 常用维护命令
 
-## 3. 常用命令（日志、停止、重建）
+如果你想单独查看某个服务的状态，或者更新单独的服务，可以使用以下命令（均确保您位于 elm-cloud 目录下执行）：
 
-- 查看某个服务的日志（跟随输出）：
+- **查看服务日志**（例如查看 user-service 或 gateway 的运行日志）：
+  `powershell
+  docker-compose logs -f user-service
+  docker-compose logs -f gateway
+  `
 
-```powershell
-docker compose -f .\elm-cloud\docker-compose.yml logs -f user-service
-```
+- **单独重新构建某一项服务**（如修改了 merchant-service 代码后期望单独编译更新）：
+  `powershell
+  docker-compose up -d --build merchant-service
+  `
 
-- 停止并删除容器（保留数据卷）：
+- **停止并删除所有服务与数据卷**（如果您希望彻底重置系统数据和数据库）：
+  `powershell
+  docker-compose down -v
+  `
+  *(清除后下次 up 时会重新触发 MySQL 数据的初始化)*
 
-```powershell
-docker compose -f .\elm-cloud\docker-compose.yml down
-```
-
-- 停止并删除容器及卷（会触发 MySQL 重新初始化）：
-
-```powershell
-docker compose -f .\elm-cloud\docker-compose.yml down -v
-```
-
-- 只重建某个服务并重启：
-
-```powershell
-docker compose -f .\elm-cloud\docker-compose.yml build user-service
-docker compose -f .\elm-cloud\docker-compose.yml up -d user-service
-```
-
-## 4. 前端（elm-frontend）说明
-
-- 当前 `elm-cloud/docker-compose.yml` 默认不包含前端（前端在仓库根 `elm-frontend`）。如果你已经把原来的前端启动片段拷贝到 `elm-cloud/docker-compose.yml` 中，并确保 build context 指向前端目录，那么这样是可以的。示例（可加入到 `elm-cloud/docker-compose.yml`）：
-
-```yaml
-  frontend:
-    build:
-      context: ..
-      dockerfile: ./elm-frontend/Dockerfile
-    ports:
-      - 8088:80
-    depends_on:
-      - gateway
-```
-
-或者你也可以在宿主机直接运行前端（更快）:
-
-```powershell
-cd 'd:\partical\TJU-SE-Practice=2\elm-frontend'
-pnpm install
-pnpm run dev
-```
-
-（若你使用 npm/yarn，请替换相应命令）
-
-## 5. 常见故障与排查
-
-- 父 POM 相关错误（Non-resolvable parent POM）：请确认你是从仓库根执行 `docker compose`，并且 `elm-cloud/*/Dockerfile` 已按本项目模式使用 repo 根作为构建上下文（已修改）。如仍报错，贴 build 日志我会帮你分析。
-- 数据库权限或表未创建：查看服务日志（Hibernate 输出）；若 MySQL 用户权限不足，建议把必要的 CREATE DATABASE 语句放到 `docker/mysql/init`，并在启动前执行 `docker compose down -v` 以让 init 脚本重新执行。
-- 构建很慢或依赖下载失败：建议先在宿主机用 Maven 构建：
-
-```powershell
-mvn -T1C -DskipTests package
-```
-
-然后再运行 `docker compose -f .\elm-cloud\docker-compose.yml build`（或修改 Dockerfile 让其直接复制 host 上的 jar，详见 README 中的“构建加速”一节）。
-
-## 6. 我可以为你进一步做的事（可选）
-
-- 在仓库根添加 `.dockerignore`（减少构建上下文体积）。
-- 添加一个 `Dockerfile.hostbuild`（仅复制宿主机构建的 jar），并把运行步骤写成脚本以便快速重建镜像。
-- 把前端服务直接加入 `elm-cloud/docker-compose.yml`（如果你确认要把前端也用该 compose 管理）。
-
-如果你希望我直接把前端片段加入 `elm-cloud/docker-compose.yml` 或帮助添加 `.dockerignore`，请回复确认，我会在 `elm-cloud` 下完成并提交更改。
