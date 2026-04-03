@@ -1,6 +1,6 @@
 package cn.edu.tju.points.service.impl;
 
-import cn.edu.tju.points.model.PointsAccount;
+import cn.edu.tju.points.model.BO.PointsAccount;
 import cn.edu.tju.points.repository.PointsRepository;
 import cn.edu.tju.points.service.PointsInternalService;
 import org.springframework.stereotype.Service;

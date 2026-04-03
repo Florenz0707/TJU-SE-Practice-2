@@ -1,5 +1,5 @@
 cn\edu\tju\address\Application.class
-cn\edu\tju\elm\utils\JwtUtils.class
+cn\edu\tju\address\util\JwtUtils.class
 cn\edu\tju\address\service\impl\AddressInternalServiceImpl.class
 cn\edu\tju\core\model\HttpResult.class
 cn\edu\tju\core\model\ResultCodeEnum.class

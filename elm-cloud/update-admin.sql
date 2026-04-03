@@ -1,1 +1,0 @@
-UPDATE user SET password='$10$Nl2X0utPlQxYpcgvKPo1iOMQ1XLUpSM1Xo/R3xE7lwFwje9hdH.Lq' WHERE username='admin'; DELETE FROM user_authority WHERE user_id=12; DELETE FROM person WHERE id=12; DELETE FROM user WHERE id=12;

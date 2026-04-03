@@ -1,6 +1,6 @@
 package cn.edu.tju.wallet.controller;
 
-import cn.edu.tju.wallet.model.Wallet;
+import cn.edu.tju.wallet.model.BO.Wallet;
 import cn.edu.tju.wallet.service.WalletInternalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

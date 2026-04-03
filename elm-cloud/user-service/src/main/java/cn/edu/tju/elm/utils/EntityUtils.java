@@ -9,7 +9,7 @@ public class EntityUtils {
   public static <T extends BaseEntity> List<T> filterEntityList(List<T> entityList) {
     List<T> list = new ArrayList<>(entityList.size());
     for (T entity : entityList) {
-      if (!entity.getDeleted()) list.add(entity);
+      if (entity.getDeleted() == null || !entity.getDeleted()) list.add(entity);
     }
     return list;
   }

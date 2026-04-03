@@ -1,6 +1,6 @@
 package cn.edu.tju.wallet.service.impl;
 
-import cn.edu.tju.wallet.model.Wallet;
+import cn.edu.tju.wallet.model.BO.Wallet;
 import cn.edu.tju.wallet.repository.WalletRepository;
 import cn.edu.tju.wallet.service.WalletInternalService;
 import org.springframework.stereotype.Service;
@@ -18,6 +18,6 @@ public class WalletInternalServiceImpl implements WalletInternalService {
 
     @Override
     public Optional<Wallet> findByUserId(Long userId) {
-        return repository.findByUserId(userId);
+        return repository.findByOwnerId(userId);
     }
 }

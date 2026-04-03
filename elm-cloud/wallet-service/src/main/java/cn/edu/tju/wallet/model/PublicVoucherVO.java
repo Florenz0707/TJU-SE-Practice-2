@@ -2,6 +2,7 @@ package cn.edu.tju.wallet.model;
 
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
+import cn.edu.tju.wallet.model.BO.PublicVoucher;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

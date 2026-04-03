@@ -100,6 +100,12 @@ public class TransactionController {
       var walletVO = walletService.getWalletByOwnerId(currentUserId);
       if (walletVO == null) {
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Unauthenticated");
+      }
+      TransactionsRecord transactionsRecord =
+          transactionService.getTransactionsByWalletId(walletVO.getId());
+      return HttpResult.success(transactionsRecord);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }
   }
 

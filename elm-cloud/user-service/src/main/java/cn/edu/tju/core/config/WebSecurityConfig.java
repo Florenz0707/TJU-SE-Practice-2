@@ -67,8 +67,8 @@ public class WebSecurityConfig {
   private final String[] permitUrlArr =
       new String[] {
         "/hello",
-        "/api/auth",
-        "/api/persons",
+        "/api/auth/**",
+        "/api/persons/**",
         "/error",
         "/swagger-ui/**",
         "/v3/api-docs/**",
@@ -93,6 +93,7 @@ public class WebSecurityConfig {
         .authorizeHttpRequests(
             requests ->
                 requests
+                    .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers(permitUrlArr)
                     .permitAll()
                     .requestMatchers("/api/inner/**")

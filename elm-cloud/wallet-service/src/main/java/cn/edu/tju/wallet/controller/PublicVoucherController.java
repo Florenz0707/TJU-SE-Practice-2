@@ -146,8 +146,16 @@ public class PublicVoucherController {
     Long currentUserId = SecurityUtils.getCurrentUserId().orElse(null);
     if (currentUserId == null) {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Unauthenticated");
+    }
+    try {
+      Optional<Wallet> walletOpt = walletRepository.findByOwnerId(currentUserId);
       if (walletOpt.isEmpty()) {
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Unauthenticated");
+      }
+      List<PublicVoucherVO> vouchers = publicVoucherService.getPublicVouchers();
+      return HttpResult.success(vouchers);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }
   }
 }

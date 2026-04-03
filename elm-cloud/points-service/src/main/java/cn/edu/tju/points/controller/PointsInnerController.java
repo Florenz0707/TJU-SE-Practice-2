@@ -1,6 +1,6 @@
 package cn.edu.tju.points.controller;
 
-import cn.edu.tju.points.model.PointsAccount;
+import cn.edu.tju.points.model.BO.PointsAccount;
 import cn.edu.tju.points.service.PointsInternalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

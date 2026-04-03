@@ -44,6 +44,9 @@ public class PrivateVoucherController {
     Long currentUserId = SecurityUtils.getCurrentUserId().orElse(null);
     if (currentUserId == null) {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Unauthenticated");
+    }
+    try {
+      PublicVoucherVO publicVoucherVO = publicVoucherService.getPublicVoucherById(publicVoucherId);
       if (publicVoucherVO == null) {
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "PublicVoucher NOT FOUND");
       }
@@ -62,21 +65,27 @@ public class PrivateVoucherController {
   }
 
   @GetMapping("/my")
-  
+  @Operation(summary = "My Private Vouchers")
   public HttpResult<List<PrivateVoucherVO>> myPrivateVouchers() {
     Long currentUserId = SecurityUtils.getCurrentUserId().orElse(null);
     if (currentUserId == null) {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Unauthenticated");
     }
+    WalletVO walletVO = walletService.getWalletByOwnerId(currentUserId);
+    List<PrivateVoucherVO> vouchers = privateVoucherService.getPrivateVouchers(walletVO.getId());
+    return HttpResult.success(vouchers);
   }
 
   @PostMapping("/redeem/{id}")
-  
+  @Operation(summary = "Redeem Private Voucher")
   public HttpResult<String> redeem(
-      @PathVariable("id") Long id) {
+      @Parameter(description = "privateVoucher id") @PathVariable("id") Long id) {
     Long currentUserId = SecurityUtils.getCurrentUserId().orElse(null);
     if (currentUserId == null) {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Unauthenticated");
+    }
+    try {
+      boolean ok = privateVoucherService.redeemPrivateVoucher(id);
       if (ok) {
         return HttpResult.success("Redeemed");
       }

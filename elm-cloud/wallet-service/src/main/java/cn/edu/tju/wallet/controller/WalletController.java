@@ -182,6 +182,13 @@ public class WalletController {
       WalletVO walletVO = walletService.getWalletByOwnerId(currentUserId);
       if (walletVO == null) {
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Unauthenticated");
+      }
+      TransactionVO transaction =
+          transactionService.createTransaction(
+              amount, TransactionType.WITHDRAW, null, walletVO.getId());
+      return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }
   }
 }

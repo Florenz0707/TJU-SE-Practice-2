@@ -1,6 +1,6 @@
 package cn.edu.tju.wallet.service;
 
-import cn.edu.tju.wallet.model.Wallet;
+import cn.edu.tju.wallet.model.BO.Wallet;
 
 import java.util.Optional;
 
