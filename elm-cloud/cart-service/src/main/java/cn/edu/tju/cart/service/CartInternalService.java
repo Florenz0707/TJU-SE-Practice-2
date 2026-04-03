@@ -2,8 +2,8 @@ package cn.edu.tju.cart.service;
 
 import cn.edu.tju.cart.model.Cart;
 
-import java.util.Optional;
+import java.util.List;
 
 public interface CartInternalService {
-    Optional<Cart> getCartByUserId(Long userId);
+    List<Cart> getCartByUserId(String userId);
 }

@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/internal/carts")
 public class CartInnerController {
@@ -19,9 +21,7 @@ public class CartInnerController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<Cart> getByUser(@PathVariable Long userId) {
-        return cartInternalService.getCartByUserId(userId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<List<Cart>> getByUser(@PathVariable String userId) {
+        return ResponseEntity.ok(cartInternalService.getCartByUserId(userId));
     }
 }

@@ -1,7 +1,13 @@
+cn\edu\tju\product\model\Food.class
+cn\edu\tju\product\repository\FoodRepository.class
+cn\edu\tju\product\repository\ProductRepository.class
+cn\edu\tju\product\service\impl\ProductInternalServiceImpl.class
 cn\edu\tju\product\service\ProductInternalService.class
 cn\edu\tju\product\controller\ProductInnerController.class
-cn\edu\tju\product\repository\ProductRepository.class
+cn\edu\tju\product\model\Food$BusinessDto.class
+cn\edu\tju\core\model\HttpResult.class
+cn\edu\tju\core\model\ResultCodeEnum.class
 cn\edu\tju\core\model\BaseEntity.class
-cn\edu\tju\product\service\impl\ProductInternalServiceImpl.class
+cn\edu\tju\product\controller\FoodController.class
 cn\edu\tju\product\model\Product.class
 cn\edu\tju\ProductServiceApplication.class

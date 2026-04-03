@@ -1,7 +1,12 @@
 D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\product\model\Product.java
 D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\product\service\impl\ProductInternalServiceImpl.java
 D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\product\controller\ProductInnerController.java
+D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\product\controller\FoodController.java
+D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\core\model\ResultCodeEnum.java
+D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\product\model\Food.java
 D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\product\repository\ProductRepository.java
 D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\product\service\ProductInternalService.java
 D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\core\model\BaseEntity.java
+D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\product\repository\FoodRepository.java
+D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\core\model\HttpResult.java
 D:\partical\TJU-SE-Practice=2\elm-cloud\product-service\src\main\java\cn\edu\tju\ProductServiceApplication.java

@@ -5,7 +5,7 @@ import cn.edu.tju.cart.repository.CartRepository;
 import cn.edu.tju.cart.service.CartInternalService;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.util.List;
 
 @Service
 public class CartInternalServiceImpl implements CartInternalService {
@@ -17,7 +17,7 @@ public class CartInternalServiceImpl implements CartInternalService {
     }
 
     @Override
-    public Optional<Cart> getCartByUserId(Long userId) {
+    public List<Cart> getCartByUserId(String userId) {
         return cartRepository.findByUserId(userId);
     }
 }
