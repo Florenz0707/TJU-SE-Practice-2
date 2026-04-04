@@ -50,10 +50,16 @@ public class UserService {
 
     public Optional<User> getUserById(Long id) {
         try {
+            HttpHeaders headers = new HttpHeaders();
+            String token = jwtUtils.resolveToken(request);
+            if (token != null && !token.isEmpty()) {
+                headers.setBearerAuth(token);
+            }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
             ResponseEntity<HttpResult<User>> response = restTemplate.exchange(
                 "http://user-service/elm/api/users/" + id,
                 HttpMethod.GET,
-                null,
+                entity,
                 new ParameterizedTypeReference<HttpResult<User>>() {}
             );
             if (response.getBody() != null && response.getBody().getSuccess() && response.getBody().getData() != null) {

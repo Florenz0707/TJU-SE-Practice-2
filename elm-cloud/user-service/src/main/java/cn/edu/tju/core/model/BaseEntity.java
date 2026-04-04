@@ -15,7 +15,7 @@ public class BaseEntity implements Serializable {
 
   private LocalDateTime updateTime;
 
-  @Column(name = "is_deleted")
+  @Column(name = "deleted")
   private Boolean deleted;
 
   public LocalDateTime getCreateTime() {

@@ -15,7 +15,7 @@ public class EntityUtils {
   }
 
   public static <T extends BaseEntity> T filterEntity(T entity) {
-    if (entity != null && !entity.getDeleted()) return entity;
+    if (entity != null && (entity.getDeleted() == null || !entity.getDeleted())) return entity;
     return null;
   }
 
