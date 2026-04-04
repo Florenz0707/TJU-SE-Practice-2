@@ -145,7 +145,7 @@ public class BusinessApplicationController {
       EntityUtils.updateEntity(oldApplication);
       businessApplicationService.updateBusinessApplication(oldApplication);
 
-      if (oldApplication.getApplicationState().equals(2D)) {
+      if (oldApplication.getApplicationState().equals(2)) {
         Business business = oldApplication.getBusiness();
         business.setDeleted(false);
         business.setUpdateTime(LocalDateTime.now());

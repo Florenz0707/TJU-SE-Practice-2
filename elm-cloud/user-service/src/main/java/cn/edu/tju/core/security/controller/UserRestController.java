@@ -174,4 +174,29 @@ public class UserRestController {
     }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
+
+  @PatchMapping("/users/{id}/authorities")
+  @Operation(summary = "修改用户权限", description = "管理用户权限列表")
+  public HttpResult<User> updateUserAuthorities(
+      @Parameter(description = "用户ID", required = true) @PathVariable Long id,
+      @RequestBody java.util.Map<String, Object> body) {
+    User user = userService.getUserById(id);
+    if (user == null) {
+      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "User NOT FOUND");
+    }
+
+    if (body.containsKey("authorities")) {
+        @SuppressWarnings("unchecked")
+        java.util.List<java.util.Map<String, String>> authList = (java.util.List<java.util.Map<String, String>>) body.get("authorities");
+        java.util.Set<String> authorities = new java.util.HashSet<>();
+        if (authList != null) {
+            for (java.util.Map<String, String> authMap : authList) {
+                authorities.add(authMap.get("name"));
+            }
+        }
+        user.setAuthorities(AuthorityUtils.getAuthoritySet(String.join(" ", authorities)));
+        userService.updateUser(user);
+    }
+    return HttpResult.success(user);
+  }
 }

@@ -116,7 +116,7 @@ public class MerchantApplicationController {
     EntityUtils.updateEntity(merchantApplication);
     merchantApplicationService.updateMerchantApplication(merchantApplication);
 
-    if (merchantApplication.getApplicationState().equals(2D)) {
+    if (merchantApplication.getApplicationState().equals(2)) {
       User applicant = userService.getUserById(merchantApplication.getApplicantId()).orElse(null);
       if (applicant == null)
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Applicant NOT FOUND");

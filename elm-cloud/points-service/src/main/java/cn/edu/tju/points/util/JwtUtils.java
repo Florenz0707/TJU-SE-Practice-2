@@ -39,4 +39,30 @@ public class JwtUtils {
         }
         return null;
     }
+
+    public boolean hasAdminAuthority(String token) {
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        try {
+            byte[] keyBytes = Decoders.BASE64.decode(base64Secret);
+            Key key = Keys.hmacShaKeyFor(keyBytes);
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            Object authObj = claims.get("auth");
+            if (authObj != null) {
+                String auths = authObj.toString();
+                return auths.contains("ADMIN") || auths.contains("ROLE_ADMIN");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }

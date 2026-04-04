@@ -15,10 +15,12 @@ cn\edu\tju\points\model\VO\PointsRecordVO.class
 cn\edu\tju\points\repository\PointsRecordRepository.class
 cn\edu\tju\points\util\JwtUtils.class
 cn\edu\tju\points\model\BO\PointsRecord.class
+cn\edu\tju\points\controller\PointsAdminController.class
 cn\edu\tju\points\model\BO\PointsRule.class
 cn\edu\tju\points\constant\PointsRecordType.class
 cn\edu\tju\points\service\PointsInternalService.class
 cn\edu\tju\points\service\PointsService.class
+cn\edu\tju\points\controller\PointsController.class
 cn\edu\tju\points\repository\PointsRepository.class
 cn\edu\tju\points\service\impl\PointsInternalServiceImpl.class
 cn\edu\tju\points\repository\PointsRuleRepository.class
