@@ -1,8 +1,0 @@
-# 这是 Config Server 本地的配置仓库示例，服务在 native 模式下会从 classpath:/config 读取这些文件
-app:
-  message: "配置来自 Config Server 本地仓库"
-
-# 也可以为具体的应用提供配置，例如 user-service.yml
-# user-service:
-#   some:
-#     property: "user specific value"
