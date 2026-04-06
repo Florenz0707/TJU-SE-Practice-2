@@ -69,7 +69,9 @@ public class PointsService {
   /** 分页查询积分明细 */
   @Transactional(readOnly = true)
   public Page<PointsRecord> getPointsRecords(Long userId, int page, int size, String type) {
-    Pageable pageable = PageRequest.of(page - 1, size);
+    int safePage = Math.max(page, 1);
+    int safeSize = Math.max(size, 1);
+    Pageable pageable = PageRequest.of(safePage - 1, safeSize);
     if (type != null && !type.isEmpty() && PointsRecordType.isValidType(type)) {
       return pointsRecordRepository.findByUserIdAndType(userId, type, pageable);
     }

@@ -81,17 +81,46 @@ const statusFilter = ref<number | null>(null);
 
 const columns = [
   { prop: "id", label: "ID", width: 80 },
-  { prop: "applicant.username", label: "申请人" },
+  {
+    prop: "applicant.username",
+    label: "申请人",
+    formatter: (row: Record<string, any>) => {
+      const name =
+        row?.applicant?.username ||
+        row?.applicantName ||
+        row?.owner?.username ||
+        row?.user?.username ||
+        row?.business?.businessOwner?.username ||
+        row?.business?.businessOwnerName;
+      return name ?? "";
+    },
+  },
   { prop: "applicationExplain", label: "申请说明" },
   { prop: "applicationState", label: "状态", slot: "applicationState" },
   {
     prop: "createTime",
     label: "申请时间",
-    formatter: (row: { createTime?: string }) =>
-      new Date(row.createTime || "").toLocaleString(),
+    formatter: (row: Record<string, unknown>) => {
+      const raw =
+        (row.createTime as string | undefined) ||
+        (row.createdAt as string | undefined) ||
+        (row.createAt as string | undefined) ||
+        (row.applyTime as string | undefined);
+      if (!raw) return "";
+      const d = new Date(raw);
+      return Number.isNaN(d.getTime()) ? raw : d.toLocaleString();
+    },
   },
   { prop: "actions", label: "操作", slot: "actions" },
 ];
+
+const parseDateKey = (row: any): number => {
+  const raw =
+    row?.createTime || row?.createdAt || row?.createAt || row?.applyTime || null;
+  if (!raw) return 0;
+  const t = new Date(raw).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
 
 const statusText = (state: number): string => {
   const map: { [key: number]: string } = {
@@ -118,8 +147,7 @@ const fetchApplications = async () => {
     const res = await getMerchantApplications();
     if (res.success) {
       applications.value = (res.data || []).sort(
-        (a, b) =>
-          new Date(b.createTime!).getTime() - new Date(a.createTime!).getTime(),
+        (a, b) => parseDateKey(b) - parseDateKey(a),
       );
     } else {
       ElMessage.error(res.message || "获取申请列表失败。");
@@ -137,7 +165,7 @@ const filteredApplications = computed(() => {
   return applications.value.filter((app) => {
     const searchMatch =
       !searchQuery.value ||
-      app.applicant.username
+      (app.applicant?.username || "")
         .toLowerCase()
         .includes(searchQuery.value.toLowerCase());
     const statusMatch =

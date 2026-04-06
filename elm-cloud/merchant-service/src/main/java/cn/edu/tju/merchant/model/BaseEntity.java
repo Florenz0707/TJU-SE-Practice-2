@@ -18,6 +18,28 @@ public class BaseEntity implements Serializable {
   @Column(name = "is_deleted")
   private Boolean deleted;
 
+  @PrePersist
+  protected void onCreate() {
+    LocalDateTime now = LocalDateTime.now();
+    if (createTime == null) {
+      createTime = now;
+    }
+    if (updateTime == null) {
+      updateTime = now;
+    }
+    if (deleted == null) {
+      deleted = false;
+    }
+  }
+
+  @PreUpdate
+  protected void onUpdate() {
+    updateTime = LocalDateTime.now();
+    if (deleted == null) {
+      deleted = false;
+    }
+  }
+
   public LocalDateTime getCreateTime() {
     return createTime;
   }

@@ -71,8 +71,8 @@ public class PrivateVoucherController {
     if (currentUserId == null) {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Unauthenticated");
     }
-    WalletVO walletVO = walletService.getWalletByOwnerId(currentUserId);
-    List<PrivateVoucherVO> vouchers = privateVoucherService.getPrivateVouchers(walletVO.getId());
+    // PrivateVoucherService.getPrivateVouchers expects ownerId (userId), not walletId.
+    List<PrivateVoucherVO> vouchers = privateVoucherService.getPrivateVouchers(currentUserId);
     return HttpResult.success(vouchers);
   }
 

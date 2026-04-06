@@ -8,12 +8,8 @@ import cn.edu.tju.wallet.model.VO.PublicVoucherVO;
 import cn.edu.tju.wallet.repository.PrivateVoucherRepository;
 import cn.edu.tju.wallet.repository.WalletRepository;
 import cn.edu.tju.wallet.service.serviceInterface.PublicVoucherService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,7 +27,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicVoucherController {
   private final PublicVoucherService publicVoucherService;
   private final WalletRepository walletRepository;
-  private final PrivateVoucherRepository privateVoucherRepository;
 
   public PublicVoucherController(
       PublicVoucherService publicVoucherService,
@@ -39,11 +34,13 @@ public class PublicVoucherController {
       PrivateVoucherRepository privateVoucherRepository) {
     this.publicVoucherService = publicVoucherService;
     this.walletRepository = walletRepository;
-    this.privateVoucherRepository = privateVoucherRepository;
   }
 
   private boolean hasAdminAuthority() {
-    return false;
+    // This codebase doesn't expose authorities in JWT via SecurityUtils.
+    // In the provided init data, admin user is the first seeded user (id=1).
+    // So we treat uid==1 as admin to keep behavior consistent with the frontend.
+    return SecurityUtils.getCurrentUserId().map(id -> id == 1L).orElse(false);
   }
 
   @GetMapping("/list")

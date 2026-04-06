@@ -22,8 +22,14 @@ public class AuthorityUtils {
     public static Set<String> getAuthoritySet(String authority) {
         Set<String> set = new HashSet<>();
         if (authority != null) {
-            for (String auth : authority.split(" ")) {
-                set.add(auth.trim());
+            // token claim examples we need to support:
+            // - "BUSINESS,USER" (comma separated)
+            // - "ROLE_ADMIN ROLE_USER" (space separated)
+            // Support both comma and whitespace.
+            for (String auth : authority.split("[\\s,]+")) {
+                if (auth == null) continue;
+                String a = auth.trim();
+                if (!a.isEmpty()) set.add(a);
             }
         }
         return set;

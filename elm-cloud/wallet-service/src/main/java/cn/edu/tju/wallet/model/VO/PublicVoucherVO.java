@@ -13,6 +13,10 @@ public class PublicVoucherVO implements Serializable {
   private Boolean claimable;
   private Integer validDays;
 
+  // total quantity and per-user limit for admin management
+  private Integer totalQuantity;
+  private Integer perUserLimit;
+
   public PublicVoucherVO() {}
 
   public PublicVoucherVO(PublicVoucher publicVoucher) {
@@ -21,6 +25,8 @@ public class PublicVoucherVO implements Serializable {
     value = publicVoucher.getFaceValue();
     claimable = publicVoucher.getClaimable();
     validDays = publicVoucher.getValidDays();
+    totalQuantity = publicVoucher.getTotalQuantity();
+    perUserLimit = publicVoucher.getPerUserLimit();
   }
 
   public static HttpResult<String> isValidPublicVoucherVO(PublicVoucherVO publicVoucherVO) {
@@ -63,6 +69,14 @@ public class PublicVoucherVO implements Serializable {
     return validDays;
   }
 
+  public Integer getTotalQuantity() {
+    return totalQuantity;
+  }
+
+  public Integer getPerUserLimit() {
+    return perUserLimit;
+  }
+
   @Override
   public String toString() {
     return "VoucherVO: "
@@ -75,6 +89,10 @@ public class PublicVoucherVO implements Serializable {
         + ", claimable="
         + claimable
         + ", valid_days="
-        + validDays;
+        + validDays
+        + ", total_quantity="
+        + totalQuantity
+        + ", per_user_limit="
+        + perUserLimit;
   }
 }

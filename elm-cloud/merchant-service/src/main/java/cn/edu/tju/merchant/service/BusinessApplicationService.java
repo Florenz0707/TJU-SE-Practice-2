@@ -48,11 +48,26 @@ public class BusinessApplicationService {
   }
 
   public List<BusinessApplication> getBusinessApplicationsByApplicantId(Long applicantId) {
+    if (applicantId == null) {
+      return List.of();
+    }
     List<BusinessApplication> allBusinessApplications = businessApplicationRepository.findAll();
     List<BusinessApplication> businessApplicationsByApplicant =
         new ArrayList<>(allBusinessApplications.size());
     for (BusinessApplication businessApplication : allBusinessApplications) {
-      if (businessApplication.getBusiness().getBusinessOwnerId().equals(applicantId)) {
+      if (businessApplication == null) continue;
+
+      // Prefer explicit applicantId (new field)
+      if (businessApplication.getApplicantId() != null
+          && businessApplication.getApplicantId().equals(applicantId)) {
+        businessApplicationsByApplicant.add(businessApplication);
+        continue;
+      }
+
+      // Backward compatibility: fall back to businessOwnerId matching
+      if (businessApplication.getBusiness() != null
+          && businessApplication.getBusiness().getBusinessOwnerId() != null
+          && businessApplication.getBusiness().getBusinessOwnerId().equals(applicantId)) {
         businessApplicationsByApplicant.add(businessApplication);
       }
     }

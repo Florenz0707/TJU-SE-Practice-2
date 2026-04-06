@@ -8,9 +8,6 @@ import cn.edu.tju.wallet.model.RECORD.TransactionsRecord;
 import cn.edu.tju.wallet.model.VO.TransactionVO;
 import cn.edu.tju.wallet.service.serviceInterface.TransactionService;
 import cn.edu.tju.wallet.service.serviceInterface.WalletService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.math.BigDecimal;
 
 
@@ -22,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/transaction")
@@ -109,6 +107,12 @@ public class TransactionController {
     }
   }
 
+  @GetMapping("/my/list")
+  public HttpResult<TransactionsRecord> getMyTransactionsList() {
+    // Defensive endpoint for frontend: no walletId parameter required.
+    return getMyTransactions();
+  }
+
   @PostMapping("")
   
   public HttpResult<TransactionVO> createTransaction(
@@ -166,7 +170,8 @@ public class TransactionController {
   @PatchMapping("/finished")
   
   public HttpResult<TransactionVO> finishTransaction(
-      @RequestParam("id") Long id) {
+      @RequestParam("id") Long id,
+      @RequestBody(required = false) Map<String, Object> body) {
     Long currentUserId = SecurityUtils.getCurrentUserId().orElse(null);
     if (currentUserId == null) {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
@@ -174,6 +179,9 @@ public class TransactionController {
     if (id == null) {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ID CANT BE NULL");
     }
+
+    // 兼容根目录前端：会传 { isFinished: boolean }，当前后端以“触发完成”为准，不依赖该字段。
+    // 如果后续要支持撤销完成，可在 TransactionService 增加明确方法并在此解析该字段。
 
     try {
       TransactionVO transactionVO =

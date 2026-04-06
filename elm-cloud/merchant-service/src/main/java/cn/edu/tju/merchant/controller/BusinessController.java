@@ -8,8 +8,6 @@ import cn.edu.tju.merchant.model.User;
 
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
-
-import cn.edu.tju.merchant.util.JwtUtils;
 import cn.edu.tju.merchant.model.Business;
 import cn.edu.tju.merchant.service.BusinessService;
 
@@ -48,7 +46,9 @@ public class BusinessController {
   @GetMapping("")
   
   public HttpResult<List<Business>> getBusinesses() {
-    return HttpResult.success(businessService.getBusinesses());
+    List<Business> businesses = businessService.getBusinesses();
+    compatibilityEnricher.enrichBusinesses(businesses);
+    return HttpResult.success(businesses);
   }
 
   @PostMapping("")
@@ -76,6 +76,23 @@ public class BusinessController {
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
     if (isAdmin || (isBusiness && me.equals(owner))) {
+      // Hard guard: each merchant(user) can only have ONE active store.
+      // This prevents accidental duplicates when frontend mistakenly calls POST instead of PUT.
+      try {
+        List<Business> existing = businessService.getBusinessByOwnerId(owner.getId());
+        if (existing != null) {
+          for (Business b : existing) {
+            if (b != null && (b.getDeleted() == null || !b.getDeleted())) {
+              return HttpResult.failure(
+                  ResultCodeEnum.SERVER_ERROR,
+                  "ALREADY HAS ACTIVE STORE (use update endpoint instead)");
+            }
+          }
+        }
+      } catch (Exception ignore) {
+        // best-effort guard
+      }
+
       business.setBusinessOwnerId(owner.getId());
       EntityUtils.setNewEntity(business);
       businessService.addBusiness(business);
@@ -109,14 +126,22 @@ public class BusinessController {
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
     if (isAdmin || (isBusiness && me.getId().equals(oldOwnerId))) {
-      business.setId(null);
-      EntityUtils.substituteEntity(oldBusiness, business);
-      business.setBusinessOwnerId(oldOwnerId);
-      businessService.updateBusiness(oldBusiness);
-      businessService.updateBusiness(business);
-      compatibilityEnricher.enrichBusiness(business);
+      // IMPORTANT: Update should NOT create a new row.
+      // Keep the same id and only mutate fields on the existing entity.
+      EntityUtils.updateEntity(oldBusiness);
+      oldBusiness.setBusinessName(business.getBusinessName());
+      oldBusiness.setBusinessAddress(business.getBusinessAddress());
+      oldBusiness.setBusinessExplain(business.getBusinessExplain());
+      oldBusiness.setBusinessImg(business.getBusinessImg());
+      oldBusiness.setRemarks(business.getRemarks());
+      oldBusiness.setOrderTypeId(business.getOrderTypeId());
+      oldBusiness.setStartPrice(business.getStartPrice());
+      oldBusiness.setDeliveryPrice(business.getDeliveryPrice());
+      oldBusiness.setBusinessOwnerId(oldOwnerId);
 
-      return HttpResult.success(business);
+      businessService.updateBusiness(oldBusiness);
+      compatibilityEnricher.enrichBusiness(oldBusiness);
+      return HttpResult.success(oldBusiness);
     }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
@@ -142,26 +167,21 @@ public class BusinessController {
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
     if (isAdmin || (isBusiness && me.getId().equals(oldOwnerId))) {
-      business.setBusinessOwnerId(oldOwnerId);
-      if (business.getBusinessName() == null)
-        business.setBusinessName(oldBusiness.getBusinessName());
-      if (business.getBusinessAddress() == null)
-        business.setBusinessAddress(oldBusiness.getBusinessAddress());
-      if (business.getBusinessExplain() == null)
-        business.setBusinessExplain(oldBusiness.getBusinessExplain());
-      if (business.getBusinessImg() == null) business.setBusinessImg(oldBusiness.getBusinessImg());
-      if (business.getRemarks() == null) business.setRemarks(oldBusiness.getRemarks());
-      if (business.getOrderTypeId() == null) business.setOrderTypeId(oldBusiness.getOrderTypeId());
-      if (business.getStartPrice() == null) business.setStartPrice(oldBusiness.getStartPrice());
-      if (business.getDeliveryPrice() == null)
-        business.setDeliveryPrice(oldBusiness.getDeliveryPrice());
+      // Patch should also update the same row, not clone/insert.
+      EntityUtils.updateEntity(oldBusiness);
+      if (business.getBusinessName() != null) oldBusiness.setBusinessName(business.getBusinessName());
+      if (business.getBusinessAddress() != null) oldBusiness.setBusinessAddress(business.getBusinessAddress());
+      if (business.getBusinessExplain() != null) oldBusiness.setBusinessExplain(business.getBusinessExplain());
+      if (business.getBusinessImg() != null) oldBusiness.setBusinessImg(business.getBusinessImg());
+      if (business.getRemarks() != null) oldBusiness.setRemarks(business.getRemarks());
+      if (business.getOrderTypeId() != null) oldBusiness.setOrderTypeId(business.getOrderTypeId());
+      if (business.getStartPrice() != null) oldBusiness.setStartPrice(business.getStartPrice());
+      if (business.getDeliveryPrice() != null) oldBusiness.setDeliveryPrice(business.getDeliveryPrice());
+      oldBusiness.setBusinessOwnerId(oldOwnerId);
 
-      business.setId(null);
-      EntityUtils.substituteEntity(oldBusiness, business);
       businessService.updateBusiness(oldBusiness);
-      businessService.updateBusiness(business);
-      compatibilityEnricher.enrichBusiness(business);
-      return HttpResult.success(business);
+      compatibilityEnricher.enrichBusiness(oldBusiness);
+      return HttpResult.success(oldBusiness);
     }
 
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
@@ -198,8 +218,11 @@ public class BusinessController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    if (AuthorityUtils.hasAuthority(me, "BUSINESS"))
-      return HttpResult.success(businessService.getBusinessByOwnerId(me.getId()));
+    if (AuthorityUtils.hasAuthority(me, "BUSINESS")) {
+      List<Business> businesses = businessService.getBusinessByOwnerId(me.getId());
+      compatibilityEnricher.enrichBusinesses(businesses);
+      return HttpResult.success(businesses);
+    }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
 }

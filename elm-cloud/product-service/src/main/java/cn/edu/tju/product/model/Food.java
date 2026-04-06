@@ -16,7 +16,9 @@ public class Food extends BaseEntity {
     @Column(name = "food_explain")
     private String foodExplain;
 
-    @Column(name = "food_img")
+    // Frontend sends image as base64 (often a full data URL), which can exceed 255 chars.
+    // Use LONGTEXT to avoid Data too long for column 'food_img'.
+    @Column(name = "food_img", columnDefinition = "LONGTEXT")
     private String foodImg;
 
     @Column(name = "food_price", nullable = false)

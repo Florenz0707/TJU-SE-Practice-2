@@ -73,9 +73,18 @@ const cartStore = useCartStore();
 const router = useRouter();
 
 onMounted(() => {
-  if (cartStore.items.length === 0) {
-    cartStore.fetchCart();
+  // Always sync with server when entering the cart page.
+  // Otherwise, stale in-memory items may prevent a fetch and lead to an empty cart UI with no request.
+  if (import.meta.env.DEV || location.hostname === "localhost") {
+    const debug = localStorage.getItem("DEBUG_CART") === "1";
+    if (debug) {
+      // eslint-disable-next-line no-console
+      console.debug("[cart] Cart.vue mounted, will fetchCart()", {
+        hasToken: Boolean(localStorage.getItem("token")),
+      });
+    }
   }
+  cartStore.fetchCart();
 });
 
 const updateQuantity = (item: Cart, newQuantity: number) => {

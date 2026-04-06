@@ -8,9 +8,6 @@ import cn.edu.tju.wallet.model.VO.TransactionVO;
 import cn.edu.tju.wallet.model.VO.WalletVO;
 import cn.edu.tju.wallet.service.serviceInterface.TransactionService;
 import cn.edu.tju.wallet.service.serviceInterface.WalletService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.math.BigDecimal;
 
 
@@ -117,7 +114,14 @@ public class WalletController {
     }
 
     try {
-      WalletVO walletVO = walletService.getWalletByOwnerId(currentUserId);
+      // Frontend expects this endpoint to be safe to call and to always return a wallet.
+      // If the user doesn't have a wallet yet, create one idempotently (owner_id is unique).
+      WalletVO walletVO;
+      try {
+        walletVO = walletService.getWalletByOwnerId(currentUserId);
+      } catch (Exception notFound) {
+        walletVO = walletService.createWallet(currentUserId);
+      }
       return HttpResult.success(walletVO);
     } catch (Exception e) {
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());

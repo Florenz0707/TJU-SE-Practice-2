@@ -29,8 +29,9 @@ export const useCartStore = defineStore("cart", () => {
     if (!currentBusinessId.value) {
       return [];
     }
+    const bizId = String(currentBusinessId.value);
     return items.value.filter(
-      (item) => item.business?.id === currentBusinessId.value,
+      (item) => String(item.business?.id ?? "") === bizId,
     );
   });
 
@@ -109,11 +110,14 @@ export const useCartStore = defineStore("cart", () => {
         if (!authStore.user) {
           throw new Error("User not logged in. Cannot add items to cart.");
         }
+        // cart-service expects only id views for nested fields (food/business/customer),
+        // and stores them as foodId/businessId/userId.
+        // Sending the full object can lead to missing ids after JSON mapping.
         const newCartItem: Cart = {
-          food: food,
-          quantity: quantity,
-          business: food.business,
-          customer: authStore.user,
+          food: { id: String(food.id) } as unknown as Cart["food"],
+          business: { id: String(food.business?.id) } as unknown as Cart["business"],
+          customer: { id: String(authStore.user.id) } as unknown as Cart["customer"],
+          quantity,
         };
         const response = await addCartItem(newCartItem);
         if (response.success) {

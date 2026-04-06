@@ -40,14 +40,41 @@ export const useAuthStore = defineStore("auth", {
         return ["GUEST"];
       }
       const roleMap: { [key: string]: string } = {
+        // Backend commonly uses USER/ADMIN/BUSINESS.
+        // Frontend historically uses CUSTOMER/ADMIN/MERCHANT.
         USER: "CUSTOMER",
-        BUSINESS: "MERCHANT",
         ADMIN: "ADMIN",
+        BUSINESS: "MERCHANT",
+        // Be tolerant to already-normalized / alternative naming.
+        CUSTOMER: "CUSTOMER",
+        MERCHANT: "MERCHANT",
       };
-      const roles = state.user.authorities
-        .map((auth) => roleMap[auth.name] || auth.name)
-        .filter(Boolean);
-      return roles.length > 0 ? roles : ["GUEST"];
+
+      // Backend may return authorities as:
+      // - Array<{ name: string }> (JHipster-ish)
+      // - Array<string> (some simplified implementations)
+      const normalized = (state.user.authorities as unknown[])
+        .map((auth) => {
+          if (typeof auth === "string") return roleMap[auth] || auth;
+          if (auth && typeof auth === "object") {
+            const name = (auth as { name?: unknown }).name;
+            if (typeof name === "string") return roleMap[name] || name;
+          }
+          return undefined;
+        })
+        .filter((v): v is string => typeof v === "string" && v.length > 0);
+
+      // Compatibility: if backend returns BUSINESS directly (or DB manually edited),
+      // still expose MERCHANT so route guards/layouts don't lock the user out.
+      if (normalized.includes("BUSINESS") && !normalized.includes("MERCHANT")) {
+        normalized.push("MERCHANT");
+      }
+      if (normalized.includes("USER") && !normalized.includes("CUSTOMER")) {
+        normalized.push("CUSTOMER");
+      }
+
+      if (normalized.length === 0) return ["GUEST"];
+      return Array.from(new Set(normalized));
     },
   },
 

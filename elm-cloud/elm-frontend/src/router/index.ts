@@ -458,22 +458,42 @@ import { isMobile } from "../utils/device";
 
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
-  const isAuthenticated = authStore.user !== null;
+  // Use token as the source of truth for authentication.
+  // `user` may be null after a refresh until we fetch it again.
+  const isAuthenticated = authStore.isLoggedIn;
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
 
+  // Allow manually forcing desktop UI.
+  // Usage:
+  // - Add ?ui=desktop once to persist desktop mode (stored in localStorage)
+  // - Add ?ui=auto to restore auto detection
+  const uiParam = (to.query.ui as string | undefined)?.toLowerCase();
+  if (uiParam === "desktop") {
+    localStorage.setItem("uiMode", "desktop");
+  } else if (uiParam === "auto") {
+    localStorage.removeItem("uiMode");
+  }
+  const forceDesktop = localStorage.getItem("uiMode") === "desktop";
+
   // Redirect root to mobile home on mobile devices
-  if (to.path === "/" && isMobile()) {
+  if (to.path === "/" && !forceDesktop && isMobile()) {
     return next("/mobile/home");
   }
 
   // Redirect merchant dashboard to mobile version on mobile devices
-  if (to.path === "/merchant/dashboard" && isMobile()) {
+  if (to.path === "/merchant/dashboard" && !forceDesktop && isMobile()) {
     return next("/mobile/merchant/dashboard");
   }
 
   // Redirect admin dashboard to mobile version on mobile devices
-  if (to.path === "/admin/dashboard" && isMobile()) {
+  if (to.path === "/admin/dashboard" && !forceDesktop && isMobile()) {
     return next("/mobile/admin/dashboard");
+  }
+
+  // If user is on a desktop-sized screen but currently in /mobile routes, bounce back to desktop home.
+  // This avoids getting "stuck" on mobile UI after a previous redirect.
+  if (!forceDesktop && to.path.startsWith("/mobile") && !isMobile()) {
+    return next("/");
   }
 
   if (requiresAuth && !isAuthenticated) {
@@ -488,12 +508,47 @@ router.beforeEach((to, _from, next) => {
   const requiredRoles = to.matched.flatMap(
     (record) => (record.meta.roles as string[]) || [],
   );
+
+  // If logged in but user info is missing (e.g. after hard refresh),
+  // fetch it once so role checks are based on real authorities.
+  if (isAuthenticated && requiredRoles.length > 0 && !authStore.user) {
+    authStore
+      .fetchUserInfo()
+      .then(() => next())
+      .catch(() =>
+        next({ path: "/login", query: { redirect: to.fullPath } }),
+      );
+    return;
+  }
+
   if (requiredRoles.length > 0) {
     const userRoles = authStore.userRoles;
     const hasRequiredRole = requiredRoles.some((role) =>
       userRoles.includes(role),
     );
     if (!isAuthenticated || !hasRequiredRole) {
+      // Debug helper: enable by setting localStorage.DEBUG_ROUTE_GUARD = '1'
+      // (Only prints on localhost to avoid polluting production logs.)
+      try {
+        const debugOn =
+          typeof window !== "undefined" &&
+          window.location?.hostname === "localhost" &&
+          localStorage.getItem("DEBUG_ROUTE_GUARD") === "1";
+        if (debugOn) {
+          // eslint-disable-next-line no-console
+          console.warn("[route-guard] forbidden", {
+            to: to.fullPath,
+            requiresAuth,
+            requiredRoles,
+            isAuthenticated,
+            userRoles,
+            authorities: authStore.user?.authorities,
+            hasToken: !!authStore.token,
+          });
+        }
+      } catch {
+        // ignore
+      }
       return next("/forbidden");
     }
   }

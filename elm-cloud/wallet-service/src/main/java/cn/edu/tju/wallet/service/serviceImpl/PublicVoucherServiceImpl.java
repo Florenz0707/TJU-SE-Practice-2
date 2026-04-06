@@ -41,8 +41,12 @@ public class PublicVoucherServiceImpl implements PublicVoucherService {
   public void createPublicVoucher(PublicVoucherVO publicVoucherVO) throws PublicVoucherException {
     PublicVoucher publicVoucher =
         PublicVoucher.createVoucher(
-            publicVoucherVO.getThreshold(), publicVoucherVO.getValue(),
-            publicVoucherVO.getClaimable(), publicVoucherVO.getValidDays());
+            publicVoucherVO.getThreshold(),
+            publicVoucherVO.getValue(),
+            publicVoucherVO.getClaimable(),
+            publicVoucherVO.getValidDays(),
+            publicVoucherVO.getTotalQuantity(),
+            publicVoucherVO.getPerUserLimit());
     publicVoucherRepository.save(publicVoucher);
   }
 
@@ -61,8 +65,12 @@ public class PublicVoucherServiceImpl implements PublicVoucherService {
       throw new PublicVoucherException(PublicVoucherException.NOT_FOUND);
     PublicVoucher newPublicVoucher =
         PublicVoucher.createVoucher(
-            publicVoucherVO.getThreshold(), publicVoucherVO.getValue(),
-            publicVoucherVO.getClaimable(), publicVoucherVO.getValidDays());
+            publicVoucherVO.getThreshold(),
+            publicVoucherVO.getValue(),
+            publicVoucherVO.getClaimable(),
+            publicVoucherVO.getValidDays(),
+            publicVoucherVO.getTotalQuantity(),
+            publicVoucherVO.getPerUserLimit());
     EntityUtils.substituteEntity(publicVoucher, newPublicVoucher);
     publicVoucherRepository.save(publicVoucher);
     publicVoucherRepository.save(newPublicVoucher);

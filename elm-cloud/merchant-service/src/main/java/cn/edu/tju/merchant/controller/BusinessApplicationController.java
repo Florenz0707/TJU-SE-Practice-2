@@ -1,34 +1,28 @@
 package cn.edu.tju.merchant.controller;
 import cn.edu.tju.merchant.service.UserService;
-
 import cn.edu.tju.merchant.util.AuthorityUtils;
-
 import cn.edu.tju.merchant.model.User;
-
-import cn.edu.tju.merchant.model.ApplicationState;
-
-
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
-
-import cn.edu.tju.merchant.util.JwtUtils;
 import cn.edu.tju.merchant.model.Business;
 import cn.edu.tju.merchant.model.BusinessApplication;
 import cn.edu.tju.merchant.service.BusinessApplicationService;
 import cn.edu.tju.merchant.service.BusinessService;
-
 import cn.edu.tju.merchant.util.EntityUtils;
 import cn.edu.tju.merchant.util.ResponseCompatibilityEnricher;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/applications/business")
 
 public class BusinessApplicationController {
-    private boolean isValidApplicationState(Integer state) { return state == 1 || state == 2; }
+  private static final Logger log = LoggerFactory.getLogger(BusinessApplicationController.class);
+  private boolean isValidApplicationState(Integer state) { return state != null && (state == 1 || state == 2); }
 
   private final UserService userService;
   private final BusinessService businessService;
@@ -56,8 +50,43 @@ public class BusinessApplicationController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    if (!AuthorityUtils.hasAuthority(me, "BUSINESS"))
+    boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
+    log.info(
+        "addBusinessApplication: uid={}, username={}, authorities={}, isBusiness={}",
+        me.getId(),
+        me.getUsername(),
+        me.getAuthorities(),
+        isBusiness);
+
+    // Business application (open a store) requires the user to already be a merchant (BUSINESS).
+    if (!isBusiness) {
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "NOT A MERCHANT YET");
+    }
+
+    // Hard guard: if the merchant already has an active store, they shouldn't apply again.
+    List<Business> myBusinesses = businessService.getBusinessByOwnerId(me.getId());
+    if (myBusinesses != null) {
+      for (Business b : myBusinesses) {
+        if (b != null && (b.getDeleted() == null || !b.getDeleted())) {
+          return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "ALREADY HAS STORE");
+        }
+      }
+    }
+
+    // If there is already a pending application, forbid duplicate submissions.
+    try {
+      List<BusinessApplication> myApps =
+          businessApplicationService.getBusinessApplicationsByApplicantId(me.getId());
+      if (myApps != null) {
+        for (BusinessApplication a : myApps) {
+          if (a != null && Integer.valueOf(1).equals(a.getApplicationState())) {
+            return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "APPLICATION ALREADY SUBMITTED");
+          }
+        }
+      }
+    } catch (Exception ignore) {
+      // best-effort
+    }
 
     if (businessApplication == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessApplication CANT BE NULL");
@@ -75,7 +104,11 @@ public class BusinessApplicationController {
     EntityUtils.setNewEntity(businessApplication);
     businessApplication.setBusiness(business);
     businessApplication.setApplicationState(1);
+    businessApplication.setApplicantId(me.getId());
     User admin = userService.getUserWithUsername("admin").orElse(null);
+    if (admin == null || admin.getId() == null) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ADMIN USER NOT FOUND");
+    }
     businessApplication.setHandlerId(admin.getId());
     businessApplicationService.addApplication(businessApplication);
     compatibilityEnricher.enrichBusinessApplication(businessApplication);
@@ -85,7 +118,9 @@ public class BusinessApplicationController {
   @GetMapping("")
   
   public HttpResult<List<BusinessApplication>> getBusinessApplications() {
-    return HttpResult.success(businessApplicationService.getAllBusinessApplications());
+    List<BusinessApplication> apps = businessApplicationService.getAllBusinessApplications();
+    compatibilityEnricher.enrichBusinessApplications(apps);
+    return HttpResult.success(apps);
   }
 
   @GetMapping("/{id}")
@@ -107,8 +142,10 @@ public class BusinessApplicationController {
 
     if (isAdmin
         || (isBusiness
-            && me.getId().equals(businessApplication.getBusiness().getBusinessOwnerId())))
+            && me.getId().equals(businessApplication.getBusiness().getBusinessOwnerId()))) {
+      compatibilityEnricher.enrichBusinessApplication(businessApplication);
       return HttpResult.success(businessApplication);
+    }
     return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
   }
 
@@ -137,7 +174,7 @@ public class BusinessApplicationController {
     if (businessApplication == null || businessApplication.getApplicationState() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ApplicationState CANT BE NULL");
 
-    if (!isValidApplicationState(oldApplication.getApplicationState()))
+    if (!isValidApplicationState(businessApplication.getApplicationState()))
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "ApplicationState NOT VALID");
 
     if (me.getId().equals(oldApplication.getHandlerId())) {
@@ -150,6 +187,26 @@ public class BusinessApplicationController {
         business.setDeleted(false);
         business.setUpdateTime(LocalDateTime.now());
         businessService.updateBusiness(business);
+
+        // After approval, upgrade the applicant's authority to BUSINESS.
+        // The applicant is the business owner recorded in the application business.
+        try {
+          Long applicantId = business.getBusinessOwnerId();
+          if (applicantId != null) {
+            User applicant = new User();
+            applicant.setId(applicantId);
+            java.util.Set<String> auths = new java.util.HashSet<>();
+            auths.add("USER");
+            auths.add("BUSINESS");
+            applicant.setAuthorities(auths);
+            boolean ok = userService.updateUser(applicant);
+            if (!ok) {
+              return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "UPDATE USER AUTHORITIES FAILED");
+            }
+          }
+        } catch (Exception ignore) {
+          // updateUser already logs details; keep approval flow resilient
+        }
       }
       compatibilityEnricher.enrichBusinessApplication(oldApplication);
       return HttpResult.success(oldApplication);
@@ -166,10 +223,14 @@ public class BusinessApplicationController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    if (!AuthorityUtils.hasAuthority(me, "BUSINESS"))
+    // Viewing my applications should be allowed as long as the user is a merchant.
+    if (!AuthorityUtils.hasAuthority(me, "BUSINESS")) {
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "NOT A MERCHANT YET");
+    }
 
-    return HttpResult.success(
-        businessApplicationService.getBusinessApplicationsByApplicantId(me.getId()));
+  List<BusinessApplication> apps =
+    businessApplicationService.getBusinessApplicationsByApplicantId(me.getId());
+  compatibilityEnricher.enrichBusinessApplications(apps);
+  return HttpResult.success(apps);
   }
 }

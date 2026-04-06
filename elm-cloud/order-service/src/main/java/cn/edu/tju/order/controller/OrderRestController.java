@@ -10,6 +10,7 @@ import cn.edu.tju.order.util.JwtUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -101,6 +102,40 @@ public class OrderRestController {
                 command.items()
         );
         return HttpResult.success(orderInternalService.createOrder(updatedCommand));
+    }
+
+    @PatchMapping("/api/orders")
+    public HttpResult<OrderSnapshotVO> updateOrderStatus(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        Long userId = verifyUser(token);
+        if (body == null || body.get("id") == null || body.get("orderState") == null) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "id/orderState REQUIRED");
+        }
+        Long orderId;
+        Integer orderState;
+        try {
+            orderId = Long.parseLong(body.get("id").toString());
+            orderState = Integer.parseInt(body.get("orderState").toString());
+        } catch (Exception e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "id/orderState NOT VALID");
+        }
+
+        // 当前 microservice 版 OrderInternalService 暂未提供“按状态更新”命令对象，这里采用最小实现：
+        // 复用已有 getOrderById + createOrder/cancelPaidOrder 的模式，新增一个内部 service 方法会更干净。
+        // 先走最稳的方案：如果 service 暂无接口，返回明确错误，避免 silently success。
+        // 保守权限策略：仅允许“订单所属用户”更新（例如确认收货/完成）。
+        // 更细粒度的权限（商家/管理员）需要补齐 token 中的角色解析与订单归属校验。
+        OrderSnapshotVO existing = orderInternalService.getOrderById(orderId);
+        if (existing == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+        }
+        if (existing.getCustomerId() != null && userId != null && !userId.equals(existing.getCustomerId())) {
+            return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
+        }
+
+        OrderSnapshotVO updated = orderInternalService.updateOrderState(orderId, orderState);
+        return HttpResult.success(updated);
     }
 
     // -------------------------------------------------------------

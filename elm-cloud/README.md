@@ -67,6 +67,14 @@ Eureka（注册中心） ←→ Config Server（配置中心）
 如需我把 `.dockerignore`、示例 frontend 的 compose 片段或 host-build 的 Dockerfile 模板加入仓库，请回复同意，我会在 `elm-cloud` 下添加相应文件或补充说明。
 
 *** 此 README 只针对 `elm-cloud` 目录下的微服务拆分与运行说明。
+
+## 文档导航
+
+- 汇报用总文档：`docs/report-microservice-architecture.md`
+  - 覆盖：单体（elm-v2.0）→ 微服务（elm-cloud）拆分、Eureka/Gateway/负载均衡（Ribbon 概念对照 LoadBalancer）、Config、以及 Bus/Hystrix 的现状与演进方案。
+- 项目结构总览：`docs/project-structure.md`
+- 本地运行指南：`run.md`
+- 常见问题排错：`docs/troubleshooting.md`
 # elm-cloud
 
 This folder is a starter multi-module Spring Cloud project for the course.

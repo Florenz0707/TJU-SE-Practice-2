@@ -34,6 +34,23 @@ service.interceptors.request.use(
     if (authToken && config.headers && !config.headers["Authorization"]) {
       config.headers["Authorization"] = `Bearer ${authToken}`;
     }
+
+    // Dev-only diagnostic logs to confirm Authorization header is attached.
+    if (import.meta.env.DEV) {
+      const url = String(config.url || "");
+      const needsAuthDiag =
+        url.includes("/applications/") ||
+        url.includes("/businesses") ||
+        url.includes("/persons") ||
+        url.includes("/user");
+      if (needsAuthDiag) {
+        const hasAuthHeader = Boolean(config.headers?.["Authorization"]);
+        // eslint-disable-next-line no-console
+        console.debug(
+          `[api] ${String(config.method || "GET").toUpperCase()} ${url} authHeader=${hasAuthHeader} tokenInMemory=${Boolean(authToken)}`,
+        );
+      }
+    }
     return config;
   },
   (error: AxiosError) => {

@@ -172,13 +172,15 @@ public class OrderInternalService {
     if (customerId == null) {
       return new PagedOrderSnapshotVO(List.of(), 0L, page, size);
     }
+    int safePage = Math.max(page, 1);
+    int safeSize = Math.max(size, 1);
     Page<Order> orderPage =
-        orderRepository.findAllByCustomerId(customerId, PageRequest.of(page - 1, size));
+        orderRepository.findAllByCustomerId(customerId, PageRequest.of(safePage - 1, safeSize));
     return new PagedOrderSnapshotVO(
         orderPage.getContent().stream().map(OrderSnapshotVO::new).toList(),
         orderPage.getTotalElements(),
-        page,
-        size);
+        safePage,
+        safeSize);
   }
 
   @Transactional(readOnly = true)
@@ -186,13 +188,15 @@ public class OrderInternalService {
     if (businessId == null) {
       return new PagedOrderSnapshotVO(List.of(), 0L, page, size);
     }
+    int safePage = Math.max(page, 1);
+    int safeSize = Math.max(size, 1);
     Page<Order> orderPage =
-        orderRepository.findAllByBusinessId(businessId, PageRequest.of(page - 1, size));
+        orderRepository.findAllByBusinessId(businessId, PageRequest.of(safePage - 1, safeSize));
     return new PagedOrderSnapshotVO(
         orderPage.getContent().stream().map(OrderSnapshotVO::new).toList(),
         orderPage.getTotalElements(),
-        page,
-        size);
+        safePage,
+        safeSize);
   }
 
   @Transactional(readOnly = true)

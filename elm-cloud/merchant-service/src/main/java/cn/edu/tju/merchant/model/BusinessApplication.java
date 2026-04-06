@@ -14,10 +14,16 @@ public class BusinessApplication extends BaseEntity {
   @JoinColumn(name = "business_id", nullable = false)
   private Business business;
 
+  // Applicant user id (who submitted the application)
+  @Column(name = "applicant_id")
+  private Long applicantId;
+
   @Column(name = "handler_id", nullable = false)
   private Long handlerId;
 
   @Transient private UserSummaryView handler;
+
+  @Transient private UserSummaryView applicant;
 
   @Column(columnDefinition = "TEXT")
   private String applicationExplain;
@@ -35,6 +41,14 @@ public class BusinessApplication extends BaseEntity {
     this.business = business;
   }
 
+  public Long getApplicantId() {
+    return applicantId;
+  }
+
+  public void setApplicantId(Long applicantId) {
+    this.applicantId = applicantId;
+  }
+
   public Long getHandlerId() {
     return handlerId;
   }
@@ -49,6 +63,14 @@ public class BusinessApplication extends BaseEntity {
 
   public void setHandler(UserSummaryView handler) {
     this.handler = handler;
+  }
+
+  public UserSummaryView getApplicant() {
+    return applicant;
+  }
+
+  public void setApplicant(UserSummaryView applicant) {
+    this.applicant = applicant;
   }
 
   public String getApplicationExplain() {
