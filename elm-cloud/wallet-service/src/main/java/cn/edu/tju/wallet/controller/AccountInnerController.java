@@ -71,6 +71,75 @@ public class AccountInnerController {
     }
   }
 
+  @PostMapping("/wallet/credit")
+  
+  public HttpResult<TransactionVO> walletCredit(
+      @RequestBody WalletCreditRequest request) {
+    try {
+      TransactionVO transaction =
+          accountInternalService.walletCredit(
+              request.getRequestId(),
+              request.getUserId(),
+              request.getAmount(),
+              request.getBizId(),
+              request.getReason());
+      if (transaction == null) {
+        return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "wallet credit failed");
+      }
+      return HttpResult.success(transaction);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
+  public static class WalletCreditRequest {
+    private String requestId;
+    private Long userId;
+    private BigDecimal amount;
+    private String bizId;
+    private String reason;
+
+    public String getRequestId() {
+      return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+      this.requestId = requestId;
+    }
+
+    public Long getUserId() {
+      return userId;
+    }
+
+    public void setUserId(Long userId) {
+      this.userId = userId;
+    }
+
+    public BigDecimal getAmount() {
+      return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+      this.amount = amount;
+    }
+
+    public String getBizId() {
+      return bizId;
+    }
+
+    public void setBizId(String bizId) {
+      this.bizId = bizId;
+    }
+
+    public String getReason() {
+      return reason;
+    }
+
+    public void setReason(String reason) {
+      this.reason = reason;
+    }
+  }
+
   @PostMapping("/voucher/redeem")
   
   public HttpResult<Boolean> redeemVoucher(

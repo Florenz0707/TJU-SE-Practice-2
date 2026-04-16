@@ -1,5 +1,6 @@
 package cn.edu.tju.order.service;
 
+import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.order.constant.OrderState;
 import cn.edu.tju.order.model.bo.Order;
 import cn.edu.tju.order.model.bo.OrderDetailet;
@@ -11,21 +12,30 @@ import cn.edu.tju.order.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 public class OrderInternalService {
   private final OrderRepository orderRepository;
   private final OrderDetailetRepository orderDetailetRepository;
+  private final RestTemplate restTemplate;
 
   public OrderInternalService(
-      OrderRepository orderRepository, OrderDetailetRepository orderDetailetRepository) {
+      OrderRepository orderRepository, OrderDetailetRepository orderDetailetRepository,
+      RestTemplate restTemplate) {
     this.orderRepository = orderRepository;
     this.orderDetailetRepository = orderDetailetRepository;
+    this.restTemplate = restTemplate;
   }
 
   @Transactional
@@ -50,6 +60,24 @@ public class OrderInternalService {
       return new OrderSnapshotVO(existed);
     }
 
+    // 1. 如果有 walletPaid，先从用户钱包扣款
+    if (command.walletPaid() != null && command.walletPaid().compareTo(BigDecimal.ZERO) > 0) {
+      try {
+        Map<String, Object> debitRequest = new HashMap<>();
+        debitRequest.put("requestId", command.requestId());
+        debitRequest.put("userId", command.customerId());
+        debitRequest.put("amount", command.walletPaid());
+        debitRequest.put("bizId", command.requestId());
+        debitRequest.put("reason", "订单支付");
+
+        String debitUrl = "http://gateway:8080/elm/api/inner/account/wallet/debit";
+        restTemplate.postForObject(debitUrl, debitRequest, Object.class);
+      } catch (Exception e) {
+        throw new RuntimeException("钱包扣款失败: " + e.getMessage(), e);
+      }
+    }
+
+    // 2. 创建订单
     Order order = new Order();
     LocalDateTime now = LocalDateTime.now();
     order.setCreateTime(now);
@@ -124,6 +152,48 @@ public class OrderInternalService {
     if (!isValidStateTransition(order.getOrderState(), targetState)) {
       throw new IllegalStateException("非法的状态转换");
     }
+    
+    Integer oldState = order.getOrderState();
+    
+    // 状态转换业务逻辑
+    if (oldState.equals(OrderState.PAID)) {
+      if (targetState.equals(OrderState.CANCELED)) {
+        // 商家拒单或用户取消：给用户退款
+        if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
+          try {
+            Map<String, Object> refundRequest = new HashMap<>();
+            refundRequest.put("requestId", order.getRequestId() + "_refund");
+            refundRequest.put("userId", order.getCustomerId());
+            refundRequest.put("amount", order.getWalletPaid());
+            refundRequest.put("bizId", String.valueOf(order.getId()));
+            refundRequest.put("reason", "订单取消退款");
+
+            String refundUrl = "http://gateway:8080/elm/api/inner/account/wallet/refund";
+            restTemplate.postForObject(refundUrl, refundRequest, Object.class);
+          } catch (Exception e) {
+            throw new RuntimeException("钱包退款失败: " + e.getMessage(), e);
+          }
+        }
+      } else if (targetState.equals(OrderState.RECEIVED)) {
+        // 商家接单：给商家钱包入账
+        if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
+          try {
+            Map<String, Object> creditRequest = new HashMap<>();
+            creditRequest.put("requestId", order.getRequestId() + "_merchant");
+            creditRequest.put("userId", order.getBusinessId()); // 商家ID作为userID
+            creditRequest.put("amount", order.getWalletPaid());
+            creditRequest.put("bizId", String.valueOf(order.getId()));
+            creditRequest.put("reason", "订单收入");
+
+            String creditUrl = "http://gateway:8080/elm/api/inner/account/wallet/credit";
+            restTemplate.postForObject(creditUrl, creditRequest, Object.class);
+          } catch (Exception e) {
+            throw new RuntimeException("商家钱包入账失败: " + e.getMessage(), e);
+          }
+        }
+      }
+    }
+    
     order.setOrderState(targetState);
     order.setUpdateTime(LocalDateTime.now());
     Order saved = orderRepository.save(order);
@@ -242,5 +312,151 @@ public class OrderInternalService {
       return from.equals(OrderState.PAID);
     }
     return to > from;
+  }
+
+  private void enrichOrderSnapshot(OrderSnapshotVO vo) {
+    Map<Long, Map<String, Object>> foodCache = new HashMap<>();
+    Map<Long, Map<String, Object>> businessCache = new HashMap<>();
+    Map<Long, Map<String, Object>> addressCache = new HashMap<>();
+    Map<Long, Map<String, Object>> customerCache = new HashMap<>();
+
+    try {
+      if (vo.getCustomerId() != null) {
+        Map<String, Object> cachedCustomer = customerCache.get(vo.getCustomerId());
+        if (cachedCustomer != null) {
+          vo.setCustomer(cachedCustomer);
+        } else {
+          Map<String, Object> customerView = new HashMap<>();
+          customerView.put("id", vo.getCustomerId());
+          customerView.put("username", "用户" + vo.getCustomerId());
+          customerCache.put(vo.getCustomerId(), customerView);
+          vo.setCustomer(customerView);
+        }
+      }
+
+      if (vo.getBusinessId() != null) {
+        Map<String, Object> cachedBusiness = businessCache.get(vo.getBusinessId());
+        if (cachedBusiness != null) {
+          vo.setBusiness(cachedBusiness);
+        } else {
+          try {
+            String businessUrl = "http://gateway:8080/elm/api/businesses/" + vo.getBusinessId();
+            ResponseEntity<HttpResult<Object>> businessResp = restTemplate.exchange(
+                    businessUrl,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<HttpResult<Object>>() {}
+            );
+            HttpResult<Object> businessBody = businessResp.getBody();
+            if (businessBody != null && Boolean.TRUE.equals(businessBody.getSuccess()) && businessBody.getData() instanceof Map<?, ?> map) {
+              Map<String, Object> businessView = new HashMap<>();
+              businessView.put("id", vo.getBusinessId());
+              businessView.put("businessName", map.get("businessName"));
+              businessView.put("businessAddress", map.get("businessAddress"));
+              businessView.put("businessExplain", map.get("businessExplain"));
+              businessView.put("businessImg", map.get("businessImg"));
+              businessView.put("deliveryPrice", map.get("deliveryPrice"));
+              businessView.put("startPrice", map.get("startPrice"));
+              businessCache.put(vo.getBusinessId(), businessView);
+              vo.setBusiness(businessView);
+            }
+          } catch (Exception ignored) {}
+        }
+      }
+
+      if (vo.getDeliveryAddressId() != null) {
+        Map<String, Object> cachedAddress = addressCache.get(vo.getDeliveryAddressId());
+        if (cachedAddress != null) {
+          vo.setDeliveryAddress(cachedAddress);
+        } else {
+          try {
+            String addressUrl = "http://gateway:8080/elm/api/addresses/" + vo.getDeliveryAddressId();
+            ResponseEntity<HttpResult<Object>> addressResp = restTemplate.exchange(
+                    addressUrl,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<HttpResult<Object>>() {}
+            );
+            HttpResult<Object> addressBody = addressResp.getBody();
+            if (addressBody != null && Boolean.TRUE.equals(addressBody.getSuccess()) && addressBody.getData() instanceof Map<?, ?> map) {
+              Map<String, Object> addressView = new HashMap<>();
+              addressView.put("id", vo.getDeliveryAddressId());
+              addressView.put("contactName", map.get("contactName"));
+              addressView.put("contactSex", map.get("contactSex"));
+              addressView.put("contactTel", map.get("contactTel"));
+              addressView.put("address", map.get("address"));
+              addressCache.put(vo.getDeliveryAddressId(), addressView);
+              vo.setDeliveryAddress(addressView);
+            }
+          } catch (Exception ignored) {}
+        }
+      }
+
+      if (vo.getOrderDetails() != null) {
+        for (OrderDetailetVO detail : vo.getOrderDetails()) {
+          if (detail.getFoodId() != null) {
+            Map<String, Object> cachedFood = foodCache.get(detail.getFoodId());
+            if (cachedFood != null) {
+              detail.setFood(cachedFood);
+            } else {
+              try {
+                String foodUrl = "http://gateway:8080/elm/api/foods/" + detail.getFoodId();
+                ResponseEntity<HttpResult<Object>> foodResp = restTemplate.exchange(
+                        foodUrl,
+                        HttpMethod.GET,
+                        null,
+                        new ParameterizedTypeReference<HttpResult<Object>>() {}
+                );
+                HttpResult<Object> foodBody = foodResp.getBody();
+                if (foodBody != null && Boolean.TRUE.equals(foodBody.getSuccess()) && foodBody.getData() instanceof Map<?, ?> map) {
+                  Map<String, Object> foodView = new HashMap<>();
+                  foodView.put("id", detail.getFoodId());
+                  foodView.put("foodName", map.get("foodName"));
+                  foodView.put("foodPrice", map.get("foodPrice"));
+                  foodView.put("foodImg", map.get("foodImg"));
+                  foodView.put("foodExplain", map.get("foodExplain"));
+                  foodCache.put(detail.getFoodId(), foodView);
+                  detail.setFood(foodView);
+                }
+              } catch (Exception ignored) {}
+            }
+          }
+        }
+      }
+    } catch (Exception ignored) {}
+  }
+
+  @Transactional(readOnly = true)
+  public OrderSnapshotVO getOrderByIdWithDetails(Long orderId) {
+    OrderSnapshotVO vo = getOrderById(orderId);
+    if (vo == null) return null;
+    
+    List<OrderDetailetVO> details = getOrderDetailetsByOrderId(orderId);
+    vo.setOrderDetails(details);
+    
+    enrichOrderSnapshot(vo);
+    return vo;
+  }
+
+  @Transactional(readOnly = true)
+  public List<OrderSnapshotVO> getOrdersByCustomerIdWithDetails(Long customerId) {
+    List<OrderSnapshotVO> orders = getOrdersByCustomerId(customerId);
+    for (OrderSnapshotVO vo : orders) {
+      List<OrderDetailetVO> details = getOrderDetailetsByOrderId(vo.getId());
+      vo.setOrderDetails(details);
+      enrichOrderSnapshot(vo);
+    }
+    return orders;
+  }
+
+  @Transactional(readOnly = true)
+  public List<OrderSnapshotVO> getOrdersByBusinessIdWithDetails(Long businessId) {
+    List<OrderSnapshotVO> orders = getOrdersByBusinessId(businessId);
+    for (OrderSnapshotVO vo : orders) {
+      List<OrderDetailetVO> details = getOrderDetailetsByOrderId(vo.getId());
+      vo.setOrderDetails(details);
+      enrichOrderSnapshot(vo);
+    }
+    return orders;
   }
 }

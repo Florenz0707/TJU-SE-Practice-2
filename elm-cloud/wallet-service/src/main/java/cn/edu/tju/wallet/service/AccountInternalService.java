@@ -100,6 +100,41 @@ public class AccountInternalService {
   }
 
   @Transactional
+  public TransactionVO walletCredit(
+      String requestId, Long userId, BigDecimal amount, String bizId, String reason) {
+    if (requestId == null || requestId.isEmpty() || userId == null || amount == null) {
+      return null;
+    }
+    Optional<Transaction> existing = transactionRepository.findByRequestId(requestId);
+    if (existing.isPresent()) {
+      return new TransactionVO(existing.get());
+    }
+
+    Wallet wallet = walletRepository.findByOwnerId(userId).orElse(null);
+    if (wallet == null) {
+      // 如果商家没有钱包，自动创建一个
+      wallet = Wallet.getNewWallet(userId);
+      EntityUtils.setNewEntity(wallet);
+      wallet = walletRepository.save(wallet);
+    }
+    if (!wallet.addBalance(amount)) {
+      return null;
+    }
+    EntityUtils.updateEntity(wallet);
+    walletRepository.save(wallet);
+
+    Transaction transaction =
+        Transaction.createNewTransaction(amount, TransactionType.TOP_UP, wallet, null);
+    transaction.setRequestId(requestId);
+    transaction.setBizId(bizId);
+    transaction.setReason(reason != null ? reason : "internal wallet credit");
+    transaction.finish();
+    EntityUtils.setNewEntity(transaction);
+    transactionRepository.save(transaction);
+    return new TransactionVO(transaction);
+  }
+
+  @Transactional
   public boolean redeemVoucher(String requestId, Long userId, Long voucherId, String orderId) {
     if (userId == null || voucherId == null) {
       return false;

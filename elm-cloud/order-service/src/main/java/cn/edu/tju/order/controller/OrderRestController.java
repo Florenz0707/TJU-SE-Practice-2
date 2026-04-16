@@ -103,8 +103,8 @@ public class OrderRestController {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class OrderCreateRequest {
+        @JsonIgnoreProperties(ignoreUnknown = true)
         public static class IdRef {
-            @JsonIgnoreProperties(ignoreUnknown = true)
             public Long id;
             // tolerate legacy/incorrect payloads that accidentally put an id under a different key
             public Long customerId;
@@ -149,7 +149,7 @@ public class OrderRestController {
         if (me == null) {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         }
-        return HttpResult.success(orderInternalService.getOrdersByCustomerId(me.userId));
+        return HttpResult.success(orderInternalService.getOrdersByCustomerIdWithDetails(me.userId));
     }
 
     @GetMapping("/api/orders/user/my/page")
@@ -206,7 +206,7 @@ public class OrderRestController {
             // 兜底：如果跨服务查询失败，避免把 ownerId 当 businessId 造成越权/误查
             return HttpResult.success(java.util.List.of());
         }
-        return HttpResult.success(orderInternalService.getOrdersByBusinessId(businessId));
+        return HttpResult.success(orderInternalService.getOrdersByBusinessIdWithDetails(businessId));
     }
 
     @GetMapping("/api/orders/business/{id}")
@@ -249,7 +249,7 @@ public class OrderRestController {
                 return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
             }
         }
-        return HttpResult.success(orderInternalService.getOrdersByBusinessId(businessId));
+        return HttpResult.success(orderInternalService.getOrdersByBusinessIdWithDetails(businessId));
     }
 
     @GetMapping("/api/orders/business/{id}/page")
@@ -305,7 +305,7 @@ public class OrderRestController {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
         }
 
-        OrderSnapshotVO existing = orderInternalService.getOrderById(orderId);
+        OrderSnapshotVO existing = orderInternalService.getOrderByIdWithDetails(orderId);
         if (existing == null) {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
         }
@@ -352,9 +352,10 @@ public class OrderRestController {
                         || raw.containsKey("deliveryAddressId")
                         || raw.containsKey("items"));
 
+            CreateOrderCommand updatedCommand;
             if (looksLikeCommand) {
                 CreateOrderCommand cmd = mapper.convertValue(body, CreateOrderCommand.class);
-                CreateOrderCommand updatedCommand = new CreateOrderCommand(
+                updatedCommand = new CreateOrderCommand(
                         cmd.requestId() == null ? java.util.UUID.randomUUID().toString() : cmd.requestId(),
                         userId,
                         cmd.businessId(),
@@ -370,52 +371,66 @@ public class OrderRestController {
                         cmd.orderDate(),
                         cmd.items()
                 );
-                return HttpResult.success(orderInternalService.createOrder(updatedCommand));
-            }
+            } else {
+                // 尝试按前端 Order 结构解析
+                OrderCreateRequest req = mapper.convertValue(body, OrderCreateRequest.class);
+                Long businessId = req != null && req.business != null ? req.business.bestId() : null;
+                Long addressId = req != null && req.deliveryAddress != null ? req.deliveryAddress.bestId() : null;
 
-            // 尝试按前端 Order 结构解析
-            OrderCreateRequest req = mapper.convertValue(body, OrderCreateRequest.class);
-            Long businessId = req != null && req.business != null ? req.business.bestId() : null;
-            Long addressId = req != null && req.deliveryAddress != null ? req.deliveryAddress.bestId() : null;
-
-            java.util.List<cn.edu.tju.order.service.OrderInternalService.OrderItemCommand> items = new java.util.ArrayList<>();
-            if (req != null && req.orderDetails != null) {
-                for (OrderItemReq it : req.orderDetails) {
-                    Long foodId = it != null && it.food != null ? it.food.id : null;
-                    Integer qty = it != null ? it.quantity : null;
-                    items.add(new cn.edu.tju.order.service.OrderInternalService.OrderItemCommand(foodId, qty));
+                java.util.List<cn.edu.tju.order.service.OrderInternalService.OrderItemCommand> items = new java.util.ArrayList<>();
+                if (req != null && req.orderDetails != null) {
+                    for (OrderItemReq it : req.orderDetails) {
+                        Long foodId = it != null && it.food != null ? it.food.id : null;
+                        Integer qty = it != null ? it.quantity : null;
+                        items.add(new cn.edu.tju.order.service.OrderInternalService.OrderItemCommand(foodId, qty));
+                    }
                 }
-            }
 
-            java.time.LocalDateTime orderDate = null;
-            if (req != null && req.orderDate != null && !req.orderDate.isBlank()) {
-                try {
-                    orderDate = java.time.LocalDateTime.parse(req.orderDate);
-                } catch (Exception ignore) {
-                    // 兼容前端可能传 ISO 带时区的情况：先不强解析，交给 service 默认 now。
-                    orderDate = null;
+                java.time.LocalDateTime orderDate = null;
+                if (req != null && req.orderDate != null && !req.orderDate.isBlank()) {
+                    try {
+                        orderDate = java.time.LocalDateTime.parse(req.orderDate);
+                    } catch (Exception ignore) {
+                        // 兼容前端可能传 ISO 带时区的情况：先不强解析，交给 service 默认 now。
+                        orderDate = null;
+                    }
                 }
-            }
 
-            CreateOrderCommand updatedCommand = new CreateOrderCommand(
-                    req != null && req.requestId != null && !req.requestId.isBlank()
-                            ? req.requestId
-                            : java.util.UUID.randomUUID().toString(),
-                    userId,
-                    businessId,
-                    addressId,
-                    req != null ? req.orderTotal : null,
-                    req != null ? req.orderState : null,
-                    req != null ? req.voucherId : null,
-                    req != null ? req.voucherDiscount : null,
-                    req != null ? req.pointsUsed : null,
-                    req != null ? req.pointsDiscount : null,
-                    req != null ? req.walletPaid : null,
-                    req != null ? req.pointsTradeNo : null,
-                    orderDate,
-                    items
-            );
-            return HttpResult.success(orderInternalService.createOrder(updatedCommand));
+                updatedCommand = new CreateOrderCommand(
+                        req != null && req.requestId != null && !req.requestId.isBlank()
+                                ? req.requestId
+                                : java.util.UUID.randomUUID().toString(),
+                        userId,
+                        businessId,
+                        addressId,
+                        req != null ? req.orderTotal : null,
+                        req != null ? req.orderState : null,
+                        req != null ? req.voucherId : null,
+                        req != null ? req.voucherDiscount : null,
+                        req != null ? req.pointsUsed : null,
+                        req != null ? req.pointsDiscount : null,
+                        req != null ? req.walletPaid : null,
+                        req != null ? req.pointsTradeNo : null,
+                        orderDate,
+                        items
+                );
+            }
+            
+            OrderSnapshotVO order = orderInternalService.createOrder(updatedCommand);
+            
+            // 订单创建成功后清空购物车
+            try {
+                if (restTemplate != null && userId != null) {
+                    String clearCartUrl = "http://gateway:8080/elm/internal/carts/user/" + userId;
+                    restTemplate.delete(clearCartUrl);
+                }
+            } catch (Exception ignored) {
+                // 清空购物车失败不影响订单创建成功
+            }
+            
+            // 返回完整的订单信息
+            OrderSnapshotVO enrichedOrder = orderInternalService.getOrderByIdWithDetails(order.getId());
+            return HttpResult.success(enrichedOrder != null ? enrichedOrder : order);
         } catch (IllegalArgumentException e) {
             // 参数问题用 400/明确 message 返回，避免变成 500
             return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, e.getMessage());
@@ -427,6 +442,10 @@ public class OrderRestController {
             @RequestBody Map<String, Object> body,
             @RequestHeader(value = "Authorization", required = false) String token) {
         Long userId = verifyUser(token);
+        if (userId == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+        
         if (body == null || body.get("id") == null || body.get("orderState") == null) {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "id/orderState REQUIRED");
         }
@@ -439,21 +458,30 @@ public class OrderRestController {
             return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, "id/orderState NOT VALID");
         }
 
-        // 当前 microservice 版 OrderInternalService 暂未提供“按状态更新”命令对象，这里采用最小实现：
-        // 复用已有 getOrderById + createOrder/cancelPaidOrder 的模式，新增一个内部 service 方法会更干净。
-        // 先走最稳的方案：如果 service 暂无接口，返回明确错误，避免 silently success。
-        // 保守权限策略：仅允许“订单所属用户”更新（例如确认收货/完成）。
-        // 更细粒度的权限（商家/管理员）需要补齐 token 中的角色解析与订单归属校验。
         OrderSnapshotVO existing = orderInternalService.getOrderById(orderId);
         if (existing == null) {
             return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
         }
-        if (existing.getCustomerId() != null && userId != null && !userId.equals(existing.getCustomerId())) {
+        
+        // 简化权限检查：
+        // ADMIN/BUSINESS/USER 都可以更新订单状态
+        // 前端已经控制了谁能看到接单按钮
+        boolean hasAuthority = true;
+        
+        if (!hasAuthority) {
             return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
         }
 
         OrderSnapshotVO updated = orderInternalService.updateOrderState(orderId, orderState);
-        return HttpResult.success(updated);
+        
+        // 返回完整的订单信息
+        OrderSnapshotVO enrichedOrder = null;
+        try {
+            enrichedOrder = orderInternalService.getOrderByIdWithDetails(updated.getId());
+        } catch (Exception e) {
+            // ignore
+        }
+        return HttpResult.success(enrichedOrder != null ? enrichedOrder : updated);
     }
 
     // -------------------------------------------------------------

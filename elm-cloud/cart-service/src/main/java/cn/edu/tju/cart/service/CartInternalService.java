@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface CartInternalService {
     List<Cart> getCartByUserId(String userId);
+    void clearCartByUserId(String userId);
 }

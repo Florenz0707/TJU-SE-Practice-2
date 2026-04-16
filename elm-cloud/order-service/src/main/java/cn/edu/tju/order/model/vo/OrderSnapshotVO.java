@@ -3,6 +3,8 @@ package cn.edu.tju.order.model.vo;
 import cn.edu.tju.order.model.bo.Order;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 public class OrderSnapshotVO {
   private final Long id;
@@ -19,6 +21,13 @@ public class OrderSnapshotVO {
   private final String pointsTradeNo;
   private final String requestId;
   private final LocalDateTime orderDate;
+  private final LocalDateTime createTime;
+  private final LocalDateTime updateTime;
+  
+  private Map<String, Object> customer;
+  private Map<String, Object> business;
+  private Map<String, Object> deliveryAddress;
+  private List<OrderDetailetVO> orderDetails;
 
   public OrderSnapshotVO(Order order) {
     this.id = order.getId();
@@ -35,6 +44,8 @@ public class OrderSnapshotVO {
     this.pointsTradeNo = order.getPointsTradeNo();
     this.requestId = order.getRequestId();
     this.orderDate = order.getOrderDate();
+    this.createTime = order.getCreateTime();
+    this.updateTime = order.getUpdateTime();
   }
 
   public Long getId() {
@@ -91,5 +102,45 @@ public class OrderSnapshotVO {
 
   public LocalDateTime getOrderDate() {
     return orderDate;
+  }
+
+  public LocalDateTime getCreateTime() {
+    return createTime;
+  }
+
+  public LocalDateTime getUpdateTime() {
+    return updateTime;
+  }
+
+  public Map<String, Object> getCustomer() {
+    return customer;
+  }
+
+  public void setCustomer(Map<String, Object> customer) {
+    this.customer = customer;
+  }
+
+  public Map<String, Object> getBusiness() {
+    return business;
+  }
+
+  public void setBusiness(Map<String, Object> business) {
+    this.business = business;
+  }
+
+  public Map<String, Object> getDeliveryAddress() {
+    return deliveryAddress;
+  }
+
+  public void setDeliveryAddress(Map<String, Object> deliveryAddress) {
+    this.deliveryAddress = deliveryAddress;
+  }
+
+  public List<OrderDetailetVO> getOrderDetails() {
+    return orderDetails;
+  }
+
+  public void setOrderDetails(List<OrderDetailetVO> orderDetails) {
+    this.orderDetails = orderDetails;
   }
 }

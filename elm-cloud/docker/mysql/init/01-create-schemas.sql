@@ -1,6 +1,10 @@
-﻿CREATE DATABASE IF NOT EXISTS elm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- =============================================
+-- Elm Cloud 数据库架构初始化脚本
+-- 负责创建所有需要的数据库和基础表结构
+-- =============================================
+
+CREATE DATABASE IF NOT EXISTS elm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS elm_points CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE IF NOT EXISTS elm_account CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS elm_catalog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS elm_order CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS elm_user CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -8,9 +12,10 @@ CREATE DATABASE IF NOT EXISTS elm_wallet CHARACTER SET utf8mb4 COLLATE utf8mb4_u
 CREATE DATABASE IF NOT EXISTS elm_address CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS elm_merchant CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- 创建数据库用户并授权
+CREATE USER IF NOT EXISTS 'elm'@'%' IDENTIFIED BY 'elm';
 GRANT ALL PRIVILEGES ON elm.* TO 'elm'@'%';
 GRANT ALL PRIVILEGES ON elm_points.* TO 'elm'@'%';
-GRANT ALL PRIVILEGES ON elm_account.* TO 'elm'@'%';
 GRANT ALL PRIVILEGES ON elm_catalog.* TO 'elm'@'%';
 GRANT ALL PRIVILEGES ON elm_order.* TO 'elm'@'%';
 GRANT ALL PRIVILEGES ON elm_user.* TO 'elm'@'%';
@@ -21,11 +26,13 @@ FLUSH PRIVILEGES;
 
 USE elm_user;
 
+-- 权限表
 CREATE TABLE IF NOT EXISTS authority (
     name VARCHAR(50) NOT NULL,
     PRIMARY KEY (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 用户表
 CREATE TABLE IF NOT EXISTS `user` (
     id BIGINT NOT NULL AUTO_INCREMENT,
     username VARCHAR(100) NOT NULL UNIQUE,
@@ -37,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 用户权限关联表
 CREATE TABLE IF NOT EXISTS user_authority (
     user_id BIGINT NOT NULL,
     authority_name VARCHAR(50) NOT NULL,
@@ -45,7 +53,6 @@ CREATE TABLE IF NOT EXISTS user_authority (
     CONSTRAINT fk_authority_name FOREIGN KEY (authority_name) REFERENCES authority (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 初始化权限数据
 INSERT IGNORE INTO authority (name) VALUES ('USER'), ('ADMIN'), ('BUSINESS');
-INSERT IGNORE INTO `user` (id, username, password, activated, deleted) VALUES (1, 'admin', '$2a$10$X2ngW1dCn.osyqZUXksi1.88repVt9jc1N2YW9kfB/69nozB1PJs.', 1, 0);
-INSERT IGNORE INTO user_authority (user_id, authority_name) VALUES (1, 'ADMIN'), (1, 'USER');
 

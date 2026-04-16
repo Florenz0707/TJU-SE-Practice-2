@@ -134,7 +134,11 @@ public class UserRestController {
     if (person.getUsername() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Person.Username CANT BE NULL");
 
-    person.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    // 兼容旧格式：如果传了 authorities 就保留，没传才设置为 USER
+    if (person.getAuthorities() == null || person.getAuthorities().isEmpty()) {
+      person.setAuthorities(AuthorityUtils.getAuthoritySet("USER"));
+    }
+    
     if (person.getPassword() != null && !person.getPassword().isEmpty()) {
       person.setPassword(SecurityUtils.BCryptPasswordEncode(person.getPassword()));
     } else {

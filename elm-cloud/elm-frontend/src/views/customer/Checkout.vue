@@ -542,6 +542,11 @@ const placeOrder = async () => {
       pointsDiscount: pointsDiscount.value,
       walletPaid: actualWalletPayAmount.value, // Add wallet payment amount
       paymentMethod: paymentMethod.value,
+      // Add order details from cart
+      orderDetails: cartStore.itemsForCurrentBusiness.map((item) => ({
+        food: item.food,
+        quantity: item.quantity,
+      })),
     };
 
     const res = await addOrder(orderPayload);

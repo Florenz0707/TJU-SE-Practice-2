@@ -28,6 +28,12 @@ public class Cart extends BaseEntity {
     @Transient
     private Map<String, Object> foodDetail;
 
+    @Transient
+    private Map<String, Object> businessDetail;
+
+    @Transient
+    private Map<String, Object> customerDetail;
+
     /**
      * 兼容部分旧代码/数据：如果存在 cartId，优先保持；否则用 BaseEntity.id。
      * 前端只关心 data.id，因此这里不暴露 cartId 字段。
@@ -63,25 +69,61 @@ public class Cart extends BaseEntity {
     }
 
     @Transient
-    public IdOnlyView getBusiness() {
+    public Object getBusiness() {
+        if (this.businessDetail != null) return this.businessDetail;
         if (this.businessId == null) return null;
         return new IdOnlyView(this.businessId);
     }
 
     @Transient
-    public void setBusiness(IdOnlyView business) {
-        this.businessId = business == null ? null : business.getId();
+    public void setBusiness(Object business) {
+        if (business == null) {
+            this.businessId = null;
+            this.businessDetail = null;
+            return;
+        }
+        if (business instanceof IdOnlyView view) {
+            this.businessId = view.getId();
+            return;
+        }
+        if (business instanceof Map<?, ?> map) {
+            Object id = map.get("id");
+            this.businessId = id == null ? null : String.valueOf(id);
+            java.util.LinkedHashMap<String, Object> copied = new java.util.LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                copied.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+            this.businessDetail = copied;
+        }
     }
 
     @Transient
-    public IdOnlyView getCustomer() {
+    public Object getCustomer() {
+        if (this.customerDetail != null) return this.customerDetail;
         if (this.userId == null) return null;
         return new IdOnlyView(this.userId);
     }
 
     @Transient
-    public void setCustomer(IdOnlyView customer) {
-        this.userId = customer == null ? null : customer.getId();
+    public void setCustomer(Object customer) {
+        if (customer == null) {
+            this.userId = null;
+            this.customerDetail = null;
+            return;
+        }
+        if (customer instanceof IdOnlyView view) {
+            this.userId = view.getId();
+            return;
+        }
+        if (customer instanceof Map<?, ?> map) {
+            Object id = map.get("id");
+            this.userId = id == null ? null : String.valueOf(id);
+            java.util.LinkedHashMap<String, Object> copied = new java.util.LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                copied.put(String.valueOf(entry.getKey()), entry.getValue());
+            }
+            this.customerDetail = copied;
+        }
     }
 
     @Data

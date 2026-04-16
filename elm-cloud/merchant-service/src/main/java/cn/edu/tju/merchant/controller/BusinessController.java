@@ -65,6 +65,12 @@ public class BusinessController {
 
     if (business.getBusinessName() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessName CANT BE NULL");
+    
+    // 兼容旧格式：从 businessOwner 对象中提取 id
+    if (business.getBusinessOwnerId() == null && business.getBusinessOwner() != null) {
+      business.setBusinessOwnerId(business.getBusinessOwner().getId());
+    }
+    
     if (business.getBusinessOwnerId() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner.Id CANT BE NULL");
 

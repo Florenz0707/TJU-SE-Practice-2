@@ -1,4 +1,4 @@
-﻿# 本地运行指南（elm-cloud）
+# 本地运行指南（elm-cloud）
 
 本文档指导在本地使用 Docker Compose 快速启动 elm-cloud 下的所有微服务、前端和数据库。
 
@@ -6,69 +6,176 @@
 
 - 请确保本机已安装并能运行 **Docker Desktop**（或 Docker Engine + Compose v2+）。
 - 所有操作均在 elm-cloud 服务目录下进行。
+- 确保 80、8080、8761、3306 端口未被占用。
 
 ## 2. 快速启动（一键运行所有功能）
 
 目前所有后端微服务（包括 gateway、merchant-service、user-service 等），以及前端应用（frontend）和数据库环境（mysql），都已统一配置在了 elm-cloud/docker-compose.yml 中。实际构建代码均与当前配置完全匹配，支持直接启动。
 
-1) **进入** elm-cloud **目录**：
-  ```powershell
-  cd elm-cloud
-  ```
+如果自动拉取镜像失败可以手动拉取
 
-2) **构建并后台运行所有容器**：
-  ```powershell
-  # Compose v2（推荐）
-  docker compose up -d --build
-   
-  # 如果你的环境仍是 docker-compose v1，也可以用：
-  # docker-compose up -d --build
-  ```
-   > **注：** 首次启动时，为了拉取基础镜像并进行 Java Maven 包和前端 Node 环境的构建，可能会消耗较长的时间，请耐心等待。
+```PowerShell
+# 1. MySQL 数据库镜像
+docker pull mysql:8.0
 
-## 3. 访问系统与管理员账号
+# 2. Java 运行环境镜像（所有 Java 微服务都会用这个）
+docker pull eclipse-temurin:21-jre
+
+# 3. Node.js 镜像（前端构建用）
+docker pull node:22-alpine
+
+# 4. Nginx 镜像（前端生产环境用）
+docker pull nginx:stable-alpine
+```
+1. **进入elm-cloud目录**：
+```powershell
+cd elm-cloud
+```
+1. **清理旧容器和数据（如果之前运行过）**：
+
+```powershell
+docker compose down -v
+```
+
+1. **构建并后台运行所有容器**：
+
+```powershell
+# Compose v2（推荐）
+docker compose up -d --build
+```
+
+> **注：** 首次启动时，为了拉取基础镜像并进行 Java Maven 包和前端 Node 环境的构建，可能会消耗较长的时间（约 10-20 分钟），请耐心等待。
+
+## 3. 验证服务启动
+
+服务启动后，请按以下顺序验证：
+
+1. **等待所有服务健康启动**（约需 3-5 分钟）：
+   ```powershell
+   docker compose ps
+   ```
+   确保所有服务的 STATUS 都是 Up（healthy）
+2. **查看 Eureka 注册中心**：
+   浏览器访问：<http://localhost:8761>
+   应能看到所有微服务都已注册
+3. **查看网关**：
+   浏览器访问：<http://localhost:8080>
+   应能看到网关响应
+
+## 4. 访问系统与测试账号
 
 服务成功启动后即可在本地访问：
 
-- **前端系统入口**：直接在浏览器访问 [http://localhost](http://localhost) （由于前端容器映射到了外部 80 端口）。
-- **管理员账号（Admin）**：
-  数据库初始脚本 docker/mysql/init/01-create-schemas.sql 中已为您预置了具备高级管理权限的账号，用于审核商家申请和管理配置系统：
-  - **账号用户名**：admin
-  - **登录密码**：password
+### 前端系统入口
 
-*(注：系统中的其它注册用户或演示账号，如无单独说明均可用相同的方式进行登录注册测试)*
+- **前端系统**：直接在浏览器访问 <http://localhost>
 
-## 4. 常用维护命令
+### 测试账号信息
+
+数据库初始化脚本已预置以下账号，可直接使用：
+
+| 账号类型      | 用户名       | 密码     |
+| --------- | --------- | ------ |
+| **管理员**   | admin     | admin  |
+| **商家1**   | business1 | 111111 |
+| **商家2**   | business2 | 111111 |
+| **普通用户1** | user1     | 111111 |
+| **普通用户2** | user2     | 111111 |
+
+## 5. 常用维护命令
 
 如果你想单独查看某个服务的状态，或者更新单独的服务，可以使用以下命令（均确保您位于 elm-cloud 目录下执行）：
 
+### 查看服务状态和日志
+
+- **查看所有服务状态**：
+  ```powershell
+  docker compose ps
+  ```
 - **查看服务日志**（例如查看 user-service 或 gateway 的运行日志）：
   ```powershell
+  # 查看所有服务日志
+  docker compose logs -f
+
+  # 查看特定服务日志
   docker compose logs -f user-service
   docker compose logs -f gateway
+  docker compose logs -f order-service
+  docker compose logs -f cart-service
   ```
 
-- **单独重新构建某一项服务**（如修改了 merchant-service 代码后期望单独编译更新）：
+### 重新构建和重启服务
+
+- **单独重新构建某一项服务**（如修改了代码后期望单独编译更新）：
   ```powershell
+  # 停止并删除旧容器
+  docker compose stop merchant-service
+  docker compose rm -f merchant-service
+
+  # 重新构建并启动
   docker compose up -d --build merchant-service
   ```
+- **重启某个服务**：
+  ```powershell
+  docker compose restart merchant-service
+  ```
 
-- **停止并删除所有服务与数据卷**（如果您希望彻底重置系统数据和数据库）：
+### 清理和重置
+
+- **停止所有服务但保留数据**：
+  ```powershell
+  docker compose stop
+  ```
+- **停止并删除所有服务与数据卷**（彻底重置系统数据和数据库）：
   ```powershell
   docker compose down -v
   ```
   *(清除后下次 up 时会重新触发 MySQL 数据的初始化)*
 
-## 5. 简单健康检查（推荐）
+## 6. 服务端口映射
 
-- Eureka 控制台： http://localhost:8761
-- Gateway： http://localhost:8080
-- 前端： http://localhost
+| 服务            | 外部端口 | 内部端口 | 说明        |
+| ------------- | ---- | ---- | --------- |
+| frontend      | 80   | 80   | 前端 Nginx  |
+| gateway       | 8080 | 8080 | API 网关    |
+| eureka-server | 8761 | 8761 | 服务注册中心    |
+| mysql         | 3306 | 3306 | MySQL 数据库 |
 
-如果某个服务启动慢或频繁重启，优先看它的日志：
+## 7. 数据库初始化说明
 
-```powershell
-docker compose ps
-docker compose logs -f <service-name>
-```
+数据库初始化脚本位于 `docker/mysql/init/` 目录：
+
+- **01-create-schemas.sql**：创建所有数据库和基础表结构
+- **02-initialize-data.sql**：初始化测试数据（用户、商家、菜品、地址等）
+
+MySQL 会在首次启动时自动执行这些脚本。如果需要重新初始化，执行 `docker compose down -v` 后再启动即可。
+
+## 8. 故障排查
+
+### 服务启动失败
+
+如果某个服务启动失败或频繁重启：
+
+1. 查看该服务的日志：
+   ```powershell
+   docker compose logs -f <service-name>
+   ```
+2. 检查端口是否被占用：
+   ```powershell
+   netstat -ano | findstr ":80"
+   netstat -ano | findstr ":8080"
+   ```
+3. 确保 Docker 有足够的内存（建议至少 4GB）
+
+### 数据库连接失败
+
+- 确保 mysql 容器已启动：`docker compose ps`
+- 查看 mysql 日志：`docker compose logs -f mysql`
+- 等待 mysql 完全启动（约需 30-60 秒）
+
+### 前端访问异常
+
+- 确保 frontend 容器正在运行
+- 检查浏览器控制台是否有错误
+- 确认 gateway 服务正常运行
 

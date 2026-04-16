@@ -1,4 +1,4 @@
-﻿server:
+server:
   port: 8080
 
 spring:
@@ -45,11 +45,12 @@ spring:
             # Compatible with both API prefixes:
             # - /elm/api/** (gateway standard)
             # - /api/** and /carts/** (some frontends/legacy calls)
-            - Path=/elm/api/carts, /elm/api/carts/**, /api/carts, /api/carts/**, /carts, /carts/**
+            - Path=/elm/api/carts, /elm/api/carts/**, /api/carts, /api/carts/**, /carts, /carts/**, /elm/internal/carts/**
           filters:
             # cart-service itself does NOT use server.servlet.context-path=/elm,
-            # so requests coming from /elm/api/** must be rewritten to /api/**.
-            - RewritePath=/elm/api/(?<segment>.*), /${segment}
+            # so requests coming from /elm/api/** must be rewritten to /api/**,
+            # and /elm/internal/** must be rewritten to /internal/**.
+            - RewritePath=/elm/(?<segment>.*), /${segment}
 
         - id: points-service
           uri: lb://points-service

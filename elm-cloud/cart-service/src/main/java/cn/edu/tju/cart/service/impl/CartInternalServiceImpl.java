@@ -4,6 +4,7 @@ import cn.edu.tju.cart.model.Cart;
 import cn.edu.tju.cart.repository.CartRepository;
 import cn.edu.tju.cart.service.CartInternalService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,5 +20,12 @@ public class CartInternalServiceImpl implements CartInternalService {
     @Override
     public List<Cart> getCartByUserId(String userId) {
         return cartRepository.findByUserId(userId);
+    }
+
+    @Override
+    @Transactional
+    public void clearCartByUserId(String userId) {
+        List<Cart> carts = cartRepository.findByUserId(userId);
+        cartRepository.deleteAll(carts);
     }
 }

@@ -3,6 +3,7 @@ package cn.edu.tju.cart.controller;
 import cn.edu.tju.cart.model.Cart;
 import cn.edu.tju.cart.service.CartInternalService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,5 +24,11 @@ public class CartInnerController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Cart>> getByUser(@PathVariable String userId) {
         return ResponseEntity.ok(cartInternalService.getCartByUserId(userId));
+    }
+
+    @DeleteMapping("/user/{userId}")
+    public ResponseEntity<Void> clearCartByUser(@PathVariable String userId) {
+        cartInternalService.clearCartByUserId(userId);
+        return ResponseEntity.ok().build();
     }
 }
