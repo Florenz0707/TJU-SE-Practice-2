@@ -38,7 +38,10 @@ public class UserService {
     public User verify(String token) {
         if (token == null || token.isEmpty()) return null;
         Long uid = jwtUtils.getUserId(token);
-        if (uid == null) return null;
+        if (uid == null) {
+            log.warn("JWT verify failed: uid missing. tokenPrefix={}", token.length() > 16 ? token.substring(0, 16) : token);
+            return null;
+        }
 
         User u = new User();
         u.setId(uid);
@@ -49,10 +52,20 @@ public class UserService {
 
     public Optional<User> getUserWithAuthorities() {
         String token = jwtUtils.resolveToken(request);
+        if (token == null || token.isBlank()) {
+            String authHeader = request.getHeader("Authorization");
+            String xAuthHeader = request.getHeader("X-Authorization");
+            log.warn("No bearer token found in request. AuthorizationPresent={}, X-AuthorizationPresent={}",
+                    authHeader != null && !authHeader.isBlank(),
+                    xAuthHeader != null && !xAuthHeader.isBlank());
+            return Optional.empty();
+        }
+
         User u = verify(token);
         if (u != null) {
             return Optional.of(u);
         }
+        log.warn("JWT verify returned null user. tokenPrefix={}", token.length() > 16 ? token.substring(0, 16) : token);
         return Optional.empty();
     }
 

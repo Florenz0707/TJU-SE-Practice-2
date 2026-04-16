@@ -1,12 +1,12 @@
-package cn.edu.tju.merchant.util;
+package cn.edu.tju.product.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.security.Key;
 
@@ -17,23 +17,15 @@ public class JwtUtils {
     private String base64Secret;
 
     public String resolveToken(HttpServletRequest request) {
-        // Standard header
         String token = request.getHeader("Authorization");
-        // Some gateways/proxies may forward auth in a different header
-        if (token == null || token.isBlank()) {
-            token = request.getHeader("X-Authorization");
-        }
-        if (token == null) return null;
-
-        token = token.trim();
-        if (token.startsWith("Bearer ")) {
-            return token.substring(7).trim();
+        if (token != null && token.startsWith("Bearer ")) {
+            return token.substring(7);
         }
         return token;
     }
 
     public Claims getClaims(String token) {
-        if(token == null || token.isEmpty()) return null;
+        if (token == null || token.isEmpty()) return null;
         try {
             byte[] keyBytes = Decoders.BASE64.decode(base64Secret);
             Key key = Keys.hmacShaKeyFor(keyBytes);
@@ -42,29 +34,23 @@ public class JwtUtils {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-        } catch(Exception e) { 
-            return null; 
+        } catch (Exception e) {
+            return null;
         }
     }
 
     public Long getUserId(String token) {
         Claims claims = getClaims(token);
-        if (claims != null && claims.get("uid") != null) {
+        if (claims == null) return null;
+
+        if (claims.get("uid") != null) {
             return Long.valueOf(claims.get("uid").toString());
         }
-        if (claims != null && claims.get("userId") != null) {
+        if (claims.get("userId") != null) {
             return Long.valueOf(claims.get("userId").toString());
         }
-        if (claims != null && claims.get("id") != null) {
+        if (claims.get("id") != null) {
             return Long.valueOf(claims.get("id").toString());
-        }
-        return null;
-    }
-
-    public String getUsername(String token) {
-        Claims claims = getClaims(token);
-        if (claims != null) {
-            return claims.getSubject();
         }
         return null;
     }

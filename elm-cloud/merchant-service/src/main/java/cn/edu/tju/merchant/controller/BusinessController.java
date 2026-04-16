@@ -46,7 +46,7 @@ public class BusinessController {
   @GetMapping("")
   
   public HttpResult<List<Business>> getBusinesses() {
-    List<Business> businesses = businessService.getBusinesses();
+    List<Business> businesses = businessService.getOpenBusinesses();
     compatibilityEnricher.enrichBusinesses(businesses);
     return HttpResult.success(businesses);
   }

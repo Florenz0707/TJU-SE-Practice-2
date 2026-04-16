@@ -10,6 +10,10 @@ import cn.edu.tju.order.util.JwtUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import java.util.Map;
 import java.util.List;
 
@@ -23,21 +27,129 @@ public class OrderRestController {
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired(required = false)
+    private RestTemplate restTemplate;
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class AuthorityRef {
+        public String name;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class UserWithAuthorities {
+        public Long id;
+        public List<AuthorityRef> authorities;
+    }
+
+    public static class AuthzContext {
+        public final Long userId;
+        public final boolean isAdmin;
+        public final boolean isBusiness;
+
+        public AuthzContext(Long userId, boolean isAdmin, boolean isBusiness) {
+            this.userId = userId;
+            this.isAdmin = isAdmin;
+            this.isBusiness = isBusiness;
+        }
+    }
+
+    private AuthzContext requireMe(String token) {
+        Long userId = verifyUser(token);
+        if (userId == null || restTemplate == null || token == null || token.isBlank()) {
+            return null;
+        }
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", token);
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+            @SuppressWarnings({"rawtypes"})
+        ResponseEntity<cn.edu.tju.core.model.HttpResult> resp =
+                    restTemplate.exchange(
+                            "lb://user-service/elm/api/user",
+                            org.springframework.http.HttpMethod.GET,
+                            entity,
+                            cn.edu.tju.core.model.HttpResult.class);
+            Object data = resp.getBody() != null ? resp.getBody().getData() : null;
+            if (!(data instanceof java.util.Map<?, ?> m)) {
+                return new AuthzContext(userId, false, false);
+            }
+
+            boolean isAdmin = false;
+            boolean isBusiness = false;
+            Object authObj = m.get("authorities");
+            if (authObj instanceof java.util.List<?> list) {
+                for (Object a : list) {
+                    if (a instanceof java.util.Map<?, ?> am) {
+                        Object nameObj = am.get("name");
+                        if (nameObj == null) continue;
+                        String name = nameObj.toString();
+                        if ("ADMIN".equals(name)) isAdmin = true;
+                        if ("BUSINESS".equals(name)) isBusiness = true;
+                    }
+                }
+            }
+            return new AuthzContext(userId, isAdmin, isBusiness);
+        } catch (Exception ignore) {
+            return new AuthzContext(userId, false, false);
+        }
+    }
+
     private Long verifyUser(String token) {
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
         }
-        Long userId = jwtUtils.getUserIdFromToken(token);
-        if (userId == null) {
-            return 1L; // Fallback
+        return jwtUtils.getUserIdFromToken(token);
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class OrderCreateRequest {
+        public static class IdRef {
+            @JsonIgnoreProperties(ignoreUnknown = true)
+            public Long id;
+            // tolerate legacy/incorrect payloads that accidentally put an id under a different key
+            public Long customerId;
+            public Long businessId;
+            public Long deliveryAddressId;
+
+            public Long bestId() {
+                if (id != null) return id;
+                if (customerId != null) return customerId;
+                if (businessId != null) return businessId;
+                return deliveryAddressId;
+            }
         }
-        return userId;
+
+        public String requestId;
+        public IdRef customer;
+        public IdRef business;
+        public IdRef deliveryAddress;
+        public java.math.BigDecimal orderTotal;
+        public Integer orderState;
+        public String orderDate;
+
+        public Long voucherId;
+        public java.math.BigDecimal voucherDiscount;
+        public Integer pointsUsed;
+        public java.math.BigDecimal pointsDiscount;
+        public java.math.BigDecimal walletPaid;
+        public String pointsTradeNo;
+
+        public List<OrderItemReq> orderDetails;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class OrderItemReq {
+        public OrderCreateRequest.IdRef food;
+        public Integer quantity;
     }
 
     @GetMapping("/api/orders/user/my")
     public HttpResult<List<OrderSnapshotVO>> myOrders(@RequestHeader(value = "Authorization", required = false) String token) {
-        Long userId = verifyUser(token);
-        return HttpResult.success(orderInternalService.getOrdersByCustomerId(userId));
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+        return HttpResult.success(orderInternalService.getOrdersByCustomerId(me.userId));
     }
 
     @GetMapping("/api/orders/user/my/page")
@@ -45,63 +157,269 @@ public class OrderRestController {
             @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
-        Long userId = verifyUser(token);
-        return HttpResult.success(orderInternalService.getOrdersByCustomerId(userId, page, size));        
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+        return HttpResult.success(orderInternalService.getOrdersByCustomerId(me.userId, page, size));        
     }
 
     @GetMapping("/api/orders/merchant/my")
     public HttpResult<List<OrderSnapshotVO>> merchantOrders(@RequestHeader(value = "Authorization", required = false) String token) {
-        Long businessId = verifyUser(token); // Or business owner based on token
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+        if (!me.isAdmin && !me.isBusiness) {
+            return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
+        }
+        // ownerId -> businessId（跨服务查“我的店铺”）
+        Long businessId = null;
+        if (restTemplate != null && token != null && !token.isBlank()) {
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("Authorization", token);
+                org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+                @SuppressWarnings("rawtypes")
+                ResponseEntity<cn.edu.tju.core.model.HttpResult> resp =
+                        restTemplate.exchange(
+                                "lb://merchant-service/elm/api/businesses/my",
+                                org.springframework.http.HttpMethod.GET,
+                                entity,
+                                cn.edu.tju.core.model.HttpResult.class);
+                Object data = resp.getBody() != null ? resp.getBody().getData() : null;
+                if (data instanceof java.util.List<?> list && !list.isEmpty()) {
+                    Object first = list.get(0);
+                    if (first instanceof java.util.Map<?, ?> m) {
+                        Object idObj = m.get("id");
+                        if (idObj != null) {
+                            businessId = Long.parseLong(idObj.toString());
+                        }
+                    }
+                }
+            } catch (Exception ignore) {
+                businessId = null;
+            }
+        }
+
+        if (businessId == null) {
+            // 兜底：如果跨服务查询失败，避免把 ownerId 当 businessId 造成越权/误查
+            return HttpResult.success(java.util.List.of());
+        }
         return HttpResult.success(orderInternalService.getOrdersByBusinessId(businessId));
     }
 
     @GetMapping("/api/orders/business/{id}")
-    public HttpResult<List<OrderSnapshotVO>> businessOrders(@PathVariable("id") Long businessId) {
+    public HttpResult<List<OrderSnapshotVO>> businessOrders(
+            @PathVariable("id") Long businessId,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+
+        // 单体语义：ADMIN 可查任意店；BUSINESS 仅可查自己店铺。
+        if (!me.isAdmin) {
+            if (!me.isBusiness) return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
+
+            Long myBusinessId = null;
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("Authorization", token);
+                org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+                @SuppressWarnings("rawtypes")
+                ResponseEntity<cn.edu.tju.core.model.HttpResult> resp =
+                        restTemplate.exchange(
+                                "lb://merchant-service/elm/api/businesses/my",
+                                org.springframework.http.HttpMethod.GET,
+                                entity,
+                                cn.edu.tju.core.model.HttpResult.class);
+                Object data = resp.getBody() != null ? resp.getBody().getData() : null;
+                if (data instanceof java.util.List<?> list && !list.isEmpty()) {
+                    Object first = list.get(0);
+                    if (first instanceof java.util.Map<?, ?> m) {
+                        Object idObj = m.get("id");
+                        if (idObj != null) myBusinessId = Long.parseLong(idObj.toString());
+                    }
+                }
+            } catch (Exception ignore) {
+                myBusinessId = null;
+            }
+            if (myBusinessId == null || !myBusinessId.equals(businessId)) {
+                return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
+            }
+        }
         return HttpResult.success(orderInternalService.getOrdersByBusinessId(businessId));
     }
 
     @GetMapping("/api/orders/business/{id}/page")
     public HttpResult<PagedOrderSnapshotVO> businessOrdersByPage(
             @PathVariable("id") Long businessId,
+            @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size) {
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+
+        if (!me.isAdmin) {
+            if (!me.isBusiness) return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
+
+            Long myBusinessId = null;
+            try {
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("Authorization", token);
+                org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+                @SuppressWarnings("rawtypes")
+                ResponseEntity<cn.edu.tju.core.model.HttpResult> resp =
+                        restTemplate.exchange(
+                                "lb://merchant-service/elm/api/businesses/my",
+                                org.springframework.http.HttpMethod.GET,
+                                entity,
+                                cn.edu.tju.core.model.HttpResult.class);
+                Object data = resp.getBody() != null ? resp.getBody().getData() : null;
+                if (data instanceof java.util.List<?> list && !list.isEmpty()) {
+                    Object first = list.get(0);
+                    if (first instanceof java.util.Map<?, ?> m) {
+                        Object idObj = m.get("id");
+                        if (idObj != null) myBusinessId = Long.parseLong(idObj.toString());
+                    }
+                }
+            } catch (Exception ignore) {
+                myBusinessId = null;
+            }
+            if (myBusinessId == null || !myBusinessId.equals(businessId)) {
+                return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
+            }
+        }
         return HttpResult.success(orderInternalService.getOrdersByBusinessId(businessId, page, size));    
     }
 
     @GetMapping("/api/orders/{id}")
-    public HttpResult<OrderSnapshotVO> getOrder(@PathVariable("id") Long orderId) {
-        return HttpResult.success(orderInternalService.getOrderById(orderId));
+    public HttpResult<OrderSnapshotVO> getOrder(
+            @PathVariable("id") Long orderId,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+
+        OrderSnapshotVO existing = orderInternalService.getOrderById(orderId);
+        if (existing == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "Order NOT FOUND");
+        }
+
+        // 单体语义：ADMIN 全权；普通用户仅可看自己订单；商家这里按“看店铺订单”走 /business/{id}。
+        if (!me.isAdmin && existing.getCustomerId() != null && !me.userId.equals(existing.getCustomerId())) {
+            return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
+        }
+        return HttpResult.success(existing);
     }
 
     @PostMapping("/api/orders/{id}/cancel")
     public HttpResult<OrderSnapshotVO> cancelOrder(@PathVariable("id") Long orderId,
                                   @RequestHeader(value = "Authorization", required = false) String token) {    
-        Long userId = verifyUser(token);
-        return HttpResult.success(orderInternalService.cancelPaidOrder(orderId, userId));
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+        return HttpResult.success(orderInternalService.cancelPaidOrder(orderId, me.userId));
     }
 
     @PostMapping("/api/orders")
     public HttpResult<OrderSnapshotVO> createOrder(
-            @RequestBody CreateOrderCommand command,
+            @RequestBody Object body,
             @RequestHeader(value = "Authorization", required = false) String token) {
-        Long userId = verifyUser(token);
-        CreateOrderCommand updatedCommand = new CreateOrderCommand(
-                command.requestId() == null ? java.util.UUID.randomUUID().toString() : command.requestId(),
-                userId,
-                command.businessId(),
-                command.deliveryAddressId(),
-                command.orderTotal(),
-                command.orderState(),
-                command.voucherId(),
-                command.voucherDiscount(),
-                command.pointsUsed(),
-                command.pointsDiscount(),
-                command.walletPaid(),
-                command.pointsTradeNo(),
-                command.orderDate(),
-                command.items()
-        );
-        return HttpResult.success(orderInternalService.createOrder(updatedCommand));
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+        Long userId = me.userId;
+
+        // 兼容两种 payload：
+        // 1) micro-service 版 CreateOrderCommand（customerId/businessId/deliveryAddressId/items）
+        // 2) 前端 openapi Order（customer/business/deliveryAddress/orderDetails）
+        // 这里用 Jackson 进行轻量转换，避免前端必须改字段。
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+            // 先探测 payload 形态，避免“前端 Order payload”被误当成 CreateOrderCommand 导致反序列化报错
+            java.util.Map<?, ?> raw = mapper.convertValue(body, java.util.Map.class);
+            boolean looksLikeCommand = raw != null
+                    && (raw.containsKey("businessId")
+                        || raw.containsKey("customerId")
+                        || raw.containsKey("deliveryAddressId")
+                        || raw.containsKey("items"));
+
+            if (looksLikeCommand) {
+                CreateOrderCommand cmd = mapper.convertValue(body, CreateOrderCommand.class);
+                CreateOrderCommand updatedCommand = new CreateOrderCommand(
+                        cmd.requestId() == null ? java.util.UUID.randomUUID().toString() : cmd.requestId(),
+                        userId,
+                        cmd.businessId(),
+                        cmd.deliveryAddressId(),
+                        cmd.orderTotal(),
+                        cmd.orderState(),
+                        cmd.voucherId(),
+                        cmd.voucherDiscount(),
+                        cmd.pointsUsed(),
+                        cmd.pointsDiscount(),
+                        cmd.walletPaid(),
+                        cmd.pointsTradeNo(),
+                        cmd.orderDate(),
+                        cmd.items()
+                );
+                return HttpResult.success(orderInternalService.createOrder(updatedCommand));
+            }
+
+            // 尝试按前端 Order 结构解析
+            OrderCreateRequest req = mapper.convertValue(body, OrderCreateRequest.class);
+            Long businessId = req != null && req.business != null ? req.business.bestId() : null;
+            Long addressId = req != null && req.deliveryAddress != null ? req.deliveryAddress.bestId() : null;
+
+            java.util.List<cn.edu.tju.order.service.OrderInternalService.OrderItemCommand> items = new java.util.ArrayList<>();
+            if (req != null && req.orderDetails != null) {
+                for (OrderItemReq it : req.orderDetails) {
+                    Long foodId = it != null && it.food != null ? it.food.id : null;
+                    Integer qty = it != null ? it.quantity : null;
+                    items.add(new cn.edu.tju.order.service.OrderInternalService.OrderItemCommand(foodId, qty));
+                }
+            }
+
+            java.time.LocalDateTime orderDate = null;
+            if (req != null && req.orderDate != null && !req.orderDate.isBlank()) {
+                try {
+                    orderDate = java.time.LocalDateTime.parse(req.orderDate);
+                } catch (Exception ignore) {
+                    // 兼容前端可能传 ISO 带时区的情况：先不强解析，交给 service 默认 now。
+                    orderDate = null;
+                }
+            }
+
+            CreateOrderCommand updatedCommand = new CreateOrderCommand(
+                    req != null && req.requestId != null && !req.requestId.isBlank()
+                            ? req.requestId
+                            : java.util.UUID.randomUUID().toString(),
+                    userId,
+                    businessId,
+                    addressId,
+                    req != null ? req.orderTotal : null,
+                    req != null ? req.orderState : null,
+                    req != null ? req.voucherId : null,
+                    req != null ? req.voucherDiscount : null,
+                    req != null ? req.pointsUsed : null,
+                    req != null ? req.pointsDiscount : null,
+                    req != null ? req.walletPaid : null,
+                    req != null ? req.pointsTradeNo : null,
+                    orderDate,
+                    items
+            );
+            return HttpResult.success(orderInternalService.createOrder(updatedCommand));
+        } catch (IllegalArgumentException e) {
+            // 参数问题用 400/明确 message 返回，避免变成 500
+            return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @PatchMapping("/api/orders")

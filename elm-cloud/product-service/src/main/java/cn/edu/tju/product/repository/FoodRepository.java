@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface FoodRepository extends JpaRepository<Food, Long> {
     List<Food> findByBusinessId(Long businessId);
+
+    List<Food> findByBusinessIdIn(List<Long> businessIds);
 }
