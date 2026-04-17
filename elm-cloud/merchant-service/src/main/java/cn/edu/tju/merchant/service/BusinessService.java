@@ -91,6 +91,11 @@ public class BusinessService {
     return ret;
   }
 
+  public boolean hasBusinessWithSameName(Long ownerId, String businessName) {
+    List<Business> existing = businessRepository.findByBusinessOwnerIdAndBusinessNameAndDeletedFalse(ownerId, businessName);
+    return existing != null && !existing.isEmpty();
+  }
+
   public void addBusiness(Business business) {
     businessRepository.save(business);
   }

@@ -152,6 +152,26 @@ public class OrderRestController {
         return HttpResult.success(orderInternalService.getOrdersByCustomerIdWithDetails(me.userId));
     }
 
+    @GetMapping("/api/orders")
+    public HttpResult<List<OrderSnapshotVO>> listOrders(
+            @RequestParam(value = "userId", required = false) Long userIdParam,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        AuthzContext me = requireMe(token);
+        if (me == null) {
+            return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
+        }
+        
+        // 兼容旧格式：如果传了 userId 参数，优先使用；否则用当前用户
+        Long userId = userIdParam != null ? userIdParam : me.userId;
+        
+        // 权限检查：ADMIN 可以查任意用户，普通用户只能查自己
+        if (!me.isAdmin && !userId.equals(me.userId)) {
+            return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
+        }
+        
+        return HttpResult.success(orderInternalService.getOrdersByCustomerIdWithDetails(userId));
+    }
+
     @GetMapping("/api/orders/user/my/page")
     public HttpResult<PagedOrderSnapshotVO> myOrdersByPage(
             @RequestHeader(value = "Authorization", required = false) String token,

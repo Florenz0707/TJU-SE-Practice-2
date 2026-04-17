@@ -1,9 +1,11 @@
 package cn.edu.tju.merchant.controller;
 import cn.edu.tju.merchant.service.UserService;
+import cn.edu.tju.merchant.service.BusinessApplicationService;
 
 import cn.edu.tju.merchant.util.AuthorityUtils;
 
 import cn.edu.tju.merchant.model.User;
+import cn.edu.tju.merchant.model.BusinessApplication;
 
 
 import cn.edu.tju.core.model.HttpResult;
@@ -23,14 +25,17 @@ import org.springframework.web.bind.annotation.*;
 public class BusinessController {
   private final UserService userService;
   private final BusinessService businessService;
+  private final BusinessApplicationService businessApplicationService;
   private final ResponseCompatibilityEnricher compatibilityEnricher;
 
   public BusinessController(
       UserService userService,
       BusinessService businessService,
+      BusinessApplicationService businessApplicationService,
       ResponseCompatibilityEnricher compatibilityEnricher) {
     this.userService = userService;
     this.businessService = businessService;
+    this.businessApplicationService = businessApplicationService;
     this.compatibilityEnricher = compatibilityEnricher;
   }
 
@@ -73,36 +78,48 @@ public class BusinessController {
     
     if (business.getBusinessOwnerId() == null)
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner.Id CANT BE NULL");
+    
+    Long finalOwnerId = business.getBusinessOwnerId();
 
-    User owner = userService.getUserById(business.getBusinessOwnerId()).orElse(null);
-    if (owner == null)
-      return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "BusinessOwner NOT FOUND");
+    Optional<User> ownerOptional = userService.getUserById(business.getBusinessOwnerId());
+    User owner = ownerOptional.orElse(null);
+    if (owner == null) {
+      // 如果无法从 user-service 获取用户，创建一个 fallback 用户
+      owner = new User();
+      owner.setId(finalOwnerId);
+      owner.setUsername("user" + finalOwnerId);
+    }
 
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
 
     if (isAdmin || (isBusiness && me.equals(owner))) {
-      // Hard guard: each merchant(user) can only have ONE active store.
-      // This prevents accidental duplicates when frontend mistakenly calls POST instead of PUT.
-      try {
-        List<Business> existing = businessService.getBusinessByOwnerId(owner.getId());
-        if (existing != null) {
-          for (Business b : existing) {
-            if (b != null && (b.getDeleted() == null || !b.getDeleted())) {
-              return HttpResult.failure(
-                  ResultCodeEnum.SERVER_ERROR,
-                  "ALREADY HAS ACTIVE STORE (use update endpoint instead)");
-            }
-          }
-        }
-      } catch (Exception ignore) {
-        // best-effort guard
+      // 检查同一商家是否已经有相同名称的店铺
+      if (businessService.hasBusinessWithSameName(finalOwnerId, business.getBusinessName())) {
+        return HttpResult.failure(
+            ResultCodeEnum.SERVER_ERROR,
+            "ALREADY HAS BUSINESS WITH SAME NAME");
       }
-
-      business.setBusinessOwnerId(owner.getId());
+      
+      business.setBusinessOwnerId(finalOwnerId);
       EntityUtils.setNewEntity(business);
       businessService.addBusiness(business);
       compatibilityEnricher.enrichBusiness(business);
+
+      // 如果是 admin 直接创建店铺，自动创建一个已批准的 BusinessApplication
+      if (isAdmin) {
+        try {
+          BusinessApplication application = new BusinessApplication();
+          EntityUtils.setNewEntity(application);
+          application.setBusiness(business);
+          application.setApplicationState(2); // 2 = 已批准
+          application.setApplicantId(finalOwnerId);
+          application.setHandlerId(me.getId());
+          businessApplicationService.addApplication(application);
+        } catch (Exception e) {
+          // 即使创建 application 失败，也不要阻止店铺的创建
+        }
+      }
 
       return HttpResult.success(business);
     }
@@ -132,6 +149,14 @@ public class BusinessController {
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
     if (isAdmin || (isBusiness && me.getId().equals(oldOwnerId))) {
+      // 检查更新后的店铺名称是否与该商家的其他店铺重复（排除当前正在更新的店铺）
+      if (!oldBusiness.getBusinessName().equals(business.getBusinessName()) && 
+          businessService.hasBusinessWithSameName(oldOwnerId, business.getBusinessName())) {
+        return HttpResult.failure(
+            ResultCodeEnum.SERVER_ERROR,
+            "ALREADY HAS BUSINESS WITH SAME NAME");
+      }
+      
       // IMPORTANT: Update should NOT create a new row.
       // Keep the same id and only mutate fields on the existing entity.
       EntityUtils.updateEntity(oldBusiness);
@@ -173,6 +198,15 @@ public class BusinessController {
     boolean isAdmin = AuthorityUtils.hasAuthority(me, "ADMIN");
     boolean isBusiness = AuthorityUtils.hasAuthority(me, "BUSINESS");
     if (isAdmin || (isBusiness && me.getId().equals(oldOwnerId))) {
+      // 如果要更新店铺名称，检查是否与该商家的其他店铺重复（排除当前正在更新的店铺）
+      if (business.getBusinessName() != null && 
+          !oldBusiness.getBusinessName().equals(business.getBusinessName()) && 
+          businessService.hasBusinessWithSameName(oldOwnerId, business.getBusinessName())) {
+        return HttpResult.failure(
+            ResultCodeEnum.SERVER_ERROR,
+            "ALREADY HAS BUSINESS WITH SAME NAME");
+      }
+      
       // Patch should also update the same row, not clone/insert.
       EntityUtils.updateEntity(oldBusiness);
       if (business.getBusinessName() != null) oldBusiness.setBusinessName(business.getBusinessName());
@@ -224,7 +258,7 @@ public class BusinessController {
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "AUTHORITY NOT FOUND");
     User me = meOptional.get();
 
-    if (AuthorityUtils.hasAuthority(me, "BUSINESS")) {
+    if (AuthorityUtils.hasAuthority(me, "BUSINESS") || AuthorityUtils.hasAuthority(me, "ADMIN")) {
       List<Business> businesses = businessService.getBusinessByOwnerId(me.getId());
       compatibilityEnricher.enrichBusinesses(businesses);
       return HttpResult.success(businesses);

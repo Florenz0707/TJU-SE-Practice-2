@@ -56,3 +56,18 @@ CREATE TABLE IF NOT EXISTS user_authority (
 -- 初始化权限数据
 INSERT IGNORE INTO authority (name) VALUES ('USER'), ('ADMIN'), ('BUSINESS');
 
+-- 创建 person 表
+CREATE TABLE IF NOT EXISTS person (
+    id BIGINT NOT NULL,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(255),
+    gender VARCHAR(255),
+    photo TEXT,
+    create_time DATETIME,
+    update_time DATETIME,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_person_user_id FOREIGN KEY (id) REFERENCES `user` (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

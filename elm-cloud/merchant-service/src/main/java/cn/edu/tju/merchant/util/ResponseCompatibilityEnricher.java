@@ -23,7 +23,13 @@ public class ResponseCompatibilityEnricher {
     public void enrichBusiness(Business business) {
         if (business == null) return;
         if (business.getBusinessOwner() == null && business.getBusinessOwnerId() != null) {
-            business.setBusinessOwner(toSummaryView(userService.getUserById(business.getBusinessOwnerId())));
+            Optional<User> userOptional = userService.getUserById(business.getBusinessOwnerId());
+            if (userOptional != null && userOptional.isPresent()) {
+                business.setBusinessOwner(toSummaryView(userOptional));
+            } else {
+                // 如果 user-service 暂时不可用，至少回填 id，避免前端直接崩
+                business.setBusinessOwner(new UserSummaryView(business.getBusinessOwnerId(), "user" + business.getBusinessOwnerId()));
+            }
         }
     }
 

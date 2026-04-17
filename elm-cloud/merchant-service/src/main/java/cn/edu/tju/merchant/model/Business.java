@@ -22,7 +22,7 @@ public class Business extends BaseEntity {
 
   private String businessExplain;
 
-  @Column(columnDefinition = "TEXT")
+  @Column(columnDefinition = "LONGTEXT")
   private String businessImg;
 
   private Integer orderTypeId;

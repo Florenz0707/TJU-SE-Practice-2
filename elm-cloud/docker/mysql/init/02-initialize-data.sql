@@ -36,5 +36,18 @@ VALUES
 (5, 'USER');
 
 -- =============================================
+-- 初始化个人信息数据
+-- =============================================
+
+-- 插入个人信息数据
+INSERT IGNORE INTO person (id, first_name, last_name, email, phone, gender, create_time, update_time) 
+VALUES 
+(1, '管', '理员', 'admin@example.com', '13800000001', 'MALE', NOW(), NOW()),
+(2, '商', '家1', 'business1@example.com', '13800000002', 'MALE', NOW(), NOW()),
+(3, '商', '家2', 'business2@example.com', '13800000003', 'FEMALE', NOW(), NOW()),
+(4, '用', '户1', 'user1@example.com', '13800000004', 'MALE', NOW(), NOW()),
+(5, '用', '户2', 'user2@example.com', '13800000005', 'FEMALE', NOW(), NOW());
+
+-- =============================================
 -- 初始化完成
 -- =============================================

@@ -16,7 +16,7 @@ export function addPublicVoucher(
 export function updatePublicVoucher(
   voucher: PublicVoucher,
 ): Promise<HttpResult<PublicVoucher>> {
-  return request.put(`/publicVoucher`, voucher);
+  return request.put(`/publicVoucher/${voucher.id}`, voucher);
 }
 
 export function getPublicVoucherById(

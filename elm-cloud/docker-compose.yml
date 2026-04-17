@@ -14,6 +14,12 @@ services:
       - 3306:3306
     networks:
       - elm-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   eureka-server:
     build:
@@ -22,7 +28,8 @@ services:
     ports:
       - 8761:8761
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -33,7 +40,8 @@ services:
     ports:
       - 8888:8888
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_started
     networks:
       - elm-network
 
@@ -44,8 +52,10 @@ services:
     ports:
       - 8080:8080
     depends_on:
-      - eureka-server
-      - config-server
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
     networks:
       - elm-network
 
@@ -56,8 +66,10 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=local
     depends_on:
-      - eureka-server
-      - mysql
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -68,8 +80,10 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=local
     depends_on:
-      - eureka-server
-      - mysql
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -78,8 +92,10 @@ services:
       context: .
       dockerfile: ./cart-service/Dockerfile
     depends_on:
-      - eureka-server
-      - mysql
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -88,8 +104,10 @@ services:
       context: .
       dockerfile: ./order-service/Dockerfile
     depends_on:
-      - eureka-server
-      - mysql
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -98,8 +116,10 @@ services:
       context: .
       dockerfile: ./address-service/Dockerfile
     depends_on:
-      - eureka-server
-      - mysql
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -108,8 +128,10 @@ services:
       context: .
       dockerfile: ./user-service/Dockerfile
     depends_on:
-      - eureka-server
-      - mysql
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -118,8 +140,10 @@ services:
       context: .
       dockerfile: ./points-service/Dockerfile
     depends_on:
-      - eureka-server
-      - mysql
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -128,8 +152,10 @@ services:
       context: .
       dockerfile: ./wallet-service/Dockerfile
     depends_on:
-      - eureka-server
-      - mysql
+      eureka-server:
+        condition: service_started
+      mysql:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -140,7 +166,8 @@ services:
     container_name: elm-frontend-1
     restart: unless-stopped
     depends_on:
-      - gateway
+      gateway:
+        condition: service_started
     ports:
       - "80:80"
     networks:

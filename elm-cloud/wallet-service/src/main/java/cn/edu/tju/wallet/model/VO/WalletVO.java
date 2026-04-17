@@ -33,6 +33,11 @@ public class WalletVO implements Serializable {
     return ownerId;
   }
 
+  // 兼容旧格式：旧文档中用 owner 而不是 ownerId
+  public Long getOwner() {
+    return ownerId;
+  }
+
   @Override
   public String toString() {
     return "WalletVO: id="

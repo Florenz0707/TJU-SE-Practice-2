@@ -57,6 +57,17 @@ public class PublicVoucherController {
     }
   }
 
+  @GetMapping()
+  
+  public HttpResult<List<PublicVoucherVO>> getAllPublicVouchersWithoutList() {
+    try {
+      List<PublicVoucherVO> publicVoucherVOS = publicVoucherService.getPublicVouchers();
+      return HttpResult.success(publicVoucherVOS);
+    } catch (Exception e) {
+      return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+    }
+  }
+
   @PostMapping()
   
   public HttpResult<String> createPublicVoucher(
@@ -78,13 +89,18 @@ public class PublicVoucherController {
     }
   }
 
-  @PutMapping()
+  @PutMapping("/{id}")
   
   public HttpResult<String> updatePublicVoucher(
+      @PathVariable("id") Long id,
       @RequestBody
           PublicVoucherVO publicVoucherVO) {
     if (!hasAdminAuthority()) {
       return HttpResult.failure(ResultCodeEnum.FORBIDDEN, "AUTHORITY LACKED");
+    }
+    // 兼容旧格式：如果请求体中没有 id，从路径参数设置
+    if (publicVoucherVO != null && publicVoucherVO.getId() == null) {
+      publicVoucherVO.setId(id);
     }
     HttpResult<String> failure = PublicVoucherVO.isValidPublicVoucherVO(publicVoucherVO);
     if (failure != null) {
