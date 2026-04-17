@@ -2,6 +2,8 @@ package cn.edu.tju.product.service;
 
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.product.service.dto.BusinessDto;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ import java.util.Optional;
 public class MerchantClient {
 
     private static final Logger log = LoggerFactory.getLogger(MerchantClient.class);
+    private static final String MERCHANT_SERVICE_CB = "merchantService";
 
     private final RestTemplate restTemplate;
     private final HttpServletRequest request;
@@ -29,6 +32,8 @@ public class MerchantClient {
         this.request = request;
     }
 
+    @CircuitBreaker(name = MERCHANT_SERVICE_CB, fallbackMethod = "getBusinessByIdFallback")
+    @Retry(name = MERCHANT_SERVICE_CB)
     public Optional<BusinessDto> getBusinessById(Long businessId) {
         if (businessId == null) return Optional.empty();
         try {
@@ -39,7 +44,6 @@ public class MerchantClient {
             }
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            // Use service discovery (Spring Cloud LoadBalancer) instead of assuming port 80
             String url = "lb://merchant-service/elm/api/businesses/" + businessId;
 
             try {
@@ -55,17 +59,23 @@ public class MerchantClient {
                 }
                 return Optional.empty();
             } catch (Exception wrappedParseEx) {
-                // fallback: sometimes it may directly return BusinessDto
                 ResponseEntity<BusinessDto> response = restTemplate.exchange(url, HttpMethod.GET, entity, BusinessDto.class);
                 return Optional.ofNullable(response.getBody());
             }
 
         } catch (Exception e) {
             log.warn("getBusinessById({}) failed: {}", businessId, e.toString());
-            return Optional.empty();
+            throw e;
         }
     }
 
+    public Optional<BusinessDto> getBusinessByIdFallback(Long businessId, Exception e) {
+        log.warn("Fallback triggered for getBusinessById({}): {}", businessId, e.getMessage());
+        return Optional.empty();
+    }
+
+    @CircuitBreaker(name = MERCHANT_SERVICE_CB, fallbackMethod = "getMyBusinessesFallback")
+    @Retry(name = MERCHANT_SERVICE_CB)
     public List<BusinessDto> getMyBusinesses() {
         HttpHeaders headers = new HttpHeaders();
         String token = request.getHeader("Authorization");
@@ -85,6 +95,11 @@ public class MerchantClient {
         if (body != null && Boolean.TRUE.equals(body.getSuccess()) && body.getData() != null) {
             return body.getData();
         }
+        return List.of();
+    }
+
+    public List<BusinessDto> getMyBusinessesFallback(Exception e) {
+        log.warn("Fallback triggered for getMyBusinesses: {}", e.getMessage());
         return List.of();
     }
 }

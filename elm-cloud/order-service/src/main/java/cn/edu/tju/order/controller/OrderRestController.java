@@ -7,6 +7,8 @@ import cn.edu.tju.order.model.vo.PagedOrderSnapshotVO;
 import cn.edu.tju.order.service.OrderInternalService;
 import cn.edu.tju.order.service.OrderInternalService.CreateOrderCommand;
 import cn.edu.tju.order.util.JwtUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,8 @@ import java.util.List;
 @RestController
 @RequestMapping
 public class OrderRestController {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderRestController.class);
 
     @Autowired
     private OrderInternalService orderInternalService;
@@ -441,10 +445,11 @@ public class OrderRestController {
             // 订单创建成功后清空购物车
             try {
                 if (restTemplate != null && userId != null) {
-                    String clearCartUrl = "http://gateway:8080/elm/internal/carts/user/" + userId;
+                    String clearCartUrl = "http://cart-service/internal/carts/user/" + userId;
                     restTemplate.delete(clearCartUrl);
                 }
             } catch (Exception ignored) {
+                log.warn("清空购物车失败", ignored);
                 // 清空购物车失败不影响订单创建成功
             }
             

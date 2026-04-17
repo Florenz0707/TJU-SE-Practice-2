@@ -1,5 +1,7 @@
 package cn.edu.tju.merchant.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import cn.edu.tju.merchant.model.User;
@@ -21,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private static final String USER_SERVICE_CB = "userService";
 
     private final JwtUtils jwtUtils;
     private final HttpServletRequest request;
@@ -69,6 +72,8 @@ public class UserService {
         return Optional.empty();
     }
 
+    @CircuitBreaker(name = USER_SERVICE_CB, fallbackMethod = "getUserByIdFallback")
+    @Retry(name = USER_SERVICE_CB)
     public Optional<User> getUserById(Long id) {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -79,7 +84,6 @@ public class UserService {
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             String url = "http://user-service/elm/api/users/" + id;
 
-            // 先尝试按标准包装结构解析：HttpResult<User>
             try {
                 ResponseEntity<HttpResult<User>> response = restTemplate.exchange(
                     url,
@@ -97,7 +101,6 @@ public class UserService {
                     log.warn("getUserById({}) returned empty body, status={}", id, response.getStatusCode());
                 }
             } catch (Exception wrappedParseEx) {
-                // 再兜底尝试：有些实现直接返回 User（无 HttpResult 包装）
                 try {
                     ResponseEntity<User> response = restTemplate.exchange(url, HttpMethod.GET, entity, User.class);
                     if (response.getBody() != null) {
@@ -110,7 +113,13 @@ public class UserService {
             }
         } catch (Exception e) {
             log.warn("getUserById({}) unexpected error: {}", id, e.toString());
+            throw e;
         }
+        return Optional.empty();
+    }
+
+    public Optional<User> getUserByIdFallback(Long id, Exception e) {
+        log.warn("Fallback triggered for getUserById({}): {}", id, e.getMessage());
         return Optional.empty();
     }
 
@@ -122,6 +131,9 @@ public class UserService {
         }
         return Optional.of(u);
     }
+
+    @CircuitBreaker(name = USER_SERVICE_CB, fallbackMethod = "updateUserFallback")
+    @Retry(name = USER_SERVICE_CB)
     public boolean updateUser(User user) {
         if (user == null || user.getId() == null) {
             log.warn("Update user authorities SKIP: userId is null. user={}", user);
@@ -134,17 +146,14 @@ public class UserService {
         try {
             HttpHeaders headers = new HttpHeaders();
             boolean useInternalToken = internalServiceToken != null && !internalServiceToken.isBlank();
-            // Use internal service token for privileged operations
             if (useInternalToken) {
                 headers.add("X-Internal-Service-Token", internalServiceToken);
             } else {
-                // fallback to user bearer token if internal token isn't configured
                 String token = jwtUtils.resolveToken(request);
                 if (token != null && !token.isEmpty()) {
                     headers.setBearerAuth(token);
                 }
             }
-            // convert Set<String> to Set<Map<String, String>>
             java.util.List<java.util.Map<String, String>> authList = new java.util.ArrayList<>();
             if (user.getAuthorities() != null) {
                 for (String auth : user.getAuthorities()) {
@@ -181,7 +190,12 @@ public class UserService {
                 e.getClass().getName(),
                 e.getMessage());
             log.debug("Update user authorities ERROR stacktrace", e);
-            return false;
+            throw e;
         }
+    }
+
+    public boolean updateUserFallback(User user, Exception e) {
+        log.warn("Fallback triggered for updateUser(userId={}): {}", user != null ? user.getId() : null, e.getMessage());
+        return false;
     }
 }
