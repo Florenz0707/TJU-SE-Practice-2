@@ -63,18 +63,18 @@
       </el-descriptions>
     </el-card>
 
-    <el-card v-if="orderItems.length" class="order-items-card">
+    <el-card v-if="order && order.orderDetails && order.orderDetails.length" class="order-items-card">
       <template #header>
         <h4>订单商品</h4>
       </template>
-      <el-table :data="orderItems" stripe>
-        <el-table-column prop="foodName" label="商品" />
-        <el-table-column prop="foodPrice" label="价格">
+      <el-table :data="order.orderDetails" stripe>
+        <el-table-column prop="food.foodName" label="商品" />
+        <el-table-column prop="food.foodPrice" label="价格">
           <template #default="{ row }"
-            >¥{{ row.foodPrice.toFixed(2) }}</template
+            >¥{{ row.food?.foodPrice ? row.food.foodPrice.toFixed(2) : '0.00' }}</template
           >
         </el-table-column>
-        <!-- Quantity is not available on the Food object, so we can't display it yet -->
+        <el-table-column prop="quantity" label="数量" />
       </el-table>
     </el-card>
 
@@ -93,18 +93,15 @@ import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { getOrderById } from "../../../api/order";
 import { getOrderReview } from "../../../api/review";
-import { getAllFoods } from "../../../api/food";
-import type { Order, Food, Review, OrderStatus } from "../../../api/types";
+import type { Order, Review, OrderStatus } from "../../../api/types";
 import {
   getOrderStatusInfo,
   OrderStatus as OrderStatusEnum,
 } from "../../../api/types";
-import { ElMessage } from "element-plus";
 
 const route = useRoute();
 const router = useRouter();
 const order = ref<Order | null>(null);
-const orderItems = ref<Food[]>([]);
 const review = ref<Review | null>(null);
 const loading = ref(false);
 const error = ref<string | null>(null);
@@ -143,10 +140,7 @@ onMounted(async () => {
   }
 
   try {
-    const [orderRes, itemsRes] = await Promise.all([
-      getOrderById(orderId),
-      getAllFoods({ order: orderId }),
-    ]);
+    const orderRes = await getOrderById(orderId);
 
     if (orderRes.success) {
       order.value = orderRes.data;
@@ -161,13 +155,6 @@ onMounted(async () => {
       }
     } else {
       throw new Error(orderRes.message || "获取订单详情失败");
-    }
-
-    if (itemsRes.success) {
-      orderItems.value = itemsRes.data;
-    } else {
-      // It's possible an order has no items or the endpoint fails, don't block for this
-      ElMessage.warning("无法获取此订单的商品列表。");
     }
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : String(err);

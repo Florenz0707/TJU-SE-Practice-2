@@ -3,6 +3,7 @@ package cn.edu.tju.wallet.model.VO;
 import cn.edu.tju.wallet.model.BO.Transaction;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class TransactionVO implements Serializable {
   private Long id;
@@ -14,6 +15,8 @@ public class TransactionVO implements Serializable {
   private String requestId;
   private String bizId;
   private String reason;
+  private LocalDateTime createTime;
+  private LocalDateTime updateTime;
 
   public TransactionVO() {}
 
@@ -28,6 +31,8 @@ public class TransactionVO implements Serializable {
     this.requestId = transaction.getRequestId();
     this.bizId = transaction.getBizId();
     this.reason = transaction.getReason();
+    this.createTime = transaction.getCreateTime();
+    this.updateTime = transaction.getUpdateTime();
   }
 
   public Long getId() {
@@ -100,6 +105,22 @@ public class TransactionVO implements Serializable {
 
   public void setReason(String reason) {
     this.reason = reason;
+  }
+
+  public LocalDateTime getCreateTime() {
+    return createTime;
+  }
+
+  public void setCreateTime(LocalDateTime createTime) {
+    this.createTime = createTime;
+  }
+
+  public LocalDateTime getUpdateTime() {
+    return updateTime;
+  }
+
+  public void setUpdateTime(LocalDateTime updateTime) {
+    this.updateTime = updateTime;
   }
 
   @Override

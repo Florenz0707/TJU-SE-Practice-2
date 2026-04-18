@@ -197,8 +197,8 @@ public class OrderRestController {
         if (!me.isAdmin && !me.isBusiness) {
             return HttpResult.failure(ResultCodeEnum.BAD_REQUEST, "AUTHORITY LACKED");
         }
-        // ownerId -> businessId（跨服务查“我的店铺”）
-        Long businessId = null;
+        // ownerId -> businessIds（跨服务查“我的所有店铺”）
+        java.util.List<Long> businessIds = new java.util.ArrayList<>();
         if (restTemplate != null && token != null && !token.isBlank()) {
             try {
                 HttpHeaders headers = new HttpHeaders();
@@ -213,24 +213,25 @@ public class OrderRestController {
                                 cn.edu.tju.core.model.HttpResult.class);
                 Object data = resp.getBody() != null ? resp.getBody().getData() : null;
                 if (data instanceof java.util.List<?> list && !list.isEmpty()) {
-                    Object first = list.get(0);
-                    if (first instanceof java.util.Map<?, ?> m) {
-                        Object idObj = m.get("id");
-                        if (idObj != null) {
-                            businessId = Long.parseLong(idObj.toString());
+                    for (Object item : list) {
+                        if (item instanceof java.util.Map<?, ?> m) {
+                            Object idObj = m.get("id");
+                            if (idObj != null) {
+                                businessIds.add(Long.parseLong(idObj.toString()));
+                            }
                         }
                     }
                 }
             } catch (Exception ignore) {
-                businessId = null;
+                businessIds = new java.util.ArrayList<>();
             }
         }
 
-        if (businessId == null) {
-            // 兜底：如果跨服务查询失败，避免把 ownerId 当 businessId 造成越权/误查
+        if (businessIds.isEmpty()) {
+            // 兜底：如果跨服务查询失败，返回空列表
             return HttpResult.success(java.util.List.of());
         }
-        return HttpResult.success(orderInternalService.getOrdersByBusinessIdWithDetails(businessId));
+        return HttpResult.success(orderInternalService.getOrdersByBusinessIdsWithDetails(businessIds));
     }
 
     @GetMapping("/api/orders/business/{id}")

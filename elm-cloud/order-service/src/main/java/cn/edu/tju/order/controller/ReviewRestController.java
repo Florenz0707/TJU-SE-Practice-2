@@ -7,7 +7,10 @@ import cn.edu.tju.order.model.bo.Review;
 import cn.edu.tju.order.repository.OrderRepository;
 import cn.edu.tju.order.repository.ReviewRepository;
 import cn.edu.tju.order.util.JwtUtils;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping
@@ -28,6 +32,8 @@ public class ReviewRestController {
   @Autowired private OrderRepository orderRepository;
 
   @Autowired private JwtUtils jwtUtils;
+  
+  @Autowired private RestTemplate restTemplate;
 
   private Long verifyUser(String token) {
     if (token != null && token.startsWith("Bearer ")) {
@@ -76,8 +82,31 @@ public class ReviewRestController {
     toSave.setStars(review.getStars());
     toSave.setContent(review.getContent());
     toSave.setAnonymous(review.getAnonymous());
+    
+    Review savedReview = reviewRepository.save(toSave);
+    
+    // 如果是新创建的评论（非更新），发放评论积分
+    if (existing == null || Boolean.TRUE.equals(existing.getDeleted())) {
+      try {
+        awardReviewPoints(userId, savedReview.getId());
+      } catch (Exception e) {
+        // 积分发放失败不影响评论创建成功
+      }
+    }
 
-    return HttpResult.success(reviewRepository.save(toSave));
+    return HttpResult.success(savedReview);
+  }
+
+  private void awardReviewPoints(Long userId, Long reviewId) {
+    Map<String, Object> pointsRequest = new HashMap<>();
+    pointsRequest.put("userId", userId);
+    pointsRequest.put("bizId", String.valueOf(reviewId));
+    pointsRequest.put("amount", null);
+    pointsRequest.put("eventTime", LocalDateTime.now().toString());
+    pointsRequest.put("extraInfo", "");
+
+    String pointsUrl = "http://points-service/elm/api/inner/points/notify/review-success";
+    restTemplate.postForObject(pointsUrl, pointsRequest, Object.class);
   }
 
   @GetMapping("/api/reviews/order/{orderId}")

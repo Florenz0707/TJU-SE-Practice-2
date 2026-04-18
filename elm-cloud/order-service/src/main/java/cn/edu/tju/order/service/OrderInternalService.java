@@ -101,6 +101,16 @@ public class OrderInternalService {
     order.setPointsTradeNo(command.pointsTradeNo());
     Order savedOrder = orderRepository.save(order);
 
+    // 3. 核销优惠券（如果使用了优惠券）
+    if (command.voucherId() != null && command.voucherDiscount() != null && command.voucherDiscount().compareTo(BigDecimal.ZERO) > 0) {
+      try {
+        redeemVoucher(command, savedOrder);
+      } catch (Exception e) {
+        log.error("优惠券核销失败: {}", e.getMessage(), e);
+        // 优惠券核销失败不影响订单创建成功，继续执行
+      }
+    }
+
     List<OrderDetailet> details = new ArrayList<>(command.items().size());
     for (OrderItemCommand item : command.items()) {
       if (item.foodId() == null || item.quantity() == null || item.quantity() <= 0) {
@@ -138,6 +148,24 @@ public class OrderInternalService {
     throw new RuntimeException("钱包服务暂时不可用，请稍后重试", e);
   }
 
+  @CircuitBreaker(name = WALLET_SERVICE_CB, fallbackMethod = "redeemVoucherFallback")
+  @Retry(name = WALLET_SERVICE_CB)
+  private void redeemVoucher(CreateOrderCommand command, Order savedOrder) {
+    Map<String, Object> redeemRequest = new HashMap<>();
+    redeemRequest.put("requestId", command.requestId() + "_voucher");
+    redeemRequest.put("userId", command.customerId());
+    redeemRequest.put("voucherId", command.voucherId());
+    redeemRequest.put("orderId", String.valueOf(savedOrder.getId()));
+
+    String redeemUrl = "http://wallet-service/elm/api/inner/account/voucher/redeem";
+    restTemplate.postForObject(redeemUrl, redeemRequest, Object.class);
+  }
+
+  private void redeemVoucherFallback(CreateOrderCommand command, Order savedOrder, Exception e) {
+    log.warn("Fallback triggered for redeemVoucher: {}", e.getMessage());
+    throw new RuntimeException("优惠券服务暂时不可用，请稍后重试", e);
+  }
+
   @Transactional
   public OrderSnapshotVO cancelPaidOrder(Long orderId, Long operatorUserId) {
     if (orderId == null || operatorUserId == null) {
@@ -153,10 +181,61 @@ public class OrderInternalService {
     if (!Integer.valueOf(OrderState.PAID).equals(order.getOrderState())) {
       throw new IllegalStateException("OrderState NOT PAID");
     }
+    
+    // 回滚优惠券（如果使用了优惠券）
+    if (order.getVoucherId() != null && order.getVoucherDiscount() != null && order.getVoucherDiscount().compareTo(BigDecimal.ZERO) > 0) {
+      try {
+        rollbackVoucher(order);
+      } catch (Exception e) {
+        log.error("优惠券回滚失败: {}", e.getMessage(), e);
+        // 优惠券回滚失败不影响订单取消，继续执行
+      }
+    }
+    
     order.setOrderState(OrderState.CANCELED);
     order.setUpdateTime(LocalDateTime.now());
     Order saved = orderRepository.save(order);
     return new OrderSnapshotVO(saved);
+  }
+
+  @CircuitBreaker(name = WALLET_SERVICE_CB, fallbackMethod = "rollbackVoucherFallback")
+  @Retry(name = WALLET_SERVICE_CB)
+  private void rollbackVoucher(Order order) {
+    Map<String, Object> rollbackRequest = new HashMap<>();
+    rollbackRequest.put("requestId", order.getRequestId() + "_voucher_rollback");
+    rollbackRequest.put("userId", order.getCustomerId());
+    rollbackRequest.put("voucherId", order.getVoucherId());
+    rollbackRequest.put("orderId", String.valueOf(order.getId()));
+    rollbackRequest.put("reason", "订单取消");
+
+    String rollbackUrl = "http://wallet-service/elm/api/inner/account/voucher/rollback";
+    restTemplate.postForObject(rollbackUrl, rollbackRequest, Object.class);
+  }
+
+  private void rollbackVoucherFallback(Order order, Exception e) {
+    log.warn("Fallback triggered for rollbackVoucher: {}", e.getMessage());
+    throw new RuntimeException("优惠券服务暂时不可用，请稍后重试", e);
+  }
+
+  private static final String POINTS_SERVICE_CB = "pointsService";
+
+  @CircuitBreaker(name = POINTS_SERVICE_CB, fallbackMethod = "awardPointsForOrderFallback")
+  @Retry(name = POINTS_SERVICE_CB)
+  private void awardPointsForOrder(Order order) {
+    Map<String, Object> pointsRequest = new HashMap<>();
+    pointsRequest.put("userId", order.getCustomerId());
+    pointsRequest.put("bizId", String.valueOf(order.getId()));
+    pointsRequest.put("amount", order.getOrderTotal() != null ? order.getOrderTotal().doubleValue() : 0.0);
+    pointsRequest.put("eventTime", LocalDateTime.now().toString());
+    pointsRequest.put("extraInfo", "");
+
+    String pointsUrl = "http://points-service/elm/api/inner/points/notify/order-success";
+    restTemplate.postForObject(pointsUrl, pointsRequest, Object.class);
+  }
+
+  private void awardPointsForOrderFallback(Order order, Exception e) {
+    log.warn("Fallback triggered for awardPointsForOrder: {}", e.getMessage());
+    throw new RuntimeException("积分服务暂时不可用，请稍后重试", e);
   }
 
   @Transactional
@@ -189,16 +268,31 @@ public class OrderInternalService {
             throw new RuntimeException("钱包退款失败: " + e.getMessage(), e);
           }
         }
-      } else if (targetState.equals(OrderState.RECEIVED)) {
-        // 商家接单：给商家钱包入账
-        if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
-          try {
-            creditWallet(order);
-          } catch (Exception e) {
-            log.error("商家钱包入账失败: {}", e.getMessage(), e);
-            throw new RuntimeException("商家钱包入账失败: " + e.getMessage(), e);
+      }
+    }
+    
+    // 订单完成时：给商家钱包入账 + 给用户发放积分
+    if (!oldState.equals(OrderState.COMPLETE) && targetState.equals(OrderState.COMPLETE)) {
+      if (order.getWalletPaid() != null && order.getWalletPaid().compareTo(BigDecimal.ZERO) > 0) {
+        try {
+          // 先通过 businessId 查询店铺信息，获取 ownerId
+          Long ownerId = getBusinessOwnerId(order.getBusinessId());
+          if (ownerId == null) {
+            throw new RuntimeException("无法获取店铺 ownerId");
           }
+          creditWallet(order, ownerId);
+        } catch (Exception e) {
+          log.error("商家钱包入账失败: {}", e.getMessage(), e);
+          throw new RuntimeException("商家钱包入账失败: " + e.getMessage(), e);
         }
+      }
+      
+      // 给用户发放订单完成积分
+      try {
+        awardPointsForOrder(order);
+      } catch (Exception e) {
+        log.error("订单积分发放失败: {}", e.getMessage(), e);
+        // 积分发放失败不影响订单完成，继续执行
       }
     }
     
@@ -227,12 +321,36 @@ public class OrderInternalService {
     throw new RuntimeException("钱包退款服务暂时不可用，请稍后重试", e);
   }
 
+  @CircuitBreaker(name = MERCHANT_SERVICE_CB, fallbackMethod = "getBusinessOwnerIdFallback")
+  private Long getBusinessOwnerId(Long businessId) {
+    String businessUrl = "http://merchant-service/elm/api/businesses/" + businessId;
+    ResponseEntity<HttpResult<Object>> businessResp = restTemplate.exchange(
+            businessUrl,
+            HttpMethod.GET,
+            null,
+            new ParameterizedTypeReference<HttpResult<Object>>() {}
+    );
+    HttpResult<Object> businessBody = businessResp.getBody();
+    if (businessBody != null && Boolean.TRUE.equals(businessBody.getSuccess()) && businessBody.getData() instanceof Map<?, ?> map) {
+      Object ownerIdObj = map.get("businessOwnerId");
+      if (ownerIdObj != null) {
+        return Long.parseLong(ownerIdObj.toString());
+      }
+    }
+    return null;
+  }
+
+  private Long getBusinessOwnerIdFallback(Long businessId, Exception e) {
+    log.warn("Fallback triggered for getBusinessOwnerId: {}", e.getMessage());
+    throw new RuntimeException("获取店铺信息失败: " + e.getMessage(), e);
+  }
+
   @CircuitBreaker(name = WALLET_SERVICE_CB, fallbackMethod = "creditWalletFallback")
   @Retry(name = WALLET_SERVICE_CB)
-  private void creditWallet(Order order) {
+  private void creditWallet(Order order, Long ownerId) {
     Map<String, Object> creditRequest = new HashMap<>();
     creditRequest.put("requestId", order.getRequestId() + "_merchant");
-    creditRequest.put("userId", order.getBusinessId());
+    creditRequest.put("userId", ownerId);
     creditRequest.put("amount", order.getWalletPaid());
     creditRequest.put("bizId", String.valueOf(order.getId()));
     creditRequest.put("reason", "订单收入");
@@ -241,7 +359,7 @@ public class OrderInternalService {
     restTemplate.postForObject(creditUrl, creditRequest, Object.class);
   }
 
-  private void creditWalletFallback(Order order, Exception e) {
+  private void creditWalletFallback(Order order, Long ownerId, Exception e) {
     log.warn("Fallback triggered for creditWallet: {}", e.getMessage());
     throw new RuntimeException("商家钱包入账服务暂时不可用，请稍后重试", e);
   }
@@ -284,6 +402,16 @@ public class OrderInternalService {
   }
 
   @Transactional(readOnly = true)
+  public List<OrderSnapshotVO> getOrdersByBusinessIds(List<Long> businessIds) {
+    if (businessIds == null || businessIds.isEmpty()) {
+      return List.of();
+    }
+    return orderRepository.findAllByBusinessIdIn(businessIds).stream()
+        .map(OrderSnapshotVO::new)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
   public PagedOrderSnapshotVO getOrdersByCustomerId(Long customerId, int page, int size) {
     if (customerId == null) {
       return new PagedOrderSnapshotVO(List.of(), 0L, page, size);
@@ -308,6 +436,22 @@ public class OrderInternalService {
     int safeSize = Math.max(size, 1);
     Page<Order> orderPage =
         orderRepository.findAllByBusinessId(businessId, PageRequest.of(safePage - 1, safeSize));
+    return new PagedOrderSnapshotVO(
+        orderPage.getContent().stream().map(OrderSnapshotVO::new).toList(),
+        orderPage.getTotalElements(),
+        safePage,
+        safeSize);
+  }
+
+  @Transactional(readOnly = true)
+  public PagedOrderSnapshotVO getOrdersByBusinessIds(List<Long> businessIds, int page, int size) {
+    if (businessIds == null || businessIds.isEmpty()) {
+      return new PagedOrderSnapshotVO(List.of(), 0L, page, size);
+    }
+    int safePage = Math.max(page, 1);
+    int safeSize = Math.max(size, 1);
+    Page<Order> orderPage =
+        orderRepository.findAllByBusinessIdIn(businessIds, PageRequest.of(safePage - 1, safeSize));
     return new PagedOrderSnapshotVO(
         orderPage.getContent().stream().map(OrderSnapshotVO::new).toList(),
         orderPage.getTotalElements(),
@@ -525,6 +669,17 @@ public class OrderInternalService {
   @Transactional(readOnly = true)
   public List<OrderSnapshotVO> getOrdersByBusinessIdWithDetails(Long businessId) {
     List<OrderSnapshotVO> orders = getOrdersByBusinessId(businessId);
+    for (OrderSnapshotVO vo : orders) {
+      List<OrderDetailetVO> details = getOrderDetailetsByOrderId(vo.getId());
+      vo.setOrderDetails(details);
+      enrichOrderSnapshot(vo);
+    }
+    return orders;
+  }
+
+  @Transactional(readOnly = true)
+  public List<OrderSnapshotVO> getOrdersByBusinessIdsWithDetails(List<Long> businessIds) {
+    List<OrderSnapshotVO> orders = getOrdersByBusinessIds(businessIds);
     for (OrderSnapshotVO vo : orders) {
       List<OrderDetailetVO> details = getOrderDetailetsByOrderId(vo.getId());
       vo.setOrderDetails(details);

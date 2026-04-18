@@ -5,6 +5,10 @@ import cn.edu.tju.cart.repository.CartRepository;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.cart.util.JwtUtils;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -20,18 +24,21 @@ import java.util.Map;
 import java.util.List;
 
 @RestController
-// NOTE: server.servlet.context-path is '/elm' (see logs). Do NOT include '/elm' here,
-// otherwise routes become '/elm/elm/...'.
 @RequestMapping({"/api/carts", "/carts"})
 public class CartController {
 
+    private static final Logger log = LoggerFactory.getLogger(CartController.class);
+    private static final String PRODUCT_SERVICE_CB = "productService";
+    private static final String MERCHANT_SERVICE_CB = "merchantService";
+
     private final CartRepository cartRepository;
     private final JwtUtils jwtUtils;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
-    public CartController(CartRepository cartRepository, JwtUtils jwtUtils) {
+    public CartController(CartRepository cartRepository, JwtUtils jwtUtils, RestTemplate restTemplate) {
         this.cartRepository = cartRepository;
         this.jwtUtils = jwtUtils;
+        this.restTemplate = restTemplate;
     }
 
     private String verifyUser(String token) {
@@ -40,14 +47,11 @@ public class CartController {
         }
         Long userId = jwtUtils.getUserIdFromToken(token);
         if (userId == null) {
-            return "1"; // Fallback
+            return "1";
         }
         return String.valueOf(userId);
     }
 
-    // Debug helper: echo raw body to quickly diagnose JSON parsing issues.
-    // IMPORTANT: use byte[] so Spring doesn't try to parse it as JSON via Jackson.
-    // Safe because it does not persist anything.
     @PostMapping(
         value = "/_debug/echo",
             consumes = MediaType.ALL_VALUE,
@@ -94,63 +98,24 @@ public class CartController {
                            Map<String, Map<String, Object>> businessCache, 
                            Map<String, Map<String, Object>> customerCache) {
         try {
-            // Enrich food details
             if (cart.getFoodId() != null) {
                 Map<String, Object> cachedFood = foodCache.get(cart.getFoodId());
                 if (cachedFood != null) {
                     cart.setFoodDetail(cachedFood);
                 } else {
-                    String foodUrl = "http://gateway:8080/elm/api/foods/" + cart.getFoodId();
-                    ResponseEntity<HttpResult<Object>> foodResp = restTemplate.exchange(
-                            foodUrl,
-                            HttpMethod.GET,
-                            null,
-                            new ParameterizedTypeReference<HttpResult<Object>>() {}
-                    );
-                    HttpResult<Object> foodBody = foodResp.getBody();
-                    if (foodBody != null && Boolean.TRUE.equals(foodBody.getSuccess()) && foodBody.getData() instanceof Map<?, ?> map) {
-                        Map<String, Object> foodView = new HashMap<>();
-                        foodView.put("id", cart.getFoodId());
-                        foodView.put("foodName", map.get("foodName"));
-                        foodView.put("foodPrice", map.get("foodPrice"));
-                        foodView.put("foodImg", map.get("foodImg"));
-                        foodView.put("foodExplain", map.get("foodExplain"));
-                        foodCache.put(cart.getFoodId(), foodView);
-                        cart.setFoodDetail(foodView);
-                    }
+                    getFoodFromService(cart, foodCache);
                 }
             }
             
-            // Enrich business details
             if (cart.getBusinessId() != null) {
                 Map<String, Object> cachedBusiness = businessCache.get(cart.getBusinessId());
                 if (cachedBusiness != null) {
                     cart.setBusiness(cachedBusiness);
                 } else {
-                    String businessUrl = "http://gateway:8080/elm/api/businesses/" + cart.getBusinessId();
-                    ResponseEntity<HttpResult<Object>> businessResp = restTemplate.exchange(
-                            businessUrl,
-                            HttpMethod.GET,
-                            null,
-                            new ParameterizedTypeReference<HttpResult<Object>>() {}
-                    );
-                    HttpResult<Object> businessBody = businessResp.getBody();
-                    if (businessBody != null && Boolean.TRUE.equals(businessBody.getSuccess()) && businessBody.getData() instanceof Map<?, ?> map) {
-                        Map<String, Object> businessView = new HashMap<>();
-                        businessView.put("id", cart.getBusinessId());
-                        businessView.put("businessName", map.get("businessName"));
-                        businessView.put("businessAddress", map.get("businessAddress"));
-                        businessView.put("businessExplain", map.get("businessExplain"));
-                        businessView.put("businessImg", map.get("businessImg"));
-                        businessView.put("deliveryPrice", map.get("deliveryPrice"));
-                        businessView.put("startPrice", map.get("startPrice"));
-                        businessCache.put(cart.getBusinessId(), businessView);
-                        cart.setBusiness(businessView);
-                    }
+                    getBusinessFromService(cart, businessCache);
                 }
             }
             
-            // Enrich customer details
             if (cart.getUserId() != null) {
                 Map<String, Object> cachedCustomer = customerCache.get(cart.getUserId());
                 if (cachedCustomer != null) {
@@ -164,8 +129,62 @@ public class CartController {
                 }
             }
         } catch (Exception ignored) {
-            // ignore enrichment failure
+            log.warn("Enrich cart failed: {}", ignored.getMessage());
         }
+    }
+
+    @CircuitBreaker(name = PRODUCT_SERVICE_CB, fallbackMethod = "getFoodFromServiceFallback")
+    private void getFoodFromService(Cart cart, Map<String, Map<String, Object>> foodCache) {
+        String foodUrl = "http://product-service/elm/api/foods/" + cart.getFoodId();
+        ResponseEntity<HttpResult<Object>> foodResp = restTemplate.exchange(
+                foodUrl,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<HttpResult<Object>>() {}
+        );
+        HttpResult<Object> foodBody = foodResp.getBody();
+        if (foodBody != null && Boolean.TRUE.equals(foodBody.getSuccess()) && foodBody.getData() instanceof Map<?, ?> map) {
+            Map<String, Object> foodView = new HashMap<>();
+            foodView.put("id", cart.getFoodId());
+            foodView.put("foodName", map.get("foodName"));
+            foodView.put("foodPrice", map.get("foodPrice"));
+            foodView.put("foodImg", map.get("foodImg"));
+            foodView.put("foodExplain", map.get("foodExplain"));
+            foodCache.put(cart.getFoodId(), foodView);
+            cart.setFoodDetail(foodView);
+        }
+    }
+
+    private void getFoodFromServiceFallback(Cart cart, Map<String, Map<String, Object>> foodCache, Exception e) {
+        log.warn("Fallback triggered for getFoodFromService: {}", e.getMessage());
+    }
+
+    @CircuitBreaker(name = MERCHANT_SERVICE_CB, fallbackMethod = "getBusinessFromServiceFallback")
+    private void getBusinessFromService(Cart cart, Map<String, Map<String, Object>> businessCache) {
+        String businessUrl = "http://merchant-service/elm/api/businesses/" + cart.getBusinessId();
+        ResponseEntity<HttpResult<Object>> businessResp = restTemplate.exchange(
+                businessUrl,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<HttpResult<Object>>() {}
+        );
+        HttpResult<Object> businessBody = businessResp.getBody();
+        if (businessBody != null && Boolean.TRUE.equals(businessBody.getSuccess()) && businessBody.getData() instanceof Map<?, ?> map) {
+            Map<String, Object> businessView = new HashMap<>();
+            businessView.put("id", cart.getBusinessId());
+            businessView.put("businessName", map.get("businessName"));
+            businessView.put("businessAddress", map.get("businessAddress"));
+            businessView.put("businessExplain", map.get("businessExplain"));
+            businessView.put("businessImg", map.get("businessImg"));
+            businessView.put("deliveryPrice", map.get("deliveryPrice"));
+            businessView.put("startPrice", map.get("startPrice"));
+            businessCache.put(cart.getBusinessId(), businessView);
+            cart.setBusiness(businessView);
+        }
+    }
+
+    private void getBusinessFromServiceFallback(Cart cart, Map<String, Map<String, Object>> businessCache, Exception e) {
+        log.warn("Fallback triggered for getBusinessFromService: {}", e.getMessage());
     }
 
     @GetMapping
@@ -173,10 +192,6 @@ public class CartController {
         String userId = verifyUser(token);
         List<Cart> carts = cartRepository.findByUserId(userId);
 
-        // Enrich food details for frontend display (foodName/foodPrice etc).
-        // product-service doesn't support batch-get by ids, so we do per-item fetch,
-        // but cache by foodId within this request to reduce N+1 duplicates.
-        // Fail-soft: if fetch fails, still return cart ids so frontend can proceed.
         Map<String, Map<String, Object>> foodCache = new HashMap<>();
         Map<String, Map<String, Object>> businessCache = new HashMap<>();
         Map<String, Map<String, Object>> customerCache = new HashMap<>();
@@ -189,10 +204,9 @@ public class CartController {
 
     @PostMapping
     @Transactional
-    public HttpResult<List<Cart>> addCartItem(@RequestHeader(value = "Authorization", required = false) String token, @RequestBody AddCartRequest req) {
+    public HttpResult<Cart> addCartItem(@RequestHeader(value = "Authorization", required = false) String token, @RequestBody AddCartRequest req) {
         String userId = verifyUser(token);
 
-        // Normalize ids: support both nested objects and plain *_Id fields.
         String foodId = req.getFoodId();
         if (foodId == null && req.getFood() != null) foodId = req.getFood().getId();
         String businessId = req.getBusinessId();
@@ -205,30 +219,26 @@ public class CartController {
 
         int addQty = (req.getQuantity() == null ? 1 : req.getQuantity());
 
+        Cart savedCart;
         Cart existingItem = cartRepository.findByUserIdAndBusinessIdAndFoodId(userId, businessId, foodId);
         if (existingItem != null) {
             existingItem.setQuantity(existingItem.getQuantity() + addQty);
-            cartRepository.save(existingItem);
+            savedCart = cartRepository.save(existingItem);
         } else {
             Cart created = new Cart();
             created.setUserId(userId);
             created.setBusinessId(businessId);
             created.setFoodId(foodId);
             created.setQuantity(addQty);
-            cartRepository.save(created);
+            savedCart = cartRepository.save(created);
         }
 
-        // 返回完整的购物车列表，而不是只返回添加的那一项
-        List<Cart> carts = cartRepository.findByUserId(userId);
         Map<String, Map<String, Object>> foodCache = new HashMap<>();
         Map<String, Map<String, Object>> businessCache = new HashMap<>();
         Map<String, Map<String, Object>> customerCache = new HashMap<>();
+        enrichCart(savedCart, foodCache, businessCache, customerCache);
         
-        for (Cart cart : carts) {
-            enrichCart(cart, foodCache, businessCache, customerCache);
-        }
-        
-        return HttpResult.success(carts);
+        return HttpResult.success(savedCart);
     }
 
     @PatchMapping("/{id}")
@@ -244,7 +254,6 @@ public class CartController {
             cart.setQuantity(quantity);
             Cart savedCart = cartRepository.save(cart);
             
-            // Enrich the cart with detailed information before returning
             Map<String, Map<String, Object>> foodCache = new HashMap<>();
             Map<String, Map<String, Object>> businessCache = new HashMap<>();
             Map<String, Map<String, Object>> customerCache = new HashMap<>();

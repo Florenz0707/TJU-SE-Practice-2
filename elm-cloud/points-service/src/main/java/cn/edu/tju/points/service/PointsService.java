@@ -414,6 +414,60 @@ public class PointsService {
     return points;
   }
 
+  /** 注册完成通知（发放积分） */
+  public Integer notifyRegisterSuccess(Long userId, String eventTime) throws PointsException {
+    // 查找REGISTER渠道的启用规则
+    List<PointsRule> rules =
+        pointsRuleRepository.findByChannelTypeAndIsEnabled(ChannelType.REGISTER, true);
+    if (rules.isEmpty()) {
+      return 0; // 没有规则，不发放积分
+    }
+
+    // 使用第一个启用的规则
+    PointsRule rule = rules.getFirst();
+
+    // 注册积分通常固定，但如果规则有比例，也可以计算
+    int points = (int) Math.round(rule.getRatio());
+
+    if (points <= 0) {
+      return 0;
+    }
+
+    // 获取或创建账户
+    PointsAccount account = getOrCreateAccount(userId);
+    if (account == null) {
+      return 0;
+    }
+
+    // 创建积分记录
+    PointsRecord record =
+        PointsRecord.createRecord(
+            account.getUserId(),
+            PointsRecordType.EARN,
+            points,
+            "REGISTER_" + userId,
+            ChannelType.REGISTER,
+            rule.getDescription() + " - 用户注册");
+    pointsRecordRepository.save(record);
+
+    // 计算过期时间
+    LocalDateTime expireTime = null;
+    if (rule.getExpireDays() != null && rule.getExpireDays() > 0) {
+      expireTime = LocalDateTime.now().plusDays(rule.getExpireDays());
+    }
+
+    // 创建积分批次
+    PointsBatch batch = PointsBatch.createBatch(account.getUserId(), points, expireTime, record);
+    pointsBatchRepository.save(batch);
+
+    // 更新账户
+    account.addPoints(points);
+    EntityUtils.updateEntity(account);
+    pointsAccountRepository.save(account);
+
+    return points;
+  }
+
   /** 评价删除通知（扣除积分） */
   public boolean notifyReviewDeleted(Long userId, String reviewId) throws PointsException {
     Optional<PointsRecord> recordOpt = pointsRecordRepository.findByBizId(reviewId);
@@ -451,6 +505,67 @@ public class PointsService {
     pointsRecordRepository.save(deductRecord);
 
     return true;
+  }
+
+  /** 登录完成通知（发放积分，每天首次登录） */
+  public Integer notifyLoginSuccess(Long userId, String eventTime) throws PointsException {
+    // 检查今天是否已经有登录积分记录
+    LocalDateTime todayStart = LocalDateTime.now().toLocalDate().atStartOfDay();
+    boolean alreadyLogged = pointsRecordRepository.existsTodayLoginRecord(userId, todayStart);
+    if (alreadyLogged) {
+      return 0; // 今天已经领取过登录积分，不再发放
+    }
+
+    // 查找LOGIN渠道的启用规则
+    List<PointsRule> rules =
+        pointsRuleRepository.findByChannelTypeAndIsEnabled(ChannelType.LOGIN, true);
+    if (rules.isEmpty()) {
+      return 0; // 没有规则，不发放积分
+    }
+
+    // 使用第一个启用的规则
+    PointsRule rule = rules.getFirst();
+
+    // 登录积分通常固定，但如果规则有比例，也可以计算
+    int points = (int) Math.round(rule.getRatio());
+
+    if (points <= 0) {
+      return 0;
+    }
+
+    // 获取或创建账户
+    PointsAccount account = getOrCreateAccount(userId);
+    if (account == null) {
+      return 0;
+    }
+
+    // 创建积分记录
+    PointsRecord record =
+        PointsRecord.createRecord(
+            account.getUserId(),
+            PointsRecordType.EARN,
+            points,
+            "LOGIN_" + LocalDateTime.now().toLocalDate().toString(),
+            ChannelType.LOGIN,
+            rule.getDescription() + " - 每日登录");
+    pointsRecordRepository.save(record);
+
+    // 计算过期时间
+    LocalDateTime expireTime = null;
+    if (rule.getExpireDays() != null && rule.getExpireDays() > 0) {
+      expireTime = LocalDateTime.now().plusDays(rule.getExpireDays());
+    }
+
+    // 创建积分批次
+    PointsBatch batch = PointsBatch.createBatch(account.getUserId(), points, expireTime, record);
+    pointsBatchRepository.save(batch);
+
+    // 更新账户
+    account.addPoints(points);
+    EntityUtils.updateEntity(account);
+    pointsAccountRepository.save(account);
+
+    return points;
   }
 
   @Scheduled(cron = "0 0 2 * * ?")

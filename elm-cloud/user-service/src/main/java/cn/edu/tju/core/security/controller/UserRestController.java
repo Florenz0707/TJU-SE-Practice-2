@@ -14,10 +14,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 @RestController
 @RequestMapping("/api")
@@ -26,11 +29,13 @@ public class UserRestController {
 
   private final UserService userService;
   private final PersonService personService;
+  private final RestTemplate restTemplate;
 
   public UserRestController(
-      UserService userService, PersonService personService) {
+      UserService userService, PersonService personService, RestTemplate restTemplate) {
     this.userService = userService;
     this.personService = personService;
+    this.restTemplate = restTemplate;
   }
 
   @PostMapping("/users")
@@ -156,8 +161,24 @@ public class UserRestController {
 
     userService.addUser(person);
     personService.addPerson(person);
+    
+    // 发放注册积分
+    try {
+      awardRegisterPoints(person.getId());
+    } catch (Exception e) {
+      // 积分发放失败不影响注册成功
+    }
 
     return HttpResult.success(person);
+  }
+
+  private void awardRegisterPoints(Long userId) {
+    Map<String, Object> pointsRequest = new HashMap<>();
+    pointsRequest.put("userId", userId);
+    pointsRequest.put("eventTime", LocalDateTime.now().toString());
+
+    String pointsUrl = "http://points-service/elm/api/inner/points/notify/register-success";
+    restTemplate.postForObject(pointsUrl, pointsRequest, Object.class);
   }
 
   @GetMapping("/persons/{id}")
