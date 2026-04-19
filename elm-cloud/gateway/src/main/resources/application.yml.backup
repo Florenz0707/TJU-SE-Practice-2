@@ -1,0 +1,137 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    discovery:
+      enabled: true
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/elm/api/authenticate, /elm/api/register, /elm/api/account/**, /elm/api/users/**, /elm/api/user, /elm/api/password, /elm/api/persons/**, /elm/api/auth/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userService
+                fallbackUri: forward:/fallback/user-service
+
+        - id: wallet-service
+          uri: lb://wallet-service
+          predicates:
+            - Path=/elm/api/wallet/**, /elm/api/transactions/**, /elm/api/vouchers/**, /elm/api/transaction/**, /elm/api/publicVoucher/**, /elm/api/privateVoucher/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: walletService
+                fallbackUri: forward:/fallback/wallet-service
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/elm/api/orders/**, /elm/api/reviews/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderService
+                fallbackUri: forward:/fallback/order-service
+
+        - id: address-service
+          uri: lb://address-service
+          predicates:
+            - Path=/elm/api/addresses/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: addressService
+                fallbackUri: forward:/fallback/address-service
+
+        - id: merchant-service
+          uri: lb://merchant-service
+          predicates:
+            - Path=/elm/api/businesses/**, /elm/api/applications/business/**, /elm/api/applications/merchant/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: merchantService
+                fallbackUri: forward:/fallback/merchant-service
+
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/elm/api/foods/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: productService
+                fallbackUri: forward:/fallback/product-service
+
+        - id: cart-service
+          uri: lb://cart-service
+          predicates:
+            - Path=/elm/api/carts, /elm/api/carts/**, /elm/carts, /elm/carts/**, /elm/internal/carts/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: cartService
+                fallbackUri: forward:/fallback/cart-service
+
+        - id: points-service
+          uri: lb://points-service
+          predicates:
+            - Path=/elm/api/points/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: pointsService
+                fallbackUri: forward:/fallback/points-service
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+# Resilience4j Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10
+    instances:
+      userService:
+        base-config: default
+      walletService:
+        base-config: default
+      orderService:
+        base-config: default
+      addressService:
+        base-config: default
+      merchantService:
+        base-config: default
+      productService:
+        base-config: default
+      cartService:
+        base-config: default
+      pointsService:
+        base-config: default
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, circuitbreakers
+  endpoint:
+    health:
+      show-details: always

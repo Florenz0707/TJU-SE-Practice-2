@@ -60,4 +60,15 @@ public class PointsAccountVO {
   public void setAvailablePoints(Integer availablePoints) {
     this.availablePoints = availablePoints;
   }
+
+  @Override
+  public String toString() {
+    return "PointsAccountVO{" +
+        "id=" + id +
+        ", userId=" + userId +
+        ", totalPoints=" + totalPoints +
+        ", frozenPoints=" + frozenPoints +
+        ", availablePoints=" + availablePoints +
+        '}';
+  }
 }

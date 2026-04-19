@@ -90,7 +90,7 @@ onMounted(async () => {
       getBusinessReviews(businessId),
     ]);
 
-    // Handle business details
+    // Handle business details (critical)
     const businessResult = results[0];
     if (businessResult.status === "fulfilled" && businessResult.value.success) {
       business.value = businessResult.value.data;
@@ -108,7 +108,7 @@ onMounted(async () => {
       throw new Error(errorMessage || "获取餐厅详情失败");
     }
 
-    // Handle menu
+    // Handle menu (non-critical: fallback to empty menu)
     const menuResult = results[1];
     if (menuResult.status === "fulfilled" && menuResult.value.success) {
       menu.value = menuResult.value.data;
@@ -117,7 +117,8 @@ onMounted(async () => {
         menuResult.status === "fulfilled"
           ? menuResult.value.message
           : (menuResult.reason as Error).message;
-      throw new Error(errorMessage || "获取菜单失败");
+      console.warn("获取菜单失败，将显示空菜单:", errorMessage);
+      menu.value = []; // 降级处理：菜单加载失败显示空菜单
     }
 
     // Handle reviews (non-critical)
@@ -130,7 +131,7 @@ onMounted(async () => {
           ? reviewsResult.value.message
           : (reviewsResult.reason as Error).message;
       console.error("获取评价失败:", errorMessage);
-      // Not throwing an error here as it's non-critical
+      reviews.value = []; // 降级处理：评价加载失败显示空评价
     }
   } catch (err: unknown) {
     error.value =

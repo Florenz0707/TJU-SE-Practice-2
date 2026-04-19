@@ -4,6 +4,7 @@ import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.points.model.BO.PointsAccount;
 import cn.edu.tju.points.service.PointsInternalService;
+import cn.edu.tju.points.service.PointsService;
 import cn.edu.tju.points.exception.PointsException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +16,11 @@ import java.util.Map;
 public class PointsInnerController {
 
     private final PointsInternalService pointsInternalService;
+    private final PointsService pointsService;
 
-    public PointsInnerController(PointsInternalService pointsInternalService) {
+    public PointsInnerController(PointsInternalService pointsInternalService, PointsService pointsService) {
         this.pointsInternalService = pointsInternalService;
+        this.pointsService = pointsService;
     }
 
     @GetMapping("/user/{userId}")
@@ -254,6 +257,182 @@ public class PointsInnerController {
 
         public void setReviewId(String reviewId) {
             this.reviewId = reviewId;
+        }
+    }
+
+    @PostMapping("/freeze")
+    public HttpResult<Map<String, Object>> freezePoints(@RequestBody FreezePointsRequest request) {
+        try {
+            Map<String, Object> result = pointsService.freezePoints(
+                    request.getUserId(),
+                    request.getPoints(),
+                    request.getTempOrderId()
+            );
+            return HttpResult.success(result);
+        } catch (PointsException e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @PostMapping("/deduct")
+    public HttpResult<Boolean> deductPoints(@RequestBody DeductPointsRequest request) {
+        try {
+            boolean success = pointsService.deductPoints(
+                    request.getUserId(),
+                    request.getTempOrderId(),
+                    request.getFinalOrderId()
+            );
+            return HttpResult.success(success);
+        } catch (PointsException e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @PostMapping("/rollback")
+    public HttpResult<Boolean> rollbackPoints(@RequestBody RollbackPointsRequest request) {
+        try {
+            boolean success = pointsService.rollbackPoints(
+                    request.getUserId(),
+                    request.getTempOrderId(),
+                    request.getReason()
+            );
+            return HttpResult.success(success);
+        } catch (PointsException e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @PostMapping("/refund-deducted")
+    public HttpResult<Boolean> refundDeductedPoints(@RequestBody RefundDeductedPointsRequest request) {
+        try {
+            boolean success = pointsService.refundDeductedPoints(
+                    request.getUserId(),
+                    request.getOrderBizId(),
+                    request.getReason()
+            );
+            return HttpResult.success(success);
+        } catch (PointsException e) {
+            return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    public static class FreezePointsRequest {
+        private Long userId;
+        private Integer points;
+        private String tempOrderId;
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public Integer getPoints() {
+            return points;
+        }
+
+        public void setPoints(Integer points) {
+            this.points = points;
+        }
+
+        public String getTempOrderId() {
+            return tempOrderId;
+        }
+
+        public void setTempOrderId(String tempOrderId) {
+            this.tempOrderId = tempOrderId;
+        }
+    }
+
+    public static class DeductPointsRequest {
+        private Long userId;
+        private String tempOrderId;
+        private String finalOrderId;
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public String getTempOrderId() {
+            return tempOrderId;
+        }
+
+        public void setTempOrderId(String tempOrderId) {
+            this.tempOrderId = tempOrderId;
+        }
+
+        public String getFinalOrderId() {
+            return finalOrderId;
+        }
+
+        public void setFinalOrderId(String finalOrderId) {
+            this.finalOrderId = finalOrderId;
+        }
+    }
+
+    public static class RollbackPointsRequest {
+        private Long userId;
+        private String tempOrderId;
+        private String reason;
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public String getTempOrderId() {
+            return tempOrderId;
+        }
+
+        public void setTempOrderId(String tempOrderId) {
+            this.tempOrderId = tempOrderId;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public void setReason(String reason) {
+            this.reason = reason;
+        }
+    }
+
+    public static class RefundDeductedPointsRequest {
+        private Long userId;
+        private String orderBizId;
+        private String reason;
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public String getOrderBizId() {
+            return orderBizId;
+        }
+
+        public void setOrderBizId(String orderBizId) {
+            this.orderBizId = orderBizId;
+        }
+
+        public String getReason() {
+            return reason;
+        }
+
+        public void setReason(String reason) {
+            this.reason = reason;
         }
     }
 }

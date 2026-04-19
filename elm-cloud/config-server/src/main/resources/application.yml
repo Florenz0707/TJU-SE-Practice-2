@@ -8,6 +8,14 @@ spring:
       server:
         native:
           search-locations: classpath:/config
+    bus:
+      enabled: true
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+
 server:
   port: 8888
 
@@ -15,6 +23,12 @@ eureka:
   client:
     service-url:
       defaultZone: http://eureka-server:8761/eureka/
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, bus-refresh, bus-env
 
 # Optional: allow reading config from local filesystem when running compose (file:./config)
 # spring:

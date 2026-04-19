@@ -141,7 +141,7 @@ onMounted(async () => {
       throw new Error(errorMessage || "获取商家信息失败");
     }
 
-    // Handle menu (non-critical)
+    // Handle menu (non-critical: fallback to empty menu)
     const foodResult = results[1];
     if (foodResult.status === "fulfilled" && foodResult.value.success) {
       foods.value = foodResult.value.data;
@@ -150,10 +150,11 @@ onMounted(async () => {
         foodResult.status === "fulfilled"
           ? foodResult.value.message
           : (foodResult.reason as Error).message;
-      console.error("获取菜单失败:", errorMessage);
+      console.warn("获取菜单失败，将显示空菜单:", errorMessage);
+      foods.value = []; // 降级处理：菜单加载失败显示空菜单
     }
 
-    // Handle reviews (non-critical)
+    // Handle reviews (non-critical: fallback to empty reviews)
     const reviewsResult = results[2];
     if (reviewsResult.status === "fulfilled" && reviewsResult.value.success) {
       reviews.value = reviewsResult.value.data;
@@ -162,7 +163,8 @@ onMounted(async () => {
         reviewsResult.status === "fulfilled"
           ? reviewsResult.value.message
           : (reviewsResult.reason as Error).message;
-      console.error("获取评价失败:", errorMessage);
+      console.error("获取评价失败，将显示空评价:", errorMessage);
+      reviews.value = []; // 降级处理：评价加载失败显示空评价
     }
   } catch (err: unknown) {
     error.value =

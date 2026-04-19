@@ -26,13 +26,13 @@ public class OrderRestController {
     private static final Logger log = LoggerFactory.getLogger(OrderRestController.class);
 
     @Autowired
-    private OrderInternalService orderInternalService;
+  private OrderInternalService orderInternalService;
 
-    @Autowired
-    private JwtUtils jwtUtils;
+  @Autowired
+  private JwtUtils jwtUtils;
 
-    @Autowired(required = false)
-    private RestTemplate restTemplate;
+  @Autowired
+  private RestTemplate restTemplate;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class AuthorityRef {
@@ -446,7 +446,7 @@ public class OrderRestController {
             // 订单创建成功后清空购物车
             try {
                 if (restTemplate != null && userId != null) {
-                    String clearCartUrl = "http://cart-service/internal/carts/user/" + userId;
+                    String clearCartUrl = "http://cart-service/elm/internal/carts/user/" + userId;
                     restTemplate.delete(clearCartUrl);
                 }
             } catch (Exception ignored) {

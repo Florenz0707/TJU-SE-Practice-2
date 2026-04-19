@@ -1,0 +1,15 @@
+# gateway 的启动配置（用于从 Config Server 拉取配置）
+spring:
+  application:
+    name: gateway
+  cloud:
+    config:
+      uri: http://config-server:8888
+      fail-fast: false  # Config Server 不可用时不要失败，使用本地配置
+      retry:
+        max-attempts: 3  # 重试3次
+        initial-interval: 1000  # 初始等待1秒
+        max-interval: 3000  # 最大等待3秒
+        multiplier: 1.5
+      request-read-timeout: 10000
+      request-connect-timeout: 5000

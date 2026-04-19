@@ -29,18 +29,28 @@ public class PointsController {
 
   @GetMapping("/account/my")
   public HttpResult<PointsAccountVO> getMyPointsAccount(@RequestHeader(value = "Authorization", required = false) String token) {
+    System.out.println("=== PointsController.getMyPointsAccount() ===");
+    System.out.println("Token received: " + (token != null ? token.substring(0, Math.min(50, token.length())) + "..." : "null"));
     Long currentUserId = jwtUtils.getUserIdFromToken(token);
+    System.out.println("Parsed userId: " + currentUserId);
+    
     if (currentUserId == null) {
+      System.out.println("Returning error: 用户未登录");
       return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "用户未登录");
     }
 
     try {
+      System.out.println("Fetching account for userId: " + currentUserId);
       PointsAccount account = pointsService.getPointsAccount(currentUserId);
       if (account == null) {
+        System.out.println("Returning error: ACCOUNT_NOT_FOUND");
         return HttpResult.failure(ResultCodeEnum.NOT_FOUND, "ACCOUNT_NOT_FOUND");
       }
-      return HttpResult.success(new PointsAccountVO(account));
+      PointsAccountVO vo = new PointsAccountVO(account);
+      System.out.println("Returning VO: " + vo);
+      return HttpResult.success(vo);
     } catch (PointsException e) {
+      System.err.println("PointsException caught: " + e.getMessage());
       return HttpResult.failure(ResultCodeEnum.SERVER_ERROR, e.getMessage());
     }
   }

@@ -70,17 +70,35 @@ public class OrderInternalService {
       return new OrderSnapshotVO(existed);
     }
 
-    // 1. 如果有 walletPaid，先从用户钱包扣款
+    // 1. 如果有 pointsUsed，先冻结积分
+    if (command.pointsUsed() != null && command.pointsUsed() > 0) {
+      try {
+        freezePoints(command);
+      } catch (Exception e) {
+        log.error("积分冻结失败: {}", e.getMessage(), e);
+        throw new RuntimeException("积分冻结失败: " + e.getMessage(), e);
+      }
+    }
+
+    // 2. 如果有 walletPaid，先从用户钱包扣款
     if (command.walletPaid() != null && command.walletPaid().compareTo(BigDecimal.ZERO) > 0) {
       try {
         debitWallet(command);
       } catch (Exception e) {
         log.error("钱包扣款失败: {}", e.getMessage(), e);
+        // 回滚积分
+        if (command.pointsUsed() != null && command.pointsUsed() > 0) {
+          try {
+            rollbackPoints(command);
+          } catch (Exception e2) {
+            log.error("积分回滚失败: {}", e2.getMessage(), e2);
+          }
+        }
         throw new RuntimeException("钱包扣款失败: " + e.getMessage(), e);
       }
     }
 
-    // 2. 创建订单
+    // 3. 创建订单
     Order order = new Order();
     LocalDateTime now = LocalDateTime.now();
     order.setCreateTime(now);
@@ -101,7 +119,17 @@ public class OrderInternalService {
     order.setPointsTradeNo(command.pointsTradeNo());
     Order savedOrder = orderRepository.save(order);
 
-    // 3. 核销优惠券（如果使用了优惠券）
+    // 4. 扣减积分（如果使用了积分）
+    if (command.pointsUsed() != null && command.pointsUsed() > 0) {
+      try {
+        deductPoints(command, savedOrder);
+      } catch (Exception e) {
+        log.error("积分扣减失败: {}", e.getMessage(), e);
+        // 积分扣减失败不影响订单创建成功，继续执行
+      }
+    }
+
+    // 5. 核销优惠券（如果使用了优惠券）
     if (command.voucherId() != null && command.voucherDiscount() != null && command.voucherDiscount().compareTo(BigDecimal.ZERO) > 0) {
       try {
         redeemVoucher(command, savedOrder);
@@ -166,6 +194,57 @@ public class OrderInternalService {
     throw new RuntimeException("优惠券服务暂时不可用，请稍后重试", e);
   }
 
+  @CircuitBreaker(name = POINTS_SERVICE_CB, fallbackMethod = "freezePointsFallback")
+  @Retry(name = POINTS_SERVICE_CB)
+  private void freezePoints(CreateOrderCommand command) {
+    Map<String, Object> freezeRequest = new HashMap<>();
+    freezeRequest.put("userId", command.customerId());
+    freezeRequest.put("points", command.pointsUsed());
+    freezeRequest.put("tempOrderId", command.requestId());
+
+    String freezeUrl = "http://points-service/elm/api/inner/points/freeze";
+    restTemplate.postForObject(freezeUrl, freezeRequest, Object.class);
+  }
+
+  private void freezePointsFallback(CreateOrderCommand command, Exception e) {
+    log.warn("Fallback triggered for freezePoints: {}", e.getMessage());
+    throw new RuntimeException("积分服务暂时不可用，请稍后重试", e);
+  }
+
+  @CircuitBreaker(name = POINTS_SERVICE_CB, fallbackMethod = "deductPointsFallback")
+  @Retry(name = POINTS_SERVICE_CB)
+  private void deductPoints(CreateOrderCommand command, Order savedOrder) {
+    Map<String, Object> deductRequest = new HashMap<>();
+    deductRequest.put("userId", command.customerId());
+    deductRequest.put("tempOrderId", command.requestId());
+    deductRequest.put("finalOrderId", String.valueOf(savedOrder.getId()));
+
+    String deductUrl = "http://points-service/elm/api/inner/points/deduct";
+    restTemplate.postForObject(deductUrl, deductRequest, Object.class);
+  }
+
+  private void deductPointsFallback(CreateOrderCommand command, Order savedOrder, Exception e) {
+    log.warn("Fallback triggered for deductPoints: {}", e.getMessage());
+    // 积分扣减失败不中断
+  }
+
+  @CircuitBreaker(name = POINTS_SERVICE_CB, fallbackMethod = "rollbackPointsFallback")
+  @Retry(name = POINTS_SERVICE_CB)
+  private void rollbackPoints(CreateOrderCommand command) {
+    Map<String, Object> rollbackRequest = new HashMap<>();
+    rollbackRequest.put("userId", command.customerId());
+    rollbackRequest.put("tempOrderId", command.requestId());
+    rollbackRequest.put("reason", "订单创建失败");
+
+    String rollbackUrl = "http://points-service/elm/api/inner/points/rollback";
+    restTemplate.postForObject(rollbackUrl, rollbackRequest, Object.class);
+  }
+
+  private void rollbackPointsFallback(CreateOrderCommand command, Exception e) {
+    log.warn("Fallback triggered for rollbackPoints: {}", e.getMessage());
+    // 积分回滚失败不中断
+  }
+
   @Transactional
   public OrderSnapshotVO cancelPaidOrder(Long orderId, Long operatorUserId) {
     if (orderId == null || operatorUserId == null) {
@@ -182,6 +261,16 @@ public class OrderInternalService {
       throw new IllegalStateException("OrderState NOT PAID");
     }
     
+    // 回滚积分（如果使用了积分）
+    if (order.getPointsUsed() != null && order.getPointsUsed() > 0) {
+      try {
+        refundDeductedPoints(order);
+      } catch (Exception e) {
+        log.error("积分回滚失败: {}", e.getMessage(), e);
+        // 积分回滚失败不影响订单取消，继续执行
+      }
+    }
+    
     // 回滚优惠券（如果使用了优惠券）
     if (order.getVoucherId() != null && order.getVoucherDiscount() != null && order.getVoucherDiscount().compareTo(BigDecimal.ZERO) > 0) {
       try {
@@ -196,6 +285,23 @@ public class OrderInternalService {
     order.setUpdateTime(LocalDateTime.now());
     Order saved = orderRepository.save(order);
     return new OrderSnapshotVO(saved);
+  }
+
+  @CircuitBreaker(name = POINTS_SERVICE_CB, fallbackMethod = "refundDeductedPointsFallback")
+  @Retry(name = POINTS_SERVICE_CB)
+  private void refundDeductedPoints(Order order) {
+    Map<String, Object> refundRequest = new HashMap<>();
+    refundRequest.put("userId", order.getCustomerId());
+    refundRequest.put("orderBizId", String.valueOf(order.getId()));
+    refundRequest.put("reason", "订单取消");
+
+    String refundUrl = "http://points-service/elm/api/inner/points/refund-deducted";
+    restTemplate.postForObject(refundUrl, refundRequest, Object.class);
+  }
+
+  private void refundDeductedPointsFallback(Order order, Exception e) {
+    log.warn("Fallback triggered for refundDeductedPoints: {}", e.getMessage());
+    // 积分回滚失败不中断
   }
 
   @CircuitBreaker(name = WALLET_SERVICE_CB, fallbackMethod = "rollbackVoucherFallback")

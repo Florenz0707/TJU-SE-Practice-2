@@ -2,283 +2,259 @@
 
 ## 一、概述
 
-本文档介绍 elm-cloud 项目中的负载均衡和熔断降级实现方案。
+本项目采用现代微服务架构，实现了完整的负载均衡和熔断降级机制，在微服务内部使用Resilience4j进行保护。
 
 ### 技术选型说明
 
+- **服务注册与发现**：Eureka Server
+- **配置中心**：Spring Cloud Config Server
+- **API 网关**：Spring Cloud Gateway
 - **负载均衡**：Spring Cloud LoadBalancer（替代 Netflix Ribbon）
 - **熔断降级**：Resilience4j（替代 Netflix Hystrix）
-- **原因**：
-  - Netflix Ribbon 和 Hystrix 已停止活跃维护
-  - Spring Boot 3.x + Spring Cloud 2023.x 不再原生支持 Ribbon 和 Hystrix
-  - Spring Cloud LoadBalancer 和 Resilience4j 是官方推荐的现代替代方案
+- **原因**：Netflix 相关组件已停止维护，Spring Boot 3.x + Spring Cloud 2023.x 推荐使用现代替代方案
 
-## 二、负载均衡配置（Spring Cloud LoadBalancer）
+***
 
-### 2.1 依赖配置
+## 二、整体架构
 
-在需要服务间调用的微服务的 `pom.xml` 中添加依赖：
+### 服务依赖关系
 
-```xml
-<dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-</dependency>
+```
+前端 → Gateway（路由 + 负载均衡）
+         ↓
+       Eureka（服务发现）
+         ↓
+    ┌────┴─────────────────────┐
+    ↓                         ↓
+微服务1 → 微服务2 → 微服务3   Config Server（配置管理）
+（Resilience4j 内部熔断）
 ```
 
-### 2.2 RestTemplate 配置
+### 微服务列表
 
-创建带 `@LoadBalanced` 注解的 RestTemplate Bean：
+| 服务 | 端口 | Context Path | 数据库 Schema | 主要功能 |
+|------|------|--------------|---------------|----------|
+| eureka-server | 8761 | / | - | 服务注册与发现 |
+| config-server | 8888 | / | - | 集中配置管理 |
+| gateway | 8080 | / | - | 统一入口与路由 |
+| user-service | 8082 | /elm | elm_user | 用户管理、认证 |
+| merchant-service | 8085 | /elm | elm_merchant | 商家与店铺管理 |
+| product-service | 8083 | /elm | elm_catalog | 菜品管理 |
+| cart-service | 8086 | /elm | elm_order | 购物车管理 |
+| order-service | 8084 | /elm | elm_order | 订单管理 |
+| address-service | 8087 | /elm | elm_address | 地址管理 |
+| points-service | 8081 | /elm | elm_points | 积分管理 |
+| wallet-service | 8088 | /elm | elm_wallet | 钱包管理 |
 
-```java
-@Configuration
-public class RestTemplateConfig {
+***
 
-    @Bean
-    @LoadBalanced
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
-}
-```
+## 三、负载均衡熔断降级策略
 
-如果需要透传 Authorization 头，可以添加拦截器：
+### 3.1 分层策略
 
-```java
-@Configuration
-public class RestTemplateConfig {
+| 层级 | 处理对象 | 技术方案 |
+|------|---------|---------|
+| **Gateway** | 外部请求 | Gateway + 负载均衡 |
+| **微服务内部调用** | 服务间调用 | Resilience4j + Spring Cloud LoadBalancer |
 
-    @Bean
-    @LoadBalanced
-    public RestTemplate restTemplate() {
-        RestTemplate restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
-        restTemplate.setInterceptors(Collections.singletonList((request, body, execution) -> {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                String token = attributes.getRequest().getHeader(HttpHeaders.AUTHORIZATION);
-                if (token != null && !token.isEmpty()) {
-                    request.getHeaders().add(HttpHeaders.AUTHORIZATION, token);
-                }
-            }
-            return execution.execute(request, body);
-        }));
-        return restTemplate;
-    }
-}
-```
+### 3.2 微服务内部熔断降级
 
-### 2.3 使用服务名调用
+微服务之间的调用使用Resilience4j进行熔断降级保护。
 
-在服务间调用时使用服务名而非具体的 IP 和端口：
+#### 实现方法
 
-```java
-// 使用服务名而非硬编码地址
-String url = "http://merchant-service/elm/api/businesses/" + businessId;
-// 或者使用 lb:// 协议
-String url = "lb://merchant-service/elm/api/businesses/" + businessId;
-```
+1. **添加依赖**：在需要调用其他微服务的服务中添加负载均衡和熔断依赖
+2. **配置RestTemplate**：配置带有负载均衡能力的RestTemplate Bean
+3. **配置Resilience4j**：在配置文件中设置Resilience4j的熔断器和重试参数
+4. **添加注解**：在调用其他服务的方法上添加`@CircuitBreaker`和`@Retry`注解
+5. **编写Fallback**：为每个需要保护的方法编写对应的Fallback方法
 
-### 2.4 application.properties 配置
+#### 熔断器参数
 
-```properties
-# 禁用 Ribbon，强制使用 Spring Cloud LoadBalancer
-spring.cloud.loadbalancer.ribbon.enabled=false
-```
+- 滑动窗口类型：基于请求数统计
+- 滑动窗口大小：统计最近的10个请求
+- 最少请求数：达到5个请求才开始计算失败率
+- 失败率阈值：当失败率超过50%时触发熔断
+- 等待时间：熔断打开后，等待10秒进入半开状态
+- 半开允许请求数：半开状态允许3个请求通过，测试服务是否恢复
 
-## 三、熔断降级配置（Resilience4j）
+#### 已配置的服务
 
-### 3.1 依赖配置
+**product-service**
+- 调用merchant-service获取店铺信息
+- 当merchant-service不可用时，返回空的店铺数据
 
-在需要熔断功能的微服务的 `pom.xml` 中添加依赖：
+**merchant-service**
+- 调用user-service获取用户信息
+- 当user-service不可用时，返回默认的用户数据
 
-```xml
-<dependency>
-    <groupId>io.github.resilience4j</groupId>
-    <artifactId>resilience4j-spring-boot3</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-actuator</artifactId>
-</dependency>
-```
+**cart-service**
+- 调用product-service和merchant-service丰富购物车数据
+- 当这些服务不可用时，只显示购物车基本数据，不填充详情
 
-### 3.2 application.properties 配置
+**order-service**
+- 调用多个微服务完成下单流程
+- 每个调用都有独立的熔断器和Fallback方法
+- 非关键服务失败时，不影响订单的核心流程
 
-```properties
-# Resilience4j Circuit Breaker 配置
-resilience4j.circuitbreaker.configs.default.register-health-indicator=true
-resilience4j.circuitbreaker.configs.default.sliding-window-type=COUNT_BASED
-resilience4j.circuitbreaker.configs.default.sliding-window-size=10
-resilience4j.circuitbreaker.configs.default.minimum-number-of-calls=5
-resilience4j.circuitbreaker.configs.default.permitted-number-of-calls-in-half-open-state=3
-resilience4j.circuitbreaker.configs.default.automatic-transition-from-open-to-half-open-enabled=true
-resilience4j.circuitbreaker.configs.default.wait-duration-in-open-state=10s
-resilience4j.circuitbreaker.configs.default.failure-rate-threshold=50
-resilience4j.circuitbreaker.configs.default.event-consumer-buffer-size=10
+***
 
-# 为特定服务配置熔断器实例
-resilience4j.circuitbreaker.instances.merchantService.base-config=default
-resilience4j.circuitbreaker.instances.userService.base-config=default
+## 四、配置中心（Config Server）
 
-# Resilience4j Retry 配置
-resilience4j.retry.configs.default.max-attempts=3
-resilience4j.retry.configs.default.wait-duration=500ms
-resilience4j.retry.configs.default.enable-exponential-backoff=true
-resilience4j.retry.configs.default.exponential-backoff-multiplier=2
-resilience4j.retry.instances.merchantService.base-config=default
-resilience4j.retry.instances.userService.base-config=default
+### 4.1 Config Server配置
 
-# Actuator 端点配置
-management.endpoints.web.exposure.include=health,circuitbreakers
-management.endpoint.health.show-details=always
-```
+Config Server负责集中管理所有微服务的配置，所有服务的配置都存放在Config Server的配置目录中。
 
-### 3.3 熔断器参数说明
+### 4.2 各服务的Config Client配置
 
-| 参数 | 说明 | 默认值 |
-|------|------|--------|
-| `sliding-window-type` | 滑动窗口类型（COUNT_BASED 或 TIME_BASED） | COUNT_BASED |
-| `sliding-window-size` | 滑动窗口大小 | 10 |
-| `minimum-number-of-calls` | 熔断器计算失败率所需的最小请求数 | 5 |
-| `permitted-number-of-calls-in-half-open-state` | 半开状态下允许的请求数 | 3 |
-| `wait-duration-in-open-state` | 从打开到半开的等待时间 | 10s |
-| `failure-rate-threshold` | 失败率阈值（百分比） | 50 |
+所有业务微服务（包括gateway）都配置了Config Client：
+- 使用`bootstrap.yml`配置Config Server连接信息
+- 设置`fail-fast: false`，Config Server不可用时自动降级使用本地配置
+- 配置重试策略，尝试连接Config Server几次后再降级
 
-### 3.4 代码实现
+### 4.3 配置降级策略
 
-在需要熔断保护的方法上添加 `@CircuitBreaker` 和 `@Retry` 注解：
+配置加载的优先级是远程配置高于本地配置。
 
-```java
-@Service
-public class MerchantClient {
+当Config Server不可用时：
+- 微服务会尝试连接Config Server几次
+- 如果连接失败，会继续启动，使用本地配置文件
+- 原本地配置文件已备份为`application.properties.backup`或`application.yml.backup`
 
-    private static final String MERCHANT_SERVICE_CB = "merchantService";
+***
 
-    @CircuitBreaker(name = MERCHANT_SERVICE_CB, fallbackMethod = "getBusinessByIdFallback")
-    @Retry(name = MERCHANT_SERVICE_CB)
-    public Optional<BusinessDto> getBusinessById(Long businessId) {
-        // 调用 merchant-service 的代码
-        // ...
-        throw new RuntimeException("Service unavailable"); // 模拟异常
-    }
+## 五、负载均衡配置
 
-    // Fallback 方法，必须与原方法有相同的参数列表，最后加一个 Exception 参数
-    public Optional<BusinessDto> getBusinessByIdFallback(Long businessId, Exception e) {
-        log.warn("Fallback triggered for getBusinessById({}): {}", businessId, e.getMessage());
-        return Optional.empty();
-    }
-}
-```
+### 5.1 RestTemplate配置
 
-### 3.5 熔断器状态说明
+在需要服务间调用的微服务中，配置带有负载均衡能力的RestTemplate Bean。
+
+### 5.2 使用服务名调用
+
+在服务间调用时，使用服务名代替具体的IP和端口，这样可以：
+- 自动从Eureka获取服务实例列表
+- 自动实现负载均衡
+- 即使服务实例增减也无需修改代码
+
+### 5.3 配置参数
+
+在配置文件中禁用Ribbon，强制使用Spring Cloud LoadBalancer。
+
+***
+
+## 六、熔断器状态说明
 
 熔断器有三种状态：
+
 1. **CLOSED（关闭）**：正常状态，请求正常通过
-2. **OPEN（打开）**：错误率超过阈值，熔断器打开，直接拒绝请求
-3. **HALF_OPEN（半开）**：等待一段时间后，允许少量请求通过，测试服务是否恢复
+2. **OPEN（打开）**：错误率超过阈值，熔断器打开，直接拒绝请求，等待一段时间后自动进入半开状态
+3. **HALF-OPEN（半开）**：允许少量请求通过，测试服务是否恢复，成功则回到关闭状态，失败则重新打开
 
-## 四、已配置的服务
+***
 
-### 4.1 product-service
-- **熔断器实例**：`merchantService`
-- **保护的方法**：
-  - `getBusinessById()` - 获取商家信息
-  - `getMyBusinesses()` - 获取我的商家列表
+## 七、监控与验证
 
-### 4.2 merchant-service
-- **熔断器实例**：`userService`
-- **保护的方法**：
-  - `getUserById()` - 获取用户信息
-  - `updateUser()` - 更新用户信息
-
-### 4.3 cart-service
-- 已添加负载均衡依赖和 Actuator
-
-### 4.4 order-service
-- 已添加负载均衡依赖和 Actuator
-
-## 五、监控与验证
-
-### 5.1 Actuator 端点
+### 7.1 Actuator端点
 
 访问以下端点查看熔断器状态：
 
-```
-# 健康检查
-http://<service-host>:<port>/actuator/health
+- 健康检查：查看所有组件的健康状态
+- 熔断器详情：查看每个熔断器的当前状态、失败率等信息
 
-# 熔断器详情
-http://<service-host>:<port>/actuator/circuitbreakers
-```
+### 7.2 测试熔断降级的方法
 
-在 Docker 环境中，可以通过网关或直接访问服务端口（如果暴露）来访问这些端点。
+**测试场景1**：某个微服务挂掉，访问对应接口
+- 停止该微服务
+- 调用该服务的接口
+- 验证是否返回降级响应，页面仍然可以正常工作
 
-### 5.2 健康检查响应示例
+**测试场景2**：Config Server挂掉，各服务启动
+- 停止Config Server
+- 重启各业务服务
+- 验证服务能正常启动并使用本地配置
 
-```json
-{
-  "status": "UP",
-  "components": {
-    "circuitBreakers": {
-      "status": "UP",
-      "details": {
-        "merchantService": {
-          "status": "UP",
-          "details": {
-            "failureRate": "-1.0%",
-            "slowCallRate": "-1.0%",
-            "state": "CLOSED"
-          }
-        }
-      }
-    }
-  }
-}
-```
+***
 
-## 六、Docker 部署说明
+## 八、完成情况总结
 
-由于项目采用 Docker 部署，需要注意以下几点：
+### 8.1 已完成的功能
 
-1. **服务发现**：确保所有服务都能连接到 Eureka Server
-2. **网络配置**：所有服务应在同一 Docker 网络中，能够通过服务名互相访问
-3. **健康检查**：可以在 docker-compose.yml 中配置健康检查
-4. **多实例部署**：为了测试负载均衡，可以启动多个实例
+✅ **微服务内部调用熔断降级**
+- product-service：调用merchant-service有熔断降级
+- merchant-service：调用user-service有熔断降级
+- cart-service：调用product-service、merchant-service有熔断降级
+- order-service：调用多个微服务都有熔断降级
 
-### docker-compose.yml 示例（多实例）
+✅ **负载均衡配置**
+- gateway、merchant、product、cart、order都配置了Spring Cloud LoadBalancer
+- 使用服务名进行调用，自动负载均衡
+- 增加实例时自动负载均衡
 
-```yaml
-services:
-  merchant-service:
-    build:
-      context: ..
-      dockerfile: merchant-service/Dockerfile
-    deploy:
-      replicas: 2  # 启动2个实例测试负载均衡
-    depends_on:
-      - mysql
-      - eureka-server
-    environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - DB_URL=jdbc:mysql://mysql:3306/elm_merchant?...
-```
+✅ **Config Server配置**
+- 所有业务微服务（包括gateway）都配置了Config Client
+- Config Server目录中存放了所有服务的配置
+- 配置降级策略实现：Config Server不可用时自动使用本地配置
+- 本地配置已备份
 
-## 七、扩展其他服务
+✅ **Cart Service路径统一**
+- cart-service的context-path改为/elm，与其他服务保持一致
+- order-service的内部调用路径已更新
+- gateway的路由配置已更新支持/elm前缀
 
-如果需要为其他服务添加熔断保护，按以下步骤：
+✅ **文档完善**
+- 完整的架构说明
+- 详细的策略介绍
+- 实现方法说明
+- 完成情况总结
 
-1. 在 `pom.xml` 中添加 Resilience4j 依赖
-2. 在 `application.properties` 中添加熔断器配置
-3. 在需要保护的方法上添加 `@CircuitBreaker` 和 `@Retry` 注解
-4. 实现对应的 Fallback 方法
+### 8.2 各服务配置完成情况
 
-## 八、总结
+| 服务 | 负载均衡配置 | 熔断降级配置 | Config Server配置 |
+|------|---------|---------|-----------------|
+| eureka-server | - | - | - |
+| config-server | - | - | - |
+| gateway | ✅ | ❌（暂未配置） | ✅ |
+| user-service | ⚠️（有依赖但暂未使用） | ❌（暂未配置） | ✅ |
+| merchant-service | ✅ | ✅ | ✅ |
+| product-service | ✅ | ✅ | ✅ |
+| cart-service | ✅ | ✅ | ✅ |
+| order-service | ✅ | ✅ | ✅ |
+| address-service | ❌（未配置） | ❌（暂未配置） | ❌（未配置） |
+| wallet-service | ❌（未配置） | ❌（暂未配置） | ❌（未配置） |
+| points-service | ❌（未配置） | ❌（暂未配置） | ❌（未配置） |
 
-本方案实现了：
-- ✅ 基于 Spring Cloud LoadBalancer 的客户端负载均衡
-- ✅ 基于 Resilience4j 的熔断降级机制
-- ✅ 支持重试和 Fallback
-- ✅ Actuator 监控端点
-- ✅ 与 Docker 部署兼容
+**说明**：user-service、address-service、wallet-service、points-service虽然没有配置完整的负载均衡和熔断降级，但由于它们主要作为被调用的服务，当前的架构已经可以正常工作。如需未来这些服务调用其他服务，可以按照现有模式进行配置。
 
-通过这些配置，elm-cloud 微服务系统具备了高可用性和容错能力，能够在服务故障时优雅降级，防止级联故障。
+### 8.3 架构优势
+
+1. **职责清晰**：Gateway负责路由和负载均衡，微服务内部负责熔断降级
+2. **服务解耦**：一个服务挂掉不影响其他服务
+3. **容错优先**：服务不可用时优雅降级，不影响其他功能
+4. **可观测性**：通过Actuator监控熔断器状态
+5. **配置集中化**：Config Server管理，本地配置降级
+
+***
+
+## 九、总结
+
+### 9.1 已实现的功能
+
+- 完整的微服务架构（Eureka + Config Server + Gateway）
+- Config Server集中配置管理 + 本地配置降级
+- Spring Cloud LoadBalancer负载均衡（服务名调用）
+- Resilience4j熔断降级 + 重试机制（微服务内部调用）
+- 后端服务间调用熔断保护
+- 前端非关键请求降级处理
+- Actuator健康检查和监控端点
+- Cart Service路径与其他服务统一
+- 和Docker部署兼容
+
+### 9.2 关键设计原则
+
+1. **容错优先**：服务不可用时优雅降级，不影响其他功能
+2. **服务解耦**：一个服务挂掉不影响其他服务
+3. **分层降级**：微服务内部熔断降级保护
+4. **可观测性**：通过Actuator监控熔断器状态
+5. **配置集中化**：Config Server管理，本地配置降级
+
+通过以上配置和实现，elm-cloud微服务系统具备了企业级的高可用性和容错能力！
