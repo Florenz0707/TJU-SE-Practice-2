@@ -58,6 +58,8 @@ services:
       dockerfile: ./config-server/Dockerfile
     ports:
       - 8888:8888
+    volumes:
+      - ./config:/app/config:ro
     depends_on:
       eureka-server:
         condition: service_started
@@ -93,6 +95,8 @@ services:
         condition: service_healthy
     networks:
       - elm-network
+    deploy:
+      replicas: 2
 
   product-service:
     build:
@@ -107,6 +111,8 @@ services:
         condition: service_healthy
     networks:
       - elm-network
+    deploy:
+      replicas: 2
 
   cart-service:
     build:
@@ -119,6 +125,8 @@ services:
         condition: service_healthy
     networks:
       - elm-network
+    deploy:
+      replicas: 2
 
   order-service:
     build:
@@ -140,6 +148,8 @@ services:
         condition: service_healthy
     networks:
       - elm-network
+    deploy:
+      replicas: 2
 
   address-service:
     build:
@@ -173,6 +183,8 @@ services:
         condition: service_healthy
     networks:
       - elm-network
+    deploy:
+      replicas: 2
 
   points-service:
     build:

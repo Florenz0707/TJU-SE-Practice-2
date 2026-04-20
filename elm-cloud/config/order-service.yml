@@ -1,0 +1,87 @@
+# 这是 order-service 的配置文件（从 Config Server 读取）
+
+spring:
+  application:
+    name: order-service
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    show-sql: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql:3306/elm_order?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:elm}
+    password: ${DB_PASSWORD:elm}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+
+server:
+  port: 8084
+  servlet:
+    context-path: /elm
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+# Resilience4j Circuit Breaker 配置
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        event-consumer-buffer-size: 10
+    instances:
+      walletService:
+        base-config: default
+      merchantService:
+        base-config: default
+      addressService:
+        base-config: default
+      productService:
+        base-config: default
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+    instances:
+      walletService:
+        base-config: default
+      merchantService:
+        base-config: default
+      addressService:
+        base-config: default
+      productService:
+        base-config: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, circuitbreakers, bus-refresh, refresh
+  endpoint:
+    health:
+      show-details: always

@@ -7,7 +7,7 @@ spring:
     config:
       server:
         native:
-          search-locations: classpath:/config
+          search-locations: file:./config,classpath:/config
     bus:
       enabled: true
   rabbitmq:
@@ -29,11 +29,3 @@ management:
     web:
       exposure:
         include: health, bus-refresh, bus-env
-
-# Optional: allow reading config from local filesystem when running compose (file:./config)
-# spring:
-#   cloud:
-#     config:
-#       server:
-#         native:
-#           search-locations: file:./config,classpath:/config

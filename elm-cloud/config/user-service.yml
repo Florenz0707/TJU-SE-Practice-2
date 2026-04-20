@@ -1,0 +1,58 @@
+# 这是 user-service 的配置文件（从 Config Server 读取）
+
+spring:
+  application:
+    name: user-service
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql:3306/elm_user?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:elm}
+    password: ${DB_PASSWORD:elm}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+server:
+  port: 8082
+  servlet:
+    context-path: /elm
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+
+jwt:
+  base64-secret: ZmQ0ZGI5NjQ0MDQwY2I4MjMxY2Y3ZmI3MjdhN2ZmMjNhODViOTg1ZGE0NTBjMGM4NDA5NzYxMjdjOWMwYWRmZTBlZjlhNGY3ZTg4Y2U3YTE1ODVkZDU5Y2Y3OGYwZWE1NzUzNWQ2YjFjZDc0NGMxZWU2MmQ3MjY1NzJmNTE0MzI=
+  token-validity-in-seconds: 86400
+  token-validity-in-seconds-for-remember-me: 108000
+
+internal:
+  service:
+    token: internal-service-secret-token-2024
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, bus-refresh, refresh
+  endpoint:
+    health:
+      show-details: always
