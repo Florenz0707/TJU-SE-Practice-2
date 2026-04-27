@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: address-service
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+      fail-fast: false
+      retry:
+        max-attempts: 3
+        initial-interval: 1000
+        max-interval: 3000
+        multiplier: 1.5
+      request-read-timeout: 10000
+      request-connect-timeout: 5000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://eureka-server:8761/eureka/}

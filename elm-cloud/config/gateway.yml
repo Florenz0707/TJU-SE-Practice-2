@@ -58,7 +58,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health, bus-refresh, refresh
   endpoint:
     health:
       show-details: always

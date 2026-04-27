@@ -51,22 +51,72 @@ services:
         condition: service_healthy
     networks:
       - elm-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8761 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
-  config-server:
+  config-server-1:
     build:
       context: .
       dockerfile: ./config-server/Dockerfile
     ports:
       - 8888:8888
+    environment:
+      - SERVER_PORT=8888
+      - CONFIG_SERVER_INSTANCE_ID=config-server-1:8888
+      - CONFIG_SERVER_MODE=${CONFIG_SERVER_MODE:-native}
+      - CONFIG_GIT_URI=${CONFIG_GIT_URI:-file:/app/config-repo}
+      - CONFIG_GIT_DEFAULT_LABEL=${CONFIG_GIT_DEFAULT_LABEL:-main}
+      - CONFIG_GIT_CLONE_ON_START=${CONFIG_GIT_CLONE_ON_START:-false}
     volumes:
       - ./config:/app/config:ro
+      - ./config-repo:/app/config-repo:ro
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
       - elm-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8888/actuator/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  config-server-2:
+    build:
+      context: .
+      dockerfile: ./config-server/Dockerfile
+    ports:
+      - 8889:8888
+    environment:
+      - SERVER_PORT=8888
+      - CONFIG_SERVER_INSTANCE_ID=config-server-2:8888
+      - CONFIG_SERVER_MODE=${CONFIG_SERVER_MODE:-native}
+      - CONFIG_GIT_URI=${CONFIG_GIT_URI:-file:/app/config-repo}
+      - CONFIG_GIT_DEFAULT_LABEL=${CONFIG_GIT_DEFAULT_LABEL:-main}
+      - CONFIG_GIT_CLONE_ON_START=${CONFIG_GIT_CLONE_ON_START:-false}
+    volumes:
+      - ./config:/app/config:ro
+      - ./config-repo:/app/config-repo:ro
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - elm-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8888/actuator/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
 
   gateway:
     build:
@@ -76,9 +126,13 @@ services:
       - 8080:8080
     depends_on:
       eureka-server:
-        condition: service_started
-      config-server:
-        condition: service_started
+        condition: service_healthy
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - elm-network
 
@@ -90,8 +144,14 @@ services:
       - SPRING_PROFILES_ACTIVE=local
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       mysql:
+        condition: service_healthy
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - elm-network
@@ -106,8 +166,14 @@ services:
       - SPRING_PROFILES_ACTIVE=local
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       mysql:
+        condition: service_healthy
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - elm-network
@@ -120,8 +186,14 @@ services:
       dockerfile: ./cart-service/Dockerfile
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       mysql:
+        condition: service_healthy
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - elm-network
@@ -139,11 +211,13 @@ services:
       - SPRING_RABBITMQ_PASSWORD=guest
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       mysql:
         condition: service_healthy
-      config-server:
-        condition: service_started
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
@@ -157,8 +231,14 @@ services:
       dockerfile: ./address-service/Dockerfile
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       mysql:
+        condition: service_healthy
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - elm-network
@@ -174,11 +254,13 @@ services:
       - SPRING_RABBITMQ_PASSWORD=guest
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       mysql:
         condition: service_healthy
-      config-server:
-        condition: service_started
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
@@ -192,8 +274,14 @@ services:
       dockerfile: ./points-service/Dockerfile
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       mysql:
+        condition: service_healthy
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - elm-network
@@ -204,8 +292,14 @@ services:
       dockerfile: ./wallet-service/Dockerfile
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       mysql:
+        condition: service_healthy
+      config-server-1:
+        condition: service_healthy
+      config-server-2:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - elm-network

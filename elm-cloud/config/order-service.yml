@@ -85,3 +85,8 @@ management:
   endpoint:
     health:
       show-details: always
+
+demo:
+  config:
+    message: order-service remote config ready
+    version: v1

@@ -30,7 +30,7 @@
 
 这一段最关键，建议照着讲：
 
-> 课件里通常是远程 Git 仓库 + Config Server 集群 + 所有服务全量接入。我这里做了几个调整。第一，我没有用远程 Git，而是使用了 Config Server 的 native 模式，直接读取 Docker 部署目录下的外部配置文件；第二，我当前只保留了一个 Config Server 实例，没有继续扩成高可用集群；第三，我不是一次性让所有服务都接入配置中心，而是先让 gateway、order-service、user-service 三个服务接入；第四，Bus 也是先在 config-server、order-service、user-service 这条链路上接通。
+> 课件里通常是远程 Git 仓库 + Config Server 集群 + 所有服务全量接入。我这里做了两个层次的实现。默认层是更稳的 native 模式，直接读取 Docker 部署目录下的外部配置文件；增强层是我已经把 Config Server 扩成了双实例，并把客户端改成通过 Eureka discovery-first 发现配置中心。这样默认演示更稳，同时又保留了切到 Git 模式、贴近课件标准的能力。
 
 ### 2.4 为什么这么改
 
@@ -42,7 +42,7 @@
 
 推荐讲法：
 
-> 如果按课件原版标准打分，这部分不是 100% 全做满，但核心链路已经搭起来了：Config Server 是真实可运行的，RabbitMQ 和 Bus 也已经接入，刷新端点已经开放，部分服务已经通过配置中心启动。当前还没有做满的地方是 Config Server 集群、全量服务接入，以及显式的 `@RefreshScope` 动态刷新演示 Bean。
+> 如果按课件原版标准打分，这部分现在已经更接近标准版了：Config Server 是双实例运行的，客户端通过 Eureka 发现配置中心，RabbitMQ 和 Bus 已经接入，gateway 和主要业务服务都已经通过配置中心启动，而且我还补了显式的 `@RefreshScope` 动态刷新演示 Bean。当前还没有做满的地方主要是 Git 仓库本身的实际接入和版本化管理流程。
 
 ## 3. 代码层面的证据怎么讲
 
@@ -62,45 +62,45 @@
 
 你可以说：
 
-> 当前 `gateway`、`order-service`、`user-service` 这三个服务引入了 Config Client，并且在 `bootstrap.yml` 中通过 `http://config-server:8888` 拉配置。这里我没有使用 discovery-first，而是直接写死服务地址，因为在 Docker Compose 内部网络里这种方式更直接、也更稳定。
+> 当前 `gateway` 和主要业务服务都引入了 Config Client，并且在 `bootstrap.yml` 中改成了 discovery-first，通过 Eureka 发现名为 `config-server` 的配置中心服务。这样即使有两个 Config Server 实例，客户端也不需要感知具体节点地址。
 
 ### 3.4 Bus 的证据
 
 你可以说：
 
-> `config-server`、`order-service`、`user-service` 都引入了 `spring-cloud-starter-bus-amqp`，Docker Compose 里也部署了 RabbitMQ，同时开放了 `bus-refresh` 相关 Actuator 端点，所以 Bus 链路是已经接上的。
+> `config-server`、`gateway` 和主要业务服务都引入了 `spring-cloud-starter-bus-amqp`，Docker Compose 里也部署了 RabbitMQ，同时开放了 `bus-refresh` 相关 Actuator 端点，所以 Bus 链路是已经接上的。
 
 ## 4. 你在台上最稳的“结论句”
 
 推荐直接背下来：
 
-> 所以我这部分工作的结果，不是完全照课件做出来的标准版 Config + Bus，而是一个基于当前项目实际情况的替代实现。它保留了配置中心、外部化配置、消息总线广播刷新这些核心思想，并且已经在部分服务上跑通；但高可用集群、全量服务迁移和完整热刷新演示点还属于后续可继续完善的部分。
+> 所以我这部分工作的结果，是一个更接近课件标准、但仍然保留工程化兜底的实现。它保留了配置中心、外部化配置、消息总线广播刷新这些核心思想，并且已经具备双 Config Server、discovery-first 和可现场演示的热刷新接口；默认仍保留 native 模式，Git 模式也已经预留好了切换入口。
 
 ## 5. 如果老师让你现场演示，建议怎么演
 
 ### 5.1 最适合展示的内容
 
-现场演示建议不要把目标定成“我一定要证明某个业务字段立刻热更新”，因为当前代码里没有专门的 `@RefreshScope` 演示 Bean，这样一旦老师盯着可见结果问，很容易被动。
-
 更稳的演示顺序是：
 
-1. 展示 `docker-compose.yml` 里确实有 `rabbitmq` 和 `config-server`
-2. 展示 `config-server` 的 native 配置和外挂 `./config` 目录
-3. 展示 `order-service` / `user-service` 的 `bootstrap.yml` 和 Bus 依赖
-4. 展示 `POST /actuator/bus-refresh` 这个刷新入口
-5. 最后主动说明：当前重点是把基础设施链路接通，业务热更新演示 Bean 还可以继续补强
+1. 展示 `docker-compose.yml` 里确实有 `config-server-1` 和 `config-server-2`
+2. 展示客户端 `bootstrap.yml` 已改成 discovery-first，而不是直连固定地址
+3. 展示 `config-server` 默认是 native 模式，但支持 `CONFIG_SERVER_MODE=git`
+4. 访问 `GET /elm/api/orders/runtime-config` 看当前配置值
+5. 修改配置文件，或者在 git 模式下提交配置仓库变更
+6. 向 `http://localhost:8888/actuator/bus-refresh` 或 `http://localhost:8889/actuator/bus-refresh` 发请求
+7. 再次访问 `runtime-config`，展示值已经更新
 
 ### 5.2 如果老师坚持问“那你怎么证明刷新了”
 
 你可以回答：
 
-> 当前仓库里没有专门暴露一个 `@RefreshScope` 的测试接口，所以我更适合证明的是刷新链路和依赖接入已经完成，而不是强行说所有业务配置都能在界面上立刻看到变化。这个部分如果继续完善，我会补一个安全的演示型配置接口来展示热更新效果。
+> 我现在已经补了一个安全的演示型配置接口，就是 `order-service` 的 `/api/orders/runtime-config`。它专门用于证明配置值可以在 Bus 刷新后发生变化，不影响现有业务逻辑。
 
 ## 6. 3 分钟版汇报稿
 
 下面这段可以直接按自然语速讲：
 
-> 我负责的是微服务拆分后的 Config + Bus 配置部分。这个部分我没有完全照搬课件里的 Git 配置仓库和 Config 集群方案，而是结合我们当前项目的技术栈和 Docker Compose 环境，做了一个更容易跑通的替代实现。现在项目里已经有独立的 Config Server，主启动类开启了 `@EnableConfigServer`，配置文件使用 native 模式，从 `elm-cloud/config/` 这个外部目录统一读取。这样配置就从服务内部抽离出来了。客户端这边，我先让 gateway、order-service、user-service 三个服务接入了 Config Client，它们启动时会从 `config-server:8888` 拉取配置。为了避免配置中心挂掉就导致服务起不来，我还保留了 `fail-fast: false` 的兜底策略。Bus 这一块，我接入了 RabbitMQ，并在 config-server、order-service、user-service 里加入了 Spring Cloud Bus 的 AMQP 依赖，也开放了 `bus-refresh` 端点。因此这部分的基础设施链路是已经打通的。当前没有完全做满的地方主要有三个：第一，没有使用远程 Git；第二，没有做 Config Server 集群；第三，代码里暂时没有专门的 `@RefreshScope` 演示 Bean，所以更适合把这部分定义为“核心链路已经跑通，但完整覆盖和热刷新展示还可以继续加强”。
+> 我负责的是微服务拆分后的 Config + Bus 配置部分。这个部分我没有机械地照搬课件，而是做成了一个更接近课件标准、同时又兼顾本地演示稳定性的实现。现在项目里有两个 Config Server 实例，都会注册到 Eureka，客户端通过 discovery-first 发现名为 `config-server` 的服务，而不是写死某个地址。默认情况下，Config Server 使用 native 模式，从 `elm-cloud/config/` 这个外部目录统一读取配置；如果需要更贴近课件标准，也可以通过环境变量切到 Git 模式。Bus 这一块，我接入了 RabbitMQ，并把 gateway 和主要业务服务都加入了 Spring Cloud Bus 的 AMQP 依赖，也开放了 `bus-refresh` 端点。另外我还在 order-service 里补了一个 `@RefreshScope` 演示接口 `/api/orders/runtime-config`，可以直接证明配置值在刷新后会变化。因此这部分的基础设施链路、集群化入口和演示链路都已经打通。当前还没有完全做满的地方主要是 Git 仓库本身的实际接入和版本化管理流程。
 
 ## 7. 你最后收口时可以这样说
 
