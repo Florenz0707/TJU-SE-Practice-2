@@ -1,0 +1,139 @@
+1.添加Config集中配置管理集群
+本阶段项目完成总架构图中的第六阶段，添加Spring cloud config 实现集中配置管理，并实现Config高可用集群。
+1.1.搭建远程GIT仓库
+按照 “SpringCloud课件” 中 “07.Config配置中心.md” 章节中的内容，搭建远程GIT仓库。
+1.2.上传配置文件
+上传配置文件：
+将食品微服务的配置文件名称修改为：food_server_10200-dev.yml、food_server_10201-dev.yml，然后上
+传到远程GIT仓库。
+将商家微服务的配置文件名称修改为：business_server_10300-dev.yml、business_server_10301-
+dev.yml，然后上传到远程GIT仓库。
+将购物车微服务的配置文件名称修改为：cart_server_10400-dev.yml、cart_server_10401-dev.yml，然后上
+传到远程GIT仓库。
+将送货地址微服务的配置文件名称修改为：deliveryaddress_server_10500-dev.yml、
+deliveryaddress_server_10501-dev.yml，然后上传到远程GIT仓库。
+将订单微服务的配置文件名称修改为：orders_server_10600-dev.yml、orders_server_10601-dev.yml，然
+后上传到远程GIT仓库。
+将用户微服务的配置文件名称修改为：user_server_10100-dev.yml、user_server_10101-dev.yml，然后上
+传到远程GIT仓库。
+为每一个微服务添加bootstrap.yml配置文件：
+spring:
+在每一个微服务的bootstrap.yml配置文件中的name属性，修改成自己的名称即可。
+1.3.修改SCC客户端
+给每一个微服务的pom.xml文件中添加SCC的依赖
+1.4.创建SCC服务端
+1. 在父工程下，创建 Maven Module 子工程（工程名：config_server_15000；Packaging：jar）
+2. 在pom.xml文件中添加依赖
+ cloud:
+ config:
+ name: business_server_10300 #应用名称，对应git中的文件名的前半部分
+ profile: dev #开发环境名称，对应git中的文件名的后半部分
+ label: master #git分支
+ discovery: #从Eureka中获取config server信息
+ enabled: true #开启服务发现
+ service-id: config-server
+ 
+#eureka配置
+eureka: 
+ client:
+ service-url:
+ #将自己注册给defaultZone所指定的eureka server集群上
+ defaultZone: 
+http://eurekaServer13000:13000/eureka/,http://eurekaServer13001:13001/eureka/
+ instance: 
+ prefer-ip-address: true #使用ip地址向eureka server进行注册
+ instance-id: ${spring.cloud.client.ip-address}:${server.port} #设置eureka控制台中显示的
+注册信息
+ lease-renewal-interval-in-seconds: 5 #续约间隔时间
+ lease-expiration-duration-in-seconds: 15 #续约到期时间 
+<!--加入spring-cloud-config的依赖 -->
+<dependency>
+ <groupId>org.springframework.cloud</groupId>
+ <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+<dependencies>
+ <dependency>
+ <groupId>org.springframework.cloud</groupId>
+ <artifactId>spring-cloud-starter-config</artifactId>
+ </dependency>
+ <dependency>
+3. 创建主启动类
+4. 创建application.yml文件
+ <groupId>org.springframework.cloud</groupId>
+ <artifactId>spring-cloud-config-server</artifactId>
+ </dependency>
+ <dependency>
+ <groupId>org.springframework.cloud</groupId>
+ <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+ </dependency>
+ <!--热部署 gav -->
+ <dependency>
+ <groupId>org.springframework.boot</groupId>
+ <artifactId>spring-boot-devtools</artifactId>
+ <scope>runtime</scope>
+ <optional>true</optional>
+ </dependency>
+</dependencies>
+package com.neusoft;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.config.server.EnableConfigServer;
+@SpringBootApplication
+@EnableConfigServer //开启springcloud config服务端注解
+public class MyApplication {
+ public static void main(String[] args) {
+ SpringApplication.run(MyApplication.class, args);
+ }
+}
+server:
+ port: 15000
+spring: 
+ application:
+ name: config-server
+ cloud:
+ config: #有关springcloud config的配置 
+ server:
+ git:
+ uri: https://gitee.com/yuhongjun01/elm-scc.git #git远程仓库地址
+ 
+#eureka配置
+eureka:
+5. 测试：启动项目，浏览器地址栏中输入：http://localhost:15000/business_server_10300-dev.yml
+1.5.搭建SCC服务端集群
+在父工程下，创建 Maven Module 子工程（工程名：config_server_15001；Packaging：jar）。此工程内容与
+config_server_15000工程一致，除了端口号不同。
+ client:
+ service-url:
+ #将自己注册给defaultZone所指定的eureka server集群上
+ defaultZone: 
+http://eurekaServer13000:13000/eureka/,http://eurekaServer13001:13001/eureka/
+ instance: 
+ prefer-ip-address: true #使用ip地址向eureka server进行注册
+ instance-id: ${spring.cloud.client.ip-address}:${server.port} #设置eureka控制台中
+显示的注册信息 
+ lease-renewal-interval-in-seconds: 5 #续约间隔时间
+ lease-expiration-duration-in-seconds: 15 #续约到期时间 
+server:
+ port: 15001
+spring: 
+ application:
+ name: config-server
+ cloud:
+ config: #有关springcloud config的配置 
+ server:
+ git:
+ uri: https://gitee.com/yuhongjun01/elm-scc.git #git远程仓库地址
+ 
+#eureka配置
+eureka:
+ client:
+ service-url:
+ #将自己注册给defaultZone所指定的eureka server集群上
+ defaultZone: 
+http://eurekaServer13000:13000/eureka/,http://eurekaServer13001:13001/eureka/
+ instance: 
+ prefer-ip-address: true #使用ip地址向eureka server进行注册
+ instance-id: ${spring.cloud.client.ip-address}:${server.port} #设置eureka控制台中显示的
+注册信息 
+ lease-renewal-interval-in-seconds: 5 #续约间隔时间
+ lease-expiration-duration-in-seconds: 15 #续约到期时间 
