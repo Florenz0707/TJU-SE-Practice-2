@@ -1,10 +1,12 @@
 package cn.edu.tju.order.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.order.config.RefreshableDemoProperties;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@RefreshScope
 @RestController
 public class RuntimeConfigController {
   private final RefreshableDemoProperties refreshableDemoProperties;

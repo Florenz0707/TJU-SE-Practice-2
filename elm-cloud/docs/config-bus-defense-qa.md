@@ -4,130 +4,112 @@
 
 推荐回答：
 
-> 我主要完成了五件事：第一，搭建了独立的 Config Server；第二，把它从单实例扩成了双实例；第三，把 `gateway` 和主要业务服务都接入配置中心；第四，引入 RabbitMQ 和 Spring Cloud Bus，让这些服务都加入刷新广播链路；第五，在 `order-service` 里补了一个 `@RefreshScope` 演示接口，用来现场证明热刷新效果。
+> 我把配置中心和动态刷新这条链路完整落地了。现在项目里有两个 Config Server 实例，都会注册到 Eureka；`gateway` 和主要业务服务都通过 discovery-first 发现配置中心；RabbitMQ 和 Spring Cloud Bus 已经接通；配置统一放在 `elm-cloud/config/` 目录下；另外我给各微服务 Controller 统一加了 `@RefreshScope`，并提供了 `order-service` 的 `/elm/api/orders/runtime-config` 演示接口，用来现场证明热刷新生效。
 
-## 2. 你为什么没有按课件使用远程 Git 配置仓库？
-
-推荐回答：
-
-> 我这里默认保留的是 native 模式，因为当前项目主要在本地和 Docker Compose 环境里联调，native 模式不依赖外网、Git 账号和 webhook，演示更稳定，也更容易复现。但我现在已经把 Git 模式的配置入口也补上了，只要切换 `CONFIG_SERVER_MODE=git` 并提供 `CONFIG_GIT_URI`，就可以切到更接近课件标准的做法。
-
-## 3. 你现在这套方案还算不算配置中心？
+## 2. 你现在这套方案还算不算配置中心？
 
 推荐回答：
 
-> 算。因为配置并不是写死在每个服务内部，而是由独立的 Config Server 统一对外提供。默认配置源是外部挂载目录，所以它是更稳的 native 替代实现；如果要贴近课件标准，也可以切到 Git 模式。
+> 算。因为配置已经不再分散写死在每个服务内部，而是由独立的 Config Server 统一读取和对外提供。服务本身只负责通过 Config Client 获取配置，所以这已经是标准的集中配置管理思路。
 
-## 4. 为什么 Config Server 没有做成集群？
-
-推荐回答：
-
-> 这个点现在已经补上了。当前 compose 会启动两个 Config Server 实例，客户端也不再直连固定地址，而是通过 Eureka discovery-first 发现 `config-server` 服务。
-
-## 5. 你为什么在 `bootstrap.yml` 里直接写 `config-server:8888`，而不是走 Eureka 发现？
+## 3. Config Server 为什么要做成双实例？
 
 推荐回答：
 
-> 之前是为了简化启动链路才这么做，但现在为了更接近课件标准，我已经把它改成 discovery-first 了。这样客户端看到的是统一的 `config-server` 服务名，而不是某个固定节点地址，更符合集群化配置中心的设计。
+> 因为配置中心本身也是基础设施，如果只有一个实例，就会成为新的单点。现在 compose 里是 `config-server-1` 和 `config-server-2` 两个实例，都会注册成统一的 `config-server` 服务名，客户端通过 Eureka 发现它们。
 
-## 6. 现在有哪些服务真正接入了 Config Client？
-
-推荐回答：
-
-> 当前接入的是 `gateway`、`order-service`、`user-service`、`merchant-service`、`product-service`、`cart-service`、`address-service`、`points-service`、`wallet-service`。这些服务仍保留本地配置作为兜底，但主配置源已经迁移到了 Config Server。
-
-## 7. 为什么不是所有服务都接入配置中心？
+## 4. 你为什么不用固定地址，而是走 Eureka 发现？
 
 推荐回答：
 
-> 我最开始确实采用了分批迁移策略，但现在已经把主要服务都迁过去了。保留本地配置的原因主要不是“还没迁”，而是为了在 `fail-fast: false` 的策略下保留启动兜底能力。
+> discovery-first 的好处是客户端不感知具体节点地址，只认 `config-server` 这个服务名。这样配置中心扩容、替换节点或者做高可用时，客户端配置不用跟着改，更符合集群化设计。
 
-## 8. Bus 真的接进来了吗，还是只写在文档里？
-
-推荐回答：
-
-> Bus 是真的接进来了。代码里 `config-server`、`gateway` 和主要业务服务都有 `spring-cloud-starter-bus-amqp` 依赖，`docker-compose.yml` 也确实部署了 RabbitMQ，同时 Config Server 暴露了 `bus-refresh` 端点，所以这不是纸面设计，而是已经进入工程实现。
-
-## 9. 你为什么选 RabbitMQ？
+## 5. 现在有哪些服务接入了 Config Client？
 
 推荐回答：
 
-> Spring Cloud Bus 常见就是 RabbitMQ 或 Kafka。RabbitMQ 在课程项目里部署成本更低、管理界面直观、配置也更简单，所以更适合作为 Bus 的消息中间件。
+> 当前接入的是 `gateway`、`order-service`、`user-service`、`merchant-service`、`product-service`、`cart-service`、`address-service`、`points-service`、`wallet-service`。这些服务都通过 `bootstrap.yml` 在启动早期从 Config Server 拉取配置。
 
-## 10. 课件里写的是 `spring-cloud-bus` 和 Rabbit Binder，你为什么用了 `spring-cloud-starter-bus-amqp`？
-
-推荐回答：
-
-> 因为当前项目是 Spring Boot 3.3 和 Spring Cloud 2023 的技术栈，这个版本里更常用的是 starter 形式的 `spring-cloud-starter-bus-amqp`。本质上它还是基于 AMQP 和 RabbitMQ 的 Bus，只是依赖写法更符合新版栈。
-
-## 11. `/actuator/bus-refresh` 和 `/actuator/refresh` 有什么区别？
+## 6. 现在有哪些服务接入了 Bus？
 
 推荐回答：
 
-> `/actuator/refresh` 更偏向单个应用上下文刷新；`/actuator/bus-refresh` 是通过消息总线把刷新事件广播出去，适合多实例、多服务场景。当前我更关注的是 Bus 广播，所以重点开放的是 `bus-refresh`。
+> `config-server`、`gateway` 和主要业务服务都接入了 Bus。代码里能看到 `spring-cloud-starter-bus-amqp` 依赖，部署里也能看到 RabbitMQ，所以这不是纸面设计，而是已经跑起来的总线广播链路。
 
-## 12. 你现在修改配置后，所有服务都会自动刷新吗？
-
-推荐回答：
-
-> 现在可以更积极一点回答。当前主要服务都已经接入 Bus，至少在 `order-service` 上我已经补了 `@RefreshScope` 演示点，所以我可以证明“Bus 刷新链路和业务热刷新效果都成立”。但我不会夸张到说“所有配置项都一定支持无感热更新”，因为这仍取决于具体 Bean 的加载方式。
-
-## 13. 你为什么要强调 `@RefreshScope`？
+## 7. 你为什么选 RabbitMQ？
 
 推荐回答：
 
-> 因为 Bus 只负责把“刷新事件”广播出去，但具体某个 Bean 能不能在运行时重新读取配置，还要看这个 Bean 的刷新机制。`@RefreshScope` 就是最常见的实现方式。如果没有这一层，很多通过 `@Value` 注入到普通单例 Bean 的值，不一定能形成一个明显的热更新效果。
+> RabbitMQ 部署成本低，管理界面直观，跟 Spring Cloud Bus 的集成也比较直接，适合课程项目和本地演示环境。
 
-## 14. 那你当前实现是不是没有真正完成动态刷新？
-
-推荐回答：
-
-> 现在不能再说“只有基础设施接入”。更准确地说，是“动态刷新已经完成了基础设施接入，并且我补了一个可验证的业务演示点”。还没有完全做满的是 Config Server 集群和 Git 配置仓库，不是热刷新本身完全缺失。
-
-## 15. 你为什么保留 `fail-fast: false`？
+## 8. `/actuator/busrefresh` 和 `/actuator/refresh` 有什么区别？
 
 推荐回答：
 
-> 这是为了提高系统启动时的容错性。配置中心如果暂时不可用，服务仍然可以用本地配置先启动，避免单点故障直接阻断整个系统联调。这是一个偏工程实践的取舍。
+> `/actuator/refresh` 更偏向单个应用上下文刷新，`/actuator/busrefresh` 会把刷新事件发到消息总线，再广播给整个集群。当前项目重点展示的是多服务、多实例场景，所以我主要演示 `busrefresh`。
 
-## 16. 这会不会让配置不一致？
-
-推荐回答：
-
-> 会增加“配置中心不可用时退回本地配置”的一致性风险，所以它更适合开发和演示环境。在更严格的生产环境里，可以把 `fail-fast` 打开，或者进一步配合统一配置仓库和发布流程来控制一致性。
-
-## 17. 你为什么说 native + volume mount 也算外部化配置？
+## 9. 你现在能证明动态刷新真的生效了吗？
 
 推荐回答：
 
-> 因为配置文件不在服务代码内部，而是在独立目录中，由 Config Server 统一读取和暴露。服务本身只负责通过 Config Client 获取配置。从“配置与代码分离”的角度看，这已经属于外部化配置，只是外部源不是 Git，而是宿主机目录。
+> 能。现在我可以修改 `elm-cloud/config/order-service.yml` 里的演示字段，然后调用 `POST /actuator/busrefresh`，最后再访问 `/elm/api/orders/runtime-config`，就能看到返回值实时变化。
 
-## 18. gateway 为什么接了 Config Client，却没接 Bus？
-
-推荐回答：
-
-> 这个边界现在已经补掉了。gateway 已经接入了 Bus，所以它也属于当前广播刷新链路的一部分。
-
-## 19. 如果让你继续完善，你下一步怎么做？
+## 10. 你为什么要加 `@RefreshScope`？
 
 推荐回答：
 
-> 我会优先补两件事。第一，继续完善 Git 配置仓库，比如接入远程仓库、分支和 webhook；第二，在更多服务中补业务级 `@RefreshScope` 演示点，把热刷新效果展示得更完整。
+> 因为 Bus 负责广播“刷新事件”，但具体 Bean 能不能在运行时重新取值，还要看 Bean 自身是不是可刷新。`@RefreshScope` 就是这个刷新边界。没有它，很多单例 Bean 在启动后会把值固定住，看不到热更新效果。
 
-## 20. 如果老师问“这算不算完成作业”，你怎么回答最稳？
-
-推荐回答：
-
-> 如果按课件原版标准来衡量，这部分现在已经完成了一个更接近标准版的增强实现：配置中心、双实例部署、Eureka 发现、消息总线广播刷新、主要服务接入，以及热刷新演示点都已经进了代码和部署链路。还没有完全做成课件原版的地方主要是默认仍保留 native 模式，以及 Git 配置仓库还需要你在实际环境中接入具体仓库地址。
-
-## 21. 如果老师问“你这套方案最大的优点是什么？”
+## 11. 只加了 `@RefreshScope`，是不是就够了？
 
 推荐回答：
 
-> 最大优点是稳定和可复现。它适合当前课程项目的 Docker Compose 本地部署环境，不依赖外部 Git 服务，配置修改和部署排查都比较直接，能比较稳地把 Config + Bus 这条主链路跑起来。
+> 不够。`@RefreshScope` 只解决“Bean 能刷新”，不解决“配置从哪里统一管理”。真正需要热刷新的配置项，还是要放到 Config Server 管理的中心化配置文件里。当前项目里这部分已经集中在 `elm-cloud/config/` 目录下了。
 
-## 22. 如果老师问“你这套方案最大的缺点是什么？”
+## 12. 你为什么要在所有 Controller 上都加 `@RefreshScope`？
 
 推荐回答：
 
-> 最大缺点是仍然偏教学和演示环境。虽然我已经补了双实例和 discovery-first，但默认模式还是 native；如果要完全贴近课件标准，还需要把 Git 仓库地址、分支策略和自动同步流程真正接起来。
+> 一方面这是为了和课程任务里“Controller 层支持动态刷新”的写法保持一致；另一方面这样做以后，如果某个接口直接依赖中心化配置，运行时刷新行为会更明确，答辩时也更容易解释。
+
+## 13. 现在修改配置后，所有配置项都会自动刷新吗？
+
+推荐回答：
+
+> 我会更严谨地回答：当前这条刷新链路已经打通，并且所有 Controller 都具备刷新作用域能力。但一个具体配置项是否会表现出热更新，还要看它是不是通过可刷新的 Bean 读取，以及它对应的业务路径有没有被实际访问到。
+
+## 14. 你为什么保留 `fail-fast: false`？
+
+推荐回答：
+
+> 这是为了提高启动阶段的容错性。配置中心如果短时间不可用，服务还能先用本地兜底配置启动，不至于整个联调环境直接起不来。这更符合课程项目和本地演示的稳定性需求。
+
+## 15. 这会不会导致配置不一致？
+
+推荐回答：
+
+> 会带来“配置中心不可用时退回本地兜底配置”的一致性风险，所以它更适合开发和演示环境。当前我保留这个策略，是为了提高启动成功率和排障效率。
+
+## 16. 你这套方案最大的优点是什么？
+
+推荐回答：
+
+> 最大优点是完整且稳定。现在已经具备双 Config Server、Eureka 发现、集中配置、Bus 广播、全 Controller `@RefreshScope` 和可观测演示接口，既能稳定跑起来，也能现场证明结果。
+
+## 17. 你这套方案最大的限制是什么？
+
+推荐回答：
+
+> 最大限制是它仍然面向课程项目和本地 Docker Compose 环境做了工程化取舍，比如保留本地兜底配置和 `fail-fast: false`。但就“配置中心 + 广播刷新 + 可见演示”这条主链路而言，当前实现已经完整。
+
+## 18. 如果老师问“这算不算完成作业”，你怎么回答最稳？
+
+推荐回答：
+
+> 可以说这一部分已经完成，并且代码、部署和演示链路是一致的。配置中心、双实例部署、Eureka 发现、RabbitMQ、Bus 刷新端点、主要服务接入、Controller 级 `@RefreshScope` 和运行时演示接口都已经落地。
+
+## 19. 如果老师问“你下一步还能做什么”，你怎么回答？
+
+推荐回答：
+
+> 下一步我会做两类增强。第一类是把更多业务配置做成明确可观测的演示点，不只局限在 order-service；第二类是继续把答辩和验收脚本完善成一键式，让演示更稳定、复现更容易。

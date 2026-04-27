@@ -1,5 +1,6 @@
 package cn.edu.tju.product.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.product.model.Product;
 import cn.edu.tju.product.service.ProductInternalService;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@RefreshScope
 @RestController
 @RequestMapping("/internal/products")
 public class ProductInnerController {

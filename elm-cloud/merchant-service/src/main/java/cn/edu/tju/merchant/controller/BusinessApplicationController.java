@@ -1,4 +1,6 @@
 package cn.edu.tju.merchant.controller;
+
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.merchant.service.UserService;
 import cn.edu.tju.merchant.util.AuthorityUtils;
 import cn.edu.tju.merchant.model.User;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@RefreshScope
 @RestController
 @RequestMapping("/api/applications/business")
 

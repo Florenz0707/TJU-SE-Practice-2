@@ -1,5 +1,6 @@
 package cn.edu.tju.core.security.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.core.security.AuthenticatedUser;
 import cn.edu.tju.core.security.controller.dto.LoginDto;
 import cn.edu.tju.core.security.jwt.JWTFilter;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** Controller to authenticate users. */
+@RefreshScope
 @RestController
 @RequestMapping("/api")
 @Tag(name = "管理认证", description = "提供基于JWT的身份认证和令牌管理功能")

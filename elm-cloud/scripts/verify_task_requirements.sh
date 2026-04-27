@@ -15,6 +15,34 @@ warn_count=0
 SERVICE_MODULES=(gateway order-service user-service merchant-service product-service cart-service address-service points-service wallet-service)
 BUS_SERVICE_MODULES=(config-server gateway order-service user-service merchant-service product-service cart-service address-service points-service wallet-service)
 CONFIG_FILES=(application.yml gateway.yml order-service.yml user-service.yml merchant-service.properties product-service.properties cart-service.properties address-service.properties points-service.properties wallet-service.properties)
+CONTROLLER_FILES=(
+  gateway/src/main/java/cn/edu/tju/elm/cloud/gateway/FallbackController.java
+  wallet-service/src/main/java/cn/edu/tju/wallet/controller/PublicVoucherController.java
+  product-service/src/main/java/cn/edu/tju/product/controller/FoodController.java
+  wallet-service/src/main/java/cn/edu/tju/wallet/controller/PrivateVoucherController.java
+  wallet-service/src/main/java/cn/edu/tju/wallet/controller/AccountInnerController.java
+  product-service/src/main/java/cn/edu/tju/product/controller/ProductInnerController.java
+  wallet-service/src/main/java/cn/edu/tju/wallet/controller/WalletController.java
+  address-service/src/main/java/cn/edu/tju/address/controller/AddressInnerController.java
+  cart-service/src/main/java/cn/edu/tju/cart/controller/CartController.java
+  cart-service/src/main/java/cn/edu/tju/cart/controller/CartInnerController.java
+  wallet-service/src/main/java/cn/edu/tju/wallet/controller/WalletInnerController.java
+  wallet-service/src/main/java/cn/edu/tju/wallet/controller/TransactionController.java
+  address-service/src/main/java/cn/edu/tju/address/controller/AddressController.java
+  user-service/src/main/java/cn/edu/tju/core/security/controller/AuthenticationRestController.java
+  user-service/src/main/java/cn/edu/tju/core/security/controller/UserRestController.java
+  points-service/src/main/java/cn/edu/tju/points/controller/PointsInnerController.java
+  points-service/src/main/java/cn/edu/tju/points/controller/PointsController.java
+  points-service/src/main/java/cn/edu/tju/points/controller/PointsAdminController.java
+  merchant-service/src/main/java/cn/edu/tju/merchant/controller/MerchantInnerController.java
+  merchant-service/src/main/java/cn/edu/tju/merchant/controller/MerchantApplicationController.java
+  merchant-service/src/main/java/cn/edu/tju/merchant/controller/BusinessApplicationController.java
+  merchant-service/src/main/java/cn/edu/tju/merchant/controller/BusinessController.java
+  order-service/src/main/java/cn/edu/tju/order/controller/OrderRestController.java
+  order-service/src/main/java/cn/edu/tju/order/controller/OrderInnerController.java
+  order-service/src/main/java/cn/edu/tju/order/controller/ReviewRestController.java
+  order-service/src/main/java/cn/edu/tju/order/controller/RuntimeConfigController.java
+)
 
 usage() {
   cat <<EOF
@@ -201,6 +229,9 @@ section "四、动态刷新配置（对应 动态刷新配置.txt）"
 assert_grep "order-service 存在 @RefreshScope 演示 Bean" '@RefreshScope' "$ELM_CLOUD_DIR/order-service/src/main/java/cn/edu/tju/order/config/RefreshableDemoProperties.java"
 assert_grep "order-service 演示 Bean 绑定 demo.config" '@ConfigurationProperties\(prefix = "demo.config"\)' "$ELM_CLOUD_DIR/order-service/src/main/java/cn/edu/tju/order/config/RefreshableDemoProperties.java"
 assert_grep "order-service 暴露 runtime-config 演示接口" '/api/orders/runtime-config' "$ELM_CLOUD_DIR/order-service/src/main/java/cn/edu/tju/order/controller/RuntimeConfigController.java"
+for controller_file in "${CONTROLLER_FILES[@]}"; do
+  assert_grep "${controller_file##*/} 已添加 @RefreshScope" '@RefreshScope' "$ELM_CLOUD_DIR/$controller_file"
+done
 assert_http_code "Gateway 健康接口可用" 'http://localhost:8080/actuator/health' '200'
 assert_http_code "运行时配置接口可用" 'http://localhost:8080/elm/api/orders/runtime-config' '200'
 if (cd "$ELM_CLOUD_DIR" && bash ./scripts/demo_config_bus_refresh.sh >/tmp/verify-demo-script.out 2>&1); then
@@ -211,7 +242,6 @@ fi
 
 section "五、与 task 文本不完全等价的人工说明"
 record_manual "task 文档要求的是远程 GIT 仓库；当前项目默认运行态是 native，脚本只能自动证明“代码支持 git 模式”，不能替你证明“远程仓库账号、网络和权限都正确”。"
-record_manual "task 文档示例要求每个微服务 Controller 都直接使用 @RefreshScope；当前实现采用 order-service 的专用演示 Bean 和演示接口来证明热刷新，能证明链路成立，但不等于逐个 Controller 静态注解完全一致。"
 
 section "验收汇总"
 echo "PASS   : $pass_count"

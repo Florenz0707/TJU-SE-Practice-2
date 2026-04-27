@@ -1,12 +1,12 @@
 # Config + Bus 最终演示流程
 
-这份流程按“更接近课程标准、但仍保证本地演示稳定”的目标设计。
+这份流程只描述当前仓库里已经落地并验证通过的最终实现。
 
-## 1. 演示前你要先说明的口径
+## 1. 演示前开场
 
 推荐开场：
 
-> 我现在这套实现默认采用 native 模式，保证本地 Docker 演示稳定；同时已经补上了双 Config Server、Eureka discovery-first 和 git profile 切换入口。所以它既能稳定演示，也已经具备向课件标准方案靠拢的结构。
+> 我现在展示的是项目里已经落地的 Config + Bus 最终版本。当前有双 Config Server、Eureka discovery-first、RabbitMQ 广播刷新、集中配置目录，以及 Controller 级别的 `@RefreshScope` 刷新能力。
 
 ## 2. 推荐演示顺序
 
@@ -17,13 +17,13 @@
 - `config-server-1`
 - `config-server-2`
 
-然后说明：
+说明：
 
 - 两个实例都会注册到 Eureka
-- 客户端看到的是统一的 `config-server` 服务名
-- 这比早期“直连单节点地址”的方案更接近课程标准
+- 客户端发现的是统一的 `config-server` 服务名
+- 这样配置中心本身不再是单点
 
-### 第二步：展示客户端 discovery-first
+### 第二步：展示 discovery-first
 
 打开任意一个业务服务的 `bootstrap.yml`，展示：
 
@@ -32,21 +32,20 @@
 
 答辩口径：
 
-> 这样客户端不依赖固定节点地址，而是通过注册中心发现配置中心实例，更适合集群化部署。
+> 现在客户端不再依赖固定地址，而是通过注册中心发现配置中心实例。
 
-### 第三步：展示 Config Server 支持 native / git 双模式
+### 第三步：展示中心化配置目录
 
-打开 `config-server/src/main/resources/application.yml`，说明：
+打开 `elm-cloud/config/`，说明：
 
-- 默认 `CONFIG_SERVER_MODE=native`
-- 也支持 `git` profile
-- `git` 模式下通过 `CONFIG_GIT_URI` 指定仓库地址
+- 各服务配置已经统一收口到这里
+- `order-service.yml` 里有演示用的 `demo.config.message` 和 `demo.config.version`
 
 答辩口径：
 
-> 默认保留 native，是为了降低本地演示的不确定性；如果老师要求更接近课件标准，只要切到 git 模式即可。
+> 现在配置不是散在各个服务里，而是由 Config Server 统一读取和下发。
 
-### 第四步：展示运行中的热刷新接口
+### 第四步：展示刷新前的运行时配置
 
 访问：
 
@@ -62,33 +61,28 @@ curl http://localhost:8080/elm/api/orders/runtime-config
 
 ### 第五步：修改配置
 
-如果当前是 native 模式：
+修改 `elm-cloud/config/order-service.yml`：
 
-- 修改 `elm-cloud/config/order-service.yml`
-- 调整 `demo.config.message` 或 `demo.config.version`
-
-如果当前是 git 模式：
-
-- 修改 Git 配置仓库中的 `order-service.yml`
-- 提交这次配置变更
+- 修改 `demo.config.message`
+- 或修改 `demo.config.version`
 
 ### 第六步：触发 Bus 广播刷新
 
-向任意一个 Config Server 实例发送刷新请求：
+调用任意一个 Config Server 的刷新入口：
 
 ```bash
-curl -X POST http://localhost:8888/actuator/bus-refresh
+curl -X POST http://localhost:8888/actuator/busrefresh
 ```
 
 或者：
 
 ```bash
-curl -X POST http://localhost:8889/actuator/bus-refresh
+curl -X POST http://localhost:8889/actuator/busrefresh
 ```
 
 答辩口径：
 
-> 这里无论打到哪个 Config Server，本质上都会把刷新事件发到 RabbitMQ，再由 Bus 广播到所有接入的服务实例。
+> 这一步会把刷新事件发到 RabbitMQ，再由总线广播给所有接入的服务实例。
 
 ### 第七步：再次访问演示接口
 
@@ -102,35 +96,33 @@ curl http://localhost:8080/elm/api/orders/runtime-config
 
 答辩口径：
 
-> 这一步证明的不只是 Bus 基础设施存在，而是业务侧确实能观察到配置热更新效果。
+> 这一步证明的不只是 Bus 依赖存在，而是业务侧确实已经观察到了刷新结果。
 
-## 3. 如果老师要求你演示 Git 模式
+## 3. 如果你想更稳地演示
 
-### 方式 A：远程 Git 仓库
+可以直接使用仓库里已经准备好的自动化脚本：
 
-```bash
-export CONFIG_SERVER_MODE=git
-export CONFIG_GIT_URI=https://your-git-host/your-config-repo.git
-export CONFIG_GIT_DEFAULT_LABEL=main
-cd elm-cloud
-docker compose up -d --build
-```
-
-### 方式 B：本地 Git 仓库
-
-先准备一个本地配置仓库，并保证它本身是 Git 仓库。
-
-然后：
+### 一键串讲脚本
 
 ```bash
-export CONFIG_SERVER_MODE=git
-export CONFIG_GIT_URI=file:/app/config-repo
-cd elm-cloud
-docker compose up -d --build
+./scripts/defense_config_bus_showcase.sh
 ```
 
-`docker-compose.yml` 已经把 `./config-repo` 挂载到了容器内的 `/app/config-repo`。
+这个脚本会按答辩顺序自动展示：
 
-## 4. 最稳的一句话总结
+1. 关键容器状态
+2. discovery-first 证据
+3. 中心化配置目录和运行时接口
+4. 修改配置、触发 `busrefresh`、展示刷新结果
 
-> 我现在的实现已经把 Config Server 双实例、discovery-first、Bus 广播刷新和业务热刷新演示点都补齐了。默认保留 native 模式是为了本地演示稳定，但如果需要更贴近课件标准，也可以直接切到 git 模式。
+### 自动刷新演示脚本
+
+```bash
+./scripts/demo_config_bus_refresh.sh
+```
+
+这个脚本会自动修改配置、调用 `busrefresh`、校验返回值变化，并在结束后恢复原值。
+
+## 4. 最稳的收口句
+
+> 我现在的实现已经把 Config Server 双实例、discovery-first、集中配置、Bus 广播刷新和 Controller 级 `@RefreshScope` 都补齐了，而且可以通过运行时接口直接证明配置值在刷新后发生变化。

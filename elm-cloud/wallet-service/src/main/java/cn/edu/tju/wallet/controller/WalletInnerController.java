@@ -1,5 +1,6 @@
 package cn.edu.tju.wallet.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.wallet.model.BO.Wallet;
 import cn.edu.tju.wallet.service.WalletInternalService;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@RefreshScope
 @RestController
 @RequestMapping("/internal/wallets")
 public class WalletInnerController {

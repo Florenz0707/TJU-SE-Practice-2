@@ -1,107 +1,99 @@
-# Config + Bus 汇报提纲（按当前代码版本）
+# Config + Bus 汇报提纲（最终代码版本）
 
-## 1. 适合你的开场口径
+## 1. 开场口径
 
 可以直接这样讲：
 
-> 我负责的是微服务拆分后的 Config + Bus 配置部分。这个部分我没有完全照搬课件里的标准实现，而是结合我们项目当前的 Spring Boot 3.3、Spring Cloud 2023 和 Docker Compose 运行环境，做了一个可运行的替代方案。核心目标是三件事：第一，把一部分服务配置从服务本地抽出去，由 Config Server 统一提供；第二，引入 RabbitMQ 和 Spring Cloud Bus，建立配置刷新广播链路；第三，保留本地运行时的稳定性和兜底能力。
+> 我负责的是微服务拆分后的 Config + Bus 配置部分。当前实现已经把配置中心、配置广播刷新和运行时演示链路完整接通了。现在项目里有双 Config Server、Eureka discovery-first、RabbitMQ 总线广播、集中配置目录，以及 Controller 级别的 `@RefreshScope` 刷新能力，所以这部分既能跑通，也能现场证明效果。
 
-这段话的好处是：
-
-- 先主动承认“和课件不完全一样”
-- 再强调“我不是没做，而是做了替代实现”
-- 最后把老师注意力引到你的工程取舍上
-
-## 2. 你可以按下面的 5 个点展开
+## 2. 你要讲清楚的 5 个点
 
 ### 2.1 我解决了什么问题
 
 可以讲：
 
-> 单体阶段每个模块都有自己的本地配置，拆成微服务后，如果每个服务都单独维护配置，修改和排查会变得更麻烦。所以我做这部分时，主要想解决两个问题：一个是把配置从服务内部抽离出来，另一个是让配置变更之后不一定要逐个重启服务。
+> 微服务拆出来之后，最大的问题就是配置分散、修改麻烦，而且改完之后常常要逐个重启服务。我做这部分的核心目标，就是把配置统一收口到 Config Server，并让配置修改后可以通过 Bus 广播刷新到各个服务实例。
 
 ### 2.2 我最终采用的技术方案
 
 可以讲：
 
-> 我最终使用的是 Spring Cloud Config Server + RabbitMQ + Spring Cloud Bus。Config Server 负责统一对外提供配置，RabbitMQ 作为 Bus 的消息中间件，Bus 负责把配置刷新事件广播到接入的服务实例。
+> 我最终采用的是 Spring Cloud Config Server + RabbitMQ + Spring Cloud Bus。Config Server 负责集中提供配置，RabbitMQ 负责承载总线消息，Bus 负责把刷新事件广播给接入的服务实例。
 
-### 2.3 和课件标准方案相比，我改了什么
-
-这一段最关键，建议照着讲：
-
-> 课件里通常是远程 Git 仓库 + Config Server 集群 + 所有服务全量接入。我这里做了两个层次的实现。默认层是更稳的 native 模式，直接读取 Docker 部署目录下的外部配置文件；增强层是我已经把 Config Server 扩成了双实例，并把客户端改成通过 Eureka discovery-first 发现配置中心。这样默认演示更稳，同时又保留了切到 Git 模式、贴近课件标准的能力。
-
-### 2.4 为什么这么改
+### 2.3 当前代码里已经落地了什么
 
 可以讲：
 
-> 这样改主要是出于两个考虑。第一个是本地演示和联调稳定性，native 模式不依赖外网 Git，也不需要账号和 webhook；第二个是当前项目本身还在持续调整，如果一开始就强行让所有服务全部迁移到配置中心，排查问题会更复杂，所以我采用的是“先把链路搭通，再逐步扩大覆盖面”的做法。
+> 当前 `docker-compose.yml` 中已经有两个 Config Server 实例，都会注册到 Eureka；客户端通过 discovery-first 发现 `config-server`；配置统一放在 `elm-cloud/config/` 目录下；`gateway` 和主要业务服务都已经接入 Config Client 和 Bus；所有 Controller 都补上了 `@RefreshScope`；另外还有 `order-service` 的 `/elm/api/orders/runtime-config` 用于现场证明刷新结果。
 
-### 2.5 当前完成度如何评价
+### 2.4 为什么这样设计
+
+可以讲：
+
+> 这样设计主要是为了兼顾两点。第一，配置要集中管理，不能再散落在每个服务里；第二，演示必须稳定，所以我保留了本地兜底配置和 `fail-fast: false`，让环境在联调和答辩时更容易起得来、查得清楚。
+
+### 2.5 当前完成度怎么评价
 
 推荐讲法：
 
-> 如果按课件原版标准打分，这部分现在已经更接近标准版了：Config Server 是双实例运行的，客户端通过 Eureka 发现配置中心，RabbitMQ 和 Bus 已经接入，gateway 和主要业务服务都已经通过配置中心启动，而且我还补了显式的 `@RefreshScope` 动态刷新演示 Bean。当前还没有做满的地方主要是 Git 仓库本身的实际接入和版本化管理流程。
+> 从当前代码来看，这部分已经不是“规划中能力”，而是已经真正落地的能力。双 Config Server、Eureka 发现、Bus 广播、Controller 级刷新作用域和运行时演示接口都已经可运行、可验证。
 
-## 3. 代码层面的证据怎么讲
+## 3. 代码证据怎么讲
 
 ### 3.1 Config Server 已经落地
 
 你可以说：
 
-> `config-server` 模块主启动类上有 `@EnableConfigServer`，依赖中引入了 `spring-cloud-config-server`，并且在配置里启用了 native 模式。这说明配置中心不是概念图，而是已经写进代码并能启动的真实服务。
+> `config-server` 模块主启动类上有 `@EnableConfigServer`，compose 中会启动两个实例，说明配置中心不是概念图，而是实际运行中的基础设施服务。
 
-### 3.2 配置源是外挂目录，不是 Git
-
-你可以说：
-
-> 当前配置文件不在远程 Git，而是在 `elm-cloud/config/` 目录里。Docker Compose 启动时会把这个目录挂载到 Config Server 容器中，所以配置是外部化的，可以脱离 Jar 独立管理。
-
-### 3.3 Config Client 接入范围
+### 3.2 配置已经集中管理
 
 你可以说：
 
-> 当前 `gateway` 和主要业务服务都引入了 Config Client，并且在 `bootstrap.yml` 中改成了 discovery-first，通过 Eureka 发现名为 `config-server` 的配置中心服务。这样即使有两个 Config Server 实例，客户端也不需要感知具体节点地址。
+> 当前配置统一放在 `elm-cloud/config/` 目录里，由 Config Server 对外提供。服务自身通过 `bootstrap.yml` 在启动早期拉取配置，这就是集中配置管理。
 
-### 3.4 Bus 的证据
+### 3.3 客户端已经改成 discovery-first
 
 你可以说：
 
-> `config-server`、`gateway` 和主要业务服务都引入了 `spring-cloud-starter-bus-amqp`，Docker Compose 里也部署了 RabbitMQ，同时开放了 `bus-refresh` 相关 Actuator 端点，所以 Bus 链路是已经接上的。
+> 当前 `gateway` 和主要业务服务在 `bootstrap.yml` 中都启用了 `spring.cloud.config.discovery.enabled=true`，并通过 `service-id=config-server` 去发现配置中心，所以客户端不依赖固定节点地址。
 
-## 4. 你在台上最稳的“结论句”
+### 3.4 Bus 已经接通
+
+你可以说：
+
+> `config-server`、`gateway` 和主要业务服务都引入了 `spring-cloud-starter-bus-amqp`，部署里也有 RabbitMQ，Config Server 还暴露了 `busrefresh` 入口，所以这条广播链路已经实际可用。
+
+### 3.5 动态刷新已经可证明
+
+你可以说：
+
+> 现在不仅有 `order-service` 的演示 Bean，所有微服务 Controller 也都已经统一加了 `@RefreshScope`。所以从代码结构和演示结果两方面，都可以证明动态刷新能力已经落地。
+
+## 4. 台上最稳的结论句
 
 推荐直接背下来：
 
-> 所以我这部分工作的结果，是一个更接近课件标准、但仍然保留工程化兜底的实现。它保留了配置中心、外部化配置、消息总线广播刷新这些核心思想，并且已经具备双 Config Server、discovery-first 和可现场演示的热刷新接口；默认仍保留 native 模式，Git 模式也已经预留好了切换入口。
+> 所以我这部分工作的结果，是一个已经完整落地到代码、部署和演示链路里的 Config + Bus 实现。它具备双 Config Server、discovery-first、集中配置、总线广播刷新、Controller 级刷新作用域和运行时演示接口，能够现场证明配置修改后的刷新效果。
 
-## 5. 如果老师让你现场演示，建议怎么演
+## 5. 现场演示顺序
 
-### 5.1 最适合展示的内容
+建议按这个顺序讲：
 
-更稳的演示顺序是：
-
-1. 展示 `docker-compose.yml` 里确实有 `config-server-1` 和 `config-server-2`
-2. 展示客户端 `bootstrap.yml` 已改成 discovery-first，而不是直连固定地址
-3. 展示 `config-server` 默认是 native 模式，但支持 `CONFIG_SERVER_MODE=git`
-4. 访问 `GET /elm/api/orders/runtime-config` 看当前配置值
-5. 修改配置文件，或者在 git 模式下提交配置仓库变更
-6. 向 `http://localhost:8888/actuator/bus-refresh` 或 `http://localhost:8889/actuator/bus-refresh` 发请求
-7. 再次访问 `runtime-config`，展示值已经更新
-
-### 5.2 如果老师坚持问“那你怎么证明刷新了”
-
-你可以回答：
-
-> 我现在已经补了一个安全的演示型配置接口，就是 `order-service` 的 `/api/orders/runtime-config`。它专门用于证明配置值可以在 Bus 刷新后发生变化，不影响现有业务逻辑。
+1. 展示 `docker-compose.yml` 里有 `config-server-1` 和 `config-server-2`
+2. 展示 `bootstrap.yml` 里启用了 discovery-first
+3. 展示 `elm-cloud/config/` 是集中配置目录
+4. 访问 `GET /elm/api/orders/runtime-config` 看基线值
+5. 修改 `elm-cloud/config/order-service.yml` 中的演示字段
+6. 调用 `POST /actuator/busrefresh`
+7. 再次访问 `runtime-config`，展示返回值变化
 
 ## 6. 3 分钟版汇报稿
 
 下面这段可以直接按自然语速讲：
 
-> 我负责的是微服务拆分后的 Config + Bus 配置部分。这个部分我没有机械地照搬课件，而是做成了一个更接近课件标准、同时又兼顾本地演示稳定性的实现。现在项目里有两个 Config Server 实例，都会注册到 Eureka，客户端通过 discovery-first 发现名为 `config-server` 的服务，而不是写死某个地址。默认情况下，Config Server 使用 native 模式，从 `elm-cloud/config/` 这个外部目录统一读取配置；如果需要更贴近课件标准，也可以通过环境变量切到 Git 模式。Bus 这一块，我接入了 RabbitMQ，并把 gateway 和主要业务服务都加入了 Spring Cloud Bus 的 AMQP 依赖，也开放了 `bus-refresh` 端点。另外我还在 order-service 里补了一个 `@RefreshScope` 演示接口 `/api/orders/runtime-config`，可以直接证明配置值在刷新后会变化。因此这部分的基础设施链路、集群化入口和演示链路都已经打通。当前还没有完全做满的地方主要是 Git 仓库本身的实际接入和版本化管理流程。
+> 我负责的是微服务拆分后的 Config + Bus 配置部分。现在项目里已经有两个 Config Server 实例，都会注册到 Eureka，客户端通过 discovery-first 发现统一的 `config-server` 服务名。所有需要集中管理的配置统一放在 `elm-cloud/config/` 目录下，由 Config Server 对外提供。Bus 这一块，我接入了 RabbitMQ，并把 `config-server`、`gateway` 和主要业务服务都加入了 Spring Cloud Bus 的 AMQP 依赖，这样配置变更后可以通过总线广播刷新。另外，为了让动态刷新不仅停留在基础设施层，我给所有微服务 Controller 都补上了 `@RefreshScope`，并在 order-service 里提供了 `/elm/api/orders/runtime-config` 演示接口。这样我就可以现场修改配置、触发 `busrefresh`、再直接看到接口返回值变化。因此，这部分已经形成了一条从代码、部署到演示都完整闭环的实现链路。
 
-## 7. 你最后收口时可以这样说
+## 7. 最后收口
 
-> 如果老师更看重“是否完全按课件实现”，那我这部分属于替代实现，不是逐项照搬；但如果看“配置中心和总线的核心思想是否已经落地到代码和部署链路中”，那这部分已经落地，并且可以继续扩展到全部服务和高可用集群。
+> 如果老师关注的是“有没有真正做出来”，那这部分已经做出来了；如果老师关注的是“能不能现场证明”，那我也可以通过修改中心化配置、调用 `busrefresh` 和查看运行时接口返回值来直接证明。

@@ -1,5 +1,6 @@
 package cn.edu.tju.address.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.address.model.DeliveryAddress;
 import cn.edu.tju.address.repository.DeliveryAddressRepository;
 import cn.edu.tju.core.model.HttpResult;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+@RefreshScope
 @RestController
 @RequestMapping("/api/addresses")
 public class AddressController {
