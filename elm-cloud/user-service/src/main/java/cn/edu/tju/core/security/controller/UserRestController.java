@@ -1,5 +1,6 @@
 package cn.edu.tju.core.security.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.Person;
 import cn.edu.tju.core.model.ResultCodeEnum;
@@ -22,6 +23,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+@RefreshScope
 @RestController
 @RequestMapping("/api")
 @Tag(name = "管理用户", description = "提供用户的增删改查和密码管理功能")

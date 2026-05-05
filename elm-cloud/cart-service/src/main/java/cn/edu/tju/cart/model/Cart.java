@@ -34,6 +34,62 @@ public class Cart extends BaseEntity {
     @Transient
     private Map<String, Object> customerDetail;
 
+    public String getFoodId() {
+        return foodId;
+    }
+
+    public void setFoodId(String foodId) {
+        this.foodId = foodId;
+    }
+
+    public String getBusinessId() {
+        return businessId;
+    }
+
+    public void setBusinessId(String businessId) {
+        this.businessId = businessId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public Map<String, Object> getFoodDetail() {
+        return foodDetail;
+    }
+
+    public void setFoodDetail(Map<String, Object> foodDetail) {
+        this.foodDetail = foodDetail;
+    }
+
+    public Map<String, Object> getBusinessDetail() {
+        return businessDetail;
+    }
+
+    public void setBusinessDetail(Map<String, Object> businessDetail) {
+        this.businessDetail = businessDetail;
+    }
+
+    public Map<String, Object> getCustomerDetail() {
+        return customerDetail;
+    }
+
+    public void setCustomerDetail(Map<String, Object> customerDetail) {
+        this.customerDetail = customerDetail;
+    }
+
     /**
      * 兼容部分旧代码/数据：如果存在 cartId，优先保持；否则用 BaseEntity.id。
      * 前端只关心 data.id，因此这里不暴露 cartId 字段。
@@ -131,5 +187,13 @@ public class Cart extends BaseEntity {
         private String id;
         public IdOnlyView() {}
         public IdOnlyView(String id) { this.id = id; }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
     }
 }

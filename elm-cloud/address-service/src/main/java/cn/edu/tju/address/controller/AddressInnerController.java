@@ -1,5 +1,6 @@
 package cn.edu.tju.address.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.address.model.DeliveryAddress;
 import cn.edu.tju.address.service.AddressInternalService;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@RefreshScope
 @RestController
 @RequestMapping("/internal/addresses")
 public class AddressInnerController {

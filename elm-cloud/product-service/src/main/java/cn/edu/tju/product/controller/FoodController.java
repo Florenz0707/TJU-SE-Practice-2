@@ -1,5 +1,6 @@
 package cn.edu.tju.product.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.product.model.Food;
 import cn.edu.tju.product.repository.FoodRepository;
 import cn.edu.tju.core.model.HttpResult;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+@RefreshScope
 @RestController
 @RequestMapping
 public class FoodController {

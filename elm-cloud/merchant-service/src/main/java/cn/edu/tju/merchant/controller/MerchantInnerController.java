@@ -1,4 +1,6 @@
 package cn.edu.tju.merchant.controller;
+
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.merchant.service.UserService;
 
 import cn.edu.tju.merchant.util.AuthorityUtils;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@RefreshScope
 @RestController
 @RequestMapping("/internal/merchants")
 public class MerchantInnerController {

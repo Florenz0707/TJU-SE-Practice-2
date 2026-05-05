@@ -1,5 +1,6 @@
 package cn.edu.tju.order.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.order.model.vo.OrderSnapshotVO;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.Map;
 import java.util.List;
 
+@RefreshScope
 @RestController
 @RequestMapping
 public class OrderRestController {

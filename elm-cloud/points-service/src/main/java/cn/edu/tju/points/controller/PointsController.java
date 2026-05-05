@@ -1,5 +1,6 @@
 package cn.edu.tju.points.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.points.exception.PointsException;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+@RefreshScope
 @RestController
 @RequestMapping("/api/points")
 public class PointsController {

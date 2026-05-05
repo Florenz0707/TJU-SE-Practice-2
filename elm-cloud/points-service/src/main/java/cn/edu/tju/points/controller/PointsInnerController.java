@@ -1,5 +1,6 @@
 package cn.edu.tju.points.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.points.model.BO.PointsAccount;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@RefreshScope
 @RestController
 @RequestMapping("/api/inner/points")
 public class PointsInnerController {

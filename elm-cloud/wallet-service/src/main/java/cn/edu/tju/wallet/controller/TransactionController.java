@@ -1,5 +1,6 @@
 package cn.edu.tju.wallet.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.core.model.HttpResult;
 import cn.edu.tju.core.model.ResultCodeEnum;
 import cn.edu.tju.core.security.SecurityUtils;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
+@RefreshScope
 @RestController
 @RequestMapping("/api/transaction")
 

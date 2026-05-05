@@ -24,12 +24,13 @@
   - **统一入口与路由**（Gateway）
   - **客户端负载均衡**（LoadBalancer，课程语境常称 Ribbon）
   - **配置中心**（Config Server）
-  -（可选）动态配置刷新（Bus）、熔断降级（Hystrix）等
+  - **动态配置刷新**（Bus）
+  - 熔断降级等能力
 
 > 重要说明（务实汇报口径）：
 >
-> - `elm-cloud` 已经实现并稳定运行的核心能力是：Eureka / Gateway / Config Server / 客户端负载均衡（Spring Cloud LoadBalancer）/ Docker Compose 一键启动。
-> - `Bus 动态刷新`、`Hystrix` 这两项在 **当前 `elm-cloud` 代码与依赖中并未集成**（下文会说明可扩展方案），汇报时按“规划能力/可演进方向”来讲，避免与代码不一致。
+> - `elm-cloud` 已经实现并稳定运行的核心能力是：Eureka / Gateway / Config Server / Spring Cloud Bus / 客户端负载均衡（Spring Cloud LoadBalancer）/ Docker Compose 一键启动。
+> - 熔断降级在当前项目中使用的是 **Resilience4j**，而不是旧版 Netflix Hystrix。
 
 ## 2. 微服务怎么拆：拆分原则与边界设计（汇报重点）
 
@@ -48,9 +49,10 @@
 基础设施（微服务底座）：
 
 - `eureka-server`：注册中心
-- `config-server`：配置中心（native 示例）
+- `config-server-1`、`config-server-2`：双实例配置中心
 - `gateway`：统一入口与路由
 - `mysql`：数据库
+- `rabbitmq`：总线消息中间件
 
 业务服务（按领域能力拆分）：
 
@@ -232,18 +234,20 @@ Netflix Ribbon 是早期 Spring Cloud Netflix 体系的客户端负载均衡方�
 
 - 多服务配置分散、难以统一管理。
 - 环境切换（dev/test/prod）配置重复。
+- 配置中心扩容后，客户端不应依赖固定节点地址。
 
 ### 8.2 在 elm-cloud 中如何落地
 
 - `config-server` 依赖：`spring-cloud-config-server`（见 `config-server/pom.xml`）。
-- Config Server 以 `native` 模式运行：
-  - 配置文件：`config-server/src/main/resources/application.yml`
-  - `search-locations: classpath:/config`
-- 示例配置仓库位置：`config-server/src/main/resources/config/application.yml`
+- 当前 compose 已部署 `config-server-1` 与 `config-server-2` 两个实例。
+- Config Server 统一从 `elm-cloud/config/` 目录读取中心化配置文件。
+- 当前已接入 Config Client 的服务包括：`gateway`、`order-service`、`user-service`、`merchant-service`、`product-service`、`cart-service`、`address-service`、`points-service`、`wallet-service`。
+- 当前客户端通过 `bootstrap.yml` 中的 discovery-first 配置发现 `config-server`，而不是直连单个固定地址。
+- 启动阶段保留 `fail-fast: false` 和本地兜底配置，用于提高联调和答辩环境的容错性。
 
-> 说明：目前 `elm-cloud` 的网关与各业务服务的配置，仍以各自模块内 `application.yml / application.properties` 为主；Config Server 提供的是“配置中心底座”，后续可以逐步把各服务配置迁移到 Config Server。
+> 说明：当前 `elm-cloud` 的 Config 方案已经是运行中的最终实现。它具备双实例配置中心、统一配置目录和客户端服务发现，不再只是演示性质的单点配置读取。
 
-## 9. Bus 动态刷新：现状与可扩展方案
+## 9. Bus 动态刷新：当前实现与演示方式
 
 ### 9.1 Bus 是什么（用于汇报解释）
 
@@ -255,20 +259,24 @@ Spring Cloud Bus 用消息中间件（常见：RabbitMQ/Kafka）把“配置变�
 
 ### 9.2 elm-cloud 当前现状（与代码一致）
 
-当前 `elm-cloud`：
+当前 `elm-cloud` 已经完成 Bus 落地：
 
-- **未引入** `spring-cloud-starter-bus-amqp` 或 `spring-cloud-starter-bus-kafka` 依赖。
-- compose 中也 **没有** RabbitMQ/Kafka。
+- `docker-compose.yml` 中已经部署了 RabbitMQ。
+- `config-server`、`gateway` 和主要业务服务已引入 `spring-cloud-starter-bus-amqp`。
+- `config-server` 已暴露 `busrefresh`、`bus-env` 端点。
+- 所有微服务 Controller 都已加上 `@RefreshScope`。
+- `order-service` 中已经提供 `/elm/api/orders/runtime-config` 演示接口。
 
-因此：**Bus 动态刷新在本项目并未落地启用**。
+因此：**Bus 不只是基础设施依赖存在，而是已经形成了可演示、可验证的运行时刷新链路。**
 
-### 9.3 如果要在 elm-cloud 上落地（演进建议）
+### 9.3 当前的演示链路
 
-- 在 `docker-compose.yml` 增加 RabbitMQ（或 Kafka）服务。
-- 在各微服务引入 bus 依赖并开启 actuator。
-- 在需要动态刷新的配置 bean 上使用 `@RefreshScope`。
+- 第一步：修改 `elm-cloud/config/order-service.yml` 中的中心化配置。
+- 第二步：调用任意一个 Config Server 的 `POST /actuator/busrefresh`。
+- 第三步：Bus 事件通过 RabbitMQ 广播到已接入的服务实例。
+- 第四步：访问 `/elm/api/orders/runtime-config`，直接观察刷新后的返回值。
 
-（这一段适合放在“未来工作/可扩展点”，不建议在“已实现功能”里表述。）
+这套流程已经可以在当前仓库中直接复现。
 
 ## 10. Hystrix 熔断降级：现状与替代方案
 
@@ -309,7 +317,8 @@ Hystrix 是 Netflix OSS 的熔断/隔离/降级库，解决：
 
 - `mysql`：3306
 - `eureka-server`：8761
-- `config-server`：8888
+- `config-server-1`：8888
+- `config-server-2`：8889
 - `gateway`：8080
 - `frontend`：80
 
@@ -322,7 +331,7 @@ Hystrix 是 Netflix OSS 的熔断/隔离/降级库，解决：
 3. 怎么迁（迁移步骤 + 难点与解决方案）
 4. 怎么协作（通信方式 + 典型业务链路）
 5. Eureka / Gateway / 负载均衡 / Config（底座落地）
-6. Bus、Hystrix（可演进能力：现状未落地，给出方案；Hystrix 推荐 Resilience4j）
+6. Bus、Hystrix（Bus 已落地并可演示；Hystrix 用 Resilience4j 替代）
 7. Compose（一键启动与可复现联调环境）
 
 ---
@@ -333,4 +342,4 @@ Hystrix 是 Netflix OSS 的熔断/隔离/降级库，解决：
 - 运行指南：`run.md`
 - 排错手册：`docs/troubleshooting.md`
 - 路由配置：`gateway/src/main/resources/application.yml`
-- Config Server 配置仓库示例：`config-server/src/main/resources/config/application.yml`
+- 中心化配置目录：`elm-cloud/config/`

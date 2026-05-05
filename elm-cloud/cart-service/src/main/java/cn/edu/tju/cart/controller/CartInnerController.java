@@ -1,5 +1,6 @@
 package cn.edu.tju.cart.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.cart.model.Cart;
 import cn.edu.tju.cart.service.CartInternalService;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@RefreshScope
 @RestController
 @RequestMapping("/internal/carts")
 public class CartInnerController {

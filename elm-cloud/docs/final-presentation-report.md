@@ -16,6 +16,7 @@
 | 统一入口与路由 | Spring Cloud Gateway | 外部请求统一通过 Gateway（8080） |
 | 负载均衡 | Spring Cloud LoadBalancer | 替代停更的 Netflix Ribbon |
 | 配置中心 | Spring Cloud Config Server | 所有配置集中管理 |
+| 动态刷新 | Spring Cloud Bus + RabbitMQ | 配置变更广播刷新 |
 | 熔断降级 | Resilience4j | 替代停更的 Netflix Hystrix |
 | 容器化 | Docker + Docker Compose | 一键部署，环境一致 |
 
@@ -27,7 +28,8 @@
 | 服务名 | 端口 | 职责 |
 |------|------|------|
 | eureka-server | 8761 | 服务注册与发现中心，所有服务自动注册 |
-| config-server | 8888 | 集中配置管理，各服务启动时拉取配置 |
+| config-server-1 | 8888 | 集中配置管理实例 1，各服务启动时拉取配置 |
+| config-server-2 | 8889 | 集中配置管理实例 2，各服务启动时拉取配置 |
 | gateway | 8080 | 统一入口，外部请求统一路由 |
 | MySQL | 3306 | 数据库 |
 | RabbitMQ | 5672 | 消息队列，用于配置刷新广播 |
@@ -74,11 +76,14 @@
 - 核心服务部署 **2个实例**，自动实现负载均衡
 - 增加实例后无需改动代码，自动纳入负载
 
-### 3.4 配置中心（Config Server）
-- 所有服务配置集中在 Config Server 的 `config/` 目录下
-- 各服务通过 `bootstrap.yml` 连接 Config Server 拉取配置
+### 3.4 配置中心与动态刷新（Config Server + Bus）
+- 配置中心采用 **双 Config Server 实例** 部署：`config-server-1` 和 `config-server-2`
+- 所有中心化配置统一放在 `elm-cloud/config/` 目录下
+- 各服务通过 `bootstrap.yml` 以 **discovery-first** 方式发现 `config-server`
 - **配置降级策略**：Config Server 不可用时，自动降级使用本地配置
-- 本地配置文件已备份为 `*.backup`（例如 `application.properties.backup`）
+- RabbitMQ 与 Spring Cloud Bus 已接入，支持通过 `POST /actuator/busrefresh` 广播刷新事件
+- 所有微服务 Controller 已加上 `@RefreshScope`
+- `order-service` 提供 `/elm/api/orders/runtime-config` 接口，用于现场证明配置刷新结果
 
 ### 3.5 熔断降级（Resilience4j）
 - 在微服务内部调用时使用 Resilience4j 实现熔断
@@ -159,6 +164,10 @@ docker compose up -d
 3. **测试熔断**（可选）：
    - 停止某个服务：`docker compose stop product-service`
    - 访问相关页面，验证是否有降级处理
+4. **测试配置刷新**（可选）：
+   - 修改 `elm-cloud/config/order-service.yml`
+   - 调用 `curl -X POST http://localhost:8888/actuator/busrefresh`
+   - 访问 `http://localhost:8080/elm/api/orders/runtime-config`
 
 ---
 
@@ -166,12 +175,13 @@ docker compose up -d
 
 ### 7.1 已完成的功能
 ✅ **微服务拆分与部署**
-- 从单体应用拆分为 9个微服务 + 3个基础设施服务
+- 从单体应用拆分为 9个微服务 + 4个基础设施服务
 - 核心服务双实例部署，支持负载均衡
 
 ✅ **基础设施服务**
 - Eureka Server：服务注册与发现
-- Config Server：配置集中管理 + 本地配置降级
+- Config Server：双实例集中配置管理
+- Spring Cloud Bus + RabbitMQ：配置刷新广播
 - Gateway：统一入口与路由
 
 ✅ **负载均衡**
@@ -207,20 +217,20 @@ docker compose up -d
 | 服务 | 负载均衡 | 熔断降级 | Config Server | 实例数 |
 |------|---------|---------|---------------|--------|
 | eureka-server | - | - | - | 1 |
-| config-server | - | - | - | 1 |
+| config-server | - | - | - | 2 |
 | gateway | ✅ | ❌ | ✅ | 1 |
 | user-service | ⚠️ | ❌ | ✅ | 2 |
 | merchant-service | ✅ | ✅ | ✅ | 2 |
 | product-service | ✅ | ✅ | ✅ | 2 |
 | cart-service | ✅ | ✅ | ✅ | 2 |
 | order-service | ✅ | ✅ | ✅ | 2 |
-| address-service | ❌ | ❌ | ❌ | 1 |
-| wallet-service | ❌ | ❌ | ❌ | 1 |
-| points-service | ❌ | ❌ | ❌ | 1 |
+| address-service | ❌ | ❌ | ✅ | 1 |
+| wallet-service | ❌ | ❌ | ✅ | 1 |
+| points-service | ❌ | ❌ | ✅ | 1 |
 
 ### 7.3 技术亮点
 1. **分层架构**：Gateway + 微服务，职责清晰
-2. **配置集中化 + 本地降级**：Config Server 集中管理，不可用时自动用本地配置
+2. **配置集中化 + 总线刷新**：Config Server 集中管理，Bus 统一广播刷新
 3. **服务解耦**：一个服务挂掉不影响其他服务
 4. **优雅降级**：Resilience4j 熔断，返回空数据或默认值
 5. **负载均衡**：核心服务双实例，自动负载
@@ -239,10 +249,10 @@ docker compose up -d
 
 ## 总结
 elm-cloud 从单体应用改造为微服务架构，实现了：
-- 完整的基础设施（Eureka、Config Server、Gateway）
+- 完整的基础设施（Eureka、双 Config Server、Gateway、RabbitMQ）
 - 高可用的核心服务（多实例 + 负载均衡）
 - 完善的容错机制（Resilience4j 熔断降级）
-- 配置集中化管理（Config Server + 本地降级）
+- 配置集中化管理与动态刷新（Config Server + Bus + `@RefreshScope`）
 - 完整的 Docker 部署方案
 
 通过这次改造，系统具备了企业级的高可用性和容错能力！

@@ -1,5 +1,6 @@
 package cn.edu.tju.cart.controller;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import cn.edu.tju.cart.model.Cart;
 import cn.edu.tju.cart.repository.CartRepository;
 import cn.edu.tju.core.model.HttpResult;
@@ -23,6 +24,7 @@ import java.util.Map;
 
 import java.util.List;
 
+@RefreshScope
 @RestController
 @RequestMapping({"/api/carts", "/carts"})
 public class CartController {
